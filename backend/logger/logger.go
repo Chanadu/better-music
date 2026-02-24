@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/Chanadu/better-music/envs"
+	"github.com/Chanadu/better-music/config"
 )
 
-func SetupLogger(config *envs.Config) {
+func SetupLogger(config *config.Config) {
 	file, _ := os.OpenFile(config.Logs.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 
 	multiWriter := io.MultiWriter(os.Stdout, file)

@@ -1,6 +1,7 @@
-package envs
+package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -16,9 +17,11 @@ type Config struct {
 type LogConfig struct {
 	Enabled bool
 	File    string
+	Debug   bool
 }
 
 type PostgresConfig struct {
+	Url      string
 	Username string
 	Password string
 	Host     string
@@ -48,6 +51,7 @@ func LoadConfig() (*Config, error) {
 		Logs: LogConfig{
 			Enabled: logEnabled,
 			File:    logFilePath,
+			Debug:   logDebug,
 		},
 		DB: PostgresConfig{
 			Username: os.Getenv("POSTGRES_USER"),
@@ -57,5 +61,9 @@ func LoadConfig() (*Config, error) {
 		},
 	}
 
+	config.DB.Url = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.DB.Username, config.DB.Password, config.DB.Host, config.DB.Port, config.DB.Username)
+	if logDebug {
+		config.DB.Url += "?sslmode=disable"
+	}
 	return config, nil
 }

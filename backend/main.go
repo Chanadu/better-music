@@ -4,20 +4,22 @@ import (
 	"log"
 	"log/slog"
 
-	"github.com/Chanadu/better-music/envs"
+	"github.com/Chanadu/better-music/config"
+	"github.com/Chanadu/better-music/db"
 	"github.com/Chanadu/better-music/logger"
 )
 
 func main() {
-	config, err := envs.LoadConfig()
+	config, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	logger.SetupLogger(config)
+	if config.Logs.Debug {
+		slog.Info("=============================================================")
+	}
 
-	slog.Info(config.DB.Host)
-	slog.Debug(config.DB.Password)
-
-	log.Fatal("test")
+	db.Connect(config)
+	db.RunMigrations(config)
 }
