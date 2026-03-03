@@ -17,9 +17,9 @@ import (
 
 var DB *sql.DB
 
-func Connect(config *config.Config) {
+func Connect() {
 	var err error
-	DB, err = sql.Open("postgres", config.DB.Url)
+	DB, err = sql.Open("postgres", config.Conf.DB.Url)
 
 	if err != nil {
 		log.Fatal("failed to open database: ", err)
@@ -32,8 +32,8 @@ func Connect(config *config.Config) {
 	slog.Info("connected to database successfully")
 }
 
-func RunMigrations(config *config.Config) {
-	migrationInstance, err := migrate.New("file://migrations", config.DB.Url)
+func RunMigrations() {
+	migrationInstance, err := migrate.New("file://migrations", config.Conf.DB.Url)
 
 	if err != nil {
 		log.Fatal("migration init failed:", err)

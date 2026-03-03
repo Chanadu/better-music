@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -10,8 +9,9 @@ import (
 )
 
 type Config struct {
-	Logs LogConfig
-	DB   PostgresConfig
+	Logs      LogConfig
+	DB        PostgresConfig
+	JWTSecret string
 }
 
 type LogConfig struct {
@@ -28,15 +28,17 @@ type PostgresConfig struct {
 	Port     string
 }
 
-func LoadConfig() (*Config, error) {
+var Conf Config
+
+func LoadConfig() error {
 	logEnabled, err := strconv.ParseBool(os.Getenv("LOG_ENABLE"))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	logDebug, err := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	logFilePath := ""
@@ -47,7 +49,7 @@ func LoadConfig() (*Config, error) {
 		logFilePath = os.Getenv("LOG_DIR") + "/" + time.Now().Format("2006-01-02_15:04:05")
 	}
 
-	config := &Config{
+	config := Config{
 		Logs: LogConfig{
 			Enabled: logEnabled,
 			File:    logFilePath,
@@ -58,12 +60,15 @@ func LoadConfig() (*Config, error) {
 			Password: os.Getenv("POSTGRES_PASSWORD"),
 			Host:     os.Getenv("POSTGRES_HOST"),
 			Port:     os.Getenv("POSTGRES_PORT"),
+			Url:      os.Getenv("POSTGRES_URL"),
 		},
+		JWTSecret: os.Getenv("JWT_SECRET"),
 	}
 
-	config.DB.Url = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", config.DB.Username, config.DB.Password, config.DB.Host, config.DB.Port, config.DB.Username)
 	if logDebug {
 		config.DB.Url += "?sslmode=disable"
 	}
-	return config, nil
+
+	Conf = config
+	return nil
 }

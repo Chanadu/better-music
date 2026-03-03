@@ -12,21 +12,21 @@ import (
 )
 
 func main() {
-	config, err := config.LoadConfig()
+	err := config.LoadConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	logger.SetupLogger(config)
-	if config.Logs.Debug {
+	logger.SetupLogger()
+	if config.Conf.Logs.Debug {
 		slog.Info("=============================================================")
 	}
 
 	slog.Info("Connecting to database")
-	db.Connect(config)
+	db.Connect()
 
 	slog.Info("Running database migrations")
-	db.RunMigrations(config)
+	db.RunMigrations()
 
 	mux := http.NewServeMux()
 
