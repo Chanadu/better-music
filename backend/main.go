@@ -38,7 +38,7 @@ func main() {
 	protectedMux := http.NewServeMux()
 
 	protectedMux.HandleFunc("GET /api/artists", handlers.GetArtists)
-	// protectedMux.HandleFunc("POST /api/artists", handlers.CreateArtist)
+	protectedMux.HandleFunc("POST /api/artists", handlers.CreateArtist)
 	// protectedMux.HandleFunc("DELETE /api/artists/{id}", handlers.DeleteArtist)
 	// protectedMux.HandleFunc("GET /api/artists/{id}/albums", handlers.GetArtistAlbums)
 	// protectedMux.HandleFunc("PUT /api/artists/{id}/refresh", handlers.RefreshArtist)
