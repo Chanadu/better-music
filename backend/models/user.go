@@ -13,7 +13,7 @@ type User struct {
 	CreatedAt    time.Time
 }
 
-func CreateUser(email, passwordHash string) (User, error) {
+func CreateUser(email, passwordHash string) (*User, error) {
 	var user User
 
 	err := db.DB.QueryRow(
@@ -24,14 +24,15 @@ func CreateUser(email, passwordHash string) (User, error) {
 	user.Email = email
 	user.PasswordHash = passwordHash
 
-	return user, err
+	return &user, err
 }
 
-func GetUserByEmail(email string) (User, error) {
+func GetUserByEmail(email string) (*User, error) {
 	var user User
 	err := db.DB.QueryRow(
 		"SELECT id, email, password_hash, created_at FROM users WHERE email = $1",
 		email,
 	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)
-	return user, err
+
+	return &user, err
 }
