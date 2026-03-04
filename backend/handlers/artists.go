@@ -23,7 +23,8 @@ func GetArtists(w http.ResponseWriter, r *http.Request) {
 
 func CreateArtist(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		SpotifyID string `json:"spotify_id"`
+		Name      string  `json:"name"`
+		SpotifyID *string `json:"spotify_id,omitempty"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -31,30 +32,30 @@ func CreateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if body.SpotifyID == "" {
-		writeJSON(w, http.StatusBadRequest, apiError("spotify_id is required"))
+	if body.Name == "" {
+		writeJSON(w, http.StatusBadRequest, apiError("name is required"))
 		return
 	}
 
-	if len(body.SpotifyID) > 255 {
-		writeJSON(w, http.StatusBadRequest, apiError("spotify_id is too long"))
-		return
-	}
+	// if len(body.SpotifyID) > 255 {
+	// 	writeJSON(w, http.StatusBadRequest, apiError("spotify_id is too long"))
+	// 	return
+	// }
 
 	userID := middleware.GetUserID(r)
 
-	exists, err := models.ArtistExistsBySpotifyID(userID, body.SpotifyID)
+	exists, err := models.ArtistExistsByName(userID, body.Name)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
 		return
 	}
 
 	if exists {
-		writeJSON(w, http.StatusConflict, apiError("artist with this spotify_id already exists"))
+		writeJSON(w, http.StatusConflict, apiError("artist with this name already exists"))
 		return
 	}
 
-	artist, err := models.CreateArtist(userID, "filler name", body.SpotifyID)
+	artist, err := models.CreateArtist(userID, body.Name, body.SpotifyID)
 
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to create artist: "+err.Error()))

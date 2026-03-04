@@ -5,10 +5,10 @@ import (
 )
 
 type Artist struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	SpotifyID string `json:"spotify_id"`
-	CreatedAt string `json:"created_at"`
+	ID        int     `json:"id"`
+	Name      string  `json:"name"`
+	SpotifyID *string `json:"spotify_id,omitempty"`
+	CreatedAt string  `json:"created_at"`
 }
 
 func GetArtistsByUser(userID int) ([]Artist, error) {
@@ -43,28 +43,28 @@ func GetArtistsByUser(userID int) ([]Artist, error) {
 	return artists, nil
 }
 
-func ArtistExistsBySpotifyID(userID int, spotifyID string) (bool, error) {
+func ArtistExistsByName(userID int, name string) (bool, error) {
 	var exists bool
 	err := db.DB.QueryRow(
 		`SELECT EXISTS (
 			SELECT 1
 			FROM artists
-			WHERE user_id = $1 AND spotify_id = $2
+			WHERE user_id = $1 AND name = $2
 		)
 		`,
-		userID, spotifyID,
+		userID, name,
 	).Scan(&exists)
 
 	return exists, err
 }
 
-func CreateArtist(userID int, name string, spotifyID string) (*Artist, error) {
+func CreateArtist(userID int, name string, spotifyID *string) (*Artist, error) {
 	var artist Artist
 
 	err := db.DB.QueryRow(
 		`INSERT INTO artists (user_id, name, spotify_id)
-		VALUES ($1, $2, $3)
-		RETURNING id, created_at`,
+         VALUES ($1, $2, $3)
+         RETURNING id, created_at`,
 		userID, name, spotifyID,
 	).Scan(&artist.ID, &artist.CreatedAt)
 
