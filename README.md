@@ -11,4 +11,4 @@ This is a repository for my music application.
     - setup artists
   - setup albums
   - setup spotify searching
-  - setup Caddy for production (maybe);
+  - setup Caddy for production with noip
