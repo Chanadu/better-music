@@ -12,11 +12,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type requestBody struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func generateJWT(userID int) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": userID,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	})
+
+	return token.SignedString([]byte(config.Conf.JWTSecret))
+}
+
 func AuthRegister(w http.ResponseWriter, r *http.Request) {
-	var body struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	var body requestBody
+
 	slog.Info("Registering user with email: " + body.Email)
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -46,15 +58,12 @@ func AuthRegister(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to generate token"))
 	}
 
-	// writeJSON(w, http.StatusCreated, "worked!")
 	writeJSON(w, http.StatusCreated, map[string]string{"token": token})
 }
 
 func AuthLogin(w http.ResponseWriter, r *http.Request) {
-	var body struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	var body requestBody
+
 	slog.Info("Logging in user with email: " + body.Email)
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -79,14 +88,4 @@ func AuthLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"token": token})
-
-}
-
-func generateJWT(userID int) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": userID,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
-	})
-
-	return token.SignedString([]byte(config.Conf.JWTSecret))
 }
