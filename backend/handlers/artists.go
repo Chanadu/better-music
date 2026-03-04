@@ -37,11 +37,6 @@ func CreateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if len(body.SpotifyID) > 255 {
-	// 	writeJSON(w, http.StatusBadRequest, apiError("spotify_id is too long"))
-	// 	return
-	// }
-
 	userID := middleware.GetUserID(r)
 
 	exists, err := models.ArtistExistsByName(userID, body.Name)
