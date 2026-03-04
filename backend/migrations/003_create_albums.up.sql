@@ -10,5 +10,6 @@ CREATE TABLE albums(
 	rating INTEGER,
 	comment TEXT,
 	listened_at TIMESTAMP,
-	created_at TIMESTAMP DEFAULT NOW()
+	created_at TIMESTAMP DEFAULT NOW(),
+	UNIQUE(user_id, spotify_id)
 );

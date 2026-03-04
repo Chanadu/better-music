@@ -3,5 +3,6 @@ CREATE TABLE artists(
 	user_id INTEGER NOT NULL REFERENCES users(id),
 	spotify_id TEXT NOT NULL,
 	name TEXT NOT NULL,
-	created_at TIMESTAMP DEFAULT NOW()
+	created_at TIMESTAMP DEFAULT NOW(),
+	UNIQUE(user_id, spotify_id)
 );
