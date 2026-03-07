@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/Chanadu/better-music/middleware"
 	"github.com/Chanadu/better-music/models"
@@ -58,4 +59,36 @@ func CreateArtist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, artist)
+}
+
+func DeleteArtist(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r)
+
+	idStr := r.PathValue("id")
+	artistID, err := strconv.Atoi(idStr)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, apiError("invalid artist ID"))
+		return
+	}
+
+	exists, err := models.ArtistExistsByID(userID, artistID)
+
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
+		return
+	}
+
+	if !exists {
+		writeJSON(w, http.StatusNotFound, apiError("artist not found"))
+		return
+	}
+
+	err = models.DeleteArtist(userID, artistID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete artist: "+err.Error()))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"message": "artist deleted"})
+
 }

@@ -58,6 +58,21 @@ func ArtistExistsByName(userID int, name string) (bool, error) {
 	return exists, err
 }
 
+func ArtistExistsByID(userID int, id int) (bool, error) {
+	var exists bool
+	err := db.DB.QueryRow(
+		`SELECT EXISTS (
+			SELECT 1
+			FROM artists
+			WHERE user_id = $1 AND id = $2
+		)
+		`,
+		userID, id,
+	).Scan(&exists)
+
+	return exists, err
+}
+
 func CreateArtist(userID int, name string, spotifyID *string) (*Artist, error) {
 	var artist Artist
 
@@ -76,4 +91,14 @@ func CreateArtist(userID int, name string, spotifyID *string) (*Artist, error) {
 	artist.SpotifyID = spotifyID
 
 	return &artist, nil
+}
+
+func DeleteArtist(userID int, artistID int) error {
+	_, err := db.DB.Exec(
+		`DELETE FROM artists
+		WHERE user_id = $1 AND id = $2
+		`,
+		userID, artistID,
+	)
+	return err
 }
