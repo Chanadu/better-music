@@ -45,6 +45,22 @@ func GetArtistsByUser(userID int) ([]Artist, error) {
 	return artists, nil
 }
 
+func GetArtistByID(userID int, artistID int) (*Artist, error) {
+	var artist Artist
+
+	err := db.DB.QueryRow(
+		`SELECT id, name, spotify_id, created_at
+		FROM artists
+		WHERE user_id = $1 AND id = $2`,
+		userID, artistID,
+	).Scan(&artist.ID, &artist.Name, &artist.SpotifyID, &artist.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &artist, nil
+}
+
 func ArtistExistsByName(userID int, name string) (bool, error) {
 	var exists bool
 	err := db.DB.QueryRow(

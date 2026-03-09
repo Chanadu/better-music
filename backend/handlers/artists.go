@@ -24,6 +24,24 @@ func GetArtists(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, artists)
 }
 
+func GetArtist(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("route hit", "route", "GET /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
+	userID := middleware.GetUserID(r)
+
+	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
+	if !ok {
+		return
+	}
+
+	artist, err := models.GetArtistByID(userID, artistID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to get artist: "+err.Error()))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, artist)
+}
+
 func CreateArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/artists", "method", r.Method, "path", r.URL.Path)
 	var body struct {
