@@ -31,6 +31,21 @@ func AlbumExistsByName(userID int, artistID int, title string) (bool, error) {
 	return exists, err
 }
 
+func AlbumExistsByID(userID int, artistID int, albumID int) (bool, error) {
+	var exists bool
+	err := db.DB.QueryRow(
+		`SELECT EXISTS (
+			SELECT 1
+			FROM albums
+			WHERE user_id = $1 AND artist_id = $2 AND id = $3
+		)
+		`,
+		userID, artistID, albumID,
+	).Scan(&exists)
+
+	return exists, err
+}
+
 func CreateAlbum(userID int, artistID int, title string) (*Album, error) {
 	var album Album
 
@@ -46,6 +61,34 @@ func CreateAlbum(userID int, artistID int, title string) (*Album, error) {
 	}
 
 	album.Title = title
+
+	return &album, nil
+}
+
+func GetAlbumByID(userID int, artistID int, albumID int) (*Album, error) {
+	var album Album
+
+	err := db.DB.QueryRow(
+		`SELECT id, artist_id, title, cover_url, year, spotify_id, listened, rating, comment, listened_at, created_at
+		FROM albums
+		WHERE user_id = $1 AND artist_id = $2 AND id = $3`,
+		userID, artistID, albumID,
+	).Scan(
+		&album.ID,
+		&album.ArtistID,
+		&album.Title,
+		&album.CoverUrl,
+		&album.Year,
+		&album.SpotifyID,
+		&album.Listened,
+		&album.Rating,
+		&album.Comment,
+		&album.ListenedAt,
+		&album.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	return &album, nil
 }
