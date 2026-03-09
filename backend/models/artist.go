@@ -75,22 +75,20 @@ func ArtistExistsByID(userID int, id int) (bool, error) {
 	return exists, err
 }
 
-func CreateArtist(userID int, name string, spotifyID *string) (*Artist, error) {
+func CreateArtist(userID int, name string) (*Artist, error) {
 	var artist Artist
 
 	err := db.DB.QueryRow(
-		`INSERT INTO artists (user_id, name, spotify_id)
+		`INSERT INTO artists (user_id, name)
          VALUES ($1, $2, $3)
          RETURNING id, created_at`,
-		userID, name, spotifyID,
+		userID, name,
 	).Scan(&artist.ID, &artist.CreatedAt)
 
 	if err != nil {
 		return nil, err
 	}
-
 	artist.Name = name
-	artist.SpotifyID = spotifyID
 
 	return &artist, nil
 }

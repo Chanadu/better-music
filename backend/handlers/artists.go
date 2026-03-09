@@ -24,8 +24,7 @@ func GetArtists(w http.ResponseWriter, r *http.Request) {
 
 func CreateArtist(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Name      string  `json:"name"`
-		SpotifyID *string `json:"spotify_id,omitempty"`
+		Name string `json:"name"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -51,7 +50,7 @@ func CreateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	artist, err := models.CreateArtist(userID, body.Name, body.SpotifyID)
+	artist, err := models.CreateArtist(userID, body.Name)
 
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to create artist: "+err.Error()))
@@ -108,7 +107,7 @@ func UpdateArtist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isEmpty(body.Name) && isEmpty(body.SpotifyID) {
-		writeJSON(w, http.StatusBadRequest, apiError("at least one of name or spotify_id must be provided"))
+		writeJSON(w, http.StatusBadRequest, apiError("at least one field must be provided"))
 		return
 	}
 
