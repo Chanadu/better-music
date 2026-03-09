@@ -80,7 +80,7 @@ func CreateArtist(userID int, name string) (*Artist, error) {
 
 	err := db.DB.QueryRow(
 		`INSERT INTO artists (user_id, name)
-         VALUES ($1, $2, $3)
+         VALUES ($1, $2)
          RETURNING id, created_at`,
 		userID, name,
 	).Scan(&artist.ID, &artist.CreatedAt)
