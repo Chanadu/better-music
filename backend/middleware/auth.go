@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -15,7 +15,9 @@ type contextKey string
 const userIDKey contextKey = "userID"
 
 func httpError(w http.ResponseWriter, msg string, status int) {
-	http.Error(w, fmt.Sprintf(`{"error":"%s"}`, msg), status)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
 }
 
 func Auth(next http.Handler) http.Handler {
@@ -46,7 +48,22 @@ func Auth(next http.Handler) http.Handler {
 			return
 		}
 
-		userID := int(claims["user_id"].(float64))
+		var userID int
+		switch v := claims["user_id"].(type) {
+		case float64:
+			userID = int(v)
+		case int:
+			userID = v
+		default:
+			httpError(w, "invalid token claims", http.StatusUnauthorized)
+			return
+		}
+
+		if userID <= 0 {
+			httpError(w, "invalid token claims", http.StatusUnauthorized)
+			return
+		}
+
 		ctx := context.WithValue(r.Context(), userIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
