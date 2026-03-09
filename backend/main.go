@@ -38,22 +38,19 @@ func main() {
 	protectedMux := http.NewServeMux()
 
 	protectedMux.HandleFunc("GET /api/artists", handlers.GetArtists)
+	protectedMux.HandleFunc("GET /api/artists/{id}", handlers.GetArtist)
 	protectedMux.HandleFunc("POST /api/artists", handlers.CreateArtist)
 	protectedMux.HandleFunc("DELETE /api/artists/{id}", handlers.DeleteArtist)
 	protectedMux.HandleFunc("PUT /api/artists/{id}", handlers.UpdateArtist)
 	protectedMux.HandleFunc("GET /api/artists/{id}/albums", handlers.GetArtistAlbums)
 	// protectedMux.HandleFunc("PUT /api/artists/{id}/refresh", handlers.RefreshArtist)
 	//
-	// protectedMux.HandleFunc("GET /api/albums", handlers.GetAlbums)
+	protectedMux.HandleFunc("GET /api/albums", handlers.GetAlbums)
 	protectedMux.HandleFunc("GET /api/albums/{id}", handlers.GetAlbum)
 	protectedMux.HandleFunc("POST /api/albums", handlers.CreateAlbum)
-	// protectedMux.HandleFunc("PUT /api/albums/{id}", handlers.UpdateAlbum)
-	// protectedMux.HandleFunc("DELETE /api/albums/{id}", handlers.DeleteAlbum)
-	// protectedMux.HandleFunc("PUT /api/albums/{id}/listen", handlers.ListenAlbum)
-	//
-	// protectedMux.HandleFunc("GET /api/spotify/search/artists", handlers.SearchSpotifyArtists)
-	// protectedMux.HandleFunc("GET /api/spotify/search/albums", handlers.SearchSpotifyAlbums)
-
+	protectedMux.HandleFunc("PUT /api/albums/{id}", handlers.UpdateAlbum)
+	protectedMux.HandleFunc("DELETE /api/albums/{id}", handlers.DeleteAlbum)
+	
 	// Wrap protected routes with Auth middleware
 	mux.Handle("/api/", middleware.Auth(protectedMux))
 
