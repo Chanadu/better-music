@@ -27,7 +27,7 @@ func GetArtistsByUser(userID int) ([]Artist, error) {
 	}
 
 	defer rows.Close()
-	var artists []Artist
+	artists := []Artist{}
 
 	for rows.Next() {
 		var artist Artist
@@ -169,7 +169,7 @@ func GetArtistAlbums(userID int, artistID int) ([]Album, error) {
 	}
 
 	defer rows.Close()
-	var albums []Album
+	albums := []Album{}
 
 	for rows.Next() {
 		var album Album

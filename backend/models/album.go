@@ -1,8 +1,10 @@
 package models
 
-import "database/sql"
+import (
+	"database/sql"
 
-import "github.com/Chanadu/better-music/db"
+	"github.com/Chanadu/better-music/db"
+)
 
 type Album struct {
 	ID         int     `json:"id"`
@@ -31,7 +33,7 @@ func GetAlbumsByUser(userID int) ([]Album, error) {
 	}
 
 	defer rows.Close()
-	var albums []Album
+	albums := []Album{}
 
 	for rows.Next() {
 		var album Album
@@ -98,15 +100,13 @@ func CreateAlbum(userID int, artistID int, title string) (*Album, error) {
 	err := db.DB.QueryRow(
 		`INSERT INTO albums (user_id, artist_id, title)
          VALUES ($1, $2, $3)
-         RETURNING id, listened, created_at`,
+		 RETURNING id, artist_id, title, listened, created_at`,
 		userID, artistID, title,
-	).Scan(&album.ID, &album.Listened, &album.CreatedAt)
+	).Scan(&album.ID, &album.ArtistID, &album.Title, &album.Listened, &album.CreatedAt)
 
 	if err != nil {
 		return nil, err
 	}
-
-	album.Title = title
 
 	return &album, nil
 }
