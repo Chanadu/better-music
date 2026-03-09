@@ -5,11 +5,11 @@ CREATE TABLE albums(
 	title TEXT NOT NULL,
 	cover_url TEXT,
 	YEAR INTEGER,
-	spotify_id TEXT NOT NULL,
+	spotify_id TEXT,
 	listened BOOLEAN DEFAULT FALSE,
 	rating INTEGER,
 	comment TEXT,
 	listened_at TIMESTAMP,
 	created_at TIMESTAMP DEFAULT NOW(),
-	UNIQUE(user_id, spotify_id)
+	UNIQUE(user_id, artist_id, title)
 );

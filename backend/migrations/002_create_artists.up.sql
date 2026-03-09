@@ -4,5 +4,5 @@ CREATE TABLE artists(
 	name TEXT NOT NULL,
 	spotify_id TEXT,
 	created_at TIMESTAMP DEFAULT NOW(),
-	UNIQUE(user_id, spotify_id)
+	UNIQUE(user_id, name)
 );
