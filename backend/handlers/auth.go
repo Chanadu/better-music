@@ -27,12 +27,11 @@ func generateJWT(userID int) (string, error) {
 }
 
 func AuthRegister(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("route hit", "route", "POST /api/auth/register", "method", r.Method, "path", r.URL.Path)
 	var body requestBody
 
-	slog.Info("Registering user with email: " + body.Email)
-
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON"+err.Error()))
+		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
 		return
 	}
 
@@ -56,24 +55,25 @@ func AuthRegister(w http.ResponseWriter, r *http.Request) {
 	token, err := generateJWT(user.ID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to generate token"))
+		return
 	}
 
 	writeJSON(w, http.StatusCreated, map[string]string{"token": token})
 }
 
 func AuthLogin(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("route hit", "route", "POST /api/auth/login", "method", r.Method, "path", r.URL.Path)
 	var body requestBody
 
-	slog.Info("Logging in user with email: " + body.Email)
-
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON"))
+		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
 		return
 	}
 
 	user, err := models.GetUserByEmail(body.Email)
 	if err != nil {
 		writeJSON(w, http.StatusUnauthorized, apiError("invalid email or password"))
+		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(body.Password)); err != nil {
