@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+
+	"github.com/Chanadu/better-music/middleware"
 )
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -23,4 +25,14 @@ func apiError(msg string) map[string]string {
 
 func isEmpty(s *string) bool {
 	return s == nil || *s == ""
+}
+
+func getUserID(w http.ResponseWriter, r *http.Request) (int, bool) {
+	userID, ok := middleware.GetUserID(r)
+	if !ok {
+		writeJSON(w, http.StatusUnauthorized, apiError("unauthorized"))
+		return 0, false
+	}
+
+	return userID, true
 }

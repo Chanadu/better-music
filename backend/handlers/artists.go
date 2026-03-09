@@ -6,13 +6,15 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Chanadu/better-music/middleware"
 	"github.com/Chanadu/better-music/models"
 )
 
 func GetArtists(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists", "method", r.Method, "path", r.URL.Path)
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	artists, err := models.GetArtistsByUser(userID)
 	if err != nil {
@@ -26,7 +28,10 @@ func GetArtists(w http.ResponseWriter, r *http.Request) {
 
 func GetArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
 	if !ok {
@@ -58,7 +63,10 @@ func CreateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	exists, err := models.ArtistExistsByName(userID, body.Name)
 	if err != nil {
@@ -101,7 +109,10 @@ func checkArtistExistsByID(w http.ResponseWriter, userID int, idStr string) (int
 
 func DeleteArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "DELETE /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
 	if !ok {
@@ -145,7 +156,10 @@ func UpdateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
 	if !ok {
@@ -163,7 +177,10 @@ func UpdateArtist(w http.ResponseWriter, r *http.Request) {
 
 func GetArtistAlbums(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists/{id}/albums", "method", r.Method, "path", r.URL.Path)
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
 	if !ok {

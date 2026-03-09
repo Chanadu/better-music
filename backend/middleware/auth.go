@@ -80,6 +80,11 @@ func parseJWT(tokenString string) (*jwt.Token, error) {
 
 }
 
-func GetUserID(r *http.Request) int {
-	return r.Context().Value(userIDKey).(int)
+func GetUserID(r *http.Request) (int, bool) {
+	userID, ok := r.Context().Value(userIDKey).(int)
+	if !ok || userID <= 0 {
+		return 0, false
+	}
+
+	return userID, true
 }

@@ -6,13 +6,15 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Chanadu/better-music/middleware"
 	"github.com/Chanadu/better-music/models"
 )
 
 func GetAlbums(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/albums", "method", r.Method, "path", r.URL.Path)
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	albums, err := models.GetAlbumsByUser(userID)
 	if err != nil {
@@ -56,7 +58,10 @@ func GetAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	if body.ArtistID <= 0 {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid artist ID"))
@@ -105,7 +110,10 @@ func CreateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	exists, err := models.ArtistExistsByID(userID, body.ArtistID)
 	if err != nil {
@@ -169,7 +177,10 @@ func UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	exists, err := models.ArtistExistsByID(userID, body.ArtistID)
 	if err != nil {
@@ -213,7 +224,10 @@ func DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := middleware.GetUserID(r)
+	userID, ok := getUserID(w, r)
+	if !ok {
+		return
+	}
 
 	exists, err := models.ArtistExistsByID(userID, body.ArtistID)
 	if err != nil {
