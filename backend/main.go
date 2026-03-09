@@ -46,7 +46,7 @@ func main() {
 	//
 	// protectedMux.HandleFunc("GET /api/albums", handlers.GetAlbums)
 	// protectedMux.HandleFunc("GET /api/albums/{id}", handlers.GetAlbum)
-	// protectedMux.HandleFunc("POST /api/albums", handlers.CreateAlbum)
+	protectedMux.HandleFunc("POST /api/albums", handlers.CreateAlbum)
 	// protectedMux.HandleFunc("PUT /api/albums/{id}", handlers.UpdateAlbum)
 	// protectedMux.HandleFunc("DELETE /api/albums/{id}", handlers.DeleteAlbum)
 	// protectedMux.HandleFunc("PUT /api/albums/{id}/listen", handlers.ListenAlbum)
