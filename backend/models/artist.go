@@ -81,14 +81,13 @@ func CreateArtist(userID int, name string) (*Artist, error) {
 	err := db.DB.QueryRow(
 		`INSERT INTO artists (user_id, name)
          VALUES ($1, $2)
-         RETURNING id, created_at`,
+		 RETURNING id, name, spotify_id, created_at`,
 		userID, name,
-	).Scan(&artist.ID, &artist.CreatedAt)
+	).Scan(&artist.ID, &artist.Name, &artist.SpotifyID, &artist.CreatedAt)
 
 	if err != nil {
 		return nil, err
 	}
-	artist.Name = name
 
 	return &artist, nil
 }
@@ -138,4 +137,37 @@ func UpdateArtist(userID int, artistID int, name *string, spotifyID *string) err
 	}
 
 	return nil
+}
+
+func GetArtistAlbums(userID int, artistID int) ([]Album, error) {
+	rows, err := db.DB.Query(
+		`SELECT id, artist_id, title, cover_url, year, spotify_id, listened, rating, comment, listened_at, created_at
+		FROM albums 
+		WHERE user_id = $1 AND artist_id = $2
+		ORDER BY created_at DESC
+		`,
+		userID, artistID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var albums []Album
+
+	for rows.Next() {
+		var album Album
+		err := rows.Scan(&album.ID, &album.ArtistID, &album.Title, &album.CoverUrl, &album.Year, &album.SpotifyID, &album.Listened, &album.Rating, &album.Comment, &album.ListenedAt, &album.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		albums = append(albums, album)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return albums, nil
 }

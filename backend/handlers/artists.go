@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -10,6 +11,7 @@ import (
 )
 
 func GetArtists(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("route hit", "route", "GET /api/artists", "method", r.Method, "path", r.URL.Path)
 	userID := middleware.GetUserID(r)
 
 	artists, err := models.GetArtistsByUser(userID)
@@ -23,12 +25,13 @@ func GetArtists(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateArtist(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("route hit", "route", "POST /api/artists", "method", r.Method, "path", r.URL.Path)
 	var body struct {
 		Name string `json:"name"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON"+err.Error()))
+		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
 		return
 	}
 
@@ -79,6 +82,7 @@ func checkArtistExistsByID(w http.ResponseWriter, userID int, idStr string) (int
 }
 
 func DeleteArtist(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("route hit", "route", "DELETE /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
 	userID := middleware.GetUserID(r)
 
 	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
@@ -86,7 +90,18 @@ func DeleteArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := models.DeleteArtist(userID, artistID)
+	albums, err := models.GetArtistAlbums(userID, artistID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to check artist's albums: "+err.Error()))
+		return
+	}
+
+	if len(albums) > 0 {
+		writeJSON(w, http.StatusBadRequest, apiError("artist cannot be deleted because it has albums"))
+		return
+	}
+
+	err = models.DeleteArtist(userID, artistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete artist: "+err.Error()))
 		return
@@ -96,13 +111,14 @@ func DeleteArtist(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateArtist(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("route hit", "route", "PUT /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
 	var body struct {
 		Name      *string `json:"name,omitempty"`
 		SpotifyID *string `json:"spotify_id,omitempty"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON"+err.Error()))
+		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
 		return
 	}
 
@@ -125,4 +141,23 @@ func UpdateArtist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"message": "artist updated"})
+}
+
+func GetArtistAlbums(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("route hit", "route", "GET /api/artists/{id}/albums", "method", r.Method, "path", r.URL.Path)
+	userID := middleware.GetUserID(r)
+
+	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
+	if !ok {
+		return
+	}
+
+	albums, err := models.GetArtistAlbums(userID, artistID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to get artist's albums: "+err.Error()))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, albums)
+
 }
