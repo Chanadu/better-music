@@ -41,11 +41,11 @@ func main() {
 	protectedMux.HandleFunc("POST /api/artists", handlers.CreateArtist)
 	protectedMux.HandleFunc("DELETE /api/artists/{id}", handlers.DeleteArtist)
 	protectedMux.HandleFunc("PUT /api/artists/{id}", handlers.UpdateArtist)
-	// protectedMux.HandleFunc("GET /api/artists/{id}/albums", handlers.GetArtistAlbums)
+	protectedMux.HandleFunc("GET /api/artists/{id}/albums", handlers.GetArtistAlbums)
 	// protectedMux.HandleFunc("PUT /api/artists/{id}/refresh", handlers.RefreshArtist)
 	//
 	// protectedMux.HandleFunc("GET /api/albums", handlers.GetAlbums)
-	// protectedMux.HandleFunc("GET /api/albums/{id}", handlers.GetAlbum)
+	protectedMux.HandleFunc("GET /api/albums/{id}", handlers.GetAlbum)
 	protectedMux.HandleFunc("POST /api/albums", handlers.CreateAlbum)
 	// protectedMux.HandleFunc("PUT /api/albums/{id}", handlers.UpdateAlbum)
 	// protectedMux.HandleFunc("DELETE /api/albums/{id}", handlers.DeleteAlbum)
@@ -58,5 +58,7 @@ func main() {
 	mux.Handle("/api/", middleware.Auth(protectedMux))
 
 	slog.Info("Starting server on :8080")
-	http.ListenAndServe(":8080", mux)
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatal(err)
+	}
 }
