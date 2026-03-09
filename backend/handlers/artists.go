@@ -61,34 +61,69 @@ func CreateArtist(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, artist)
 }
 
-func DeleteArtist(w http.ResponseWriter, r *http.Request) {
-	userID := middleware.GetUserID(r)
-
-	idStr := r.PathValue("id")
+func checkArtistExistsByID(w http.ResponseWriter, userID int, idStr string) (int, bool) {
 	artistID, err := strconv.Atoi(idStr)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid artist ID"))
-		return
+		return 0, false
 	}
-
 	exists, err := models.ArtistExistsByID(userID, artistID)
-
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
-		return
+		return 0, false
 	}
-
 	if !exists {
 		writeJSON(w, http.StatusNotFound, apiError("artist not found"))
+		return 0, false
+	}
+	return artistID, true
+}
+
+func DeleteArtist(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r)
+
+	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
+	if !ok {
 		return
 	}
 
-	err = models.DeleteArtist(userID, artistID)
+	err := models.DeleteArtist(userID, artistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete artist: "+err.Error()))
 		return
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"message": "artist deleted"})
+}
 
+func UpdateArtist(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Name      *string `json:"name,omitempty"`
+		SpotifyID *string `json:"spotify_id,omitempty"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON"+err.Error()))
+		return
+	}
+
+	if isEmpty(body.Name) && isEmpty(body.SpotifyID) {
+		writeJSON(w, http.StatusBadRequest, apiError("at least one of name or spotify_id must be provided"))
+		return
+	}
+
+	userID := middleware.GetUserID(r)
+
+	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
+	if !ok {
+		return
+	}
+
+	err := models.UpdateArtist(userID, artistID, body.Name, body.SpotifyID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to update artist: "+err.Error()))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"message": "artist updated"})
 }

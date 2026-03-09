@@ -1,6 +1,8 @@
 package models
 
 import (
+	"database/sql"
+
 	"github.com/Chanadu/better-music/db"
 )
 
@@ -94,11 +96,48 @@ func CreateArtist(userID int, name string, spotifyID *string) (*Artist, error) {
 }
 
 func DeleteArtist(userID int, artistID int) error {
-	_, err := db.DB.Exec(
+	result, err := db.DB.Exec(
 		`DELETE FROM artists
 		WHERE user_id = $1 AND id = $2
 		`,
 		userID, artistID,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
+
+func UpdateArtist(userID int, artistID int, name *string, spotifyID *string) error {
+	result, err := db.DB.Exec(
+		`UPDATE artists
+		SET name = COALESCE($3, name), spotify_id = COALESCE($4, spotify_id)
+		WHERE user_id = $1 AND id = $2
+		`,
+		userID, artistID, name, spotifyID,
+	)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }

@@ -20,3 +20,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 func apiError(msg string) map[string]string {
 	return map[string]string{"error": msg}
 }
+
+func isEmpty(s *string) bool {
+	return s == nil || *s == ""
+}
