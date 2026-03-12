@@ -30,7 +30,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	logger.SetupLogger(cfg.Logs.File)
+	err = logger.SetupLogger(cfg.Logs.File)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if cfg.Logs.Debug {
 		slog.Info("=============================================================")
 	}

@@ -7,8 +7,12 @@ import (
 	"time"
 )
 
-func SetupLogger(logFilePath string) {
-	file, _ := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+func SetupLogger(logFilePath string) error {
+	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+
+	if err != nil {
+		return err
+	}
 
 	multiWriter := io.MultiWriter(os.Stdout, file)
 
@@ -24,4 +28,5 @@ func SetupLogger(logFilePath string) {
 	}))
 
 	slog.SetDefault(logger)
+	return nil
 }
