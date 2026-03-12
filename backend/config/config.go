@@ -11,10 +11,12 @@ import (
 )
 
 type Config struct {
-	Logs      LogConfig
-	DB        PostgresConfig
-	Server    ServerConfig
-	JWTSecret string
+	Logs       LogConfig
+	DB         PostgresConfig
+	Server     ServerConfig
+	JWTSecret  string
+	AccessTTL  time.Duration
+	RefreshTTL time.Duration
 }
 
 type LogConfig struct {
@@ -47,6 +49,32 @@ func LoadConfig() (Config, error) {
 		return Config{}, err
 	}
 
+	accessTTL := 15 * time.Minute
+	accessMinutes := strings.TrimSpace(os.Getenv("JWT_ACCESS_TOKEN_MINUTES"))
+	if accessMinutes != "" {
+		minutes, err := strconv.Atoi(accessMinutes)
+		if err != nil {
+			return Config{}, err
+		}
+		if minutes <= 0 {
+			return Config{}, errors.New("JWT_ACCESS_TOKEN_MINUTES must be greater than 0")
+		}
+		accessTTL = time.Duration(minutes) * time.Minute
+	}
+
+	refreshTTL := 30 * 24 * time.Hour
+	refreshHours := strings.TrimSpace(os.Getenv("JWT_REFRESH_TOKEN_HOURS"))
+	if refreshHours != "" {
+		hours, err := strconv.Atoi(refreshHours)
+		if err != nil {
+			return Config{}, err
+		}
+		if hours <= 0 {
+			return Config{}, errors.New("JWT_REFRESH_TOKEN_HOURS must be greater than 0")
+		}
+		refreshTTL = time.Duration(hours) * time.Hour
+	}
+
 	logFilePath := ""
 
 	if logDebug {
@@ -72,7 +100,9 @@ func LoadConfig() (Config, error) {
 			Host: os.Getenv("SERVER_HOST"),
 			Port: os.Getenv("SERVER_PORT"),
 		},
-		JWTSecret: os.Getenv("JWT_SECRET"),
+		JWTSecret:  os.Getenv("JWT_SECRET"),
+		AccessTTL:  accessTTL,
+		RefreshTTL: refreshTTL,
 	}
 
 	if logDebug {

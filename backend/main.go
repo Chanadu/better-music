@@ -45,12 +45,9 @@ func main() {
 	slog.Info("Running database migrations")
 	db.RunMigrations(cfg.DB.Url)
 
-	// Create handler with config and database
 	h := handlers.NewHandler(&cfg, database)
-
 	mux := http.NewServeMux()
 
-	// Swagger UI
 	swaggerURL := "http://" + cfg.Server.Host + ":" + cfg.Server.Port + "/swagger/doc.json"
 	mux.HandleFunc("GET /swagger/", httpSwagger.Handler(
 		httpSwagger.URL(swaggerURL),
@@ -59,6 +56,8 @@ func main() {
 	slog.Info("Creating API routes")
 	mux.HandleFunc("POST /api/auth/register", h.AuthRegister)
 	mux.HandleFunc("POST /api/auth/login", h.AuthLogin)
+	mux.HandleFunc("POST /api/auth/refresh", h.AuthRefresh)
+	mux.HandleFunc("POST /api/auth/logout", h.AuthLogout)
 
 	protectedMux := http.NewServeMux()
 
@@ -68,15 +67,13 @@ func main() {
 	protectedMux.HandleFunc("DELETE /api/artists/{id}", h.DeleteArtist)
 	protectedMux.HandleFunc("PUT /api/artists/{id}", h.UpdateArtist)
 	protectedMux.HandleFunc("GET /api/artists/{id}/albums", h.GetArtistAlbums)
-	// protectedMux.HandleFunc("PUT /api/artists/{id}/refresh", h.RefreshArtist)
-	//
+
 	protectedMux.HandleFunc("GET /api/albums", h.GetAlbums)
 	protectedMux.HandleFunc("GET /api/albums/{id}", h.GetAlbum)
 	protectedMux.HandleFunc("POST /api/albums", h.CreateAlbum)
 	protectedMux.HandleFunc("PUT /api/albums/{id}", h.UpdateAlbum)
 	protectedMux.HandleFunc("DELETE /api/albums/{id}", h.DeleteAlbum)
 
-	// Wrap protected routes with Auth middleware
 	mux.Handle("/api/", middleware.Auth(protectedMux, cfg.JWTSecret))
 
 	serverAddr := cfg.Server.Host + ":" + cfg.Server.Port
