@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Logs      LogConfig
 	DB        PostgresConfig
+	Server    ServerConfig
 	JWTSecret string
 }
 
@@ -26,6 +27,11 @@ type PostgresConfig struct {
 	Password string
 	Host     string
 	Port     string
+}
+
+type ServerConfig struct {
+	Host string
+	Port string
 }
 
 var Conf Config
@@ -61,6 +67,10 @@ func LoadConfig() error {
 			Host:     os.Getenv("POSTGRES_HOST"),
 			Port:     os.Getenv("POSTGRES_PORT"),
 			Url:      os.Getenv("POSTGRES_URL"),
+		},
+		Server: ServerConfig{
+			Host: os.Getenv("SERVER_HOST"),
+			Port: os.Getenv("SERVER_PORT"),
 		},
 		JWTSecret: os.Getenv("JWT_SECRET"),
 	}

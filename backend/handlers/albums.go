@@ -9,6 +9,40 @@ import (
 	"github.com/Chanadu/better-music/models"
 )
 
+// CreateAlbumRequest represents the request body for creating an album
+type CreateAlbumRequest struct {
+	ArtistID int    `json:"artist_id" example:"1"`
+	Title    string `json:"title" example:"Abbey Road"`
+}
+
+// UpdateAlbumRequest represents the request body for updating an album
+type UpdateAlbumRequest struct {
+	ArtistID   int     `json:"artist_id" example:"1"`
+	Title      *string `json:"title,omitempty" example:"Abbey Road"`
+	CoverURL   *string `json:"cover_url,omitempty" example:"https://example.com/cover.jpg"`
+	Year       *int    `json:"year,omitempty" example:"1969"`
+	SpotifyID  *string `json:"spotify_id,omitempty" example:"4oDw9mW4Sro2zN1RHzlvOr"`
+	Listened   *bool   `json:"listened,omitempty" example:"true"`
+	Rating     *int    `json:"rating,omitempty" example:"5"`
+	Comment    *string `json:"comment,omitempty" example:"Classic album"`
+	ListenedAt *string `json:"listened_at,omitempty" example:"2024-01-15"`
+}
+
+// ArtistIDRequest represents a request body with just an artist ID
+type ArtistIDRequest struct {
+	ArtistID int `json:"artist_id" example:"1"`
+}
+
+// GetAlbums godoc
+// @Summary Get all albums
+// @Description Get all albums for the authenticated user
+// @Tags albums
+// @Produce json
+// @Security Bearer
+// @Success 200 {array} models.Album
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/albums [get]
 func GetAlbums(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/albums", "method", r.Method, "path", r.URL.Path)
 	userID, ok := getUserID(w, r)
@@ -46,12 +80,25 @@ func checkAlbumExistsByID(w http.ResponseWriter, userID int, artistID int, idStr
 	return albumID, true
 }
 
+// GetAlbum godoc
+// @Summary Get a specific album
+// @Description Get a specific album by ID
+// @Tags albums
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "Album ID"
+// @Param request body ArtistIDRequest true "Artist ID"
+// @Success 200 {object} models.Album
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Album or artist not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/albums/{id} [get]
 func GetAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
 
-	var body struct {
-		ArtistID int `json:"artist_id"`
-	}
+	var body ArtistIDRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
@@ -93,12 +140,23 @@ func GetAlbum(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, album)
 }
 
+// CreateAlbum godoc
+// @Summary Create a new album
+// @Description Create a new album for an artist
+// @Tags albums
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body CreateAlbumRequest true "Album data"
+// @Success 201 {object} models.Album
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 409 {object} map[string]string "Album already exists"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/albums [post]
 func CreateAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/albums", "method", r.Method, "path", r.URL.Path)
-	var body struct {
-		ArtistID int    `json:"artist_id"`
-		Title    string `json:"title"`
-	}
+	var body CreateAlbumRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
@@ -147,20 +205,25 @@ func CreateAlbum(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, album)
 }
 
+// UpdateAlbum godoc
+// @Summary Update an album
+// @Description Update an album's information
+// @Tags albums
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "Album ID"
+// @Param request body UpdateAlbumRequest true "Update data"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string "Invalid request or no fields provided"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Album or artist not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/albums/{id} [put]
 func UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "PUT /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
 
-	var body struct {
-		ArtistID  int     `json:"artist_id"`
-		Title     *string `json:"title,omitempty"`
-		CoverURL  *string `json:"cover_url,omitempty"`
-		Year      *int    `json:"year,omitempty"`
-		SpotifyID *string `json:"spotify_id,omitempty"`
-		Listened  *bool   `json:"listened,omitempty"`
-		Rating    *int    `json:"rating,omitempty"`
-		Comment   *string `json:"comment,omitempty"`
-		ListenedAt *string `json:"listened_at,omitempty"`
-	}
+	var body UpdateAlbumRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
@@ -207,12 +270,25 @@ func UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"message": "album updated"})
 }
 
+// DeleteAlbum godoc
+// @Summary Delete an album
+// @Description Delete an album by ID
+// @Tags albums
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "Album ID"
+// @Param request body ArtistIDRequest true "Artist ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Album or artist not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/albums/{id} [delete]
 func DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "DELETE /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
 
-	var body struct {
-		ArtistID int `json:"artist_id"`
-	}
+	var body ArtistIDRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))

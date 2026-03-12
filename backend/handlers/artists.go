@@ -9,6 +9,27 @@ import (
 	"github.com/Chanadu/better-music/models"
 )
 
+// CreateArtistRequest represents the request body for creating an artist
+type CreateArtistRequest struct {
+	Name string `json:"name" example:"The Beatles"`
+}
+
+// UpdateArtistRequest represents the request body for updating an artist
+type UpdateArtistRequest struct {
+	Name      *string `json:"name,omitempty" example:"The Beatles"`
+	SpotifyID *string `json:"spotify_id,omitempty" example:"6ml0jHmy7SNFWckrZblO5B"`
+}
+
+// GetArtists godoc
+// @Summary Get all artists
+// @Description Get all artists for the authenticated user
+// @Tags artists
+// @Produce json
+// @Security Bearer
+// @Success 200 {array} models.Artist
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/artists [get]
 func GetArtists(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists", "method", r.Method, "path", r.URL.Path)
 	userID, ok := getUserID(w, r)
@@ -26,6 +47,18 @@ func GetArtists(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, artists)
 }
 
+// GetArtist godoc
+// @Summary Get a specific artist
+// @Description Get a specific artist by ID for the authenticated user
+// @Tags artists
+// @Produce json
+// @Security Bearer
+// @Param id path int true "Artist ID"
+// @Success 200 {object} models.Artist
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Artist not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/artists/{id} [get]
 func GetArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
 	userID, ok := getUserID(w, r)
@@ -47,11 +80,23 @@ func GetArtist(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, artist)
 }
 
+// CreateArtist godoc
+// @Summary Create a new artist
+// @Description Create a new artist for the authenticated user
+// @Tags artists
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param request body CreateArtistRequest true "Artist data"
+// @Success 201 {object} models.Artist
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 409 {object} map[string]string "Artist already exists"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/artists [post]
 func CreateArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/artists", "method", r.Method, "path", r.URL.Path)
-	var body struct {
-		Name string `json:"name"`
-	}
+	var body CreateArtistRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
@@ -107,6 +152,19 @@ func checkArtistExistsByID(w http.ResponseWriter, userID int, idStr string) (int
 	return artistID, true
 }
 
+// DeleteArtist godoc
+// @Summary Delete an artist
+// @Description Delete an artist by ID (must have no albums)
+// @Tags artists
+// @Produce json
+// @Security Bearer
+// @Param id path int true "Artist ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string "Artist has albums"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Artist not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/artists/{id} [delete]
 func DeleteArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "DELETE /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
 	userID, ok := getUserID(w, r)
@@ -139,12 +197,24 @@ func DeleteArtist(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"message": "artist deleted"})
 }
 
+// UpdateArtist godoc
+// @Summary Update an artist
+// @Description Update an artist's name and/or Spotify ID
+// @Tags artists
+// @Accept json
+// @Produce json
+// @Security Bearer
+// @Param id path int true "Artist ID"
+// @Param request body UpdateArtistRequest true "Update data"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string "Invalid request or no fields provided"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Artist not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/artists/{id} [put]
 func UpdateArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "PUT /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
-	var body struct {
-		Name      *string `json:"name,omitempty"`
-		SpotifyID *string `json:"spotify_id,omitempty"`
-	}
+	var body UpdateArtistRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
@@ -175,6 +245,18 @@ func UpdateArtist(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"message": "artist updated"})
 }
 
+// GetArtistAlbums godoc
+// @Summary Get all albums by an artist
+// @Description Get all albums for a specific artist
+// @Tags artists
+// @Produce json
+// @Security Bearer
+// @Param id path int true "Artist ID"
+// @Success 200 {array} models.Album
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 404 {object} map[string]string "Artist not found"
+// @Failure 500 {object} map[string]string "Server error"
+// @Router /api/artists/{id}/albums [get]
 func GetArtistAlbums(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists/{id}/albums", "method", r.Method, "path", r.URL.Path)
 	userID, ok := getUserID(w, r)

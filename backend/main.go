@@ -1,3 +1,13 @@
+// @title Better Music API
+// @version 1.0
+// @description A music management API with artists and albums
+// @host localhost:8080
+// @BasePath /
+// @schemes http
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @note Update the @host value above and run 'swag init' if you change the server host/port
 package main
 
 import (
@@ -7,9 +17,11 @@ import (
 
 	"github.com/Chanadu/better-music/config"
 	"github.com/Chanadu/better-music/db"
+	_ "github.com/Chanadu/better-music/docs"
 	"github.com/Chanadu/better-music/handlers"
 	"github.com/Chanadu/better-music/logger"
 	"github.com/Chanadu/better-music/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
@@ -31,6 +43,12 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// Swagger UI
+	swaggerURL := "http://" + config.Conf.Server.Host + ":" + config.Conf.Server.Port + "/swagger/doc.json"
+	mux.HandleFunc("GET /swagger/", httpSwagger.Handler(
+		httpSwagger.URL(swaggerURL),
+	))
+
 	slog.Info("Creating API routes")
 	mux.HandleFunc("POST /api/auth/register", handlers.AuthRegister)
 	mux.HandleFunc("POST /api/auth/login", handlers.AuthLogin)
@@ -50,12 +68,13 @@ func main() {
 	protectedMux.HandleFunc("POST /api/albums", handlers.CreateAlbum)
 	protectedMux.HandleFunc("PUT /api/albums/{id}", handlers.UpdateAlbum)
 	protectedMux.HandleFunc("DELETE /api/albums/{id}", handlers.DeleteAlbum)
-	
+
 	// Wrap protected routes with Auth middleware
 	mux.Handle("/api/", middleware.Auth(protectedMux))
 
-	slog.Info("Starting server on :8080")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	serverAddr := config.Conf.Server.Host + ":" + config.Conf.Server.Port
+	slog.Info("Starting server", "address", serverAddr)
+	if err := http.ListenAndServe(serverAddr, mux); err != nil {
 		log.Fatal(err)
 	}
 }
