@@ -30,14 +30,14 @@ type UpdateArtistRequest struct {
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/artists [get]
-func GetArtists(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetArtists(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists", "method", r.Method, "path", r.URL.Path)
 	userID, ok := getUserID(w, r)
 	if !ok {
 		return
 	}
 
-	artists, err := models.GetArtistsByUser(userID)
+	artists, err := models.GetArtistsByUser(h.Database, userID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to get artists: "+err.Error()))
 		return
@@ -59,19 +59,19 @@ func GetArtists(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} map[string]string "Artist not found"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/artists/{id} [get]
-func GetArtist(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
 	userID, ok := getUserID(w, r)
 	if !ok {
 		return
 	}
 
-	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
+	artistID, ok := h.checkArtistExistsByID(w, userID, r.PathValue("id"))
 	if !ok {
 		return
 	}
 
-	artist, err := models.GetArtistByID(userID, artistID)
+	artist, err := models.GetArtistByID(h.Database, userID, artistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to get artist: "+err.Error()))
 		return
@@ -94,7 +94,7 @@ func GetArtist(w http.ResponseWriter, r *http.Request) {
 // @Failure 409 {object} map[string]string "Artist already exists"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/artists [post]
-func CreateArtist(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/artists", "method", r.Method, "path", r.URL.Path)
 	var body CreateArtistRequest
 
@@ -113,7 +113,7 @@ func CreateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := models.ArtistExistsByName(userID, body.Name)
+	exists, err := models.ArtistExistsByName(h.Database, userID, body.Name)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
 		return
@@ -124,7 +124,7 @@ func CreateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	artist, err := models.CreateArtist(userID, body.Name)
+	artist, err := models.CreateArtist(h.Database, userID, body.Name)
 
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to create artist: "+err.Error()))
@@ -134,13 +134,13 @@ func CreateArtist(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, artist)
 }
 
-func checkArtistExistsByID(w http.ResponseWriter, userID int, idStr string) (int, bool) {
+func (h *Handler) checkArtistExistsByID(w http.ResponseWriter, userID int, idStr string) (int, bool) {
 	artistID, err := strconv.Atoi(idStr)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid artist ID"))
 		return 0, false
 	}
-	exists, err := models.ArtistExistsByID(userID, artistID)
+	exists, err := models.ArtistExistsByID(h.Database, userID, artistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
 		return 0, false
@@ -165,19 +165,19 @@ func checkArtistExistsByID(w http.ResponseWriter, userID int, idStr string) (int
 // @Failure 404 {object} map[string]string "Artist not found"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/artists/{id} [delete]
-func DeleteArtist(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "DELETE /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
 	userID, ok := getUserID(w, r)
 	if !ok {
 		return
 	}
 
-	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
+	artistID, ok := h.checkArtistExistsByID(w, userID, r.PathValue("id"))
 	if !ok {
 		return
 	}
 
-	albums, err := models.GetArtistAlbums(userID, artistID)
+	albums, err := models.GetArtistAlbums(h.Database, userID, artistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check artist's albums: "+err.Error()))
 		return
@@ -188,7 +188,7 @@ func DeleteArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = models.DeleteArtist(userID, artistID)
+	err = models.DeleteArtist(h.Database, userID, artistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete artist: "+err.Error()))
 		return
@@ -212,7 +212,7 @@ func DeleteArtist(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} map[string]string "Artist not found"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/artists/{id} [put]
-func UpdateArtist(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "PUT /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
 	var body UpdateArtistRequest
 
@@ -231,12 +231,12 @@ func UpdateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
+	artistID, ok := h.checkArtistExistsByID(w, userID, r.PathValue("id"))
 	if !ok {
 		return
 	}
 
-	err := models.UpdateArtist(userID, artistID, body.Name, body.SpotifyID)
+	err := models.UpdateArtist(h.Database, userID, artistID, body.Name, body.SpotifyID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to update artist: "+err.Error()))
 		return
@@ -257,19 +257,19 @@ func UpdateArtist(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} map[string]string "Artist not found"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/artists/{id}/albums [get]
-func GetArtistAlbums(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetArtistAlbums(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists/{id}/albums", "method", r.Method, "path", r.URL.Path)
 	userID, ok := getUserID(w, r)
 	if !ok {
 		return
 	}
 
-	artistID, ok := checkArtistExistsByID(w, userID, r.PathValue("id"))
+	artistID, ok := h.checkArtistExistsByID(w, userID, r.PathValue("id"))
 	if !ok {
 		return
 	}
 
-	albums, err := models.GetArtistAlbums(userID, artistID)
+	albums, err := models.GetArtistAlbums(h.Database, userID, artistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to get artist's albums: "+err.Error()))
 		return

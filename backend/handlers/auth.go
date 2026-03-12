@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Chanadu/better-music/config"
 	"github.com/Chanadu/better-music/models"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -22,13 +21,13 @@ type TokenResponse struct {
 	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
-func generateJWT(userID int) (string, error) {
+func (h *Handler) generateJWT(userID int) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userID,
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	})
 
-	return token.SignedString([]byte(config.Conf.JWTSecret))
+	return token.SignedString([]byte(h.Config.JWTSecret))
 }
 
 // AuthRegister godoc
@@ -43,7 +42,7 @@ func generateJWT(userID int) (string, error) {
 // @Failure 409 {object} map[string]string "Email already in use"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/auth/register [post]
-func AuthRegister(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/auth/register", "method", r.Method, "path", r.URL.Path)
 	var body AuthRequest
 
@@ -63,13 +62,13 @@ func AuthRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := models.CreateUser(body.Email, string(passwordHash))
+	user, err := models.CreateUser(h.Database, body.Email, string(passwordHash))
 	if err != nil {
 		writeJSON(w, http.StatusConflict, apiError("email already in use, err: "+err.Error()))
 		return
 	}
 
-	token, err := generateJWT(user.ID)
+	token, err := h.generateJWT(user.ID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to generate token"))
 		return
@@ -90,7 +89,7 @@ func AuthRegister(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {object} map[string]string "Invalid credentials"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/auth/login [post]
-func AuthLogin(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/auth/login", "method", r.Method, "path", r.URL.Path)
 	var body AuthRequest
 
@@ -99,7 +98,7 @@ func AuthLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := models.GetUserByEmail(body.Email)
+	user, err := models.GetUserByEmail(h.Database, body.Email)
 	if err != nil {
 		writeJSON(w, http.StatusUnauthorized, apiError("invalid email or password"))
 		return
@@ -110,7 +109,7 @@ func AuthLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := generateJWT(user.ID)
+	token, err := h.generateJWT(user.ID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to generate token"))
 		return

@@ -43,14 +43,14 @@ type ArtistIDRequest struct {
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/albums [get]
-func GetAlbums(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAlbums(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/albums", "method", r.Method, "path", r.URL.Path)
 	userID, ok := getUserID(w, r)
 	if !ok {
 		return
 	}
 
-	albums, err := models.GetAlbumsByUser(userID)
+	albums, err := models.GetAlbumsByUser(h.Database, userID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to get albums: "+err.Error()))
 		return
@@ -59,14 +59,14 @@ func GetAlbums(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, albums)
 }
 
-func checkAlbumExistsByID(w http.ResponseWriter, userID int, artistID int, idStr string) (int, bool) {
+func (h *Handler) checkAlbumExistsByID(w http.ResponseWriter, userID int, artistID int, idStr string) (int, bool) {
 	albumID, err := strconv.Atoi(idStr)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid album ID"))
 		return 0, false
 	}
 
-	exists, err := models.AlbumExistsByID(userID, artistID, albumID)
+	exists, err := models.AlbumExistsByID(h.Database, userID, artistID, albumID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing album: "+err.Error()))
 		return 0, false
@@ -95,7 +95,7 @@ func checkAlbumExistsByID(w http.ResponseWriter, userID int, artistID int, idStr
 // @Failure 404 {object} map[string]string "Album or artist not found"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/albums/{id} [get]
-func GetAlbum(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
 
 	var body ArtistIDRequest
@@ -115,7 +115,7 @@ func GetAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := models.ArtistExistsByID(userID, body.ArtistID)
+	exists, err := models.ArtistExistsByID(h.Database, userID, body.ArtistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
 		return
@@ -126,12 +126,12 @@ func GetAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	albumID, ok := checkAlbumExistsByID(w, userID, body.ArtistID, r.PathValue("id"))
+	albumID, ok := h.checkAlbumExistsByID(w, userID, body.ArtistID, r.PathValue("id"))
 	if !ok {
 		return
 	}
 
-	album, err := models.GetAlbumByID(userID, body.ArtistID, albumID)
+	album, err := models.GetAlbumByID(h.Database, userID, body.ArtistID, albumID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to get album: "+err.Error()))
 		return
@@ -154,7 +154,7 @@ func GetAlbum(w http.ResponseWriter, r *http.Request) {
 // @Failure 409 {object} map[string]string "Album already exists"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/albums [post]
-func CreateAlbum(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/albums", "method", r.Method, "path", r.URL.Path)
 	var body CreateAlbumRequest
 
@@ -173,7 +173,7 @@ func CreateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := models.ArtistExistsByID(userID, body.ArtistID)
+	exists, err := models.ArtistExistsByID(h.Database, userID, body.ArtistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
 		return
@@ -184,7 +184,7 @@ func CreateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err = models.AlbumExistsByName(userID, body.ArtistID, body.Title)
+	exists, err = models.AlbumExistsByName(h.Database, userID, body.ArtistID, body.Title)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing album: "+err.Error()))
 		return
@@ -195,7 +195,7 @@ func CreateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	album, err := models.CreateAlbum(userID, body.ArtistID, body.Title)
+	album, err := models.CreateAlbum(h.Database, userID, body.ArtistID, body.Title)
 
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to create album: "+err.Error()))
@@ -220,7 +220,7 @@ func CreateAlbum(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} map[string]string "Album or artist not found"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/albums/{id} [put]
-func UpdateAlbum(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "PUT /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
 
 	var body UpdateAlbumRequest
@@ -245,7 +245,7 @@ func UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := models.ArtistExistsByID(userID, body.ArtistID)
+	exists, err := models.ArtistExistsByID(h.Database, userID, body.ArtistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
 		return
@@ -256,12 +256,12 @@ func UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	albumID, ok := checkAlbumExistsByID(w, userID, body.ArtistID, r.PathValue("id"))
+	albumID, ok := h.checkAlbumExistsByID(w, userID, body.ArtistID, r.PathValue("id"))
 	if !ok {
 		return
 	}
 
-	err = models.UpdateAlbum(userID, body.ArtistID, albumID, body.Title, body.CoverURL, body.Year, body.SpotifyID, body.Listened, body.Rating, body.Comment, body.ListenedAt)
+	err = models.UpdateAlbum(h.Database, userID, body.ArtistID, albumID, body.Title, body.CoverURL, body.Year, body.SpotifyID, body.Listened, body.Rating, body.Comment, body.ListenedAt)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to update album: "+err.Error()))
 		return
@@ -285,7 +285,7 @@ func UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} map[string]string "Album or artist not found"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /api/albums/{id} [delete]
-func DeleteAlbum(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "DELETE /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
 
 	var body ArtistIDRequest
@@ -305,7 +305,7 @@ func DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := models.ArtistExistsByID(userID, body.ArtistID)
+	exists, err := models.ArtistExistsByID(h.Database, userID, body.ArtistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
 		return
@@ -316,12 +316,12 @@ func DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	albumID, ok := checkAlbumExistsByID(w, userID, body.ArtistID, r.PathValue("id"))
+	albumID, ok := h.checkAlbumExistsByID(w, userID, body.ArtistID, r.PathValue("id"))
 	if !ok {
 		return
 	}
 
-	err = models.DeleteAlbum(userID, body.ArtistID, albumID)
+	err = models.DeleteAlbum(h.Database, userID, body.ArtistID, albumID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete album: "+err.Error()))
 		return

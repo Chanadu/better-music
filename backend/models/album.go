@@ -2,8 +2,6 @@ package models
 
 import (
 	"database/sql"
-
-	"github.com/Chanadu/better-music/db"
 )
 
 type Album struct {
@@ -20,8 +18,8 @@ type Album struct {
 	CreatedAt  string  `json:"created_at"`
 }
 
-func GetAlbumsByUser(userID int) ([]Album, error) {
-	rows, err := db.DB.Query(
+func GetAlbumsByUser(database *sql.DB, userID int) ([]Album, error) {
+	rows, err := database.Query(
 		`SELECT id, artist_id, title, cover_url, year, spotify_id, listened, rating, comment, listened_at, created_at
 		FROM albums
 		WHERE user_id = $1
@@ -64,9 +62,9 @@ func GetAlbumsByUser(userID int) ([]Album, error) {
 	return albums, nil
 }
 
-func AlbumExistsByName(userID int, artistID int, title string) (bool, error) {
+func AlbumExistsByName(database *sql.DB, userID int, artistID int, title string) (bool, error) {
 	var exists bool
-	err := db.DB.QueryRow(
+	err := database.QueryRow(
 		`SELECT EXISTS (
 			SELECT 1
 			FROM albums
@@ -79,9 +77,9 @@ func AlbumExistsByName(userID int, artistID int, title string) (bool, error) {
 	return exists, err
 }
 
-func AlbumExistsByID(userID int, artistID int, albumID int) (bool, error) {
+func AlbumExistsByID(database *sql.DB, userID int, artistID int, albumID int) (bool, error) {
 	var exists bool
-	err := db.DB.QueryRow(
+	err := database.QueryRow(
 		`SELECT EXISTS (
 			SELECT 1
 			FROM albums
@@ -94,10 +92,10 @@ func AlbumExistsByID(userID int, artistID int, albumID int) (bool, error) {
 	return exists, err
 }
 
-func CreateAlbum(userID int, artistID int, title string) (*Album, error) {
+func CreateAlbum(database *sql.DB, userID int, artistID int, title string) (*Album, error) {
 	var album Album
 
-	err := db.DB.QueryRow(
+	err := database.QueryRow(
 		`INSERT INTO albums (user_id, artist_id, title)
          VALUES ($1, $2, $3)
 		 RETURNING id, artist_id, title, listened, created_at`,
@@ -111,10 +109,10 @@ func CreateAlbum(userID int, artistID int, title string) (*Album, error) {
 	return &album, nil
 }
 
-func GetAlbumByID(userID int, artistID int, albumID int) (*Album, error) {
+func GetAlbumByID(database *sql.DB, userID int, artistID int, albumID int) (*Album, error) {
 	var album Album
 
-	err := db.DB.QueryRow(
+	err := database.QueryRow(
 		`SELECT id, artist_id, title, cover_url, year, spotify_id, listened, rating, comment, listened_at, created_at
 		FROM albums
 		WHERE user_id = $1 AND artist_id = $2 AND id = $3`,
@@ -139,8 +137,8 @@ func GetAlbumByID(userID int, artistID int, albumID int) (*Album, error) {
 	return &album, nil
 }
 
-func UpdateAlbum(userID int, artistID int, albumID int, title *string, coverURL *string, year *int, spotifyID *string, listened *bool, rating *int, comment *string, listenedAt *string) error {
-	result, err := db.DB.Exec(
+func UpdateAlbum(database *sql.DB, userID int, artistID int, albumID int, title *string, coverURL *string, year *int, spotifyID *string, listened *bool, rating *int, comment *string, listenedAt *string) error {
+	result, err := database.Exec(
 		`UPDATE albums
 		SET title = COALESCE($4, title),
 			cover_url = COALESCE($5, cover_url),
@@ -169,8 +167,8 @@ func UpdateAlbum(userID int, artistID int, albumID int, title *string, coverURL 
 	return nil
 }
 
-func DeleteAlbum(userID int, artistID int, albumID int) error {
-	result, err := db.DB.Exec(
+func DeleteAlbum(database *sql.DB, userID int, artistID int, albumID int) error {
+	result, err := database.Exec(
 		`DELETE FROM albums
 		WHERE user_id = $1 AND artist_id = $2 AND id = $3`,
 		userID, artistID, albumID,

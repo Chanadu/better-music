@@ -2,8 +2,6 @@ package models
 
 import (
 	"database/sql"
-
-	"github.com/Chanadu/better-music/db"
 )
 
 type Artist struct {
@@ -13,8 +11,8 @@ type Artist struct {
 	CreatedAt string  `json:"created_at"`
 }
 
-func GetArtistsByUser(userID int) ([]Artist, error) {
-	rows, err := db.DB.Query(
+func GetArtistsByUser(database *sql.DB, userID int) ([]Artist, error) {
+	rows, err := database.Query(
 		`SELECT id, name, spotify_id, created_at 
 		FROM artists 
 		WHERE user_id = $1 
@@ -45,10 +43,10 @@ func GetArtistsByUser(userID int) ([]Artist, error) {
 	return artists, nil
 }
 
-func GetArtistByID(userID int, artistID int) (*Artist, error) {
+func GetArtistByID(database *sql.DB, userID int, artistID int) (*Artist, error) {
 	var artist Artist
 
-	err := db.DB.QueryRow(
+	err := database.QueryRow(
 		`SELECT id, name, spotify_id, created_at
 		FROM artists
 		WHERE user_id = $1 AND id = $2`,
@@ -61,9 +59,9 @@ func GetArtistByID(userID int, artistID int) (*Artist, error) {
 	return &artist, nil
 }
 
-func ArtistExistsByName(userID int, name string) (bool, error) {
+func ArtistExistsByName(database *sql.DB, userID int, name string) (bool, error) {
 	var exists bool
-	err := db.DB.QueryRow(
+	err := database.QueryRow(
 		`SELECT EXISTS (
 			SELECT 1
 			FROM artists
@@ -76,9 +74,9 @@ func ArtistExistsByName(userID int, name string) (bool, error) {
 	return exists, err
 }
 
-func ArtistExistsByID(userID int, id int) (bool, error) {
+func ArtistExistsByID(database *sql.DB, userID int, id int) (bool, error) {
 	var exists bool
-	err := db.DB.QueryRow(
+	err := database.QueryRow(
 		`SELECT EXISTS (
 			SELECT 1
 			FROM artists
@@ -91,10 +89,10 @@ func ArtistExistsByID(userID int, id int) (bool, error) {
 	return exists, err
 }
 
-func CreateArtist(userID int, name string) (*Artist, error) {
+func CreateArtist(database *sql.DB, userID int, name string) (*Artist, error) {
 	var artist Artist
 
-	err := db.DB.QueryRow(
+	err := database.QueryRow(
 		`INSERT INTO artists (user_id, name)
          VALUES ($1, $2)
 		 RETURNING id, name, spotify_id, created_at`,
@@ -108,8 +106,8 @@ func CreateArtist(userID int, name string) (*Artist, error) {
 	return &artist, nil
 }
 
-func DeleteArtist(userID int, artistID int) error {
-	result, err := db.DB.Exec(
+func DeleteArtist(database *sql.DB, userID int, artistID int) error {
+	result, err := database.Exec(
 		`DELETE FROM artists
 		WHERE user_id = $1 AND id = $2
 		`,
@@ -131,8 +129,8 @@ func DeleteArtist(userID int, artistID int) error {
 	return nil
 }
 
-func UpdateArtist(userID int, artistID int, name *string, spotifyID *string) error {
-	result, err := db.DB.Exec(
+func UpdateArtist(database *sql.DB, userID int, artistID int, name *string, spotifyID *string) error {
+	result, err := database.Exec(
 		`UPDATE artists
 		SET name = COALESCE($3, name), spotify_id = COALESCE($4, spotify_id)
 		WHERE user_id = $1 AND id = $2
@@ -155,8 +153,8 @@ func UpdateArtist(userID int, artistID int, name *string, spotifyID *string) err
 	return nil
 }
 
-func GetArtistAlbums(userID int, artistID int) ([]Album, error) {
-	rows, err := db.DB.Query(
+func GetArtistAlbums(database *sql.DB, userID int, artistID int) ([]Album, error) {
+	rows, err := database.Query(
 		`SELECT id, artist_id, title, cover_url, year, spotify_id, listened, rating, comment, listened_at, created_at
 		FROM albums 
 		WHERE user_id = $1 AND artist_id = $2

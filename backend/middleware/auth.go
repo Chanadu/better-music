@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Chanadu/better-music/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -20,7 +19,7 @@ func httpError(w http.ResponseWriter, msg string, status int) {
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
 }
 
-func Auth(next http.Handler) http.Handler {
+func Auth(next http.Handler, jwtSecret string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 
@@ -36,7 +35,7 @@ func Auth(next http.Handler) http.Handler {
 		}
 		tokenString := parts[1]
 
-		token, err := parseJWT(tokenString)
+		token, err := parseJWT(tokenString, jwtSecret)
 		if err != nil || !token.Valid {
 			httpError(w, "invalid token", http.StatusUnauthorized)
 			return
@@ -69,13 +68,13 @@ func Auth(next http.Handler) http.Handler {
 	})
 }
 
-func parseJWT(tokenString string) (*jwt.Token, error) {
+func parseJWT(tokenString string, jwtSecret string) (*jwt.Token, error) {
 	return jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}
 
-		return []byte(config.Conf.JWTSecret), nil
+		return []byte(jwtSecret), nil
 	})
 
 }

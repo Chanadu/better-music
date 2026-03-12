@@ -5,12 +5,10 @@ import (
 	"log/slog"
 	"os"
 	"time"
-
-	"github.com/Chanadu/better-music/config"
 )
 
-func SetupLogger() {
-	file, _ := os.OpenFile(config.Conf.Logs.File, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+func SetupLogger(logFilePath string) {
+	file, _ := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 
 	multiWriter := io.MultiWriter(os.Stdout, file)
 

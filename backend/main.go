@@ -25,54 +25,57 @@ import (
 )
 
 func main() {
-	err := config.LoadConfig()
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	logger.SetupLogger()
-	if config.Conf.Logs.Debug {
+	logger.SetupLogger(cfg.Logs.File)
+	if cfg.Logs.Debug {
 		slog.Info("=============================================================")
 	}
 
 	slog.Info("Connecting to database")
-	db.Connect()
+	database := db.Connect(cfg.DB.Url)
 
 	slog.Info("Running database migrations")
-	db.RunMigrations()
+	db.RunMigrations(cfg.DB.Url)
+
+	// Create handler with config and database
+	h := handlers.NewHandler(&cfg, database)
 
 	mux := http.NewServeMux()
 
 	// Swagger UI
-	swaggerURL := "http://" + config.Conf.Server.Host + ":" + config.Conf.Server.Port + "/swagger/doc.json"
+	swaggerURL := "http://" + cfg.Server.Host + ":" + cfg.Server.Port + "/swagger/doc.json"
 	mux.HandleFunc("GET /swagger/", httpSwagger.Handler(
 		httpSwagger.URL(swaggerURL),
 	))
 
 	slog.Info("Creating API routes")
-	mux.HandleFunc("POST /api/auth/register", handlers.AuthRegister)
-	mux.HandleFunc("POST /api/auth/login", handlers.AuthLogin)
+	mux.HandleFunc("POST /api/auth/register", h.AuthRegister)
+	mux.HandleFunc("POST /api/auth/login", h.AuthLogin)
 
 	protectedMux := http.NewServeMux()
 
-	protectedMux.HandleFunc("GET /api/artists", handlers.GetArtists)
-	protectedMux.HandleFunc("GET /api/artists/{id}", handlers.GetArtist)
-	protectedMux.HandleFunc("POST /api/artists", handlers.CreateArtist)
-	protectedMux.HandleFunc("DELETE /api/artists/{id}", handlers.DeleteArtist)
-	protectedMux.HandleFunc("PUT /api/artists/{id}", handlers.UpdateArtist)
-	protectedMux.HandleFunc("GET /api/artists/{id}/albums", handlers.GetArtistAlbums)
-	// protectedMux.HandleFunc("PUT /api/artists/{id}/refresh", handlers.RefreshArtist)
+	protectedMux.HandleFunc("GET /api/artists", h.GetArtists)
+	protectedMux.HandleFunc("GET /api/artists/{id}", h.GetArtist)
+	protectedMux.HandleFunc("POST /api/artists", h.CreateArtist)
+	protectedMux.HandleFunc("DELETE /api/artists/{id}", h.DeleteArtist)
+	protectedMux.HandleFunc("PUT /api/artists/{id}", h.UpdateArtist)
+	protectedMux.HandleFunc("GET /api/artists/{id}/albums", h.GetArtistAlbums)
+	// protectedMux.HandleFunc("PUT /api/artists/{id}/refresh", h.RefreshArtist)
 	//
-	protectedMux.HandleFunc("GET /api/albums", handlers.GetAlbums)
-	protectedMux.HandleFunc("GET /api/albums/{id}", handlers.GetAlbum)
-	protectedMux.HandleFunc("POST /api/albums", handlers.CreateAlbum)
-	protectedMux.HandleFunc("PUT /api/albums/{id}", handlers.UpdateAlbum)
-	protectedMux.HandleFunc("DELETE /api/albums/{id}", handlers.DeleteAlbum)
+	protectedMux.HandleFunc("GET /api/albums", h.GetAlbums)
+	protectedMux.HandleFunc("GET /api/albums/{id}", h.GetAlbum)
+	protectedMux.HandleFunc("POST /api/albums", h.CreateAlbum)
+	protectedMux.HandleFunc("PUT /api/albums/{id}", h.UpdateAlbum)
+	protectedMux.HandleFunc("DELETE /api/albums/{id}", h.DeleteAlbum)
 
 	// Wrap protected routes with Auth middleware
-	mux.Handle("/api/", middleware.Auth(protectedMux))
+	mux.Handle("/api/", middleware.Auth(protectedMux, cfg.JWTSecret))
 
-	serverAddr := config.Conf.Server.Host + ":" + config.Conf.Server.Port
+	serverAddr := cfg.Server.Host + ":" + cfg.Server.Port
 	slog.Info("Starting server", "address", serverAddr)
 	if err := http.ListenAndServe(serverAddr, mux); err != nil {
 		log.Fatal(err)

@@ -1,9 +1,8 @@
 package models
 
 import (
+	"database/sql"
 	"time"
-
-	"github.com/Chanadu/better-music/db"
 )
 
 type User struct {
@@ -13,10 +12,10 @@ type User struct {
 	CreatedAt    time.Time
 }
 
-func CreateUser(email, passwordHash string) (*User, error) {
+func CreateUser(database *sql.DB, email, passwordHash string) (*User, error) {
 	var user User
 
-	err := db.DB.QueryRow(
+	err := database.QueryRow(
 		"INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, created_at",
 		email, passwordHash,
 	).Scan(&user.ID, &user.CreatedAt)
@@ -27,9 +26,9 @@ func CreateUser(email, passwordHash string) (*User, error) {
 	return &user, err
 }
 
-func GetUserByEmail(email string) (*User, error) {
+func GetUserByEmail(database *sql.DB, email string) (*User, error) {
 	var user User
-	err := db.DB.QueryRow(
+	err := database.QueryRow(
 		"SELECT id, email, password_hash, created_at FROM users WHERE email = $1",
 		email,
 	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt)

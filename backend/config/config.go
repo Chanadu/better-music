@@ -34,17 +34,15 @@ type ServerConfig struct {
 	Port string
 }
 
-var Conf Config
-
-func LoadConfig() error {
+func LoadConfig() (Config, error) {
 	logEnabled, err := strconv.ParseBool(os.Getenv("LOG_ENABLE"))
 	if err != nil {
-		return err
+		return Config{}, err
 	}
 
 	logDebug, err := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
 	if err != nil {
-		return err
+		return Config{}, err
 	}
 
 	logFilePath := ""
@@ -79,6 +77,5 @@ func LoadConfig() error {
 		config.DB.Url += "?sslmode=disable"
 	}
 
-	Conf = config
-	return nil
+	return config, nil
 }
