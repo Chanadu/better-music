@@ -1,8 +1,10 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -75,6 +77,10 @@ func LoadConfig() (Config, error) {
 
 	if logDebug {
 		config.DB.Url += "?sslmode=disable"
+	}
+
+	if strings.TrimSpace(config.JWTSecret) == "" {
+		return Config{}, errors.New("JWT_SECRET is required")
 	}
 
 	return config, nil
