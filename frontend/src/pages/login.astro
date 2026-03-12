@@ -1,0 +1,30 @@
+---
+import LoginForm from '../components/LoginForm.astro';
+import Panel from '../components/Panel.astro';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+	<main class="flex min-h-screen flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-12 md:px-8" style="background: linear-gradient(to bottom right, var(--bg), var(--surface-raised));">
+		<div class="w-full max-w-sm space-y-6">
+			<!-- Header -->
+			<div class="space-y-3 text-center">
+				<div class="flex justify-center">
+					<div class="flex h-12 w-12 items-center justify-center rounded-lg text-lg font-bold sm:h-14 sm:w-14 sm:text-xl" style="background: var(--primary); color: var(--primary-fg);">
+						♪
+					</div>
+				</div>
+				<div>
+					<h1 class="text-3xl font-bold sm:text-4xl" style="color: var(--text);">
+						Better Music
+					</h1>
+				</div>
+			</div>
+
+			<!-- Panel -->
+			<Panel>
+				<LoginForm />
+			</Panel>
+		</div>
+	</main>
+</Layout>

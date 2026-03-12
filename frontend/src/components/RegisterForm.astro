@@ -1,0 +1,144 @@
+---
+---
+
+<form class="w-full space-y-5">
+  <div>
+    <label for="email" class="block text-sm font-semibold" style="color: var(--text);">
+      Email Address
+    </label>
+    <input
+      type="email"
+      id="email"
+      name="email"
+      required
+      class="mt-2 w-full rounded-lg border-2 px-4 py-3 transition-colors focus:outline-none focus:ring-2"
+      style="border-color: var(--border); background: var(--surface-raised); color: var(--text); --tw-ring-color: hsla(285, 100%, 58%, 0.3);"
+      placeholder="you@example.com"
+    />
+  </div>
+
+  <div>
+    <label for="password" class="block text-sm font-semibold" style="color: var(--text);">
+      Password
+    </label>
+    <input
+      type="password"
+      id="password"
+      name="password"
+      required
+      class="mt-2 w-full rounded-lg border-2 px-4 py-3 transition-colors focus:outline-none focus:ring-2"
+      style="border-color: var(--border); background: var(--surface-raised); color: var(--text); --tw-ring-color: hsla(285, 100%, 58%, 0.3);"
+      placeholder="••••••••"
+    />
+  </div>
+
+  <div>
+    <label for="confirm-password" class="block text-sm font-semibold" style="color: var(--text);">
+      Confirm Password
+    </label>
+    <input
+      type="password"
+      id="confirm-password"
+      name="confirm-password"
+      required
+      class="mt-2 w-full rounded-lg border-2 px-4 py-3 transition-colors focus:outline-none focus:ring-2"
+      style="border-color: var(--border); background: var(--surface-raised); color: var(--text); --tw-ring-color: hsla(285, 100%, 58%, 0.3);"
+      placeholder="••••••••"
+    />
+  </div>
+
+  <!-- Error Message -->
+  <div id="error-message" class="hidden rounded-lg p-3" style="background: var(--error); color: white; font-size: 0.875rem;">
+  </div>
+
+  <button
+    type="submit"
+    class="w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+    style="background: var(--primary); color: var(--primary-fg);"
+  >
+    Create Account
+  </button>
+
+  <div class="border-t pt-5" style="border-color: var(--border);">
+    <p class="text-center text-sm" style="color: var(--text-muted);">
+      Already have an account? <a href="/login" class="font-semibold transition-opacity hover:opacity-80" style="color: var(--primary);">
+        Sign in
+      </a>
+    </p>
+  </div>
+</form>
+
+<script>
+  const form = document.querySelector('form');
+  const errorMessage = document.getElementById('error-message');
+  const emailInput = form?.querySelector('input[name="email"]') as HTMLInputElement;
+  const passwordInput = form?.querySelector('input[name="password"]') as HTMLInputElement;
+  const confirmPasswordInput = form?.querySelector('input[name="confirm-password"]') as HTMLInputElement;
+  const button = form?.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+  // Clear error and re-enable button when user starts typing
+  const handleInput = () => {
+    errorMessage!.classList.add('hidden');
+    button!.disabled = false;
+    button!.textContent = button!.getAttribute('data-original-text') || 'Create Account';
+  };
+
+  emailInput?.addEventListener('input', handleInput);
+  passwordInput?.addEventListener('input', handleInput);
+  confirmPasswordInput?.addEventListener('input', handleInput);
+
+  // Store original button text on load
+  if (button) {
+    button.setAttribute('data-original-text', button.textContent || 'Create Account');
+  }
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const email = formData.get('email');
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirm-password');
+
+    if (password !== confirmPassword) {
+      errorMessage!.textContent = 'Passwords do not match.';
+      errorMessage!.classList.remove('hidden');
+      return;
+    }
+
+    const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    submitButton.disabled = true;
+    submitButton.textContent = 'Creating account...';
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        const errorText = error.error || 'Registration failed';
+        errorMessage!.textContent = errorText;
+        errorMessage!.classList.remove('hidden');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Try again';
+        return;
+      }
+
+      const data = await response.json();
+      // Store token and redirect
+      localStorage.setItem('token', data.token);
+      window.location.href = '/dashboard';
+    } catch (err) {
+      errorMessage!.textContent = 'An error occurred. Please try again.';
+      errorMessage!.classList.remove('hidden');
+      console.error(err);
+      submitButton.disabled = true;
+      submitButton.textContent = 'Try again';
+    }
+  });
+</script>

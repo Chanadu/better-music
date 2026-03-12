@@ -134,7 +134,7 @@ func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 
 	user, err := models.CreateUser(h.Database, body.Email, string(passwordHash))
 	if err != nil {
-		writeJSON(w, http.StatusConflict, apiError("email already in use, err: "+err.Error()))
+		writeJSON(w, http.StatusConflict, apiError("email already in use"))
 		return
 	}
 
