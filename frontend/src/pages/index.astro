@@ -2,4 +2,22 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout />
+<Layout>
+	<main class="min-h-screen bg-bg px-6 py-16 font-sans">
+		<section class="mx-auto max-w-3xl rounded-4xl border border-border bg-surface p-8 shadow-[0_24px_80px_rgba(15,23,42,0.16)] sm:p-12">
+			<p class="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-text-muted">Better Music</p>
+			<h1 class="text-4xl font-black tracking-tight text-text sm:text-5xl">Theme Playground</h1>
+			<p class="mt-5 max-w-2xl text-base leading-7 text-text-muted sm:text-lg">
+				Preview the current light and dark palettes, inspect theme tokens, and test the component colors on a dedicated page.
+			</p>
+			<div class="mt-8 flex flex-wrap gap-3">
+				<a
+					href="/color-tester"
+					class="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-hover"
+				>
+					Open Color Tester
+				</a>
+			</div>
+		</section>
+	</main>
+</Layout>

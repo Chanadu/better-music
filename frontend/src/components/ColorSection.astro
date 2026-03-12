@@ -1,0 +1,17 @@
+---
+interface Props {
+  title: string;
+  columns?: number;
+}
+
+const { title, columns = 3 } = Astro.props;
+---
+
+<section class="mb-10">
+  <h2 class="mb-4 text-xs font-semibold uppercase tracking-widest text-text-muted">
+    {title}
+  </h2>
+  <div class={`grid gap-4 grid-cols-${columns}`}>
+    <slot />
+  </div>
+</section>

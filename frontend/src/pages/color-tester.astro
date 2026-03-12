@@ -1,0 +1,70 @@
+---
+import ColorSection from '../components/ColorSection.astro';
+import ColorSwatch from '../components/ColorSwatch.astro';
+import ComponentPreviews from '../components/ComponentPreviews.astro';
+import ThemeToggleButton from '../components/ThemeToggleButton.astro';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+	<main class="min-h-screen bg-bg px-6 py-10 font-sans">
+		<div class="mx-auto max-w-4xl">
+			<div class="mb-10 flex items-center justify-between gap-4">
+				<div>
+					<h1 class="text-3xl font-bold text-text">Color Theme Tester</h1>
+					<p class="mt-1 text-text-muted">Better-Music design system</p>
+				</div>
+				<div class="flex items-center gap-3">
+					<a
+						href="/"
+						class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-raised"
+					>
+						Back Home
+					</a>
+					<ThemeToggleButton />
+				</div>
+			</div>
+
+			<ColorSection title="Backgrounds" columns={3}>
+				<ColorSwatch label="bg" varName="--bg" />
+				<ColorSwatch label="surface" varName="--surface" />
+				<ColorSwatch label="surface-raised" varName="--surface-raised" />
+			</ColorSection>
+
+			<ColorSection title="Border" columns={1}>
+				<ColorSwatch label="border" varName="--border" />
+			</ColorSection>
+
+			<ColorSection title="Primary (Violet)" columns={3}>
+				<ColorSwatch label="primary" varName="--primary" fgColor="var(--primary-fg)" />
+				<ColorSwatch label="primary-hover" varName="--primary-hover" fgColor="var(--primary-fg)" />
+				<ColorSwatch label="primary-fg" varName="--primary-fg" bgColor="var(--primary-fg)" fgColor="var(--primary)" />
+			</ColorSection>
+
+			<ColorSection title="Secondary (Blue)" columns={3}>
+				<ColorSwatch label="secondary" varName="--secondary" fgColor="var(--secondary-fg)" />
+				<ColorSwatch label="secondary-hover" varName="--secondary-hover" fgColor="var(--secondary-fg)" />
+				<ColorSwatch label="secondary-fg" varName="--secondary-fg" bgColor="var(--secondary-fg)" fgColor="var(--secondary)" />
+			</ColorSection>
+
+			<ColorSection title="Text" columns={2}>
+				<div class="rounded-lg border border-border bg-surface p-5">
+					<p class="text-2xl font-bold text-text">text</p>
+					<code class="text-sm text-text-muted">--text</code>
+				</div>
+				<div class="rounded-lg border border-border bg-surface p-5">
+					<p class="text-2xl font-bold text-text-muted">text-muted</p>
+					<code class="text-sm text-text-muted">--text-muted</code>
+				</div>
+			</ColorSection>
+
+			<ColorSection title="Status" columns={3}>
+				<ColorSwatch label="success" varName="--success" fgColor="white" />
+				<ColorSwatch label="error" varName="--error" fgColor="white" />
+				<ColorSwatch label="warning" varName="--warning" fgColor="white" />
+			</ColorSection>
+
+			<ComponentPreviews />
+		</div>
+	</main>
+</Layout>

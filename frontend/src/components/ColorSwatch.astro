@@ -1,0 +1,22 @@
+---
+interface Props {
+  label: string;
+  varName: string;
+  bgColor?: string;
+  fgColor?: string;
+}
+
+const { label, varName, bgColor, fgColor } = Astro.props;
+
+const swatchClass = 'flex min-h-24 flex-col justify-between rounded-lg p-5';
+const swatchLabelClass = 'text-sm font-semibold';
+const swatchCodeClass = 'text-xs opacity-70';
+---
+
+<div
+  class={swatchClass}
+  style={`background: ${bgColor || `var(${varName})`}; ${fgColor ? `color: ${fgColor}` : ''}`}
+>
+  <span class={swatchLabelClass}>{label}</span>
+  <code class={swatchCodeClass}>{varName}</code>
+</div>

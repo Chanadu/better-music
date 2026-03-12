@@ -1,1 +1,96 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* ── Class-based dark mode ───────────────────────────────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Tailwind color / font tokens (reference CSS vars for dynamic theming) ─ */
+@theme inline {
+	/* Backgrounds */
+	--color-bg: var(--bg);
+	--color-surface: var(--surface);
+	--color-surface-raised: var(--surface-raised);
+
+	/* Border */
+	--color-border: var(--border);
+
+	/* Primary accent (purple / violet) */
+	--color-primary: var(--primary);
+	--color-primary-fg: var(--primary-fg);
+	--color-primary-hover: var(--primary-hover);
+
+	/* Secondary accent (One Dark blue) */
+	--color-secondary: var(--secondary);
+	--color-secondary-hover: var(--secondary-hover);
+	--color-secondary-fg: var(--secondary-fg);
+
+	/* Text */
+	--color-text: var(--text);
+	--color-text-muted: var(--text-muted);
+
+	/* Status */
+	--color-success: var(--success);
+	--color-error: var(--error);
+	--color-warning: var(--warning);
+
+	/* Font family */
+	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Light mode (default) ────────────────────────────────────────────────── */
+:root {
+	color-scheme: light;
+
+	--bg: oklch(98% 0.008 270);
+	--surface: oklch(100% 0 0);
+	--surface-raised: oklch(95% 0.012 270);
+	--border: oklch(88% 0.018 270);
+
+	--primary: oklch(50% 0.2 285);
+	--primary-fg: oklch(100% 0 0);
+	--primary-hover: oklch(58% 0.22 285);
+
+	--secondary: #3b82f6;
+	--secondary-hover: #60a5fa;
+	--secondary-fg: #ffffff;
+
+	--text: oklch(14% 0.015 270);
+	--text-muted: oklch(50% 0.035 270);
+
+	--success: oklch(62% 0.19 142);
+	--error: oklch(58% 0.22 25);
+	--warning: oklch(72% 0.18 70);
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+.dark {
+	color-scheme: dark;
+
+	--bg: #282c34;
+	--surface: #2c313c;
+	--surface-raised: #353b45;
+	--border: #3e4451;
+
+	--primary: oklch(58% 0.2 285);
+	--primary-fg: oklch(100% 0 0);
+	--primary-hover: oklch(66% 0.22 285);
+
+	--secondary: #3b82f6;
+	--secondary-hover: #60a5fa;
+	--secondary-fg: #ffffff;
+
+	--text: oklch(94% 0.01 270);
+	--text-muted: oklch(64% 0.035 270);
+
+	--success: oklch(68% 0.19 142);
+	--error: oklch(65% 0.22 25);
+	--warning: oklch(76% 0.18 70);
+}
+
+/* ── Base styles ─────────────────────────────────────────────────────────── */
+body {
+	background-color: var(--bg);
+	color: var(--text);
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease;
+}

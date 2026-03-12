@@ -1,0 +1,30 @@
+---
+---
+
+<button
+  id="theme-toggle"
+  class="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-raised"
+>
+  <span id="theme-icon">🌙</span>
+  <span id="theme-label">Dark mode</span>
+</button>
+
+<script>
+  const toggle = document.getElementById('theme-toggle') as HTMLButtonElement | null;
+  const icon = document.getElementById('theme-icon') as HTMLSpanElement | null;
+  const label = document.getElementById('theme-label') as HTMLSpanElement | null;
+
+  function syncToggle(): void {
+    const isDark = document.documentElement.classList.contains('dark');
+    if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+    if (label) label.textContent = isDark ? 'Light mode' : 'Dark mode';
+  }
+
+  function toggleTheme(): void {
+    window.toggleTheme();
+    syncToggle();
+  }
+
+  toggle?.addEventListener('click', toggleTheme);
+  syncToggle();
+</script>
