@@ -1,0 +1,49 @@
+---
+---
+
+<button
+  id="theme-toggle"
+  class="flex cursor-pointer items-center justify-center rounded-lg border border-border bg-surface px-3 py-2 transition-colors hover:bg-surface-raised"
+>
+  <svg id="theme-icon-moon" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z"></path>
+  </svg>
+  <svg id="theme-icon-sun" viewBox="0 0 24 24" class="hidden h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2"></path>
+    <path d="M12 20v2"></path>
+    <path d="M4.9 4.9l1.4 1.4"></path>
+    <path d="M17.7 17.7l1.4 1.4"></path>
+    <path d="M2 12h2"></path>
+    <path d="M20 12h2"></path>
+    <path d="M4.9 19.1l1.4-1.4"></path>
+    <path d="M17.7 6.3l1.4-1.4"></path>
+  </svg>
+</button>
+
+<script>
+  function syncToggle(): void {
+    const moon = document.getElementById('theme-icon-moon') as SVGSVGElement | null;
+    const sun = document.getElementById('theme-icon-sun') as SVGSVGElement | null;
+    const isDark = document.documentElement.classList.contains('dark');
+    moon?.classList.toggle('hidden', isDark);
+    sun?.classList.toggle('hidden', !isDark);
+  }
+
+  function bindThemeToggle(): void {
+    const toggle = document.getElementById('theme-toggle') as HTMLButtonElement | null;
+    if (!toggle || toggle.dataset.bound === 'true') {
+      syncToggle();
+      return;
+    }
+    toggle.dataset.bound = 'true';
+    toggle.addEventListener('click', () => {
+      window.toggleTheme();
+      syncToggle();
+    });
+    syncToggle();
+  }
+
+  bindThemeToggle();
+  document.addEventListener('astro:page-load', bindThemeToggle);
+</script>

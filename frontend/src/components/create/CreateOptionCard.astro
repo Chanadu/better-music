@@ -1,0 +1,18 @@
+---
+interface Props {
+	id: string;
+	label: string;
+}
+
+const { id, label } = Astro.props;
+---
+
+<button
+	type="button"
+	id={id}
+	class="flex min-h-36 flex-col items-center justify-center rounded-xl border p-4 text-center transition-colors hover:opacity-90"
+	style="border-color: var(--border); background: var(--surface-raised);"
+>
+	<slot />
+	<p class="mt-2 text-sm font-semibold">{label}</p>
+</button>

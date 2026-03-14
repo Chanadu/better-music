@@ -1,0 +1,23 @@
+---
+import AlbumCollection from '../components/albums/AlbumCollection.astro';
+import AuthGuard from '../components/auth/AuthGuard.astro';
+import CreateMenuModal from '../components/create/CreateMenuModal.astro';
+import AppHeader from '../components/ui/AppHeader.astro';
+import BottomTabBar from '../components/ui/BottomTabBar.astro';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+	<AuthGuard />
+	<main class="min-h-screen px-4 py-8 pb-28 sm:px-6 sm:py-12 md:px-8" style="background: linear-gradient(to bottom right, var(--bg), var(--surface-raised));">
+		<div class="mx-auto max-w-4xl">
+			<AppHeader title="Albums" />
+			<div class="rounded-2xl border-2 p-6 sm:p-8" style="background: var(--surface); border-color: var(--border);">
+				<AlbumCollection />
+			</div>
+		</div>
+	</main>
+
+	<CreateMenuModal />
+	<BottomTabBar current="albums" />
+</Layout>

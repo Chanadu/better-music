@@ -1,0 +1,303 @@
+---
+import ModalHeader from '../ui/ModalHeader.astro';
+---
+
+<dialog
+	id="album-modal"
+	class="w-[min(92vw,32rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/45"
+	style="border-color: var(--border); background: var(--surface); color: var(--text); margin: auto;"
+>
+	<form id="album-form" class="space-y-4 p-5">
+		<ModalHeader title="Create Album" modalId="album-modal" />
+
+		<div>
+			<label for="album-title" class="block text-sm font-semibold">Title</label>
+			<input id="album-title" name="title" required class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="Abbey Road" />
+		</div>
+
+		<div>
+			<label for="album-artist-id" class="block text-sm font-semibold">Artist</label>
+			<select id="album-artist-id" name="artist_id" required class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);">
+				<option value="">Select an artist</option>
+			</select>
+		</div>
+
+		<div>
+			<label for="album-cover-url" class="block text-sm font-semibold">Cover URL (optional)</label>
+			<input id="album-cover-url" name="cover_url" class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="https://example.com/cover.jpg" />
+		</div>
+
+		<div>
+			<label for="album-year" class="block text-sm font-semibold">Year (optional)</label>
+			<input id="album-year" name="year" type="number" min="0" class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="1969" />
+		</div>
+
+		<label for="album-listened" class="flex items-center gap-2 text-sm font-semibold">
+			<input id="album-listened" name="listened" type="checkbox" class="h-4 w-4 rounded border" style="border-color: var(--border);" />
+			Listened
+		</label>
+
+		<div id="album-listened-options" class="hidden space-y-4">
+			<div>
+				<label for="album-rating" class="block text-sm font-semibold">Rating (optional)</label>
+				<input id="album-rating" name="rating" type="number" min="1" max="10" class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="8" />
+			</div>
+
+			<div>
+				<label for="album-listened-at" class="block text-sm font-semibold">Listened At (optional)</label>
+				<div class="mt-2 w-full overflow-hidden rounded-lg border" style="border-color: var(--border); background: var(--surface-raised);">
+					<input id="album-listened-at" name="listened_at" type="date" class="ios-date-field w-full border-0 px-3 py-2" style="background: transparent;" />
+				</div>
+			</div>
+		</div>
+
+		<p id="album-form-status" class="text-sm" style="color: var(--text-muted);"></p>
+
+		<button type="submit" id="album-create-btn" class="mx-auto block cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50" style="background: var(--primary); color: var(--primary-fg);">
+			Create Album
+		</button>
+	</form>
+</dialog>
+
+<script>
+	import { apiFetch, getErrorMessage } from '../../lib/api';
+import { getCurrentDateLocal } from '../../lib/date';
+
+	const getAlbumModal = () => document.getElementById('album-modal') as HTMLDialogElement | null;
+	const getAlbumFormStatus = () => document.getElementById('album-form-status') as HTMLParagraphElement | null;
+	const getAlbumArtistSelect = () => document.getElementById('album-artist-id') as HTMLSelectElement | null;
+	const getAlbumCreateBtn = () => document.getElementById('album-create-btn') as HTMLButtonElement | null;
+	const getAlbumListenedInput = () => document.getElementById('album-listened') as HTMLInputElement | null;
+	const getAlbumListenedOptions = () => document.getElementById('album-listened-options') as HTMLDivElement | null;
+	const getAlbumRatingInput = () => document.getElementById('album-rating') as HTMLInputElement | null;
+	const getAlbumListenedAtInput = () => document.getElementById('album-listened-at') as HTMLInputElement | null;
+
+	const setStatus = (el: HTMLElement | null, message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
+		if (!el) return;
+		el.textContent = message;
+		if (type === 'error') {
+			el.style.color = 'var(--error)';
+		} else if (type === 'success') {
+			el.style.color = 'var(--success)';
+		} else {
+			el.style.color = 'var(--text-muted)';
+		}
+	};
+
+	const openModal = () => {
+		const albumModal = getAlbumModal();
+		if (!albumModal || albumModal.open || !albumModal.isConnected) return;
+		try {
+			albumModal.showModal();
+		} catch {
+			// Ignore transient disconnection while Astro swaps pages.
+		}
+	};
+
+	const closeModal = () => {
+		const albumModal = getAlbumModal();
+		if (!albumModal?.open) return;
+		albumModal.close();
+	};
+
+	const loadArtists = async () => {
+		const albumArtistSelect = getAlbumArtistSelect();
+		const albumFormStatus = getAlbumFormStatus();
+		if (!albumArtistSelect) return;
+
+		setStatus(albumFormStatus, 'Loading artists...');
+		albumArtistSelect.disabled = true;
+		const response = await apiFetch('/api/artists', { method: 'GET' }, { auth: true });
+
+		if (!response.ok) {
+			albumArtistSelect.disabled = false;
+			setStatus(albumFormStatus, await getErrorMessage(response), 'error');
+			return;
+		}
+
+		const artists = (await response.json()) as Array<{ id: number; name: string }>;
+		artists.sort((a, b) => a.name.localeCompare(b.name));
+		albumArtistSelect.innerHTML = '<option value="">Select an artist</option>';
+
+		for (const artist of artists) {
+			const option = document.createElement('option');
+			option.value = String(artist.id);
+			option.textContent = artist.name;
+			albumArtistSelect.appendChild(option);
+		}
+
+		albumArtistSelect.disabled = artists.length === 0;
+		setStatus(albumFormStatus, artists.length ? '' : 'No artists found. Create an artist first.');
+	};
+
+	const syncListenedFields = () => {
+		const albumListenedInput = getAlbumListenedInput();
+		const albumListenedOptions = getAlbumListenedOptions();
+		const albumRatingInput = getAlbumRatingInput();
+		const albumListenedAtInput = getAlbumListenedAtInput();
+		const listened = albumListenedInput?.checked ?? false;
+		if (albumListenedOptions) {
+			albumListenedOptions.classList.toggle('hidden', !listened);
+		}
+		if (listened && albumListenedAtInput && !albumListenedAtInput.value) {
+			albumListenedAtInput.value = getCurrentDateLocal();
+		}
+		if (!listened) {
+			if (albumRatingInput) albumRatingInput.value = '';
+			if (albumListenedAtInput) albumListenedAtInput.value = '';
+		}
+	};
+
+	const windowWithOpenFlag = window as Window & { __openAlbumModalBound?: boolean };
+	if (!windowWithOpenFlag.__openAlbumModalBound) {
+		windowWithOpenFlag.__openAlbumModalBound = true;
+		window.addEventListener('open-album-modal', async () => {
+			await new Promise<void>((resolve) => {
+				requestAnimationFrame(() => {
+					openModal();
+					resolve();
+				});
+			});
+			await loadArtists();
+		});
+	}
+
+	const windowWithArtistCreatedFlag = window as Window & { __albumModalArtistCreatedBound?: boolean };
+	if (!windowWithArtistCreatedFlag.__albumModalArtistCreatedBound) {
+		windowWithArtistCreatedFlag.__albumModalArtistCreatedBound = true;
+		window.addEventListener('artist-created', async () => {
+			if (getAlbumModal()?.open) {
+				await loadArtists();
+			}
+		});
+	}
+
+	const windowWithClickFlag = window as Window & { __albumModalClickBound?: boolean };
+	if (!windowWithClickFlag.__albumModalClickBound) {
+		windowWithClickFlag.__albumModalClickBound = true;
+		document.addEventListener('click', (event) => {
+			const target = event.target as Element | null;
+			const albumModal = getAlbumModal();
+
+			if (target?.id === 'album-modal') {
+				closeModal();
+				return;
+			}
+
+			if (albumModal && target?.closest('[data-close-modal="album-modal"]')) {
+				closeModal();
+			}
+		});
+	}
+
+	const windowWithChangeFlag = window as Window & { __albumModalChangeBound?: boolean };
+	if (!windowWithChangeFlag.__albumModalChangeBound) {
+		windowWithChangeFlag.__albumModalChangeBound = true;
+		document.addEventListener('change', (event) => {
+			const target = event.target as HTMLInputElement | null;
+			if (!target || target.id !== 'album-listened') return;
+			syncListenedFields();
+		});
+	}
+
+	syncListenedFields();
+
+	const windowWithSubmitFlag = window as Window & { __albumModalSubmitBound?: boolean };
+	if (!windowWithSubmitFlag.__albumModalSubmitBound) {
+		windowWithSubmitFlag.__albumModalSubmitBound = true;
+		document.addEventListener('submit', async (event) => {
+			const target = event.target as HTMLFormElement | null;
+			if (!target || target.id !== 'album-form') return;
+			event.preventDefault();
+
+			const albumTitleInput = document.getElementById('album-title') as HTMLInputElement | null;
+			const albumArtistSelect = getAlbumArtistSelect();
+			const albumCoverURLInput = document.getElementById('album-cover-url') as HTMLInputElement | null;
+			const albumYearInput = document.getElementById('album-year') as HTMLInputElement | null;
+			const albumListenedInput = getAlbumListenedInput();
+			const albumRatingInput = getAlbumRatingInput();
+			const albumListenedAtInput = getAlbumListenedAtInput();
+			const albumFormStatus = getAlbumFormStatus();
+			const albumCreateBtn = getAlbumCreateBtn();
+
+			if (!albumTitleInput || !albumArtistSelect) return;
+
+			const title = albumTitleInput.value.trim();
+			const artistID = Number(albumArtistSelect.value);
+			const coverURL = albumCoverURLInput?.value.trim() || '';
+			const yearValue = albumYearInput?.value.trim() || '';
+			const listened = albumListenedInput?.checked ?? false;
+			const ratingValue = albumRatingInput?.value.trim() || '';
+			const listenedAt = albumListenedAtInput?.value || '';
+
+			if (!title || !artistID) {
+				setStatus(albumFormStatus, 'Title and artist are required.', 'error');
+				return;
+			}
+
+			if (albumCreateBtn) {
+				albumCreateBtn.disabled = true;
+				albumCreateBtn.textContent = 'Creating...';
+			}
+
+			setStatus(albumFormStatus, 'Creating album...');
+
+			const createResponse = await apiFetch('/api/albums', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ title, artist_id: artistID }),
+			}, { auth: true });
+
+			if (!createResponse.ok) {
+				setStatus(albumFormStatus, await getErrorMessage(createResponse), 'error');
+				if (albumCreateBtn) {
+					albumCreateBtn.disabled = false;
+					albumCreateBtn.textContent = 'Create Album';
+				}
+				return;
+			}
+
+			const createdAlbum = (await createResponse.json()) as { id: number };
+
+			const updatePayload: Record<string, unknown> = { artist_id: artistID };
+			if (coverURL) updatePayload.cover_url = coverURL;
+			if (yearValue) updatePayload.year = Number(yearValue);
+			updatePayload.listened = listened;
+			if (listened && ratingValue) updatePayload.rating = Number(ratingValue);
+			if (listened && listenedAt) updatePayload.listened_at = new Date(listenedAt).toISOString();
+
+			if (Object.keys(updatePayload).length > 1 || updatePayload.listened === true) {
+				setStatus(albumFormStatus, 'Album created. Saving details...');
+				const updateResponse = await apiFetch(`/api/albums/${createdAlbum.id}`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(updatePayload),
+				}, { auth: true });
+
+				if (!updateResponse.ok) {
+					setStatus(albumFormStatus, `Album created, but details update failed: ${await getErrorMessage(updateResponse)}`, 'error');
+					if (albumCreateBtn) {
+						albumCreateBtn.disabled = false;
+						albumCreateBtn.textContent = 'Create Album';
+					}
+					return;
+				}
+			}
+
+			setStatus(albumFormStatus, 'Album created successfully.', 'success');
+			target.reset();
+			syncListenedFields();
+			if (albumCreateBtn) {
+				albumCreateBtn.disabled = false;
+				albumCreateBtn.textContent = 'Create Album';
+			}
+
+			window.dispatchEvent(new CustomEvent('album-created'));
+			setTimeout(() => closeModal(), 400);
+		});
+	}
+</script>

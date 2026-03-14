@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
 ---
 
 <!doctype html>
@@ -7,6 +8,8 @@ import '../styles/global.css';
 	<head>
 		<meta charset='UTF-8' />
 		<meta name='viewport' content='width=device-width' />
+		<ClientRouter />
+		<meta id='theme-color-meta' name='theme-color' content='#f6f7fb' />
 		<!-- <link rel='icon' type='image/svg+xml' href='/favicon.svg' /> -->
 		<!-- <link rel='icon' href='/favicon.ico' /> -->
 		<meta name='generator' content={Astro.generator} />
@@ -14,11 +17,23 @@ import '../styles/global.css';
 		<!-- Apply saved or system-preferred theme before first paint to avoid flash -->
 		<script is:inline>
 			(function () {
-				const saved = localStorage.getItem('theme');
-				const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-				if (saved === 'dark' || (!saved && prefersDark)) {
-					document.documentElement.classList.add('dark');
-				}
+				const themeMeta = document.getElementById('theme-color-meta');
+				const setThemeColor = (isDark) => {
+					if (!themeMeta) return;
+					themeMeta.setAttribute('content', isDark ? '#282c34' : '#f6f7fb');
+				};
+
+				const syncSavedTheme = () => {
+					const saved = localStorage.getItem('theme');
+					const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+					const useDark = saved === 'dark' || (!saved && prefersDark);
+					document.documentElement.classList.toggle('dark', useDark);
+					setThemeColor(useDark);
+				};
+
+				syncSavedTheme();
+				document.addEventListener('astro:after-swap', syncSavedTheme);
+				document.addEventListener('astro:page-load', syncSavedTheme);
 			})();
 		</script>
 	</head>
@@ -29,12 +44,49 @@ import '../styles/global.css';
 			declare global {
 				interface Window {
 					toggleTheme: () => void;
+					__routePreloadBound?: boolean;
+					__preloadedRoutes?: Record<string, boolean>;
 				}
 			}
 			window.toggleTheme = (): void => {
 				const isDark = document.documentElement.classList.toggle('dark');
 				localStorage.setItem('theme', isDark ? 'dark' : 'light');
+				const themeMeta = document.getElementById('theme-color-meta');
+				if (themeMeta) {
+					themeMeta.setAttribute('content', isDark ? '#282c34' : '#f6f7fb');
+				}
 			};
+
+			const preloadRoutes = (): void => {
+				const routes = ['/', '/albums', '/artists', '/login', '/register', '/offline'];
+				const currentPath = window.location.pathname;
+				const preloadState = (window.__preloadedRoutes ??= {});
+
+				for (const route of routes) {
+					if (route === currentPath || preloadState[route]) continue;
+					preloadState[route] = true;
+					void fetch(route, {
+						method: 'GET',
+						credentials: 'same-origin',
+						headers: { 'x-preload': '1' },
+					}).catch(() => {
+						preloadState[route] = false;
+					});
+				}
+			};
+
+			if (!window.__routePreloadBound) {
+				window.__routePreloadBound = true;
+				const kickOffPreload = () => {
+					if ('requestIdleCallback' in window) {
+						(window as Window & { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(() => preloadRoutes());
+					} else {
+						setTimeout(() => preloadRoutes(), 0);
+					}
+				};
+				document.addEventListener('astro:page-load', kickOffPreload);
+				kickOffPreload();
+			}
 		</script>
 	</body>
 </html>

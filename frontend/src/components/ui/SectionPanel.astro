@@ -1,0 +1,23 @@
+---
+import Panel from './Panel.astro';
+
+interface Props {
+	title: string;
+	description?: string;
+}
+
+const { title, description } = Astro.props;
+const hasContent = Astro.slots.has('default');
+---
+
+<Panel>
+	<div style="color: var(--text);">
+		<h2 class="mb-2 text-lg font-semibold">{title}</h2>
+		{description && (
+			<p class="text-sm" style="color: var(--text-muted);">
+				{description}
+			</p>
+		)}
+		{hasContent && <div class="mt-4"><slot /></div>}
+	</div>
+</Panel>

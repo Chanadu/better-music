@@ -1,0 +1,406 @@
+<div id="albums-list" class="space-y-3"></div>
+
+<dialog id="edit-album-modal" class="w-[min(92vw,36rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/45" style="border-color: var(--border); background: var(--surface); color: var(--text); margin: auto;">
+	<form id="edit-album-form" class="space-y-3 p-5">
+		<div class="flex items-center justify-between">
+			<h3 class="text-lg font-semibold">Edit Album</h3>
+			<button type="button" id="edit-album-close" class="inline-flex cursor-pointer items-center justify-center rounded-md p-1" style="color: var(--text-muted);" aria-label="Close">
+				<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+					<path d="M6 6l12 12"></path>
+					<path d="M18 6L6 18"></path>
+				</svg>
+			</button>
+		</div>
+
+		<input id="edit-album-id" type="hidden" />
+		<input id="edit-album-title" required class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="Title" />
+		<select id="edit-album-artist-id" required class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);"></select>
+		<input id="edit-album-cover-url" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="Cover URL" />
+		<input id="edit-album-year" type="number" min="0" class="w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="Year" />
+		<label for="edit-album-listened" class="flex items-center gap-2 text-sm font-semibold"><input id="edit-album-listened" type="checkbox" class="h-4 w-4 rounded border" style="border-color: var(--border);" /> Listened</label>
+		<input id="edit-album-rating" type="number" min="1" max="10" class="w-full rounded-lg border px-3 py-2 disabled:opacity-50" style="border-color: var(--border); background: var(--surface-raised);" placeholder="Rating" />
+		<div class="w-full overflow-hidden rounded-lg border disabled:opacity-50" style="border-color: var(--border); background: var(--surface-raised);">
+			<input id="edit-album-listened-at" type="date" class="ios-date-field w-full border-0 px-3 py-2 disabled:opacity-50" style="background: transparent;" />
+		</div>
+		<p id="edit-album-status" class="text-sm" style="color: var(--text-muted);"></p>
+		<div class="flex items-center justify-between gap-3">
+			<button type="button" id="edit-album-delete" class="cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold" style="background: var(--error); color: white;">Delete</button>
+			<button type="submit" id="edit-album-submit" class="cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold" style="background: var(--primary); color: var(--primary-fg);">Save</button>
+		</div>
+	</form>
+</dialog>
+
+<script>
+	import { apiFetch } from '../../lib/api';
+import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
+import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } from '../../lib/ui';
+
+	type Album = {
+		id: number;
+		artist_id: number;
+		title: string;
+		cover_url?: string | null;
+		year?: number | null;
+		spotify_id?: string | null;
+		listened: boolean;
+		rating?: number | null;
+		comment?: string | null;
+		listened_at?: string | null;
+		created_at: string;
+	};
+
+	type Artist = {
+		id: number;
+		name: string;
+	};
+
+	const getListRoot = () => document.getElementById('albums-list') as HTMLDivElement | null;
+	let editAlbumDialog: HTMLDialogElement | null = null;
+	let editAlbumForm: HTMLFormElement | null = null;
+	let editAlbumClose: HTMLButtonElement | null = null;
+	let editAlbumIDInput: HTMLInputElement | null = null;
+	let editAlbumTitleInput: HTMLInputElement | null = null;
+	let editAlbumArtistInput: HTMLSelectElement | null = null;
+	let editAlbumCoverInput: HTMLInputElement | null = null;
+	let editAlbumYearInput: HTMLInputElement | null = null;
+	let editAlbumListenedInput: HTMLInputElement | null = null;
+	let editAlbumRatingInput: HTMLInputElement | null = null;
+	let editAlbumListenedAtInput: HTMLInputElement | null = null;
+	let editAlbumStatus: HTMLParagraphElement | null = null;
+	let editAlbumSubmit: HTMLButtonElement | null = null;
+	let editAlbumDeleteBtn: HTMLButtonElement | null = null;
+
+	const refreshEditRefs = () => {
+		editAlbumDialog = document.getElementById('edit-album-modal') as HTMLDialogElement | null;
+		editAlbumForm = document.getElementById('edit-album-form') as HTMLFormElement | null;
+		editAlbumClose = document.getElementById('edit-album-close') as HTMLButtonElement | null;
+		editAlbumIDInput = document.getElementById('edit-album-id') as HTMLInputElement | null;
+		editAlbumTitleInput = document.getElementById('edit-album-title') as HTMLInputElement | null;
+		editAlbumArtistInput = document.getElementById('edit-album-artist-id') as HTMLSelectElement | null;
+		editAlbumCoverInput = document.getElementById('edit-album-cover-url') as HTMLInputElement | null;
+		editAlbumYearInput = document.getElementById('edit-album-year') as HTMLInputElement | null;
+		editAlbumListenedInput = document.getElementById('edit-album-listened') as HTMLInputElement | null;
+		editAlbumRatingInput = document.getElementById('edit-album-rating') as HTMLInputElement | null;
+		editAlbumListenedAtInput = document.getElementById('edit-album-listened-at') as HTMLInputElement | null;
+		editAlbumStatus = document.getElementById('edit-album-status') as HTMLParagraphElement | null;
+		editAlbumSubmit = document.getElementById('edit-album-submit') as HTMLButtonElement | null;
+		editAlbumDeleteBtn = document.getElementById('edit-album-delete') as HTMLButtonElement | null;
+	};
+
+	let artistsCache: Artist[] = [];
+
+	const sortAlbums = (albums: Album[]): Album[] => {
+		return [...albums].sort((a, b) => {
+			if (a.listened !== b.listened) return a.listened ? -1 : 1;
+			const aRating = a.rating ?? -1;
+			const bRating = b.rating ?? -1;
+			if (aRating !== bRating) return bRating - aRating;
+			return a.title.localeCompare(b.title);
+		});
+	};
+
+	const setMessage = (message: string, isError = false) => {
+		const listRoot = getListRoot();
+		if (!listRoot) return;
+		listRoot.innerHTML = '';
+		const p = document.createElement('p');
+		p.className = 'text-sm';
+		p.style.color = isError ? 'var(--error)' : 'var(--text-muted)';
+		p.textContent = message;
+		listRoot.appendChild(p);
+	};
+
+	const setEditStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
+		if (!editAlbumStatus) return;
+		editAlbumStatus.textContent = message;
+		if (type === 'error') editAlbumStatus.style.color = 'var(--error)';
+		else if (type === 'success') editAlbumStatus.style.color = 'var(--success)';
+		else editAlbumStatus.style.color = 'var(--text-muted)';
+	};
+
+	const showDialogSafely = (dialog: HTMLDialogElement | null) => {
+		if (!dialog || dialog.open) return;
+		try {
+			dialog.showModal();
+		} catch {
+			dialog.setAttribute('open', '');
+		}
+	};
+
+	const addDisclosureBehavior = (details: HTMLDetailsElement, chevron: SVGSVGElement) => {
+		const syncChevron = () => {
+			chevron.style.transform = details.open ? 'rotate(180deg)' : 'rotate(0deg)';
+		};
+		details.addEventListener('toggle', syncChevron);
+		syncChevron();
+	};
+
+	const syncEditListenedState = () => {
+		const listened = editAlbumListenedInput?.checked ?? false;
+		if (editAlbumRatingInput) {
+			editAlbumRatingInput.disabled = !listened;
+			if (!listened) editAlbumRatingInput.value = '';
+		}
+		if (editAlbumListenedAtInput) {
+			editAlbumListenedAtInput.disabled = !listened;
+			if (listened && !editAlbumListenedAtInput.value) editAlbumListenedAtInput.value = getCurrentDateLocal();
+			if (!listened) editAlbumListenedAtInput.value = '';
+		}
+	};
+
+	const populateArtistSelect = (selectedID: number) => {
+		if (!editAlbumArtistInput) return;
+		editAlbumArtistInput.innerHTML = '';
+		for (const artist of artistsCache) {
+			const option = document.createElement('option');
+			option.value = String(artist.id);
+			option.textContent = artist.name;
+			if (artist.id === selectedID) option.selected = true;
+			editAlbumArtistInput.appendChild(option);
+		}
+	};
+
+	const openEditDialog = (album: Album) => {
+		refreshEditRefs();
+		if (!editAlbumDialog || !editAlbumIDInput || !editAlbumTitleInput || !editAlbumCoverInput || !editAlbumYearInput || !editAlbumListenedInput || !editAlbumRatingInput || !editAlbumListenedAtInput) return;
+		editAlbumIDInput.value = String(album.id);
+		editAlbumTitleInput.value = album.title;
+		populateArtistSelect(album.artist_id);
+		editAlbumCoverInput.value = album.cover_url ?? '';
+		editAlbumYearInput.value = album.year == null ? '' : String(album.year);
+		editAlbumListenedInput.checked = album.listened;
+		editAlbumRatingInput.value = album.rating == null ? '' : String(album.rating);
+		editAlbumListenedAtInput.value = toDateLocal(album.listened_at);
+		syncEditListenedState();
+		setEditStatus('');
+		showDialogSafely(editAlbumDialog);
+	};
+
+	const renderAlbumCard = (album: Album, artistName: string) => {
+		const details = document.createElement('details');
+		details.className = 'overflow-hidden rounded-xl border p-4';
+		details.style.borderColor = 'var(--border)';
+		details.style.background = 'var(--surface-raised)';
+
+		const summary = document.createElement('summary');
+		summary.className = 'cursor-pointer list-none';
+
+		const topRow = document.createElement('div');
+		topRow.className = 'flex min-w-0 items-start gap-3';
+
+		const leftWrap = document.createElement('div');
+		leftWrap.className = 'flex min-w-0 flex-1 items-start gap-3';
+
+		if (album.cover_url) {
+			const img = document.createElement('img');
+			img.src = album.cover_url;
+			img.alt = `${album.title} cover`;
+			img.className = 'h-16 w-16 rounded-lg border object-cover';
+			img.style.borderColor = 'var(--border)';
+			leftWrap.appendChild(img);
+		}
+
+		const content = document.createElement('div');
+		content.className = 'min-w-0 flex-1';
+
+		const titleRow = document.createElement('div');
+		titleRow.className = 'flex min-h-8 items-center';
+		const title = document.createElement('h3');
+		title.className = 'text-lg font-semibold';
+		title.style.color = 'var(--text)';
+		title.textContent = album.title;
+		titleRow.appendChild(title);
+		content.appendChild(titleRow);
+
+		const metaRow = document.createElement('div');
+		metaRow.className = 'mt-1 flex min-h-8 flex-wrap items-center justify-between gap-2';
+		const artistYearWrap = document.createElement('div');
+		artistYearWrap.className = 'flex min-w-0 items-baseline gap-2';
+		const meta = document.createElement('p');
+		meta.className = 'text-sm';
+		meta.style.color = 'var(--text-muted)';
+		meta.textContent = artistName;
+		artistYearWrap.appendChild(meta);
+		if (album.year != null) {
+			const separator = document.createElement('span');
+			separator.className = 'text-sm';
+			separator.style.color = 'var(--text-muted)';
+			separator.textContent = '•';
+			artistYearWrap.appendChild(separator);
+
+			const yearLine = document.createElement('span');
+			yearLine.className = 'text-sm';
+			yearLine.style.color = 'var(--text-muted)';
+			yearLine.textContent = String(album.year);
+			artistYearWrap.appendChild(yearLine);
+		}
+		metaRow.appendChild(artistYearWrap);
+
+		const pillRow = document.createElement('div');
+		pillRow.className = 'flex flex-wrap items-center gap-2';
+		if (!album.listened) pillRow.appendChild(createAlbumPill('New', ICON_PATHS.newSparkle, 'secondary'));
+		if (album.listened && album.rating != null) pillRow.appendChild(createAlbumPill(`${album.rating}/10`, ICON_PATHS.ratingStar, 'primary'));
+		metaRow.appendChild(pillRow);
+		content.appendChild(metaRow);
+		leftWrap.appendChild(content);
+		topRow.appendChild(leftWrap);
+
+		const editBtn = createEditIconButton('Edit album');
+		editBtn.addEventListener('click', (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			openEditDialog(album);
+		});
+
+		const chevron = createChevronIcon();
+		chevron.classList.add('shrink-0', 'self-center');
+		const actionWrap = document.createElement('div');
+		actionWrap.className = 'ml-2 flex shrink-0 flex-col items-center gap-1';
+
+		const chevronToggle = document.createElement('button');
+		chevronToggle.type = 'button';
+		chevronToggle.className = 'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md';
+		chevronToggle.setAttribute('aria-label', 'Toggle album details');
+		chevronToggle.appendChild(chevron);
+		chevronToggle.addEventListener('click', (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			details.open = !details.open;
+		});
+
+		actionWrap.appendChild(editBtn);
+		actionWrap.appendChild(chevronToggle);
+		topRow.appendChild(actionWrap);
+		summary.appendChild(topRow);
+		addDisclosureBehavior(details, chevron);
+
+		const dropdown = document.createElement('div');
+		dropdown.className = 'mt-3 grid gap-2 rounded-lg border p-3 text-sm';
+		dropdown.style.borderColor = 'var(--border)';
+		dropdown.style.background = 'var(--surface)';
+		dropdown.style.color = 'var(--text-muted)';
+		const created = document.createElement('p');
+		created.textContent = `Created: ${formatDateTime(album.created_at)}`;
+		dropdown.appendChild(created);
+		if (album.listened) {
+			const listenedAt = document.createElement('p');
+			listenedAt.textContent = `Listened at: ${formatDateTime(album.listened_at)}`;
+			dropdown.appendChild(listenedAt);
+		}
+		const comment = document.createElement('p');
+		comment.textContent = `Comment: ${album.comment?.trim() || 'No comment'}`;
+		dropdown.appendChild(comment);
+
+		details.appendChild(summary);
+		details.appendChild(dropdown);
+		return details;
+	};
+
+	const loadAlbums = async () => {
+		const listRoot = getListRoot();
+		if (!listRoot) return;
+		setMessage('Loading albums...');
+		try {
+			const [albumsRes, artistsRes] = await Promise.all([
+				apiFetch('/api/albums', { method: 'GET' }, { auth: true }),
+				apiFetch('/api/artists', { method: 'GET' }, { auth: true }),
+			]);
+			if (!albumsRes.ok || !artistsRes.ok) {
+				setMessage('Failed to load albums/artists.', true);
+				return;
+			}
+			const albums = (await albumsRes.json()) as Album[];
+			const artists = (await artistsRes.json()) as Artist[];
+			artistsCache = [...artists].sort((a, b) => a.name.localeCompare(b.name));
+			listRoot.innerHTML = '';
+			if (!albums.length) {
+				setMessage('No albums found yet. Use Create to add one.');
+				return;
+			}
+			const artistNameMap = new Map<number, string>();
+			for (const artist of artists) artistNameMap.set(artist.id, artist.name);
+			for (const album of sortAlbums(albums)) {
+				const artistName = artistNameMap.get(album.artist_id) ?? `Artist #${album.artist_id}`;
+				listRoot.appendChild(renderAlbumCard(album, artistName));
+			}
+		} catch {
+			setMessage('An unexpected error occurred while loading albums.', true);
+		}
+	};
+
+	const bindEditHandlers = () => {
+		refreshEditRefs();
+		if (!editAlbumForm || editAlbumForm.dataset.bound === 'true') return;
+		editAlbumForm.dataset.bound = 'true';
+
+		editAlbumClose?.addEventListener('click', () => editAlbumDialog?.close());
+		editAlbumDialog?.addEventListener('click', (event) => {
+			if (editAlbumDialog && event.target === editAlbumDialog) editAlbumDialog.close();
+		});
+		editAlbumListenedInput?.addEventListener('change', syncEditListenedState);
+
+		editAlbumDeleteBtn?.addEventListener('click', async () => {
+			if (!editAlbumIDInput || !editAlbumTitleInput || !editAlbumDeleteBtn || !editAlbumSubmit) return;
+			if (!window.confirm(`Delete "${editAlbumTitleInput.value}"? This cannot be undone.`)) return;
+			editAlbumDeleteBtn.disabled = true;
+			editAlbumSubmit.disabled = true;
+			setEditStatus('Deleting...');
+			const response = await apiFetch(`/api/albums/${Number(editAlbumIDInput.value)}`, { method: 'DELETE' }, { auth: true });
+			if (!response.ok) {
+				setEditStatus('Failed to delete album.', 'error');
+				editAlbumDeleteBtn.disabled = false;
+				editAlbumSubmit.disabled = false;
+				return;
+			}
+			editAlbumDialog?.close();
+			window.dispatchEvent(new CustomEvent('album-created'));
+		});
+
+		editAlbumForm.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			if (!editAlbumIDInput || !editAlbumTitleInput || !editAlbumArtistInput || !editAlbumCoverInput || !editAlbumYearInput || !editAlbumListenedInput || !editAlbumRatingInput || !editAlbumListenedAtInput || !editAlbumSubmit) return;
+			const payload: Record<string, unknown> = {
+				artist_id: Number(editAlbumArtistInput.value),
+				title: editAlbumTitleInput.value.trim(),
+				listened: editAlbumListenedInput.checked,
+			};
+			if (editAlbumCoverInput.value.trim()) payload.cover_url = editAlbumCoverInput.value.trim();
+			if (editAlbumYearInput.value.trim()) payload.year = Number(editAlbumYearInput.value.trim());
+			if (editAlbumListenedInput.checked && editAlbumRatingInput.value.trim()) payload.rating = Number(editAlbumRatingInput.value.trim());
+			if (editAlbumListenedInput.checked && editAlbumListenedAtInput.value) payload.listened_at = new Date(editAlbumListenedAtInput.value).toISOString();
+
+			editAlbumSubmit.disabled = true;
+			editAlbumSubmit.textContent = 'Saving...';
+			setEditStatus('Saving album...');
+
+			const response = await apiFetch(`/api/albums/${Number(editAlbumIDInput.value)}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload),
+			}, { auth: true });
+
+			if (!response.ok) {
+				setEditStatus('Failed to update album.', 'error');
+				editAlbumSubmit.disabled = false;
+				editAlbumSubmit.textContent = 'Save Album';
+				return;
+			}
+
+			editAlbumSubmit.disabled = false;
+			editAlbumSubmit.textContent = 'Save Album';
+			editAlbumDialog?.close();
+			window.dispatchEvent(new CustomEvent('album-created'));
+		});
+	};
+
+	bindEditHandlers();
+
+	window.addEventListener('album-created', () => void loadAlbums());
+	window.addEventListener('artist-created', () => void loadAlbums());
+	document.addEventListener('astro:page-load', () => {
+		bindEditHandlers();
+		void loadAlbums();
+	});
+
+	void loadAlbums();
+</script>

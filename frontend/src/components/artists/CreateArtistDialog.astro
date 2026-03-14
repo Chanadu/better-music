@@ -1,0 +1,146 @@
+---
+import ModalHeader from '../ui/ModalHeader.astro';
+---
+
+<dialog
+	id="artist-modal"
+	class="w-[min(92vw,32rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/45"
+	style="border-color: var(--border); background: var(--surface); color: var(--text); margin: auto;"
+>
+	<form id="artist-form" class="space-y-4 p-5">
+		<ModalHeader title="Create Artist" modalId="artist-modal" />
+
+		<div>
+			<label for="artist-name" class="block text-sm font-semibold">Name</label>
+			<input id="artist-name" name="name" required class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="The Beatles" />
+		</div>
+
+		<p id="artist-form-status" class="text-sm" style="color: var(--text-muted);"></p>
+
+		<button type="submit" id="artist-create-btn" class="mx-auto block cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50" style="background: var(--primary); color: var(--primary-fg);">
+			Create Artist
+		</button>
+	</form>
+</dialog>
+
+<script>
+	import { apiFetch, getErrorMessage } from '../../lib/api';
+
+	const getArtistModal = () => document.getElementById('artist-modal') as HTMLDialogElement | null;
+	const getArtistForm = () => document.getElementById('artist-form') as HTMLFormElement | null;
+	const getArtistNameInput = () => document.getElementById('artist-name') as HTMLInputElement | null;
+	const getArtistFormStatus = () => document.getElementById('artist-form-status') as HTMLParagraphElement | null;
+	const getArtistCreateBtn = () => document.getElementById('artist-create-btn') as HTMLButtonElement | null;
+
+	const setStatus = (el: HTMLElement | null, message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
+		if (!el) return;
+		el.textContent = message;
+		if (type === 'error') {
+			el.style.color = 'var(--error)';
+		} else if (type === 'success') {
+			el.style.color = 'var(--success)';
+		} else {
+			el.style.color = 'var(--text-muted)';
+		}
+	};
+
+	const openModal = () => {
+		const artistModal = getArtistModal();
+		if (!artistModal || artistModal.open || !artistModal.isConnected) return;
+		try {
+			artistModal.showModal();
+		} catch {
+			// Guard against transient disconnected state during client-side swaps.
+		}
+	};
+
+	const closeModal = () => {
+		const artistModal = getArtistModal();
+		if (!artistModal?.open) return;
+		artistModal.close();
+	};
+
+	const windowWithOpenFlag = window as Window & { __openArtistModalBound?: boolean };
+	if (!windowWithOpenFlag.__openArtistModalBound) {
+		windowWithOpenFlag.__openArtistModalBound = true;
+		window.addEventListener('open-artist-modal', () => {
+			requestAnimationFrame(() => openModal());
+		});
+	}
+
+	const windowWithClickFlag = window as Window & { __artistModalClickBound?: boolean };
+	if (!windowWithClickFlag.__artistModalClickBound) {
+		windowWithClickFlag.__artistModalClickBound = true;
+		document.addEventListener('click', (event) => {
+			const target = event.target as Element | null;
+			const artistModal = getArtistModal();
+
+			if (target?.id === 'artist-modal') {
+				closeModal();
+				return;
+			}
+
+			if (artistModal && target?.closest('[data-close-modal="artist-modal"]')) {
+				closeModal();
+			}
+		});
+	}
+
+	const windowWithSubmitFlag = window as Window & { __artistModalSubmitBound?: boolean };
+	if (!windowWithSubmitFlag.__artistModalSubmitBound) {
+		windowWithSubmitFlag.__artistModalSubmitBound = true;
+		document.addEventListener('submit', async (event) => {
+			const target = event.target as HTMLFormElement | null;
+			if (!target || target.id !== 'artist-form') return;
+			event.preventDefault();
+
+			const artistNameInput = getArtistNameInput();
+			const artistFormStatus = getArtistFormStatus();
+			const artistCreateBtn = getArtistCreateBtn();
+			if (!artistNameInput) return;
+
+			const name = artistNameInput.value.trim();
+
+			if (!name) {
+				setStatus(artistFormStatus, 'Artist name is required.', 'error');
+				return;
+			}
+
+			if (artistCreateBtn) {
+				artistCreateBtn.disabled = true;
+				artistCreateBtn.textContent = 'Creating...';
+			}
+
+			setStatus(artistFormStatus, 'Creating artist...');
+
+			const createResponse = await apiFetch('/api/artists', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ name }),
+			}, { auth: true });
+
+			if (!createResponse.ok) {
+				setStatus(artistFormStatus, await getErrorMessage(createResponse), 'error');
+				if (artistCreateBtn) {
+					artistCreateBtn.disabled = false;
+					artistCreateBtn.textContent = 'Create Artist';
+				}
+				return;
+			}
+
+			await createResponse.json();
+
+			setStatus(artistFormStatus, 'Artist created successfully.', 'success');
+			target.reset();
+			if (artistCreateBtn) {
+				artistCreateBtn.disabled = false;
+				artistCreateBtn.textContent = 'Create Artist';
+			}
+
+			window.dispatchEvent(new CustomEvent('artist-created'));
+			setTimeout(() => closeModal(), 400);
+		});
+	}
+</script>

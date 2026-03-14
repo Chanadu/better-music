@@ -1,0 +1,86 @@
+---
+import CreateOptionCard from './CreateOptionCard.astro';
+import ModalHeader from '../ui/ModalHeader.astro';
+---
+
+<dialog
+	id="create-picker-modal"
+	class="w-[min(92vw,28rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/45"
+	style="border-color: var(--border); background: var(--surface); color: var(--text); margin: auto;"
+>
+	<div class="space-y-4 p-5">
+		<ModalHeader title="Choose What To Create" modalId="create-picker-modal" />
+
+		<div class="grid grid-rows-2 gap-3">
+			<CreateOptionCard id="open-artist-modal" label="Artist">
+				<svg viewBox="0 0 24 24" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+					<circle cx="12" cy="7" r="4"></circle>
+					<path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"></path>
+				</svg>
+			</CreateOptionCard>
+
+			<CreateOptionCard id="open-album-modal" label="Album">
+				<svg viewBox="0 0 24 24" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+					<circle cx="12" cy="12" r="8"></circle>
+					<circle cx="12" cy="12" r="2"></circle>
+				</svg>
+			</CreateOptionCard>
+		</div>
+	</div>
+</dialog>
+
+<script>
+	const getCreatePicker = () => document.getElementById('create-picker-modal') as HTMLDialogElement | null;
+
+	const openModal = (modal: HTMLDialogElement | null) => {
+		if (!modal || modal.open || !modal.isConnected) return;
+		try {
+			modal.showModal();
+		} catch {
+			// Ignore transient disconnection while Astro swaps pages.
+		}
+	};
+
+	const closeModal = (modal: HTMLDialogElement | null) => {
+		if (!modal?.open) return;
+		modal.close();
+	};
+
+	const windowWithFlag = window as Window & { __createPickerOpenBound?: boolean };
+	if (!windowWithFlag.__createPickerOpenBound) {
+		windowWithFlag.__createPickerOpenBound = true;
+		window.addEventListener('open-create-menu', () => {
+			requestAnimationFrame(() => openModal(getCreatePicker()));
+		});
+	}
+
+	const windowWithClickFlag = window as Window & { __createPickerClickBound?: boolean };
+	if (!windowWithClickFlag.__createPickerClickBound) {
+		windowWithClickFlag.__createPickerClickBound = true;
+		document.addEventListener('click', (event) => {
+			const target = event.target as Element | null;
+			const createPicker = getCreatePicker();
+
+			if (target?.id === 'create-picker-modal') {
+				closeModal(createPicker);
+				return;
+			}
+
+			if (target?.closest('[data-close-modal="create-picker-modal"]')) {
+				closeModal(createPicker);
+				return;
+			}
+
+			if (target?.closest('#open-artist-modal')) {
+				closeModal(createPicker);
+				requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('open-artist-modal')));
+				return;
+			}
+
+			if (target?.closest('#open-album-modal')) {
+				closeModal(createPicker);
+				requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('open-album-modal')));
+			}
+		});
+	}
+</script>

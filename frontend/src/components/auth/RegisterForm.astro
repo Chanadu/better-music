@@ -1,51 +1,13 @@
 ---
+import AuthInputField from './AuthInputField.astro';
 ---
 
 <form class="w-full space-y-5">
-  <div>
-    <label for="email" class="block text-sm font-semibold" style="color: var(--text);">
-      Email Address
-    </label>
-    <input
-      type="email"
-      id="email"
-      name="email"
-      required
-      class="mt-2 w-full rounded-lg border-2 px-4 py-3 transition-colors focus:outline-none focus:ring-2"
-      style="border-color: var(--border); background: var(--surface-raised); color: var(--text); --tw-ring-color: hsla(285, 100%, 58%, 0.3);"
-      placeholder="you@example.com"
-    />
-  </div>
+  <AuthInputField id="email" name="email" label="Email Address" type="email" placeholder="you@example.com" required={true} />
 
-  <div>
-    <label for="password" class="block text-sm font-semibold" style="color: var(--text);">
-      Password
-    </label>
-    <input
-      type="password"
-      id="password"
-      name="password"
-      required
-      class="mt-2 w-full rounded-lg border-2 px-4 py-3 transition-colors focus:outline-none focus:ring-2"
-      style="border-color: var(--border); background: var(--surface-raised); color: var(--text); --tw-ring-color: hsla(285, 100%, 58%, 0.3);"
-      placeholder="••••••••"
-    />
-  </div>
+  <AuthInputField id="password" name="password" label="Password" type="password" placeholder="••••••••" required={true} />
 
-  <div>
-    <label for="confirm-password" class="block text-sm font-semibold" style="color: var(--text);">
-      Confirm Password
-    </label>
-    <input
-      type="password"
-      id="confirm-password"
-      name="confirm-password"
-      required
-      class="mt-2 w-full rounded-lg border-2 px-4 py-3 transition-colors focus:outline-none focus:ring-2"
-      style="border-color: var(--border); background: var(--surface-raised); color: var(--text); --tw-ring-color: hsla(285, 100%, 58%, 0.3);"
-      placeholder="••••••••"
-    />
-  </div>
+  <AuthInputField id="confirm-password" name="confirm-password" label="Confirm Password" type="password" placeholder="••••••••" required={true} />
 
   <!-- Error Message -->
   <div id="error-message" class="hidden rounded-lg p-3" style="background: var(--error); color: white; font-size: 0.875rem;">
@@ -69,6 +31,9 @@
 </form>
 
 <script>
+  import { navigate } from 'astro:transitions/client';
+import { apiFetch, getErrorMessage, storeAuthTokens } from '../../lib/api';
+
   const form = document.querySelector('form');
   const errorMessage = document.getElementById('error-message');
   const emailInput = form?.querySelector('input[name="email"]') as HTMLInputElement;
@@ -111,17 +76,16 @@
     submitButton.textContent = 'Creating account...';
 
     try {
-      const response = await fetch('/api/auth/register', {
+		  const response = await apiFetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
-      });
+      }, { auth: false, retryOnUnauthorized: false });
 
       if (!response.ok) {
-        const error = await response.json();
-        const errorText = error.error || 'Registration failed';
+			const errorText = await getErrorMessage(response, 'Registration failed');
         errorMessage!.textContent = errorText;
         errorMessage!.classList.remove('hidden');
         submitButton.disabled = true;
@@ -130,9 +94,8 @@
       }
 
       const data = await response.json();
-      // Store token and redirect
-      localStorage.setItem('token', data.token);
-      window.location.href = '/dashboard';
+      storeAuthTokens(data);
+			void navigate('/');
     } catch (err) {
       errorMessage!.textContent = 'An error occurred. Please try again.';
       errorMessage!.classList.remove('hidden');
