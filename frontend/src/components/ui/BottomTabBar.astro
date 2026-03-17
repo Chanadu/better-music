@@ -12,11 +12,11 @@ const inactiveClass = 'text-text-muted hover:text-text';
 ---
 
 <nav
-	class='fixed right-0 left-0 z-40 border-t'
-	style='bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem); border-color: var(--border); background: var(--surface-raised);'
+	class='fixed right-4 left-4 z-40 rounded-2xl border border-border bg-surface-raised/85 shadow-lg backdrop-blur-md dark:shadow-black/20'
+	style='bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);'
 >
 	<div class='grid w-full grid-cols-4 px-2 pb-2 sm:px-4'>
-		<div class='border-r' style='border-color: var(--border);'>
+		<div class='border-r border-border'>
 			<a href='/' class={`${baseClass} ${current === 'home' ? activeClass : inactiveClass}`}>
 				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<path d='M3 11.5 12 4l9 7.5'></path>
@@ -26,7 +26,7 @@ const inactiveClass = 'text-text-muted hover:text-text';
 				<span class='mt-1 text-sm'>Home</span>
 			</a>
 		</div>
-		<div class='border-r' style='border-color: var(--border);'>
+		<div class='border-r border-border'>
 			<a href='/albums' class={`${baseClass} ${current === 'albums' ? activeClass : inactiveClass}`}>
 				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<circle cx='12' cy='12' r='8'></circle>
@@ -35,7 +35,7 @@ const inactiveClass = 'text-text-muted hover:text-text';
 				<span class='mt-1 text-sm'>Albums</span>
 			</a>
 		</div>
-		<div class='border-r' style='border-color: var(--border);'>
+		<div class='border-r border-border'>
 			<a href='/artists' class={`${baseClass} ${current === 'artists' ? activeClass : inactiveClass}`}>
 				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<circle cx='12' cy='7' r='4'></circle>

@@ -12,7 +12,7 @@ const { id, name, label, type = 'text', placeholder = '', required = false } = A
 ---
 
 <div>
-	<label for={id} class="block text-sm font-semibold" style="color: var(--text);">
+	<label for={id} class="block text-sm font-semibold text-text">
 		{label}
 	</label>
 	<input
@@ -20,8 +20,7 @@ const { id, name, label, type = 'text', placeholder = '', required = false } = A
 		id={id}
 		name={name}
 		required={required}
-		class="mt-2 w-full rounded-lg border-2 px-4 py-3 transition-colors focus:outline-none focus:ring-2"
-		style="border-color: var(--border); background: var(--surface-raised); color: var(--text); --tw-ring-color: hsla(285, 100%, 58%, 0.3);"
+		class="mt-2 w-full rounded-lg border-2 border-border bg-surface-raised px-4 py-3 text-text transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
 		placeholder={placeholder}
 	/>
 </div>

@@ -10,22 +10,21 @@ const { title } = Astro.props;
 
 <div class="mb-8 flex items-center justify-between gap-4">
 	<div class="flex items-center gap-3">
-		<div class="flex h-10 w-10 items-center justify-center rounded-lg" style="background: var(--primary); color: var(--primary-fg);">
+		<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-fg shadow-md">
 			<svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
 				<path d="M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm11-2a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"></path>
 				<path d="M9 18V6l11-2v12"></path>
 				<path d="M9 10l11-2"></path>
 			</svg>
 		</div>
-		<h1 class="text-2xl font-bold" style="color: var(--text);">{title}</h1>
+		<h1 class="text-2xl font-bold text-text">{title}</h1>
 	</div>
 
 	<div class="flex items-center gap-3">
 		<ThemeToggleButton />
 		<button
 			data-logout-button
-			class="flex cursor-pointer items-center justify-center rounded-lg border-2 px-3 py-2 transition-colors hover:opacity-80"
-			style="border-color: var(--border); color: var(--text); background: var(--surface);"
+			class="flex cursor-pointer items-center justify-center rounded-lg border-2 border-border bg-surface px-3 py-2 text-text shadow-sm transition-all hover:-translate-y-0.5 hover:shadow hover:opacity-90 active:scale-95"
 			aria-label="Log out"
 		>
 			<svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">

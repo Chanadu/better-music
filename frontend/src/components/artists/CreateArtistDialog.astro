@@ -4,20 +4,19 @@ import ModalHeader from '../ui/ModalHeader.astro';
 
 <dialog
 	id="artist-modal"
-	class="w-[min(92vw,32rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/45"
-	style="border-color: var(--border); background: var(--surface); color: var(--text); margin: auto;"
+	class="w-[min(92vw,32rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/45"
 >
 	<form id="artist-form" class="space-y-4 p-5">
 		<ModalHeader title="Create Artist" modalId="artist-modal" />
 
 		<div>
 			<label for="artist-name" class="block text-sm font-semibold">Name</label>
-			<input id="artist-name" name="name" required class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="The Beatles" />
+			<input id="artist-name" name="name" required class="mt-2 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 focus:border-primary focus:ring-2 focus:ring-primary/50" placeholder="The Beatles" />
 		</div>
 
-		<p id="artist-form-status" class="text-sm" style="color: var(--text-muted);"></p>
+		<p id="artist-form-status" class="text-sm text-text-muted"></p>
 
-		<button type="submit" id="artist-create-btn" class="mx-auto block cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50" style="background: var(--primary); color: var(--primary-fg);">
+		<button type="submit" id="artist-create-btn" class="mx-auto block cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg focus:ring-2 focus:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md">
 			Create Artist
 		</button>
 	</form>

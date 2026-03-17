@@ -9,7 +9,7 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout>
 	<AuthGuard />
-	<main class="min-h-screen px-4 py-8 pb-28 sm:px-6 sm:py-12 md:px-8" style="background: linear-gradient(to bottom right, var(--bg), var(--surface-raised));">
+	<main class="min-h-screen bg-gradient-to-br from-bg to-surface-raised px-4 py-8 pb-28 sm:px-6 sm:py-12 md:px-8">
 		<!-- Header -->
 		<div class="mx-auto max-w-4xl">
 			<AppHeader title="Home" />
@@ -18,21 +18,21 @@ import Layout from '../layouts/Layout.astro';
 			<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 				<!-- Artists Card -->
 				<SectionPanel title="Artists" description="Browse and manage your music collection">
-					<a href="/artists" class="inline-block rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:scale-105" style="background: var(--primary); color: var(--primary-fg);">
+					<a href="/artists" class="inline-block rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg active:scale-95">
 						View Artists
 					</a>
 				</SectionPanel>
 
 				<!-- Albums Card -->
 				<SectionPanel title="Albums" description="Explore albums by your favorite artists">
-					<a href="/albums" class="inline-block rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:scale-105" style="background: var(--primary); color: var(--primary-fg);">
+					<a href="/albums" class="inline-block rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg active:scale-95">
 						View Albums
 					</a>
 				</SectionPanel>
 
 				<!-- Create Card -->
 				<SectionPanel title="Create" description="Add a new artist or album to your library">
-					<button id="home-open-create" type="button" class="inline-block rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:scale-105" style="background: var(--primary); color: var(--primary-fg);">
+					<button id="home-open-create" type="button" class="inline-block cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg active:scale-95">
 						New Entry
 					</button>
 				</SectionPanel>

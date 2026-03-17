@@ -7,21 +7,19 @@ import AuthInputField from './AuthInputField.astro';
 
   <AuthInputField id="password" name="password" label="Password" type="password" placeholder="••••••••" required={true} />
 
-  <!-- Error Message -->
-  <div id="error-message" class="hidden rounded-lg p-3" style="background: var(--error); color: white; font-size: 0.875rem;">
+  <div id="error-message" class="hidden rounded-lg bg-error p-3 text-sm text-white shadow-md">
   </div>
 
   <button
     type="submit"
-    class="w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-    style="background: var(--primary); color: var(--primary-fg);"
+    class="w-full cursor-pointer rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-fg shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
   >
     Sign In
   </button>
 
-  <div class="border-t pt-5" style="border-color: var(--border);">
-    <p class="text-center text-sm" style="color: var(--text-muted);">
-      Don't have an account? <a href="/register" class="font-semibold transition-opacity hover:opacity-80" style="color: var(--primary);">
+  <div class="border-t border-border pt-5">
+    <p class="text-center text-sm text-text-muted">
+      Don't have an account? <a href="/register" class="font-semibold text-primary transition-opacity hover:opacity-80">
         Create one
       </a>
     </p>

@@ -10,8 +10,7 @@ const { id, label } = Astro.props;
 <button
 	type="button"
 	id={id}
-	class="flex min-h-36 flex-col items-center justify-center rounded-xl border p-4 text-center transition-colors hover:opacity-90"
-	style="border-color: var(--border); background: var(--surface-raised);"
+	class="flex min-h-36 flex-col items-center justify-center rounded-xl border border-border bg-surface-raised p-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md active:scale-95"
 >
 	<slot />
 	<p class="mt-2 text-sm font-semibold">{label}</p>
