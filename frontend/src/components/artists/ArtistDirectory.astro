@@ -178,25 +178,21 @@ import { ICON_PATHS, createArtistChip, createChevronIcon, createEditIconButton }
 
 	const renderArtistCard = (artist: Artist, albums: Album[]) => {
 		const details = document.createElement('details');
-		details.className = 'overflow-hidden rounded-xl border p-4';
-		details.style.borderColor = 'var(--border)';
-		details.style.background = 'var(--surface-raised)';
+		details.className = 'group overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm transition-all duration-300 hover:shadow-md dark:shadow-black/20';
 
 		const summary = document.createElement('summary');
 		summary.className = 'cursor-pointer list-none';
 
 		const header = document.createElement('div');
-		header.className = 'flex items-start justify-between gap-3';
+		header.className = 'flex items-center justify-between gap-3 p-4 sm:p-5';
 		const headerContent = document.createElement('div');
 		headerContent.className = 'min-w-0 flex-1';
 		const name = document.createElement('h3');
-		name.className = 'text-lg font-semibold';
-		name.style.color = 'var(--text)';
+		name.className = 'truncate text-base font-bold text-text sm:text-lg';
 		name.textContent = artist.name;
 		headerContent.appendChild(name);
 		const meta = document.createElement('div');
-		meta.className = 'mt-1 text-xs';
-		meta.style.color = 'var(--text-muted)';
+		meta.className = 'mt-0.5 text-sm text-text-muted';
 		meta.textContent = `${albums.length} album${albums.length === 1 ? '' : 's'}`;
 		headerContent.appendChild(meta);
 
@@ -209,11 +205,11 @@ import { ICON_PATHS, createArtistChip, createChevronIcon, createEditIconButton }
 
 		const chevron = createChevronIcon();
 		const right = document.createElement('div');
-		right.className = 'ml-2 flex shrink-0 self-stretch flex-col items-center justify-between';
+		right.className = 'ml-2 flex shrink-0 items-center justify-between gap-1';
 		right.appendChild(editBtn);
 		const chevronToggle = document.createElement('button');
 		chevronToggle.type = 'button';
-		chevronToggle.className = 'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md';
+		chevronToggle.className = 'flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-surface-raised transition-colors hover:bg-border/30';
 		chevronToggle.setAttribute('aria-label', 'Toggle artist details');
 		chevronToggle.appendChild(chevron);
 		chevronToggle.addEventListener('click', (event) => {
@@ -229,43 +225,34 @@ import { ICON_PATHS, createArtistChip, createChevronIcon, createEditIconButton }
 		addDisclosureBehavior(details, chevron);
 
 		const body = document.createElement('div');
-		body.className = 'mt-3 space-y-3 rounded-lg border p-3';
-		body.style.borderColor = 'var(--border)';
-		body.style.background = 'var(--surface)';
+		body.className = 'border-t border-border/30 bg-surface-raised/50 p-4 sm:p-5';
 		const created = document.createElement('p');
-		created.className = 'text-sm';
-		created.style.color = 'var(--text-muted)';
-		created.textContent = `Created: ${formatDateTime(artist.created_at)}`;
+		created.className = 'mb-4 text-sm text-text-muted';
+		created.textContent = `Added: ${formatDateTime(artist.created_at)}`;
 		body.appendChild(created);
 		const title = document.createElement('h4');
-		title.className = 'text-sm font-semibold';
-		title.style.color = 'var(--text)';
+		title.className = 'mb-3 text-sm font-semibold text-text uppercase tracking-wider';
 		title.textContent = 'Albums';
 		body.appendChild(title);
 
 		if (albums.length === 0) {
 			const empty = document.createElement('p');
-			empty.className = 'text-sm';
-			empty.style.color = 'var(--text-muted)';
+			empty.className = 'text-sm text-text-muted italic';
 			empty.textContent = 'No albums yet.';
 			body.appendChild(empty);
 		} else {
 			const list = document.createElement('ul');
-			list.className = 'space-y-2';
+			list.className = 'flex flex-col';
 			for (const album of sortAlbums(albums)) {
 				const item = document.createElement('li');
-				item.className = 'flex flex-col gap-1.5 rounded-lg border px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between';
-				item.style.borderColor = 'var(--border)';
-				item.style.background = 'var(--surface-raised)';
+				item.className = 'flex flex-col gap-2 border-b border-border/20 px-4 py-3 last:border-0 sm:flex-row sm:items-center sm:justify-between';
 				const left = document.createElement('div');
 				left.className = 'min-w-0 flex-1';
 				const albumTitle = document.createElement('p');
-				albumTitle.className = 'truncate font-medium';
-				albumTitle.style.color = 'var(--text)';
+				albumTitle.className = 'truncate font-medium text-text';
 				albumTitle.textContent = album.title;
 				const albumMeta = document.createElement('p');
-				albumMeta.className = 'text-xs';
-				albumMeta.style.color = 'var(--text-muted)';
+				albumMeta.className = 'mt-0.5 text-xs text-text-muted';
 				left.appendChild(albumTitle);
 				if (album.year != null) {
 					albumMeta.textContent = String(album.year);

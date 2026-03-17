@@ -6,17 +6,17 @@ interface Props {
 const { current } = Astro.props;
 
 const baseClass =
-	'flex min-h-12 flex-col items-center justify-center rounded-xl px-2 py-2 text-[11px] font-semibold leading-tight transition-colors';
+	'flex min-h-[4rem] flex-col items-center justify-center rounded-2xl px-2 py-1 text-[11px] font-semibold leading-tight transition-all duration-300 active:scale-95';
 const activeClass = 'text-primary';
 const inactiveClass = 'text-text-muted hover:text-text';
 ---
 
 <nav
-	class='fixed right-4 left-4 z-40 rounded-2xl border border-border bg-surface-raised/85 shadow-lg backdrop-blur-md dark:shadow-black/20'
-	style='bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);'
+	class='fixed right-4 left-4 z-40 mx-auto max-w-md rounded-[2.5rem] border border-border/50 bg-surface-raised/90 p-2 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:shadow-black/40'
+	style='bottom: calc(var(--safe-bottom) + 0.5rem);'
 >
-	<div class='grid w-full grid-cols-4 px-2 pb-2 sm:px-4'>
-		<div class='border-r border-border'>
+	<div class='flex w-full items-center justify-between gap-1'>
+		<div class='flex-1'>
 			<a href='/' class={`${baseClass} ${current === 'home' ? activeClass : inactiveClass}`}>
 				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<path d='M3 11.5 12 4l9 7.5'></path>
@@ -26,7 +26,7 @@ const inactiveClass = 'text-text-muted hover:text-text';
 				<span class='mt-1 text-sm'>Home</span>
 			</a>
 		</div>
-		<div class='border-r border-border'>
+		<div class='flex-1'>
 			<a href='/albums' class={`${baseClass} ${current === 'albums' ? activeClass : inactiveClass}`}>
 				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<circle cx='12' cy='12' r='8'></circle>
@@ -35,7 +35,7 @@ const inactiveClass = 'text-text-muted hover:text-text';
 				<span class='mt-1 text-sm'>Albums</span>
 			</a>
 		</div>
-		<div class='border-r border-border'>
+		<div class='flex-1'>
 			<a href='/artists' class={`${baseClass} ${current === 'artists' ? activeClass : inactiveClass}`}>
 				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<circle cx='12' cy='7' r='4'></circle>
@@ -44,7 +44,7 @@ const inactiveClass = 'text-text-muted hover:text-text';
 				<span class='mt-1 text-sm'>Artists</span>
 			</a>
 		</div>
-		<div>
+		<div class='flex-1'>
 			<button
 				type='button'
 				id='open-create-tab'

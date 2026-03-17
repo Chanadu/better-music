@@ -9,12 +9,13 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout>
 	<AuthGuard />
-	<main class="min-h-screen bg-gradient-to-br from-bg to-surface-raised px-4 py-8 pb-28 sm:px-6 sm:py-12 md:px-8">
-		<div class="mx-auto max-w-4xl">
-			<AppHeader title="Albums" />
-			<div class="rounded-2xl border-2 border-border bg-surface p-6 shadow-lg sm:p-8">
-				<AlbumCollection />
+	<AppHeader title="Albums" />
+	<main class="min-h-screen bg-gradient-to-br from-bg to-surface-raised px-4 pt-6 pb-28 sm:px-6 sm:pt-8 md:px-8">
+		<div class="mx-auto max-w-4xl space-y-6">
+			<div class="flex items-center justify-between">
+				<h2 class="text-xl font-bold tracking-tight text-text">Your Albums</h2>
 			</div>
+			<AlbumCollection />
 		</div>
 	</main>
 

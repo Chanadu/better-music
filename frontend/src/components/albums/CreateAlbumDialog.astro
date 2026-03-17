@@ -2,58 +2,54 @@
 import ModalHeader from '../ui/ModalHeader.astro';
 ---
 
-<dialog
-	id="album-modal"
-	class="w-[min(92vw,32rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/45"
-	style="border-color: var(--border); background: var(--surface); color: var(--text); margin: auto;"
->
-	<form id="album-form" class="space-y-4 p-5">
+<dialog id="album-modal" class="w-[min(92vw,36rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50">
+	<form id="album-form" class="space-y-4 p-5 sm:p-6">
 		<ModalHeader title="Create Album" modalId="album-modal" />
 
 		<div>
 			<label for="album-title" class="block text-sm font-semibold">Title</label>
-			<input id="album-title" name="title" required class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="Abbey Road" />
+			<input id="album-title" name="title" required class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="Abbey Road" />
 		</div>
 
 		<div>
 			<label for="album-artist-id" class="block text-sm font-semibold">Artist</label>
-			<select id="album-artist-id" name="artist_id" required class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);">
+			<select id="album-artist-id" name="artist_id" required class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20">
 				<option value="">Select an artist</option>
 			</select>
 		</div>
 
 		<div>
 			<label for="album-cover-url" class="block text-sm font-semibold">Cover URL (optional)</label>
-			<input id="album-cover-url" name="cover_url" class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="https://example.com/cover.jpg" />
+			<input id="album-cover-url" name="cover_url" class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="https://example.com/cover.jpg" />
 		</div>
 
 		<div>
 			<label for="album-year" class="block text-sm font-semibold">Year (optional)</label>
-			<input id="album-year" name="year" type="number" min="0" class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="1969" />
+			<input id="album-year" name="year" type="number" min="0" class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="1969" />
 		</div>
 
 		<label for="album-listened" class="flex items-center gap-2 text-sm font-semibold">
-			<input id="album-listened" name="listened" type="checkbox" class="h-4 w-4 rounded border" style="border-color: var(--border);" />
+			<input id="album-listened" name="listened" type="checkbox" class="h-5 w-5 rounded border border-border focus:ring-primary focus:ring-2" />
 			Listened
 		</label>
 
 		<div id="album-listened-options" class="hidden space-y-4">
 			<div>
 				<label for="album-rating" class="block text-sm font-semibold">Rating (optional)</label>
-				<input id="album-rating" name="rating" type="number" min="1" max="10" class="mt-2 w-full rounded-lg border px-3 py-2" style="border-color: var(--border); background: var(--surface-raised);" placeholder="8" />
+				<input id="album-rating" name="rating" type="number" min="1" max="10" class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="8" />
 			</div>
 
 			<div>
 				<label for="album-listened-at" class="block text-sm font-semibold">Listened At (optional)</label>
-				<div class="mt-2 w-full overflow-hidden rounded-lg border" style="border-color: var(--border); background: var(--surface-raised);">
-					<input id="album-listened-at" name="listened_at" type="date" class="ios-date-field w-full border-0 px-3 py-2" style="background: transparent;" />
+				<div class="mt-2 w-full overflow-hidden rounded-xl border border-border bg-surface-raised focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/20">
+					<input id="album-listened-at" name="listened_at" type="date" class="ios-date-field w-full border-0 bg-transparent px-4 py-3 text-base text-text" />
 				</div>
 			</div>
 		</div>
 
-		<p id="album-form-status" class="text-sm" style="color: var(--text-muted);"></p>
+		<p id="album-form-status" class="text-sm text-text-muted"></p>
 
-		<button type="submit" id="album-create-btn" class="mx-auto block cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50" style="background: var(--primary); color: var(--primary-fg);">
+		<button type="submit" id="album-create-btn" class="mx-auto block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto mt-2">
 			Create Album
 		</button>
 	</form>

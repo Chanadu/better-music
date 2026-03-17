@@ -1,7 +1,8 @@
 <div id="albums-list" class="space-y-3"></div>
 
-<dialog id="edit-album-modal" class="w-[min(92vw,36rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/45">
-	<form id="edit-album-form" class="space-y-3 p-5">
+<dialog id="edit-album-modal" class="mt-auto w-full rounded-b-none rounded-t-3xl border-t border-border bg-surface p-0 text-text shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] backdrop:bg-black/60 sm:m-auto sm:w-[min(92vw,36rem)] sm:rounded-2xl sm:border sm:shadow-2xl sm:backdrop:bg-black/45" style="margin-bottom: 0;">
+	<form id="edit-album-form" class="space-y-4 p-6 sm:p-5 pb-8 sm:pb-5">
+		<div class="mx-auto h-1.5 w-12 rounded-full bg-border/60 sm:hidden"></div>
 		<div class="flex items-center justify-between">
 			<h3 class="text-lg font-semibold">Edit Album</h3>
 			<button type="button" id="edit-album-close" class="inline-flex cursor-pointer items-center justify-center rounded-md p-1 text-text-muted hover:bg-surface-raised" aria-label="Close">
@@ -13,19 +14,19 @@
 		</div>
 
 		<input id="edit-album-id" type="hidden" />
-		<input id="edit-album-title" required class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-text focus:border-primary focus:ring-2 focus:ring-primary/50" placeholder="Title" />
-		<select id="edit-album-artist-id" required class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-text focus:border-primary focus:ring-2 focus:ring-primary/50"></select>
-		<input id="edit-album-cover-url" class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-text focus:border-primary focus:ring-2 focus:ring-primary/50" placeholder="Cover URL" />
-		<input id="edit-album-year" type="number" min="0" class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-text focus:border-primary focus:ring-2 focus:ring-primary/50" placeholder="Year" />
-		<label for="edit-album-listened" class="flex items-center gap-2 text-sm font-semibold"><input id="edit-album-listened" type="checkbox" class="h-4 w-4 rounded border border-border focus:ring-primary" /> Listened</label>
-		<input id="edit-album-rating" type="number" min="1" max="10" class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-text focus:border-primary focus:ring-2 focus:ring-primary/50 disabled:opacity-50" placeholder="Rating" />
-		<div class="w-full overflow-hidden rounded-lg border border-border bg-surface-raised focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/50 disabled:opacity-50">
-			<input id="edit-album-listened-at" type="date" class="ios-date-field w-full border-0 bg-transparent px-3 py-2 text-text disabled:opacity-50" />
+		<input id="edit-album-title" required class="w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="Title" />
+		<select id="edit-album-artist-id" required class="w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20"></select>
+		<input id="edit-album-cover-url" class="w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="Cover URL" />
+		<input id="edit-album-year" type="number" min="0" class="w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="Year" />
+		<label for="edit-album-listened" class="flex items-center gap-2 text-sm font-semibold"><input id="edit-album-listened" type="checkbox" class="h-5 w-5 rounded border border-border focus:ring-primary focus:ring-2" /> Listened</label>
+		<input id="edit-album-rating" type="number" min="1" max="10" class="w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20 disabled:opacity-50" placeholder="Rating" />
+		<div class="w-full overflow-hidden rounded-xl border border-border bg-surface-raised focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/20 disabled:opacity-50">
+			<input id="edit-album-listened-at" type="date" class="ios-date-field w-full border-0 bg-transparent px-4 py-3 text-base text-text disabled:opacity-50" />
 		</div>
 		<p id="edit-album-status" class="text-sm text-text-muted"></p>
-		<div class="flex items-center justify-between gap-3">
-			<button type="button" id="edit-album-delete" class="cursor-pointer rounded-lg bg-error px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-red-600 active:scale-95">Delete</button>
-			<button type="submit" id="edit-album-submit" class="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-md transition-all hover:bg-primary-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-50">Save</button>
+		<div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0">
+			<button type="button" id="edit-album-delete" class="cursor-pointer rounded-xl bg-error px-4 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-red-600 active:scale-95 w-full sm:w-auto sm:text-sm sm:py-2">Delete</button>
+			<button type="submit" id="edit-album-submit" class="cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md transition-all hover:bg-primary-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 w-full sm:w-auto sm:text-sm sm:py-2">Save</button>
 		</div>
 	</form>
 </dialog>
@@ -178,15 +179,13 @@ import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } 
 
 	const renderAlbumCard = (album: Album, artistName: string) => {
 		const details = document.createElement('details');
-		details.className = 'overflow-hidden rounded-xl border p-4';
-		details.style.borderColor = 'var(--border)';
-		details.style.background = 'var(--surface-raised)';
+		details.className = 'group overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm transition-all duration-300 hover:shadow-md dark:shadow-black/20';
 
 		const summary = document.createElement('summary');
 		summary.className = 'cursor-pointer list-none';
 
 		const topRow = document.createElement('div');
-		topRow.className = 'flex min-w-0 items-start gap-3';
+		topRow.className = 'flex min-w-0 items-center justify-between gap-3 p-4 sm:p-5';
 
 		const leftWrap = document.createElement('div');
 		leftWrap.className = 'flex min-w-0 flex-1 items-start gap-3';
@@ -195,8 +194,7 @@ import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } 
 			const img = document.createElement('img');
 			img.src = album.cover_url;
 			img.alt = `${album.title} cover`;
-			img.className = 'h-16 w-16 rounded-lg border object-cover';
-			img.style.borderColor = 'var(--border)';
+			img.className = 'h-14 w-14 rounded-lg border border-border/50 object-cover shadow-sm sm:h-16 sm:w-16';
 			leftWrap.appendChild(img);
 		}
 
@@ -206,8 +204,7 @@ import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } 
 		const titleRow = document.createElement('div');
 		titleRow.className = 'flex min-h-8 items-center';
 		const title = document.createElement('h3');
-		title.className = 'text-lg font-semibold';
-		title.style.color = 'var(--text)';
+		title.className = 'truncate text-base font-bold text-text sm:text-lg';
 		title.textContent = album.title;
 		titleRow.appendChild(title);
 		content.appendChild(titleRow);
@@ -217,20 +214,17 @@ import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } 
 		const artistYearWrap = document.createElement('div');
 		artistYearWrap.className = 'flex min-w-0 items-baseline gap-2';
 		const meta = document.createElement('p');
-		meta.className = 'text-sm';
-		meta.style.color = 'var(--text-muted)';
+		meta.className = 'truncate text-sm text-text-muted';
 		meta.textContent = artistName;
 		artistYearWrap.appendChild(meta);
 		if (album.year != null) {
 			const separator = document.createElement('span');
-			separator.className = 'text-sm';
-			separator.style.color = 'var(--text-muted)';
+			separator.className = 'text-xs text-text-muted/60';
 			separator.textContent = '•';
 			artistYearWrap.appendChild(separator);
 
 			const yearLine = document.createElement('span');
-			yearLine.className = 'text-sm';
-			yearLine.style.color = 'var(--text-muted)';
+			yearLine.className = 'text-sm text-text-muted';
 			yearLine.textContent = String(album.year);
 			artistYearWrap.appendChild(yearLine);
 		}
@@ -259,7 +253,7 @@ import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } 
 
 		const chevronToggle = document.createElement('button');
 		chevronToggle.type = 'button';
-		chevronToggle.className = 'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md';
+		chevronToggle.className = 'flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-surface-raised transition-colors hover:bg-border/30';
 		chevronToggle.setAttribute('aria-label', 'Toggle album details');
 		chevronToggle.appendChild(chevron);
 		chevronToggle.addEventListener('click', (event) => {
@@ -275,10 +269,7 @@ import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } 
 		addDisclosureBehavior(details, chevron);
 
 		const dropdown = document.createElement('div');
-		dropdown.className = 'mt-3 grid gap-2 rounded-lg border p-3 text-sm';
-		dropdown.style.borderColor = 'var(--border)';
-		dropdown.style.background = 'var(--surface)';
-		dropdown.style.color = 'var(--text-muted)';
+		dropdown.className = 'border-t border-border/30 bg-surface-raised/50 p-4 text-sm text-text-muted sm:p-5';
 		const created = document.createElement('p');
 		created.textContent = `Created: ${formatDateTime(album.created_at)}`;
 		dropdown.appendChild(created);

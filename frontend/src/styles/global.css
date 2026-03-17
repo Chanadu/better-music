@@ -40,35 +40,65 @@
 :root {
 	color-scheme: light;
 
-	--bg: oklch(98% 0.008 270);
+	--bg: oklch(98.5% 0.005 270);
 	--surface: oklch(100% 0 0);
-	--surface-raised: oklch(95% 0.012 270);
-	--border: oklch(88% 0.018 270);
+	--surface-raised: oklch(96% 0.01 270);
+	--border: oklch(90% 0.015 270);
 
-	--primary: #3b82f6;
+	/* Vibrant primary blue */
+	--primary: #2563eb;
 	--primary-fg: #ffffff;
-	--primary-hover: #60a5fa;
+	--primary-hover: #3b82f6;
 
-	--secondary: oklch(50% 0.2 285);
-	--secondary-hover: oklch(58% 0.22 285);
+	/* Soft secondary */
+	--secondary: oklch(50% 0.15 285);
+	--secondary-hover: oklch(55% 0.18 285);
 	--secondary-fg: oklch(100% 0 0);
 
-	--text: oklch(14% 0.015 270);
-	--text-muted: oklch(50% 0.035 270);
+	--text: oklch(20% 0.01 270);
+	--text-muted: oklch(0.55 0.02 245);
 
-	--success: oklch(62% 0.19 142);
-	--error: oklch(58% 0.22 25);
+	--success: oklch(0.65 0.15 150);
+	--error: oklch(0.6 0.18 20);
 	--warning: oklch(72% 0.18 70);
+	
+	/* Mobile Safe Area */
+	--safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+@keyframes modal-pop {
+	0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+	100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes backdrop-fade {
+	0% { opacity: 0; }
+	100% { opacity: 1; }
+}
+
+dialog[open] {
+	animation: modal-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+dialog::backdrop {
+	animation: backdrop-fade 0.3s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	dialog[open], dialog::backdrop {
+		animation: none;
+	}
 }
 
 /* ── Dark mode ───────────────────────────────────────────────────────────── */
 .dark {
 	color-scheme: dark;
 
-	--bg: #282c34;
-	--surface: #2c313c;
-	--surface-raised: #353b45;
-	--border: #3e4451;
+	/* Elegant, deep slate background */
+	--bg: #0f172a;
+	--surface: #1e293b;
+	--surface-raised: #334155;
+	--border: #475569;
 
 	--primary: #3b82f6;
 	--primary-fg: #ffffff;
@@ -78,8 +108,8 @@
 	--secondary-hover: oklch(66% 0.22 285);
 	--secondary-fg: oklch(100% 0 0);
 
-	--text: oklch(94% 0.01 270);
-	--text-muted: oklch(64% 0.035 270);
+	--text: oklch(96% 0.01 270);
+	--text-muted: oklch(70% 0.03 270);
 
 	--success: oklch(68% 0.19 142);
 	--error: oklch(65% 0.22 25);

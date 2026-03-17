@@ -4,10 +4,10 @@ import { ClientRouter } from 'astro:transitions';
 ---
 
 <!doctype html>
-<html lang='en' class='m-0 h-full w-full'>
+<html lang='en' class='m-0 min-h-screen w-full'>
 	<head>
 		<meta charset='UTF-8' />
-		<meta name='viewport' content='width=device-width' />
+		<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover' />
 		<ClientRouter />
 		<meta id='theme-color-meta' name='theme-color' content='#f6f7fb' />
 		<!-- <link rel='icon' type='image/svg+xml' href='/favicon.svg' /> -->
@@ -19,8 +19,7 @@ import { ClientRouter } from 'astro:transitions';
 			(function () {
 				const themeMeta = document.getElementById('theme-color-meta');
 				const setThemeColor = (isDark) => {
-					if (!themeMeta) return;
-					themeMeta.setAttribute('content', isDark ? '#282c34' : '#f6f7fb');
+					themeMeta.setAttribute('content', isDark ? '#0f172a' : '#f6f7fb');
 				};
 
 				const syncSavedTheme = () => {
@@ -37,7 +36,7 @@ import { ClientRouter } from 'astro:transitions';
 			})();
 		</script>
 	</head>
-	<body class='m-0 h-full w-full'>
+	<body class='m-0 min-h-screen w-full'>
 		<slot />
 		<script>
 			// Exposed for pages that need to trigger a theme toggle programmatically.
@@ -53,7 +52,7 @@ import { ClientRouter } from 'astro:transitions';
 				localStorage.setItem('theme', isDark ? 'dark' : 'light');
 				const themeMeta = document.getElementById('theme-color-meta');
 				if (themeMeta) {
-					themeMeta.setAttribute('content', isDark ? '#282c34' : '#f6f7fb');
+					themeMeta.setAttribute('content', isDark ? '#0f172a' : '#f6f7fb');
 				}
 			};
 
