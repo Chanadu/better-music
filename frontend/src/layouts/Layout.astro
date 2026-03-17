@@ -4,7 +4,7 @@ import { ClientRouter } from 'astro:transitions';
 ---
 
 <!doctype html>
-<html lang='en' class='m-0 min-h-screen w-full'>
+<html lang='en' class='m-0 min-h-screen w-full overscroll-y-none bg-surface-raised'>
 	<head>
 		<meta charset='UTF-8' />
 		<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover' />
@@ -36,7 +36,7 @@ import { ClientRouter } from 'astro:transitions';
 			})();
 		</script>
 	</head>
-	<body class='m-0 min-h-screen w-full'>
+	<body class='m-0 min-h-screen w-full overscroll-y-none'>
 		<slot />
 		<script>
 			// Exposed for pages that need to trigger a theme toggle programmatically.

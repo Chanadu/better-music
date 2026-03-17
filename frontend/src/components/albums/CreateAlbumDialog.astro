@@ -8,40 +8,40 @@ import ModalHeader from '../ui/ModalHeader.astro';
 
 		<div>
 			<label for="album-title" class="block text-sm font-semibold">Title</label>
-			<input id="album-title" name="title" required class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="Abbey Road" />
+			<input id="album-title" name="title" required class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="Abbey Road" />
 		</div>
 
 		<div>
 			<label for="album-artist-id" class="block text-sm font-semibold">Artist</label>
-			<select id="album-artist-id" name="artist_id" required class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20">
+			<select id="album-artist-id" name="artist_id" required class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10">
 				<option value="">Select an artist</option>
 			</select>
 		</div>
 
 		<div>
 			<label for="album-cover-url" class="block text-sm font-semibold">Cover URL (optional)</label>
-			<input id="album-cover-url" name="cover_url" class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="https://example.com/cover.jpg" />
+			<input id="album-cover-url" name="cover_url" class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="https://example.com/cover.jpg" />
 		</div>
 
 		<div>
 			<label for="album-year" class="block text-sm font-semibold">Year (optional)</label>
-			<input id="album-year" name="year" type="number" min="0" class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="1969" />
+			<input id="album-year" name="year" type="number" min="0" class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="1969" />
 		</div>
 
 		<label for="album-listened" class="flex items-center gap-2 text-sm font-semibold">
-			<input id="album-listened" name="listened" type="checkbox" class="h-5 w-5 rounded border border-border focus:ring-primary focus:ring-2" />
+			<input id="album-listened" name="listened" type="checkbox" class="h-5 w-5 rounded border border-border/60 bg-surface-raised/50 text-primary transition-all duration-200 focus:ring-2 focus:ring-primary/50" />
 			Listened
 		</label>
 
 		<div id="album-listened-options" class="hidden space-y-4">
 			<div>
 				<label for="album-rating" class="block text-sm font-semibold">Rating (optional)</label>
-				<input id="album-rating" name="rating" type="number" min="1" max="10" class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base text-text focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="8" />
+				<input id="album-rating" name="rating" type="number" min="1" max="10" class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10 disabled:opacity-50" placeholder="8" />
 			</div>
 
 			<div>
 				<label for="album-listened-at" class="block text-sm font-semibold">Listened At (optional)</label>
-				<div class="mt-2 w-full overflow-hidden rounded-xl border border-border bg-surface-raised focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/20">
+				<div class="mt-2 w-full overflow-hidden rounded-xl border border-border/60 bg-surface-raised/50 transition-all duration-200 focus-within:border-primary/60 focus-within:bg-surface-raised focus-within:ring-4 focus-within:ring-primary/10">
 					<input id="album-listened-at" name="listened_at" type="date" class="ios-date-field w-full border-0 bg-transparent px-4 py-3 text-base text-text" />
 				</div>
 			</div>
@@ -49,7 +49,7 @@ import ModalHeader from '../ui/ModalHeader.astro';
 
 		<p id="album-form-status" class="text-sm text-text-muted"></p>
 
-		<button type="submit" id="album-create-btn" class="mx-auto block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto mt-2">
+		<button type="submit" id="album-create-btn" class="mx-auto mt-6 block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto">
 			Create Album
 		</button>
 	</form>

@@ -121,12 +121,18 @@ export const bindSwipe = (
 	let currentX = 0;
 	let isDragging = false;
 	let isScrolling: boolean | null = null;
-	const threshold = 75; 
+	const actionThreshold = Math.min(window.innerWidth * 0.4, 150); // Require swiping at least 40% of screen or 150px
+	const velocityThreshold = 0.8;
+	const slideOutDuration = 250;
+	let lastTouchTime = 0;
+	let lastTouchX = 0;
 
 	container.addEventListener('touchstart', (e) => {
 		if (e.touches.length > 1) return;
 		startX = e.touches[0].clientX;
 		startY = e.touches[0].clientY;
+		lastTouchX = startX;
+		lastTouchTime = Date.now();
 		isDragging = true;
 		isScrolling = null;
 		foreground.style.transition = 'none';
@@ -134,10 +140,11 @@ export const bindSwipe = (
 
 	container.addEventListener('touchmove', (e) => {
 		if (!isDragging) return;
-		const x = e.touches[0].clientX;
-		const y = e.touches[0].clientY;
-		const deltaX = x - startX;
-		const deltaY = y - startY;
+		
+		const currentTouchX = e.touches[0].clientX;
+		const currentTouchY = e.touches[0].clientY;
+		const deltaX = currentTouchX - startX;
+		const deltaY = currentTouchY - startY;
 
 		if (isScrolling === null) {
 			isScrolling = Math.abs(deltaY) > Math.abs(deltaX);
@@ -148,27 +155,51 @@ export const bindSwipe = (
 			return;
 		}
 
-		currentX = deltaX;
-		if (currentX > 0) currentX = Math.min(currentX, 100);
-		else currentX = Math.max(currentX, -100);
-
-		foreground.style.transform = `translateX(${currentX}px)`;
 		if (e.cancelable) e.preventDefault();
+		
+		currentX = deltaX;
+		lastTouchX = currentTouchX;
+		lastTouchTime = Date.now();
+		
+		foreground.style.transform = `translateX(${currentX}px)`;
 	}, { passive: false });
 
 	container.addEventListener('touchend', () => {
 		if (!isDragging) return;
 		isDragging = false;
 		
-		foreground.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+		const timeDelta = Date.now() - lastTouchTime;
+		const velocityX = timeDelta > 0 ? (currentX - (lastTouchX - startX)) / timeDelta : 0;
 		
-		if (currentX > threshold) {
-			onSwipeRight();
-		} else if (currentX < -threshold) {
-			onSwipeLeft();
+		const triggerRight = currentX > actionThreshold || velocityX > velocityThreshold;
+		const triggerLeft = currentX < -actionThreshold || velocityX < -velocityThreshold;
+
+		if (triggerRight) {
+			// Slide all the way right
+			foreground.style.transition = `transform ${slideOutDuration}ms cubic-bezier(0.32, 0.72, 0, 1)`;
+			foreground.style.transform = `translateX(${window.innerWidth}px)`;
+			setTimeout(() => {
+				onSwipeRight();
+				// Reset position after action triggers
+				foreground.style.transition = 'none';
+				foreground.style.transform = 'translateX(0)';
+			}, slideOutDuration);
+		} else if (triggerLeft) {
+			// Slide all the way left
+			foreground.style.transition = `transform ${slideOutDuration}ms cubic-bezier(0.32, 0.72, 0, 1)`;
+			foreground.style.transform = `translateX(-${window.innerWidth}px)`;
+			setTimeout(() => {
+				onSwipeLeft();
+				// Reset position after action triggers
+				foreground.style.transition = 'none';
+				foreground.style.transform = 'translateX(0)';
+			}, slideOutDuration);
+		} else {
+			// Snap back
+			foreground.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+			foreground.style.transform = 'translateX(0)';
 		}
 		
-		foreground.style.transform = 'translateX(0)';
 		currentX = 0;
 	});
 };

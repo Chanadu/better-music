@@ -11,12 +11,12 @@ import ModalHeader from '../ui/ModalHeader.astro';
 
 		<div>
 			<label for="artist-name" class="block text-sm font-semibold">Name</label>
-			<input id="artist-name" name="name" required class="mt-2 w-full rounded-xl border border-border bg-surface-raised px-4 py-3 text-base focus:border-primary focus:ring-4 focus:ring-primary/20" placeholder="The Beatles" />
+			<input id="artist-name" name="name" required class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="The Beatles" />
 		</div>
 
 		<p id="artist-form-status" class="text-sm text-text-muted"></p>
 
-		<button type="submit" id="artist-create-btn" class="mx-auto block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto">
+		<button type="submit" id="artist-create-btn" class="mx-auto mt-4 block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto">
 			Create Artist
 		</button>
 	</form>

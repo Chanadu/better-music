@@ -12,11 +12,11 @@
 			</button>
 		</div>
 		<input id="edit-artist-id" type="hidden" />
-		<input id="edit-artist-name" required class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-text focus:border-primary focus:ring-2 focus:ring-primary/50" placeholder="Name" />
+		<input id="edit-artist-name" required class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="The Beatles" />
 		<p id="edit-artist-status" class="text-sm text-text-muted"></p>
-		<div class="flex items-center justify-between gap-3">
-			<button type="button" id="edit-artist-delete" class="cursor-pointer rounded-lg bg-error px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-red-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40">Delete</button>
-			<button type="submit" id="edit-artist-submit" class="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-md transition-all hover:bg-primary-hover active:scale-95 disabled:cursor-not-allowed disabled:opacity-50">Save</button>
+		<div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0">
+			<button type="button" id="edit-artist-delete" class="w-full cursor-pointer rounded-xl bg-error/90 px-4 py-3 text-base font-semibold text-white shadow-sm shadow-error/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-error hover:shadow-md hover:shadow-error/30 focus:ring-4 focus:ring-error/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:py-2 sm:text-sm">Delete</button>
+			<button type="submit" id="edit-artist-submit" class="w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto sm:py-2 sm:text-sm">Save</button>
 		</div>
 	</form>
 </dialog>
