@@ -2,6 +2,8 @@ export const ICON_PATHS = {
 	listened: 'M5 12l5 5L20 7',
 	newSparkle: 'M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8',
 	ratingStar: 'M12 17.3l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8L12 4l2.6 5.3 5.8.8-4.2 4.1 1 5.8z',
+	edit: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z',
+	trash: 'M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
 } as const;
 
 type Tone = 'neutral' | 'secondary' | 'primary';
@@ -106,4 +108,67 @@ export const createEditIconButton = (label: string) => {
 
 	button.appendChild(icon);
 	return button;
+};
+
+export const bindSwipe = (
+	container: HTMLElement,
+	foreground: HTMLElement,
+	onSwipeLeft: () => void,
+	onSwipeRight: () => void
+) => {
+	let startX = 0;
+	let startY = 0;
+	let currentX = 0;
+	let isDragging = false;
+	let isScrolling: boolean | null = null;
+	const threshold = 75; 
+
+	container.addEventListener('touchstart', (e) => {
+		if (e.touches.length > 1) return;
+		startX = e.touches[0].clientX;
+		startY = e.touches[0].clientY;
+		isDragging = true;
+		isScrolling = null;
+		foreground.style.transition = 'none';
+	}, { passive: true });
+
+	container.addEventListener('touchmove', (e) => {
+		if (!isDragging) return;
+		const x = e.touches[0].clientX;
+		const y = e.touches[0].clientY;
+		const deltaX = x - startX;
+		const deltaY = y - startY;
+
+		if (isScrolling === null) {
+			isScrolling = Math.abs(deltaY) > Math.abs(deltaX);
+		}
+
+		if (isScrolling) {
+			isDragging = false;
+			return;
+		}
+
+		currentX = deltaX;
+		if (currentX > 0) currentX = Math.min(currentX, 100);
+		else currentX = Math.max(currentX, -100);
+
+		foreground.style.transform = `translateX(${currentX}px)`;
+		if (e.cancelable) e.preventDefault();
+	}, { passive: false });
+
+	container.addEventListener('touchend', () => {
+		if (!isDragging) return;
+		isDragging = false;
+		
+		foreground.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+		
+		if (currentX > threshold) {
+			onSwipeRight();
+		} else if (currentX < -threshold) {
+			onSwipeLeft();
+		}
+		
+		foreground.style.transform = 'translateX(0)';
+		currentX = 0;
+	});
 };

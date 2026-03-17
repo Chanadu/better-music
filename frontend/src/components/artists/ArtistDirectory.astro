@@ -24,7 +24,7 @@
 <script>
 	import { apiFetch } from '../../lib/api';
 import { formatDateTime } from '../../lib/date';
-import { ICON_PATHS, createArtistChip, createChevronIcon, createEditIconButton } from '../../lib/ui';
+import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditIconButton } from '../../lib/ui';
 
 	type Artist = {
 		id: number;
@@ -105,6 +105,21 @@ import { ICON_PATHS, createArtistChip, createChevronIcon, createEditIconButton }
 		}
 	};
 
+	const deleteArtist = async (id: number, name: string, albumCount: number) => {
+		if (albumCount > 0) {
+			window.alert(`Cannot delete "${name}" because they have ${albumCount} album(s). Delete the albums first.`);
+			return;
+		}
+		if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
+		const response = await apiFetch(`/api/artists/${id}`, { method: 'DELETE' }, { auth: true });
+		if (!response.ok) {
+			window.alert('Failed to delete artist.');
+			return;
+		}
+		editArtistDialog?.close();
+		window.dispatchEvent(new CustomEvent('artist-created'));
+	};
+
 	const addDisclosureBehavior = (details: HTMLDetailsElement, chevron: SVGSVGElement) => {
 		const syncChevron = () => {
 			chevron.style.transform = details.open ? 'rotate(180deg)' : 'rotate(0deg)';
@@ -136,19 +151,12 @@ import { ICON_PATHS, createArtistChip, createChevronIcon, createEditIconButton }
 
 		editArtistDeleteBtn?.addEventListener('click', async () => {
 			if (!editArtistIDInput || !editArtistNameInput || !editArtistDeleteBtn || !editArtistSubmit) return;
-			if (!window.confirm(`Delete "${editArtistNameInput.value}"? This cannot be undone.`)) return;
 			editArtistDeleteBtn.disabled = true;
 			editArtistSubmit.disabled = true;
 			setEditStatus('Deleting...');
-			const response = await apiFetch(`/api/artists/${Number(editArtistIDInput.value)}`, { method: 'DELETE' }, { auth: true });
-			if (!response.ok) {
-				setEditStatus('Failed to delete artist.', 'error');
-				editArtistDeleteBtn.disabled = currentArtistAlbumCount > 0;
-				editArtistSubmit.disabled = false;
-				return;
-			}
-			editArtistDialog?.close();
-			window.dispatchEvent(new CustomEvent('artist-created'));
+			await deleteArtist(Number(editArtistIDInput.value), editArtistNameInput.value, currentArtistAlbumCount);
+			editArtistDeleteBtn.disabled = currentArtistAlbumCount > 0;
+			editArtistSubmit.disabled = false;
 		});
 
 		editArtistForm.addEventListener('submit', async (event) => {
@@ -177,8 +185,19 @@ import { ICON_PATHS, createArtistChip, createChevronIcon, createEditIconButton }
 	};
 
 	const renderArtistCard = (artist: Artist, albums: Album[]) => {
+		const wrapper = document.createElement('div');
+		wrapper.className = 'relative mb-3 overflow-hidden rounded-2xl last:mb-0';
+
+		const bgActions = document.createElement('div');
+		bgActions.className = 'absolute inset-0 flex';
+		bgActions.innerHTML = `
+			<div class="flex flex-1 items-center justify-start bg-primary px-6 text-primary-fg"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.edit}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+			<div class="flex flex-1 items-center justify-end bg-error px-6 text-white"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.trash}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+		`;
+		wrapper.appendChild(bgActions);
+
 		const details = document.createElement('details');
-		details.className = 'group overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm transition-all duration-300 hover:shadow-md dark:shadow-black/20';
+		details.className = 'group relative z-10 w-full overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm transition-transform duration-300 ease-out hover:shadow-md dark:shadow-black/20';
 
 		const summary = document.createElement('summary');
 		summary.className = 'cursor-pointer list-none';
@@ -272,7 +291,14 @@ import { ICON_PATHS, createArtistChip, createChevronIcon, createEditIconButton }
 
 		details.appendChild(summary);
 		details.appendChild(body);
-		return details;
+
+		bindSwipe(wrapper, details,
+			() => deleteArtist(artist.id, artist.name, albums.length), // Swipe Left -> Delete
+			() => openEditDialog(artist, albums.length)                // Swipe Right -> Edit
+		);
+
+		wrapper.appendChild(details);
+		return wrapper;
 	};
 
 	const loadArtists = async () => {

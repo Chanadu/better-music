@@ -34,7 +34,7 @@
 <script>
 	import { apiFetch } from '../../lib/api';
 import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
-import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } from '../../lib/ui';
+import { ICON_PATHS, bindSwipe, createAlbumPill, createChevronIcon, createEditIconButton } from '../../lib/ui';
 
 	type Album = {
 		id: number;
@@ -128,6 +128,17 @@ import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } 
 		}
 	};
 
+	const deleteAlbum = async (id: number, title: string) => {
+		if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+		const response = await apiFetch(`/api/albums/${id}`, { method: 'DELETE' }, { auth: true });
+		if (!response.ok) {
+			window.alert('Failed to delete album.');
+			return;
+		}
+		editAlbumDialog?.close();
+		window.dispatchEvent(new CustomEvent('album-created'));
+	};
+
 	const addDisclosureBehavior = (details: HTMLDetailsElement, chevron: SVGSVGElement) => {
 		const syncChevron = () => {
 			chevron.style.transform = details.open ? 'rotate(180deg)' : 'rotate(0deg)';
@@ -178,8 +189,19 @@ import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } 
 	};
 
 	const renderAlbumCard = (album: Album, artistName: string) => {
+		const wrapper = document.createElement('div');
+		wrapper.className = 'relative mb-3 overflow-hidden rounded-2xl last:mb-0';
+
+		const bgActions = document.createElement('div');
+		bgActions.className = 'absolute inset-0 flex';
+		bgActions.innerHTML = `
+			<div class="flex flex-1 items-center justify-start bg-primary px-6 text-primary-fg"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.edit}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+			<div class="flex flex-1 items-center justify-end bg-error px-6 text-white"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.trash}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+		`;
+		wrapper.appendChild(bgActions);
+
 		const details = document.createElement('details');
-		details.className = 'group overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm transition-all duration-300 hover:shadow-md dark:shadow-black/20';
+		details.className = 'group relative z-10 w-full overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm transition-transform duration-300 ease-out hover:shadow-md dark:shadow-black/20';
 
 		const summary = document.createElement('summary');
 		summary.className = 'cursor-pointer list-none';
@@ -284,7 +306,14 @@ import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } 
 
 		details.appendChild(summary);
 		details.appendChild(dropdown);
-		return details;
+
+		bindSwipe(wrapper, details,
+			() => deleteAlbum(album.id, album.title), // Swipe Left -> Delete
+			() => openEditDialog(album)               // Swipe Right -> Edit
+		);
+
+		wrapper.appendChild(details);
+		return wrapper;
 	};
 
 	const loadAlbums = async () => {
@@ -332,19 +361,12 @@ import { ICON_PATHS, createAlbumPill, createChevronIcon, createEditIconButton } 
 
 		editAlbumDeleteBtn?.addEventListener('click', async () => {
 			if (!editAlbumIDInput || !editAlbumTitleInput || !editAlbumDeleteBtn || !editAlbumSubmit) return;
-			if (!window.confirm(`Delete "${editAlbumTitleInput.value}"? This cannot be undone.`)) return;
 			editAlbumDeleteBtn.disabled = true;
 			editAlbumSubmit.disabled = true;
 			setEditStatus('Deleting...');
-			const response = await apiFetch(`/api/albums/${Number(editAlbumIDInput.value)}`, { method: 'DELETE' }, { auth: true });
-			if (!response.ok) {
-				setEditStatus('Failed to delete album.', 'error');
-				editAlbumDeleteBtn.disabled = false;
-				editAlbumSubmit.disabled = false;
-				return;
-			}
-			editAlbumDialog?.close();
-			window.dispatchEvent(new CustomEvent('album-created'));
+			await deleteAlbum(Number(editAlbumIDInput.value), editAlbumTitleInput.value);
+			editAlbumDeleteBtn.disabled = false;
+			editAlbumSubmit.disabled = false;
 		});
 
 		editAlbumForm.addEventListener('submit', async (event) => {
