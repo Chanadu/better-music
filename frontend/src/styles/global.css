@@ -61,19 +61,32 @@
 	--success: oklch(0.65 0.15 150);
 	--error: oklch(0.6 0.18 20);
 	--warning: oklch(72% 0.18 70);
-	
+	--rating-low: oklch(0.62 0.2 25);
+	--rating-mid: oklch(0.86 0.18 95);
+	--rating-high: oklch(0.72 0.18 150);
+
 	/* Mobile Safe Area */
 	--safe-bottom: env(safe-area-inset-bottom, 16px);
 }
 
 @keyframes modal-pop {
-	0% { opacity: 0; transform: scale(0.95) translateY(10px); }
-	100% { opacity: 1; transform: scale(1) translateY(0); }
+	0% {
+		opacity: 0;
+		transform: scale(0.95) translateY(10px);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
 }
 
 @keyframes backdrop-fade {
-	0% { opacity: 0; }
-	100% { opacity: 1; }
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
 }
 
 dialog[open] {
@@ -85,7 +98,8 @@ dialog::backdrop {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	dialog[open], dialog::backdrop {
+	dialog[open],
+	dialog::backdrop {
 		animation: none;
 	}
 }
@@ -114,15 +128,65 @@ dialog::backdrop {
 	--success: oklch(68% 0.19 142);
 	--error: oklch(65% 0.22 25);
 	--warning: oklch(76% 0.18 70);
+	--rating-low: oklch(0.72 0.18 25);
+	--rating-mid: oklch(0.9 0.14 95);
+	--rating-high: oklch(0.82 0.16 150);
 }
 
 /* ── Base styles ─────────────────────────────────────────────────────────── */
 body {
 	background-color: var(--bg);
+	background-image:
+		radial-gradient(circle at 14% 12%, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 42%),
+		radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--secondary) 10%, transparent) 0%, transparent 40%);
+	background-attachment: fixed;
 	color: var(--text);
 	transition:
 		background-color 0.2s ease,
 		color 0.2s ease;
+}
+
+@keyframes card-body-reveal {
+	0% {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.interactive-list-card {
+	transition:
+		transform 0.24s ease,
+		filter 0.24s ease;
+}
+
+@media (hover: hover) {
+	.interactive-list-card:hover {
+		transform: translateY(-1px);
+		filter: saturate(1.03);
+	}
+}
+
+.interactive-card-details[open] > .interactive-card-body {
+	animation: card-body-reveal 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.album-drag-active .interactive-card-details {
+	transform: scale(1.015) rotate(-0.35deg);
+	box-shadow: 0 24px 34px -26px rgba(0, 0, 0, 0.45);
+	border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+}
+
+.album-drag-chosen {
+	z-index: 20;
+}
+
+.album-drag-ghost {
+	opacity: 0.42 !important;
+	filter: saturate(0.8) blur(0.2px);
 }
 
 /* Keep iOS datetime controls from overflowing narrow dialog layouts. */

@@ -7,13 +7,14 @@ import (
 type Artist struct {
 	ID        int     `json:"id"`
 	Name      string  `json:"name"`
+	CoverURL  *string `json:"cover_url,omitempty"`
 	SpotifyID *string `json:"spotify_id,omitempty"`
 	CreatedAt string  `json:"created_at"`
 }
 
 func GetArtistsByUser(database *sql.DB, userID int) ([]Artist, error) {
 	rows, err := database.Query(
-		`SELECT id, name, spotify_id, created_at 
+		`SELECT id, name, cover_url, spotify_id, created_at 
 		FROM artists 
 		WHERE user_id = $1 
 		ORDER BY created_at DESC
@@ -29,7 +30,7 @@ func GetArtistsByUser(database *sql.DB, userID int) ([]Artist, error) {
 
 	for rows.Next() {
 		var artist Artist
-		err := rows.Scan(&artist.ID, &artist.Name, &artist.SpotifyID, &artist.CreatedAt)
+		err := rows.Scan(&artist.ID, &artist.Name, &artist.CoverURL, &artist.SpotifyID, &artist.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -47,11 +48,11 @@ func GetArtistByID(database *sql.DB, userID int, artistID int) (*Artist, error) 
 	var artist Artist
 
 	err := database.QueryRow(
-		`SELECT id, name, spotify_id, created_at
+		`SELECT id, name, cover_url, spotify_id, created_at
 		FROM artists
 		WHERE user_id = $1 AND id = $2`,
 		userID, artistID,
-	).Scan(&artist.ID, &artist.Name, &artist.SpotifyID, &artist.CreatedAt)
+	).Scan(&artist.ID, &artist.Name, &artist.CoverURL, &artist.SpotifyID, &artist.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -89,15 +90,15 @@ func ArtistExistsByID(database *sql.DB, userID int, id int) (bool, error) {
 	return exists, err
 }
 
-func CreateArtist(database *sql.DB, userID int, name string) (*Artist, error) {
+func CreateArtist(database *sql.DB, userID int, name string, coverURL *string, spotifyID *string) (*Artist, error) {
 	var artist Artist
 
 	err := database.QueryRow(
-		`INSERT INTO artists (user_id, name)
-         VALUES ($1, $2)
-		 RETURNING id, name, spotify_id, created_at`,
-		userID, name,
-	).Scan(&artist.ID, &artist.Name, &artist.SpotifyID, &artist.CreatedAt)
+		`INSERT INTO artists (user_id, name, cover_url, spotify_id)
+	         VALUES ($1, $2, $3, $4)
+		 RETURNING id, name, cover_url, spotify_id, created_at`,
+		userID, name, coverURL, spotifyID,
+	).Scan(&artist.ID, &artist.Name, &artist.CoverURL, &artist.SpotifyID, &artist.CreatedAt)
 
 	if err != nil {
 		return nil, err
@@ -129,13 +130,13 @@ func DeleteArtist(database *sql.DB, userID int, artistID int) error {
 	return nil
 }
 
-func UpdateArtist(database *sql.DB, userID int, artistID int, name *string, spotifyID *string) error {
+func UpdateArtist(database *sql.DB, userID int, artistID int, name *string, coverURL *string, spotifyID *string) error {
 	result, err := database.Exec(
 		`UPDATE artists
-		SET name = COALESCE($3, name), spotify_id = COALESCE($4, spotify_id)
+		SET name = COALESCE($3, name), cover_url = COALESCE($4, cover_url), spotify_id = COALESCE($5, spotify_id)
 		WHERE user_id = $1 AND id = $2
 		`,
-		userID, artistID, name, spotifyID,
+		userID, artistID, name, coverURL, spotifyID,
 	)
 	if err != nil {
 		return err

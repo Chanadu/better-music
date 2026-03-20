@@ -1,0 +1,87 @@
+---
+interface Props {
+	id: string;
+	className?: string;
+	contentClassName?: string;
+	swipeToClose?: boolean;
+}
+
+const {
+	id,
+	className = 'w-[min(92vw,32rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50',
+	contentClassName = 'p-5 sm:p-6',
+	swipeToClose = true,
+} = Astro.props as Props;
+---
+
+<dialog id={id} class={className} data-swipe-close={swipeToClose ? 'true' : 'false'}>
+	<div class={contentClassName}>
+		{swipeToClose && <div class="mx-auto mb-4 mt-2 h-1.5 w-12 rounded-full bg-border/70 sm:hidden" aria-hidden="true"></div>}
+		<slot />
+	</div>
+</dialog>
+
+<script>
+	const windowWithFlag = window as Window & { __baseDialogBound?: boolean };
+	if (!windowWithFlag.__baseDialogBound) {
+		windowWithFlag.__baseDialogBound = true;
+
+		type SwipeState = {
+			startX: number;
+			startY: number;
+			active: boolean;
+		};
+
+		const swipeState = new WeakMap<HTMLDialogElement, SwipeState>();
+		const minDistance = 80;
+
+		const bindDialogSwipe = (dialog: HTMLDialogElement) => {
+			if (dialog.dataset.swipeBound === 'true') return;
+			dialog.dataset.swipeBound = 'true';
+
+			dialog.addEventListener('touchstart', (event) => {
+				if (!dialog.open || dialog.dataset.swipeClose !== 'true' || event.touches.length !== 1) return;
+				const target = event.target as Element | null;
+				if (target?.closest('input[type="range"]')) return;
+				const touch = event.touches[0];
+				swipeState.set(dialog, {
+					startX: touch.clientX,
+					startY: touch.clientY,
+					active: true,
+				});
+			}, { passive: true });
+
+			dialog.addEventListener('touchend', (event) => {
+				const state = swipeState.get(dialog);
+				if (!state?.active || !dialog.open || dialog.dataset.swipeClose !== 'true' || event.changedTouches.length !== 1) return;
+				const touch = event.changedTouches[0];
+				const deltaX = touch.clientX - state.startX;
+				const deltaY = touch.clientY - state.startY;
+				const verticalDismiss = deltaY > minDistance && Math.abs(deltaY) > Math.abs(deltaX);
+				if (verticalDismiss) dialog.close();
+				swipeState.delete(dialog);
+			});
+
+			dialog.addEventListener('touchcancel', () => {
+				swipeState.delete(dialog);
+			});
+		};
+
+		const bindAllDialogs = () => {
+			for (const dialog of document.querySelectorAll('dialog[data-swipe-close]')) {
+				bindDialogSwipe(dialog as HTMLDialogElement);
+			}
+		};
+
+		document.addEventListener('click', (event) => {
+			const target = event.target as Element | null;
+			if (!target) return;
+			if (target instanceof HTMLDialogElement && target.open) {
+				target.close();
+			}
+		});
+
+		document.addEventListener('astro:page-load', bindAllDialogs);
+		bindAllDialogs();
+	}
+</script>

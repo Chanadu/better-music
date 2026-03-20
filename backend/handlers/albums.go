@@ -11,21 +11,22 @@ import (
 
 // CreateAlbumRequest represents the request body for creating an album
 type CreateAlbumRequest struct {
-	ArtistID int    `json:"artist_id" example:"1"`
-	Title    string `json:"title" example:"Abbey Road"`
+	ArtistID  int     `json:"artist_id" example:"1"`
+	Title     string  `json:"title" example:"Abbey Road"`
+	SpotifyID *string `json:"spotify_id,omitempty" example:"4oDw9mW4Sro2zN1RHzlvOr"`
 }
 
 // UpdateAlbumRequest represents the request body for updating an album
 type UpdateAlbumRequest struct {
-	ArtistID   int     `json:"artist_id" example:"1"`
-	Title      *string `json:"title,omitempty" example:"Abbey Road"`
-	CoverURL   *string `json:"cover_url,omitempty" example:"https://example.com/cover.jpg"`
-	Year       *int    `json:"year,omitempty" example:"1969"`
-	SpotifyID  *string `json:"spotify_id,omitempty" example:"4oDw9mW4Sro2zN1RHzlvOr"`
-	Listened   *bool   `json:"listened,omitempty" example:"true"`
-	Rating     *int    `json:"rating,omitempty" example:"5"`
-	Comment    *string `json:"comment,omitempty" example:"Classic album"`
-	ListenedAt *string `json:"listened_at,omitempty" example:"2024-01-15"`
+	ArtistID   int      `json:"artist_id" example:"1"`
+	Title      *string  `json:"title,omitempty" example:"Abbey Road"`
+	CoverURL   *string  `json:"cover_url,omitempty" example:"https://example.com/cover.jpg"`
+	Year       *int     `json:"year,omitempty" example:"1969"`
+	SpotifyID  *string  `json:"spotify_id,omitempty" example:"4oDw9mW4Sro2zN1RHzlvOr"`
+	Listened   *bool    `json:"listened,omitempty" example:"true"`
+	Rating     *float64 `json:"rating,omitempty" example:"8.5"`
+	Comment    *string  `json:"comment,omitempty" example:"Classic album"`
+	ListenedAt *string  `json:"listened_at,omitempty" example:"2024-01-15"`
 }
 
 // ArtistIDRequest represents a request body with just an artist ID
@@ -195,7 +196,7 @@ func (h *Handler) CreateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	album, err := models.CreateAlbum(h.Database, userID, body.ArtistID, body.Title)
+	album, err := models.CreateAlbum(h.Database, userID, body.ArtistID, body.Title, body.SpotifyID)
 
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to create album: "+err.Error()))

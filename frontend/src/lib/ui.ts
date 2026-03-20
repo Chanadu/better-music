@@ -81,10 +81,116 @@ export const createArtistChip = (label: string, iconPath: string, tone: Tone = '
 	);
 };
 
+export const applyRatingTone = (
+	el: HTMLElement,
+	rating: number,
+	surfaceVar: '--surface' | '--surface-raised' = '--surface-raised',
+) => {
+	const clamped = Math.min(10, Math.max(0, rating));
+	const ratingColor =
+		clamped >= 5 ?
+			`color-mix(in oklab, var(--rating-high) ${Math.round(((clamped - 5) / 5) * 100)}%, var(--rating-mid))`
+		:	`color-mix(in oklab, var(--rating-mid) ${Math.round((clamped / 5) * 100)}%, var(--rating-low))`;
+	el.style.borderColor = `color-mix(in srgb, ${ratingColor} 45%, var(--border))`;
+	el.style.background = `color-mix(in srgb, ${ratingColor} 18%, var(${surfaceVar}))`;
+	el.style.color = ratingColor;
+};
+
 export const createChevronIcon = () => {
 	const icon = createStrokeIcon('M6 9l6 6 6-6', 'h-4 w-4 transition-transform duration-200');
 	icon.style.color = 'var(--text-muted)';
 	return icon;
+};
+
+type DropdownOption = {
+	value: string;
+	label: string;
+};
+
+type ThemedDropdownConfig = {
+	triggerId: string;
+	valueId: string;
+	menuId: string;
+	onSelect: (value: string) => void;
+};
+
+type ThemedDropdownController = {
+	setOptions: (options: DropdownOption[], selectedValue: string) => void;
+	close: () => void;
+};
+
+export const createThemedDropdown = (config: ThemedDropdownConfig): ThemedDropdownController | null => {
+	const trigger = document.getElementById(config.triggerId) as HTMLButtonElement | null;
+	const valueNode = document.getElementById(config.valueId) as HTMLSpanElement | null;
+	const menu = document.getElementById(config.menuId) as HTMLDivElement | null;
+	if (!trigger || !valueNode || !menu) return null;
+
+	const root = trigger.closest('[data-themed-dropdown-root]') as HTMLDivElement | null;
+	if (!root) return null;
+
+	const close = () => {
+		menu.classList.add('hidden');
+		trigger.setAttribute('aria-expanded', 'false');
+	};
+
+	const open = () => {
+		menu.classList.remove('hidden');
+		trigger.setAttribute('aria-expanded', 'true');
+	};
+
+	if (trigger.dataset.bound !== 'true') {
+		trigger.dataset.bound = 'true';
+		trigger.addEventListener('click', () => {
+			if (menu.classList.contains('hidden')) {
+				open();
+				return;
+			}
+			close();
+		});
+
+		document.addEventListener('click', (event) => {
+			const target = event.target as Node | null;
+			if (!target) return;
+			if (root.contains(target)) return;
+			close();
+		});
+
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape') close();
+		});
+	}
+
+	const setOptions = (options: DropdownOption[], selectedValue: string) => {
+		menu.innerHTML = '';
+		let selectedLabel = '';
+
+		for (const option of options) {
+			const optionButton = document.createElement('button');
+			optionButton.type = 'button';
+			optionButton.dataset.value = option.value;
+			optionButton.setAttribute('role', 'option');
+			optionButton.setAttribute('aria-selected', option.value === selectedValue ? 'true' : 'false');
+			optionButton.className =
+				'themed-dropdown-option w-full cursor-pointer rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-200';
+			if (option.value === selectedValue) {
+				optionButton.classList.add('bg-primary/15', 'text-primary');
+				selectedLabel = option.label;
+			} else {
+				optionButton.classList.add('text-text', 'hover:bg-surface-raised/70');
+			}
+			optionButton.textContent = option.label;
+			optionButton.addEventListener('click', () => {
+				config.onSelect(option.value);
+				close();
+			});
+			menu.appendChild(optionButton);
+		}
+
+		if (!selectedLabel && options.length > 0) selectedLabel = options[0].label;
+		valueNode.textContent = selectedLabel;
+	};
+
+	return { setOptions, close };
 };
 
 export const createEditIconButton = (label: string) => {
@@ -114,7 +220,7 @@ export const bindSwipe = (
 	container: HTMLElement,
 	foreground: HTMLElement,
 	onSwipeLeft: () => void,
-	onSwipeRight: () => void
+	onSwipeRight: () => void,
 ) => {
 	let startX = 0;
 	let startY = 0;
@@ -123,54 +229,82 @@ export const bindSwipe = (
 	let isScrolling: boolean | null = null;
 	const actionThreshold = Math.min(window.innerWidth * 0.4, 150); // Require swiping at least 40% of screen or 150px
 	const velocityThreshold = 0.8;
-	const slideOutDuration = 250;
+	const slideOutDuration = 50;
 	let lastTouchTime = 0;
 	let lastTouchX = 0;
 
-	container.addEventListener('touchstart', (e) => {
-		if (e.touches.length > 1) return;
-		startX = e.touches[0].clientX;
-		startY = e.touches[0].clientY;
-		lastTouchX = startX;
-		lastTouchTime = Date.now();
-		isDragging = true;
-		isScrolling = null;
-		foreground.style.transition = 'none';
-	}, { passive: true });
+	container.addEventListener(
+		'touchstart',
+		(e) => {
+			if (e.touches.length > 1) return;
+			const target = e.target as Element | null;
+			if (target?.closest('.album-drag-handle')) return;
+			startX = e.touches[0].clientX;
+			startY = e.touches[0].clientY;
+			lastTouchX = startX;
+			lastTouchTime = Date.now();
+			isDragging = true;
+			isScrolling = null;
+			foreground.style.transition = 'none';
+		},
+		{ passive: true },
+	);
 
-	container.addEventListener('touchmove', (e) => {
-		if (!isDragging) return;
-		
-		const currentTouchX = e.touches[0].clientX;
-		const currentTouchY = e.touches[0].clientY;
-		const deltaX = currentTouchX - startX;
-		const deltaY = currentTouchY - startY;
+	container.addEventListener(
+		'touchmove',
+		(e) => {
+			if (!isDragging) return;
 
-		if (isScrolling === null) {
-			isScrolling = Math.abs(deltaY) > Math.abs(deltaX);
-		}
+			const currentTouchX = e.touches[0].clientX;
+			const currentTouchY = e.touches[0].clientY;
+			const deltaX = currentTouchX - startX;
+			const deltaY = currentTouchY - startY;
 
-		if (isScrolling) {
-			isDragging = false;
-			return;
-		}
+			if (isScrolling === null) {
+				isScrolling = Math.abs(deltaY) > Math.abs(deltaX);
+			}
 
-		if (e.cancelable) e.preventDefault();
-		
-		currentX = deltaX;
-		lastTouchX = currentTouchX;
-		lastTouchTime = Date.now();
-		
-		foreground.style.transform = `translateX(${currentX}px)`;
-	}, { passive: false });
+			if (isScrolling) {
+				isDragging = false;
+				return;
+			}
+
+			if (e.cancelable) e.preventDefault();
+
+			currentX = deltaX;
+			lastTouchX = currentTouchX;
+			lastTouchTime = Date.now();
+
+			foreground.style.transform = `translateX(${currentX}px)`;
+
+			// Dynamically show only the relevant action
+			const bg = container.firstElementChild as HTMLElement;
+			if (bg && bg.children.length >= 2) {
+				const leftAction = bg.firstElementChild as HTMLElement;
+				const rightAction = bg.lastElementChild as HTMLElement;
+				if (currentX > 0) {
+					// Swiping Right -> Left-side action (Edit, Primary)
+					bg.style.backgroundColor = getComputedStyle(leftAction).backgroundColor;
+					leftAction.style.opacity = '1';
+					rightAction.style.opacity = '0';
+				} else if (currentX < 0) {
+					// Swiping Left -> Right-side action (Delete, Error)
+					bg.style.backgroundColor = getComputedStyle(rightAction).backgroundColor;
+					leftAction.style.opacity = '0';
+					rightAction.style.opacity = '1';
+				}
+			}
+		},
+		{ passive: false },
+	);
 
 	container.addEventListener('touchend', () => {
 		if (!isDragging) return;
 		isDragging = false;
-		
+
 		const timeDelta = Date.now() - lastTouchTime;
 		const velocityX = timeDelta > 0 ? (currentX - (lastTouchX - startX)) / timeDelta : 0;
-		
+
 		const triggerRight = currentX > actionThreshold || velocityX > velocityThreshold;
 		const triggerLeft = currentX < -actionThreshold || velocityX < -velocityThreshold;
 
@@ -199,7 +333,21 @@ export const bindSwipe = (
 			foreground.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
 			foreground.style.transform = 'translateX(0)';
 		}
-		
+
+		// Reset opacities on end
+		const bg = container.firstElementChild as HTMLElement;
+		if (bg && bg.children.length >= 2) {
+			const leftAction = bg.firstElementChild as HTMLElement;
+			const rightAction = bg.lastElementChild as HTMLElement;
+			setTimeout(() => {
+				if (!isDragging) {
+					leftAction.style.opacity = '1';
+					rightAction.style.opacity = '1';
+					bg.style.backgroundColor = ''; // Reset background
+				}
+			}, slideOutDuration);
+		}
+
 		currentX = 0;
 	});
 };

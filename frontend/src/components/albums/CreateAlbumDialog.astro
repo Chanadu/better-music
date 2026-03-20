@@ -1,63 +1,98 @@
 ---
 import ModalHeader from '../ui/ModalHeader.astro';
+import BaseDialog from '../ui/BaseDialog.astro';
 ---
 
-<dialog id="album-modal" class="w-[min(92vw,36rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50">
-	<form id="album-form" class="space-y-4 p-5 sm:p-6">
-		<ModalHeader title="Create Album" modalId="album-modal" />
+<BaseDialog id="album-modal" className="w-[min(92vw,36rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50" contentClassName="p-5 sm:p-6">
+		<ModalHeader title="Create Album" />
 
-		<div>
-			<label for="album-title" class="block text-sm font-semibold">Title</label>
-			<input id="album-title" name="title" required class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="Abbey Road" />
+		<!-- Tab switcher -->
+		<div class="mt-4 flex rounded-xl border border-border/60 bg-surface-raised/50 p-1 gap-1">
+			<button type="button" id="album-tab-manual" class="flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 text-text-muted hover:text-text">
+				Manual
+			</button>
+			<button type="button" id="album-tab-spotify" class="flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 bg-surface text-text shadow-sm">
+				<span class="inline-flex items-center justify-center gap-1.5">
+					<svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-[#1DB954]" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+					Spotify
+				</span>
+			</button>
 		</div>
 
-		<div>
-			<label for="album-artist-id" class="block text-sm font-semibold">Artist</label>
-			<select id="album-artist-id" name="artist_id" required class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10">
-				<option value="">Select an artist</option>
-			</select>
-		</div>
-
-		<div>
-			<label for="album-cover-url" class="block text-sm font-semibold">Cover URL (optional)</label>
-			<input id="album-cover-url" name="cover_url" class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="https://example.com/cover.jpg" />
-		</div>
-
-		<div>
-			<label for="album-year" class="block text-sm font-semibold">Year (optional)</label>
-			<input id="album-year" name="year" type="number" min="0" class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="1969" />
-		</div>
-
-		<label for="album-listened" class="flex items-center gap-2 text-sm font-semibold">
-			<input id="album-listened" name="listened" type="checkbox" class="h-5 w-5 rounded border border-border/60 bg-surface-raised/50 text-primary transition-all duration-200 focus:ring-2 focus:ring-primary/50" />
-			Listened
-		</label>
-
-		<div id="album-listened-options" class="hidden space-y-4">
-			<div>
-				<label for="album-rating" class="block text-sm font-semibold">Rating (optional)</label>
-				<input id="album-rating" name="rating" type="number" min="1" max="10" class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10 disabled:opacity-50" placeholder="8" />
+		<!-- Manual Tab -->
+		<form id="album-form" class="mt-4 space-y-4 hidden">
+			<div class="relative">
+				<input id="album-title" name="title" required placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
+				<label for="album-title" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Title</label>
 			</div>
 
-			<div>
-				<label for="album-listened-at" class="block text-sm font-semibold">Listened At (optional)</label>
-				<div class="mt-2 w-full overflow-hidden rounded-xl border border-border/60 bg-surface-raised/50 transition-all duration-200 focus-within:border-primary/60 focus-within:bg-surface-raised focus-within:ring-4 focus-within:ring-primary/10">
-					<input id="album-listened-at" name="listened_at" type="date" class="ios-date-field w-full border-0 bg-transparent px-4 py-3 text-base text-text" />
+			<div class="relative">
+				<select id="album-artist-id" name="artist_id" required class="w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10">
+					<option value="">Select an artist</option>
+				</select>
+				<label for="album-artist-id" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted">Artist</label>
+			</div>
+
+			<div class="relative">
+				<input id="album-cover-url" name="cover_url" placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
+				<label for="album-cover-url" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Cover URL (optional)</label>
+			</div>
+
+			<div class="relative">
+				<input id="album-year" name="year" type="number" min="0" placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
+				<label for="album-year" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Year (optional)</label>
+			</div>
+
+			<label for="album-listened" class="flex items-center gap-2 text-sm font-semibold">
+				<input id="album-listened" name="listened" type="checkbox" class="h-5 w-5 rounded border border-border/60 bg-surface-raised/50 text-primary transition-all duration-200 focus:ring-2 focus:ring-primary/50" />
+				Listened
+			</label>
+
+			<div id="album-listened-options" class="hidden space-y-4">
+				<div>
+					<label for="album-rating" class="block text-sm font-semibold">Rating</label>
+					<div class="mt-2 space-y-3">
+						<div class="flex items-center gap-2 sm:gap-3">
+							<input id="album-rating-slider" type="range" min="0" max="10" step="0.1" value="5" class="h-3 w-full cursor-pointer appearance-none rounded-lg bg-border/50 accent-primary disabled:opacity-50" />
+							<div class="relative w-20 shrink-0">
+								<input id="album-rating" name="rating" type="number" min="0" max="10" step="0.1" inputmode="decimal" placeholder=" " class="peer h-11 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-2 pb-1 pt-4 text-sm text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10 disabled:opacity-50" />
+								<label for="album-rating" class="pointer-events-none absolute left-2 top-1 text-[10px] font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-xs peer-placeholder-shown:font-normal peer-focus:top-1 peer-focus:translate-y-0 peer-focus:text-[10px] peer-focus:font-semibold">Rating</label>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="relative mt-2 w-full overflow-hidden rounded-xl border border-border/60 bg-surface-raised/50 transition-all duration-200 focus-within:border-primary/60 focus-within:bg-surface-raised focus-within:ring-4 focus-within:ring-primary/10">
+					<input id="album-listened-at" name="listened_at" type="date" class="ios-date-field w-full border-0 bg-transparent px-4 pb-2 pt-6 text-base text-text" />
+					<label for="album-listened-at" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted">Listened At (optional)</label>
 				</div>
 			</div>
+
+			<p id="album-form-status" class="hidden rounded-lg border px-3 py-2 text-sm font-medium" role="alert" aria-live="assertive"></p>
+
+			<button type="submit" id="album-create-btn" class="mx-auto mt-6 block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto">
+				Create Album
+			</button>
+		</form>
+
+		<!-- Spotify Tab -->
+		<div id="album-spotify-tab" class="mt-4">
+			<div class="relative">
+				<input id="album-spotify-search" type="text" autocomplete="off" placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-[#1DB954]/60 focus:bg-surface-raised focus:ring-4 focus:ring-[#1DB954]/10" />
+				<label for="album-spotify-search" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Search Spotify Albums</label>
+				<div id="album-spotify-spinner" class="absolute right-3 top-1/2 hidden -translate-y-1/2">
+					<svg class="h-4 w-4 animate-spin text-text-muted" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+				</div>
+			</div>
+			<ul id="album-spotify-results" class="mt-2 hidden overflow-hidden rounded-xl border border-border/60 bg-surface shadow-lg"></ul>
+			<p class="mt-3 text-center text-xs text-text-muted">Select an album to auto-fill the form</p>
 		</div>
-
-		<p id="album-form-status" class="text-sm text-text-muted"></p>
-
-		<button type="submit" id="album-create-btn" class="mx-auto mt-6 block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto">
-			Create Album
-		</button>
-	</form>
-</dialog>
+</BaseDialog>
 
 <script>
 	import { apiFetch, getErrorMessage } from '../../lib/api';
 import { getCurrentDateLocal } from '../../lib/date';
+import { searchAlbums } from '../../lib/spotify';
 
 	const getAlbumModal = () => document.getElementById('album-modal') as HTMLDialogElement | null;
 	const getAlbumFormStatus = () => document.getElementById('album-form-status') as HTMLParagraphElement | null;
@@ -65,17 +100,36 @@ import { getCurrentDateLocal } from '../../lib/date';
 	const getAlbumCreateBtn = () => document.getElementById('album-create-btn') as HTMLButtonElement | null;
 	const getAlbumListenedInput = () => document.getElementById('album-listened') as HTMLInputElement | null;
 	const getAlbumListenedOptions = () => document.getElementById('album-listened-options') as HTMLDivElement | null;
+	const getAlbumRatingSliderInput = () => document.getElementById('album-rating-slider') as HTMLInputElement | null;
 	const getAlbumRatingInput = () => document.getElementById('album-rating') as HTMLInputElement | null;
 	const getAlbumListenedAtInput = () => document.getElementById('album-listened-at') as HTMLInputElement | null;
 
 	const setStatus = (el: HTMLElement | null, message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
 		if (!el) return;
+		el.dataset.statusType = type;
 		el.textContent = message;
+		if (!message) {
+			el.classList.add('hidden');
+			el.style.background = '';
+			el.style.borderColor = '';
+			el.style.color = '';
+			return;
+		}
+
+		el.classList.remove('hidden');
+		el.style.background = 'transparent';
+		el.style.borderColor = 'transparent';
 		if (type === 'error') {
+			el.style.background = 'color-mix(in srgb, var(--error) 14%, var(--surface-raised))';
+			el.style.borderColor = 'color-mix(in srgb, var(--error) 45%, var(--border))';
 			el.style.color = 'var(--error)';
 		} else if (type === 'success') {
+			el.style.background = 'color-mix(in srgb, var(--success) 14%, var(--surface-raised))';
+			el.style.borderColor = 'color-mix(in srgb, var(--success) 45%, var(--border))';
 			el.style.color = 'var(--success)';
 		} else {
+			el.style.background = 'color-mix(in srgb, var(--surface-raised) 70%, transparent)';
+			el.style.borderColor = 'var(--border)';
 			el.style.color = 'var(--text-muted)';
 		}
 	};
@@ -96,12 +150,157 @@ import { getCurrentDateLocal } from '../../lib/date';
 		albumModal.close();
 	};
 
+	// --- Tab switching ---
+	const switchAlbumTab = (tab: 'manual' | 'spotify') => {
+		const manualForm = document.getElementById('album-form');
+		const spotifyTab = document.getElementById('album-spotify-tab');
+		const manualBtn = document.getElementById('album-tab-manual');
+		const spotifyBtn = document.getElementById('album-tab-spotify');
+
+		const isManual = tab === 'manual';
+		manualForm?.classList.toggle('hidden', !isManual);
+		spotifyTab?.classList.toggle('hidden', isManual);
+
+		const activeClass = ['bg-surface', 'text-text', 'shadow-sm'];
+		const inactiveClass = ['text-text-muted', 'hover:text-text'];
+
+		if (isManual) {
+			manualBtn?.classList.add(...activeClass);
+			manualBtn?.classList.remove(...inactiveClass);
+			spotifyBtn?.classList.remove(...activeClass);
+			spotifyBtn?.classList.add(...inactiveClass);
+		} else {
+			spotifyBtn?.classList.add(...activeClass);
+			spotifyBtn?.classList.remove(...inactiveClass);
+			manualBtn?.classList.remove(...activeClass);
+			manualBtn?.classList.add(...inactiveClass);
+			document.getElementById('album-spotify-search')?.focus();
+		}
+	};
+
+	// --- Spotify search ---
+	const hideAlbumResults = () => {
+		const albumSpotifyResults = document.getElementById('album-spotify-results');
+		albumSpotifyResults?.classList.add('hidden');
+	};
+
+	let albumSearchDebounce: ReturnType<typeof setTimeout>;
+	let selectedSpotifyAlbumID: string | null = null;
+
+	// --- Main Delegated Listeners ---
+	const windowWithInputFlag = window as Window & { __albumModalInputBound?: boolean };
+	if (!windowWithInputFlag.__albumModalInputBound) {
+		windowWithInputFlag.__albumModalInputBound = true;
+		document.addEventListener('input', (event) => {
+			const target = event.target as HTMLInputElement | null;
+			if (!target || target.id !== 'album-spotify-search') return;
+
+			clearTimeout(albumSearchDebounce);
+			const q = target.value.trim();
+			if (!q) { 
+				console.log('[Album Search] Query cleared');
+				hideAlbumResults(); 
+				return; 
+			}
+
+			console.log(`[Album Search] Query: "${q}"`);
+			albumSearchDebounce = setTimeout(async () => {
+				const albumSpotifyResults = document.getElementById('album-spotify-results') as HTMLUListElement | null;
+				const albumSpotifySpinner = document.getElementById('album-spotify-spinner') as HTMLDivElement | null;
+				if (!albumSpotifyResults || !albumSpotifySpinner) {
+					console.warn('[Album Search] Could not find results/spinner elements in DOM');
+					return;
+				}
+
+				albumSpotifySpinner.classList.remove('hidden');
+				try {
+					console.log(`[Album Search] Fetching for: "${q}"...`);
+					const albums = await searchAlbums(q);
+					console.log(`[Album Search] Found ${albums.length} results`);
+					albumSpotifyResults.innerHTML = '';
+					if (!albums.length) {
+						albumSpotifyResults.innerHTML = '<li class="px-4 py-3 text-sm text-text-muted text-center italic">No results found on Spotify</li>';
+					} else {
+						for (const album of albums) {
+							const img = album.images[0];
+							const year = album.release_date ? album.release_date.substring(0, 4) : '';
+							const artistNames = album.artists.map((a: { name: string }) => a.name).join(', ');
+							const li = document.createElement('li');
+							li.className = 'flex cursor-pointer items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-raised border-b border-border/30 last:border-0';
+							li.innerHTML = `
+								${img ? `<img src="${img.url}" alt="" class="h-11 w-11 rounded-lg object-cover shrink-0 border border-border/40" />` : '<div class="h-11 w-11 rounded-lg bg-surface-raised shrink-0 border border-border/40 flex items-center justify-center text-text-muted text-xs">?</div>'}
+								<div class="min-w-0 flex-1">
+									<p class="truncate font-medium text-text">${album.name}</p>
+									<p class="truncate text-xs text-text-muted">${artistNames}${year ? ` · ${year}` : ''}</p>
+								</div>
+								<span class="ml-auto shrink-0 text-xs text-secondary font-medium">Select →</span>
+							`;
+							li.addEventListener('click', () => {
+								console.log(`[Album Search] Selected: ${album.name}`);
+								const titleInput = document.getElementById('album-title') as HTMLInputElement | null;
+								const coverInput = document.getElementById('album-cover-url') as HTMLInputElement | null;
+								const yearInput = document.getElementById('album-year') as HTMLInputElement | null;
+								const albumFormStatus = getAlbumFormStatus();
+								selectedSpotifyAlbumID = album.id;
+								if (titleInput) titleInput.value = album.name;
+								if (coverInput && img) coverInput.value = img.url;
+								if (yearInput && year) yearInput.value = year;
+
+								const spotifyArtists = album.artists.map((artist: { name: string }) => artist.name);
+								const matched = autoSelectArtistFromSpotifyNames(spotifyArtists);
+								if (albumFormStatus && spotifyArtists.length > 0) {
+									if (matched) {
+										setStatus(albumFormStatus, `Auto-selected artist: ${spotifyArtists[0]}.`, 'success');
+									} else {
+										setStatus(albumFormStatus, `No local artist matched ${spotifyArtists[0]}. Please select one manually.`, 'neutral');
+									}
+								}
+								
+								// Clear search after selection
+								const sInput = document.getElementById('album-spotify-search') as HTMLInputElement | null;
+								if (sInput) sInput.value = '';
+								hideAlbumResults();
+								switchAlbumTab('manual');
+							});
+							albumSpotifyResults.appendChild(li);
+						}
+					}
+					albumSpotifyResults.classList.remove('hidden');
+				} catch (err) {
+					console.error('[Album Search] Error:', err);
+					const msg = err instanceof Error ? err.message : 'Search failed. Try again.';
+					albumSpotifyResults.innerHTML = `<li class="px-4 py-3 text-sm text-[var(--error)] text-center font-medium">${msg}</li>`;
+					albumSpotifyResults.classList.remove('hidden');
+				} finally {
+					albumSpotifySpinner.classList.add('hidden');
+				}
+			}, 350);
+		});
+	}
+
+	const windowWithTabClickFlag = window as Window & { __albumModalTabClickBound?: boolean };
+	if (!windowWithTabClickFlag.__albumModalTabClickBound) {
+		windowWithTabClickFlag.__albumModalTabClickBound = true;
+		document.addEventListener('click', (event) => {
+			const target = event.target as HTMLElement | null;
+			const tabBtn = target?.closest('#album-tab-manual, #album-tab-spotify');
+			if (!tabBtn) return;
+
+			if (tabBtn.id === 'album-tab-manual') {
+				switchAlbumTab('manual');
+			} else {
+				switchAlbumTab('spotify');
+			}
+		});
+	}
+	// --- End Delegated Listeners ---
+	// --- End Spotify ---
+
 	const loadArtists = async () => {
 		const albumArtistSelect = getAlbumArtistSelect();
 		const albumFormStatus = getAlbumFormStatus();
 		if (!albumArtistSelect) return;
 
-		setStatus(albumFormStatus, 'Loading artists...');
 		albumArtistSelect.disabled = true;
 		const response = await apiFetch('/api/artists', { method: 'GET' }, { auth: true });
 
@@ -123,25 +322,81 @@ import { getCurrentDateLocal } from '../../lib/date';
 		}
 
 		albumArtistSelect.disabled = artists.length === 0;
-		setStatus(albumFormStatus, artists.length ? '' : 'No artists found. Create an artist first.');
+		if (!artists.length) {
+			setStatus(albumFormStatus, 'No artists found. Create an artist first.');
+			return;
+		}
+		if (albumFormStatus?.dataset.statusType !== 'error') {
+			setStatus(albumFormStatus, '');
+		}
+	};
+
+	const normalizeArtistName = (value: string) => value.trim().toLowerCase();
+
+	const autoSelectArtistFromSpotifyNames = (spotifyArtistNames: string[]): boolean => {
+		const albumArtistSelect = getAlbumArtistSelect();
+		if (!albumArtistSelect || spotifyArtistNames.length === 0) return false;
+
+		const targets = new Set(spotifyArtistNames.map(normalizeArtistName));
+		for (const option of Array.from(albumArtistSelect.options)) {
+			if (!option.value) continue;
+			if (targets.has(normalizeArtistName(option.textContent ?? ''))) {
+				albumArtistSelect.value = option.value;
+				return true;
+			}
+		}
+
+		return false;
 	};
 
 	const syncListenedFields = () => {
 		const albumListenedInput = getAlbumListenedInput();
 		const albumListenedOptions = getAlbumListenedOptions();
+		const albumRatingSliderInput = getAlbumRatingSliderInput();
 		const albumRatingInput = getAlbumRatingInput();
 		const albumListenedAtInput = getAlbumListenedAtInput();
 		const listened = albumListenedInput?.checked ?? false;
 		if (albumListenedOptions) {
 			albumListenedOptions.classList.toggle('hidden', !listened);
 		}
+		if (albumRatingSliderInput) {
+			albumRatingSliderInput.disabled = !listened;
+		}
+		if (albumRatingInput) {
+			albumRatingInput.required = listened;
+			albumRatingInput.disabled = !listened;
+		}
+		if (listened && albumRatingInput && albumRatingSliderInput && !albumRatingInput.value.trim()) {
+			albumRatingInput.value = albumRatingSliderInput.value;
+		}
 		if (listened && albumListenedAtInput && !albumListenedAtInput.value) {
 			albumListenedAtInput.value = getCurrentDateLocal();
 		}
 		if (!listened) {
+			if (albumRatingSliderInput) albumRatingSliderInput.value = '5';
 			if (albumRatingInput) albumRatingInput.value = '';
 			if (albumListenedAtInput) albumListenedAtInput.value = '';
 		}
+	};
+
+	const clampRating = (value: number) => Math.min(10, Math.max(0, value));
+
+	const syncRatingControls = (source: 'slider' | 'manual') => {
+		const slider = getAlbumRatingSliderInput();
+		const manual = getAlbumRatingInput();
+		if (!slider || !manual) return;
+
+		if (source === 'slider') {
+			const value = clampRating(Number(slider.value));
+			manual.value = Number.isFinite(value) ? value.toFixed(1) : '0.0';
+			return;
+		}
+
+		const parsed = Number(manual.value);
+		if (!Number.isFinite(parsed)) return;
+		const value = clampRating(parsed);
+		slider.value = value.toFixed(1);
+		manual.value = value.toFixed(1);
 	};
 
 	const windowWithOpenFlag = window as Window & { __openAlbumModalBound?: boolean };
@@ -154,6 +409,8 @@ import { getCurrentDateLocal } from '../../lib/date';
 					resolve();
 				});
 			});
+				selectedSpotifyAlbumID = null;
+			switchAlbumTab('spotify');
 			await loadArtists();
 		});
 	}
@@ -173,16 +430,7 @@ import { getCurrentDateLocal } from '../../lib/date';
 		windowWithClickFlag.__albumModalClickBound = true;
 		document.addEventListener('click', (event) => {
 			const target = event.target as Element | null;
-			const albumModal = getAlbumModal();
-
-			if (target?.id === 'album-modal') {
-				closeModal();
-				return;
-			}
-
-			if (albumModal && target?.closest('[data-close-modal="album-modal"]')) {
-				closeModal();
-			}
+			if (target?.id === 'album-modal') closeModal();
 		});
 	}
 
@@ -191,8 +439,30 @@ import { getCurrentDateLocal } from '../../lib/date';
 		windowWithChangeFlag.__albumModalChangeBound = true;
 		document.addEventListener('change', (event) => {
 			const target = event.target as HTMLInputElement | null;
-			if (!target || target.id !== 'album-listened') return;
-			syncListenedFields();
+			if (!target) return;
+			if (target.id === 'album-listened') {
+				syncListenedFields();
+				return;
+			}
+			if (target.id === 'album-rating') {
+				syncRatingControls('manual');
+			}
+		});
+	}
+
+	const windowWithRatingInputFlag = window as Window & { __albumModalRatingInputBound?: boolean };
+	if (!windowWithRatingInputFlag.__albumModalRatingInputBound) {
+		windowWithRatingInputFlag.__albumModalRatingInputBound = true;
+		document.addEventListener('input', (event) => {
+			const target = event.target as HTMLInputElement | null;
+			if (!target) return;
+			if (target.id === 'album-rating-slider') {
+				syncRatingControls('slider');
+				return;
+			}
+			if (target.id === 'album-rating') {
+				syncRatingControls('manual');
+			}
 		});
 	}
 
@@ -227,7 +497,14 @@ import { getCurrentDateLocal } from '../../lib/date';
 			const listenedAt = albumListenedAtInput?.value || '';
 
 			if (!title || !artistID) {
+				switchAlbumTab('manual');
 				setStatus(albumFormStatus, 'Title and artist are required.', 'error');
+				return;
+			}
+
+			if (listened && !ratingValue) {
+				switchAlbumTab('manual');
+				setStatus(albumFormStatus, 'Rating is required when album is marked as listened.', 'error');
 				return;
 			}
 
@@ -243,10 +520,15 @@ import { getCurrentDateLocal } from '../../lib/date';
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({ title, artist_id: artistID }),
+				body: JSON.stringify({
+					title,
+					artist_id: artistID,
+					...(selectedSpotifyAlbumID ? { spotify_id: selectedSpotifyAlbumID } : {}),
+				}),
 			}, { auth: true });
 
 			if (!createResponse.ok) {
+				switchAlbumTab('manual');
 				setStatus(albumFormStatus, await getErrorMessage(createResponse), 'error');
 				if (albumCreateBtn) {
 					albumCreateBtn.disabled = false;
@@ -261,7 +543,7 @@ import { getCurrentDateLocal } from '../../lib/date';
 			if (coverURL) updatePayload.cover_url = coverURL;
 			if (yearValue) updatePayload.year = Number(yearValue);
 			updatePayload.listened = listened;
-			if (listened && ratingValue) updatePayload.rating = Number(ratingValue);
+			if (listened) updatePayload.rating = Number(ratingValue);
 			if (listened && listenedAt) updatePayload.listened_at = new Date(listenedAt).toISOString();
 
 			if (Object.keys(updatePayload).length > 1 || updatePayload.listened === true) {
@@ -275,6 +557,7 @@ import { getCurrentDateLocal } from '../../lib/date';
 				}, { auth: true });
 
 				if (!updateResponse.ok) {
+					switchAlbumTab('manual');
 					setStatus(albumFormStatus, `Album created, but details update failed: ${await getErrorMessage(updateResponse)}`, 'error');
 					if (albumCreateBtn) {
 						albumCreateBtn.disabled = false;
@@ -286,6 +569,7 @@ import { getCurrentDateLocal } from '../../lib/date';
 
 			setStatus(albumFormStatus, 'Album created successfully.', 'success');
 			target.reset();
+			selectedSpotifyAlbumID = null;
 			syncListenedFields();
 			if (albumCreateBtn) {
 				albumCreateBtn.disabled = false;

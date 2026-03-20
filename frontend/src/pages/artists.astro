@@ -1,24 +1,8 @@
 ---
 import ArtistDirectory from '../components/artists/ArtistDirectory.astro';
-import AuthGuard from '../components/auth/AuthGuard.astro';
-import CreateMenuModal from '../components/create/CreateMenuModal.astro';
-import AppHeader from '../components/ui/AppHeader.astro';
-import BottomTabBar from '../components/ui/BottomTabBar.astro';
-import Layout from '../layouts/Layout.astro';
+import AppPageLayout from '../layouts/AppPageLayout.astro';
 ---
 
-<Layout>
-	<AuthGuard />
-	<AppHeader title="Artists" />
-	<main class="min-h-screen bg-gradient-to-br from-bg to-surface-raised px-4 pt-6 pb-28 sm:px-6 sm:pt-8 md:px-8">
-		<div class="mx-auto max-w-4xl space-y-6">
-			<div class="flex items-center justify-between">
-				<h2 class="text-xl font-bold tracking-tight text-text">Your Artists</h2>
-			</div>
-			<ArtistDirectory />
-		</div>
-	</main>
-
-	<CreateMenuModal />
-	<BottomTabBar current="artists" />
-</Layout>
+<AppPageLayout title="Artists" current="artists">
+	<ArtistDirectory />
+</AppPageLayout>

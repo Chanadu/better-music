@@ -1,14 +1,15 @@
 ---
 import CreateOptionCard from './CreateOptionCard.astro';
 import ModalHeader from '../ui/ModalHeader.astro';
+import BaseDialog from '../ui/BaseDialog.astro';
 ---
 
-<dialog
+<BaseDialog
 	id="create-picker-modal"
-	class="w-[min(92vw,28rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50"
+	className="w-[min(92vw,28rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50"
+	contentClassName="space-y-4 p-5 sm:p-6"
 >
-	<div class="space-y-4 p-5 sm:p-6">
-		<ModalHeader title="Choose What To Create" modalId="create-picker-modal" />
+		<ModalHeader title="Choose What To Create" />
 
 		<div class="grid grid-rows-2 gap-3">
 			<CreateOptionCard id="open-artist-modal" label="Artist">
@@ -25,8 +26,7 @@ import ModalHeader from '../ui/ModalHeader.astro';
 				</svg>
 			</CreateOptionCard>
 		</div>
-	</div>
-</dialog>
+</BaseDialog>
 
 <script>
 	const getCreatePicker = () => document.getElementById('create-picker-modal') as HTMLDialogElement | null;
@@ -56,19 +56,9 @@ import ModalHeader from '../ui/ModalHeader.astro';
 	const windowWithClickFlag = window as Window & { __createPickerClickBound?: boolean };
 	if (!windowWithClickFlag.__createPickerClickBound) {
 		windowWithClickFlag.__createPickerClickBound = true;
-		document.addEventListener('click', (event) => {
+			document.addEventListener('click', (event) => {
 			const target = event.target as Element | null;
 			const createPicker = getCreatePicker();
-
-			if (target?.id === 'create-picker-modal') {
-				closeModal(createPicker);
-				return;
-			}
-
-			if (target?.closest('[data-close-modal="create-picker-modal"]')) {
-				closeModal(createPicker);
-				return;
-			}
 
 			if (target?.closest('#open-artist-modal')) {
 				closeModal(createPicker);

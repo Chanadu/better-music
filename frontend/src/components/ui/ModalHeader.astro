@@ -1,18 +1,12 @@
 ---
 interface Props {
 	title: string;
-	modalId: string;
+	modalId?: string;
 }
 
-const { title, modalId } = Astro.props;
+const { title } = Astro.props;
 ---
 
-<div class="flex items-center justify-between">
+<div class="flex items-center justify-start">
 	<h3 class="text-lg font-semibold">{title}</h3>
-	<button type="button" data-close-modal={modalId} class="inline-flex cursor-pointer items-center justify-center rounded-md p-1" style="color: var(--text-muted);" aria-label="Close">
-		<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-			<path d="M6 6l12 12"></path>
-			<path d="M18 6L6 18"></path>
-		</svg>
-	</button>
 </div>

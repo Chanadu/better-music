@@ -1,34 +1,53 @@
+---
+import BaseDialog from '../ui/BaseDialog.astro';
+import InteractiveListToolkit from '../ui/InteractiveListToolkit.astro';
+import SortControls from '../ui/SortControls.astro';
+---
+
+<div class="mb-4">
+	<SortControls controlId="artists-sort-by" />
+</div>
+
 <div id="artists-list" class="space-y-3"></div>
 
-<dialog id="edit-artist-modal" class="w-[min(92vw,32rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/45">
+<InteractiveListToolkit />
+
+<BaseDialog id="edit-artist-modal" className="w-[min(92vw,32rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/45" contentClassName="">
 	<form id="edit-artist-form" class="space-y-3 p-5">
 		<div class="flex items-center justify-between">
 			<h3 class="text-lg font-semibold">Edit Artist</h3>
-			<button type="button" id="edit-artist-close" class="inline-flex cursor-pointer items-center justify-center rounded-md p-1 text-text-muted hover:bg-surface-raised" aria-label="Close">
-				<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-					<path d="M6 6l12 12"></path>
-					<path d="M18 6L6 18"></path>
-				</svg>
-			</button>
 		</div>
 		<input id="edit-artist-id" type="hidden" />
-		<input id="edit-artist-name" required class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="The Beatles" />
+		<div class="relative">
+			<input id="edit-artist-name" required placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
+			<label for="edit-artist-name" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Name</label>
+		</div>
+		<div class="relative">
+			<input id="edit-artist-cover-url" placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
+			<label for="edit-artist-cover-url" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Cover URL</label>
+		</div>
+		<div class="space-y-2 rounded-xl border border-border/60 bg-surface-raised/30 p-3">
+			<p class="text-xs font-semibold uppercase tracking-wide text-text-muted">Sync from Spotify</p>
+			<button type="button" id="edit-artist-spotify-refresh-btn" class="w-full cursor-pointer rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-sm font-semibold text-text transition-all duration-200 hover:bg-surface-raised focus:ring-4 focus:ring-[#1DB954]/10">Refresh from Spotify ID</button>
+			<p class="text-xs text-text-muted">Uses this artist's saved Spotify ID to refresh name and cover.</p>
+		</div>
 		<p id="edit-artist-status" class="text-sm text-text-muted"></p>
 		<div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0">
-			<button type="button" id="edit-artist-delete" class="w-full cursor-pointer rounded-xl bg-error/90 px-4 py-3 text-base font-semibold text-white shadow-sm shadow-error/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-error hover:shadow-md hover:shadow-error/30 focus:ring-4 focus:ring-error/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:py-2 sm:text-sm">Delete</button>
 			<button type="submit" id="edit-artist-submit" class="w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto sm:py-2 sm:text-sm">Save</button>
 		</div>
 	</form>
-</dialog>
+</BaseDialog>
 
 <script>
 	import { apiFetch } from '../../lib/api';
 import { formatDateTime } from '../../lib/date';
-import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditIconButton } from '../../lib/ui';
+import { getArtistBySpotifyID } from '../../lib/spotify';
+import { ICON_PATHS, applyRatingTone, createArtistChip, createThemedDropdown } from '../../lib/ui';
 
 	type Artist = {
 		id: number;
 		name: string;
+		cover_url?: string | null;
 		spotify_id?: string | null;
 		created_at: string;
 	};
@@ -45,26 +64,61 @@ import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditI
 		created_at: string;
 	};
 
+	type StatusType = 'neutral' | 'error' | 'success';
+	type ArtistSortKey = 'alphabetical' | 'createdAt' | 'averageRating';
+	type SortDirection = 'asc' | 'desc';
+
+	type InteractiveCardOptions = {
+		onEdit: () => void;
+		onDelete: () => void;
+		editLabel: string;
+		deleteLabel: string;
+		toggleLabel: string;
+		enableSwipe?: boolean;
+	};
+
+	type InteractiveCardParts = {
+		wrapper: HTMLDivElement;
+		left: HTMLDivElement;
+		right: HTMLDivElement;
+		setBody: (body: HTMLElement) => void;
+	};
+
+	type InteractiveListToolkitAPI = {
+		setListRootMessage: (listRoot: HTMLDivElement | null, message: string, isError?: boolean) => void;
+		setStatusText: (target: HTMLElement | null, message: string, type?: StatusType) => void;
+		showDialogSafely: (dialog: HTMLDialogElement | null) => void;
+		createInteractiveListCard: (options: InteractiveCardOptions) => InteractiveCardParts;
+	};
+
+	const getToolkit = () => {
+		const toolkit = (window as Window & { __interactiveListToolkit?: InteractiveListToolkitAPI }).__interactiveListToolkit;
+		if (!toolkit) throw new Error('Interactive list toolkit unavailable');
+		return toolkit;
+	};
+
 	const getListRoot = () => document.getElementById('artists-list') as HTMLDivElement | null;
 	let editArtistDialog: HTMLDialogElement | null = null;
 	let editArtistForm: HTMLFormElement | null = null;
-	let editArtistClose: HTMLButtonElement | null = null;
 	let editArtistIDInput: HTMLInputElement | null = null;
 	let editArtistNameInput: HTMLInputElement | null = null;
+	let editArtistCoverURLInput: HTMLInputElement | null = null;
 	let editArtistStatus: HTMLParagraphElement | null = null;
 	let editArtistSubmit: HTMLButtonElement | null = null;
-	let editArtistDeleteBtn: HTMLButtonElement | null = null;
 	let currentArtistAlbumCount = 0;
+	let currentEditArtistSpotifyID: string | null = null;
+	let currentSortBy: ArtistSortKey = 'alphabetical';
+	let currentSortDirection: SortDirection = 'asc';
+	let sortDropdown: ReturnType<typeof createThemedDropdown> | null = null;
 
 	const refreshEditRefs = () => {
 		editArtistDialog = document.getElementById('edit-artist-modal') as HTMLDialogElement | null;
 		editArtistForm = document.getElementById('edit-artist-form') as HTMLFormElement | null;
-		editArtistClose = document.getElementById('edit-artist-close') as HTMLButtonElement | null;
 		editArtistIDInput = document.getElementById('edit-artist-id') as HTMLInputElement | null;
 		editArtistNameInput = document.getElementById('edit-artist-name') as HTMLInputElement | null;
+		editArtistCoverURLInput = document.getElementById('edit-artist-cover-url') as HTMLInputElement | null;
 		editArtistStatus = document.getElementById('edit-artist-status') as HTMLParagraphElement | null;
 		editArtistSubmit = document.getElementById('edit-artist-submit') as HTMLButtonElement | null;
-		editArtistDeleteBtn = document.getElementById('edit-artist-delete') as HTMLButtonElement | null;
 	};
 
 	const sortAlbums = (albums: Album[]): Album[] => {
@@ -77,32 +131,76 @@ import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditI
 		});
 	};
 
-	const setMessage = (message: string, isError = false) => {
-		const listRoot = getListRoot();
-		if (!listRoot) return;
-		listRoot.innerHTML = '';
-		const p = document.createElement('p');
-		p.className = 'text-sm';
-		p.style.color = isError ? 'var(--error)' : 'var(--text-muted)';
-		p.textContent = message;
-		listRoot.appendChild(p);
+	const getAverageArtistRating = (albums: Album[]) => {
+		const rated = albums.filter((album) => album.listened && album.rating != null);
+		if (!rated.length) return null;
+		return rated.reduce((sum, album) => sum + Number(album.rating ?? 0), 0) / rated.length;
 	};
 
+	const compareOptionalNumber = (a: number | null, b: number | null) => {
+		if (a == null && b == null) return 0;
+		if (a == null) return 1;
+		if (b == null) return -1;
+		return a - b;
+	};
+
+	const syncSortDirectionButton = () => {
+		const button = document.getElementById('artists-sort-direction') as HTMLButtonElement | null;
+		if (!button) return;
+		if (currentSortDirection === 'asc') {
+			button.title = 'Ascending';
+			button.setAttribute('aria-label', 'Sort direction: ascending');
+			button.innerHTML = '<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M12 7l-4 6h8z" fill="currentColor"></path></svg>';
+			return;
+		}
+		button.title = 'Descending';
+		button.setAttribute('aria-label', 'Sort direction: descending');
+		button.innerHTML = '<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M12 17l4-6H8z" fill="currentColor"></path></svg>';
+	};
+
+	const initializeSortControls = () => {
+		const directionButton = document.getElementById('artists-sort-direction') as HTMLButtonElement | null;
+		if (!directionButton) return;
+
+		if (!sortDropdown) {
+			sortDropdown = createThemedDropdown({
+				triggerId: 'artists-sort-by-trigger',
+				valueId: 'artists-sort-by-value',
+				menuId: 'artists-sort-by-menu',
+				onSelect: (value) => {
+					currentSortBy = value as ArtistSortKey;
+					void loadArtists();
+				},
+			});
+		}
+		if (!sortDropdown) return;
+
+		const options: Array<{ value: ArtistSortKey; label: string }> = [
+			{ value: 'alphabetical', label: 'Alphabetical' },
+			{ value: 'createdAt', label: 'Creation Date' },
+			{ value: 'averageRating', label: 'Average Rating' },
+		];
+		sortDropdown.setOptions(options, currentSortBy);
+		syncSortDirectionButton();
+
+		if (directionButton.dataset.bound !== 'true') {
+			directionButton.dataset.bound = 'true';
+			directionButton.addEventListener('click', () => {
+				currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+				syncSortDirectionButton();
+				void loadArtists();
+			});
+		}
+	};
+
+	const setMessage = (message: string, isError = false) => getToolkit().setListRootMessage(getListRoot(), message, isError);
+
 	const setEditStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
-		if (!editArtistStatus) return;
-		editArtistStatus.textContent = message;
-		if (type === 'error') editArtistStatus.style.color = 'var(--error)';
-		else if (type === 'success') editArtistStatus.style.color = 'var(--success)';
-		else editArtistStatus.style.color = 'var(--text-muted)';
+		getToolkit().setStatusText(editArtistStatus, message, type);
 	};
 
 	const showDialogSafely = (dialog: HTMLDialogElement | null) => {
-		if (!dialog || dialog.open) return;
-		try {
-			dialog.showModal();
-		} catch {
-			dialog.setAttribute('open', '');
-		}
+		getToolkit().showDialogSafely(dialog);
 	};
 
 	const deleteArtist = async (id: number, name: string, albumCount: number) => {
@@ -120,21 +218,14 @@ import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditI
 		window.dispatchEvent(new CustomEvent('artist-created'));
 	};
 
-	const addDisclosureBehavior = (details: HTMLDetailsElement, chevron: SVGSVGElement) => {
-		const syncChevron = () => {
-			chevron.style.transform = details.open ? 'rotate(180deg)' : 'rotate(0deg)';
-		};
-		details.addEventListener('toggle', syncChevron);
-		syncChevron();
-	};
-
 	const openEditDialog = (artist: Artist, albumCount: number) => {
 		refreshEditRefs();
-		if (!editArtistDialog || !editArtistIDInput || !editArtistNameInput) return;
+		if (!editArtistDialog || !editArtistIDInput || !editArtistNameInput || !editArtistCoverURLInput) return;
 		editArtistIDInput.value = String(artist.id);
 		editArtistNameInput.value = artist.name;
+		editArtistCoverURLInput.value = artist.cover_url ?? '';
+		currentEditArtistSpotifyID = artist.spotify_id ?? null;
 		currentArtistAlbumCount = albumCount;
-		if (editArtistDeleteBtn) editArtistDeleteBtn.disabled = albumCount > 0;
 		setEditStatus('');
 		showDialogSafely(editArtistDialog);
 	};
@@ -144,28 +235,44 @@ import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditI
 		if (!editArtistForm || editArtistForm.dataset.bound === 'true') return;
 		editArtistForm.dataset.bound = 'true';
 
-		editArtistClose?.addEventListener('click', () => editArtistDialog?.close());
 		editArtistDialog?.addEventListener('click', (event) => {
 			if (editArtistDialog && event.target === editArtistDialog) editArtistDialog.close();
 		});
 
-		editArtistDeleteBtn?.addEventListener('click', async () => {
-			if (!editArtistIDInput || !editArtistNameInput || !editArtistDeleteBtn || !editArtistSubmit) return;
-			editArtistDeleteBtn.disabled = true;
-			editArtistSubmit.disabled = true;
-			setEditStatus('Deleting...');
-			await deleteArtist(Number(editArtistIDInput.value), editArtistNameInput.value, currentArtistAlbumCount);
-			editArtistDeleteBtn.disabled = currentArtistAlbumCount > 0;
-			editArtistSubmit.disabled = false;
+		const refreshSpotifyButton = document.getElementById('edit-artist-spotify-refresh-btn') as HTMLButtonElement | null;
+		refreshSpotifyButton?.addEventListener('click', async () => {
+			if (!editArtistNameInput || !editArtistCoverURLInput) return;
+			if (!currentEditArtistSpotifyID) {
+				setEditStatus('No Spotify ID is saved for this artist, so it cannot be refreshed.', 'error');
+				return;
+			}
+
+			refreshSpotifyButton.disabled = true;
+			refreshSpotifyButton.textContent = 'Refreshing...';
+			setEditStatus('Refreshing from Spotify...');
+
+			try {
+				const artist = await getArtistBySpotifyID(currentEditArtistSpotifyID);
+				const cover = artist.images[0]?.url ?? artist.images[artist.images.length - 1]?.url ?? '';
+				editArtistNameInput.value = artist.name;
+				if (cover) editArtistCoverURLInput.value = cover;
+				setEditStatus('Spotify metadata applied. Review and save.', 'success');
+			} catch {
+				setEditStatus('Failed to refresh from Spotify.', 'error');
+			} finally {
+				refreshSpotifyButton.disabled = false;
+				refreshSpotifyButton.textContent = 'Refresh from Spotify ID';
+			}
 		});
 
 		editArtistForm.addEventListener('submit', async (event) => {
 			event.preventDefault();
-			if (!editArtistIDInput || !editArtistNameInput || !editArtistSubmit) return;
+			if (!editArtistIDInput || !editArtistNameInput || !editArtistCoverURLInput || !editArtistSubmit) return;
 			editArtistSubmit.disabled = true;
 			editArtistSubmit.textContent = 'Saving...';
 			setEditStatus('Saving artist...');
 			const payload: Record<string, unknown> = { name: editArtistNameInput.value.trim() };
+			if (editArtistCoverURLInput.value.trim()) payload.cover_url = editArtistCoverURLInput.value.trim();
 			const response = await apiFetch(`/api/artists/${Number(editArtistIDInput.value)}`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
@@ -185,63 +292,39 @@ import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditI
 	};
 
 	const renderArtistCard = (artist: Artist, albums: Album[]) => {
-		const wrapper = document.createElement('div');
-		wrapper.className = 'relative mb-3 overflow-hidden rounded-2xl last:mb-0';
+		const card = getToolkit().createInteractiveListCard({
+			onEdit: () => openEditDialog(artist, albums.length),
+			onDelete: () => void deleteArtist(artist.id, artist.name, albums.length),
+			editLabel: 'Edit artist',
+			deleteLabel: 'Delete artist',
+			toggleLabel: 'Toggle artist details',
+		});
+		const { wrapper, left, setBody } = card;
 
-		const bgActions = document.createElement('div');
-		bgActions.className = 'absolute inset-0 flex';
-		bgActions.innerHTML = `
-			<div class="flex flex-1 items-center justify-start bg-primary px-6 text-primary-fg"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.edit}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-			<div class="flex flex-1 items-center justify-end bg-error px-6 text-white"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.trash}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-		`;
-		wrapper.appendChild(bgActions);
+		if (artist.cover_url) {
+			const coverWrap = document.createElement('div');
+			coverWrap.className = 'relative shrink-0 overflow-hidden rounded-full border border-border/40 shadow-sm';
+			const cover = document.createElement('img');
+			cover.src = artist.cover_url;
+			cover.alt = `${artist.name} cover`;
+			cover.className = 'h-12 w-12 object-cover sm:h-14 sm:w-14';
+			coverWrap.appendChild(cover);
+			left.appendChild(coverWrap);
+		}
 
-		const details = document.createElement('details');
-		details.className = 'group relative z-10 w-full overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm transition-transform duration-300 ease-out hover:shadow-md dark:shadow-black/20';
-
-		const summary = document.createElement('summary');
-		summary.className = 'cursor-pointer list-none';
-
-		const header = document.createElement('div');
-		header.className = 'flex items-center justify-between gap-3 p-4 sm:p-5';
 		const headerContent = document.createElement('div');
 		headerContent.className = 'min-w-0 flex-1';
 		const name = document.createElement('h3');
 		name.className = 'truncate text-base font-bold text-text sm:text-lg';
 		name.textContent = artist.name;
 		headerContent.appendChild(name);
+		const averageRatingValue = getAverageArtistRating(albums);
+		const averageRating = averageRatingValue == null ? null : averageRatingValue.toFixed(1);
 		const meta = document.createElement('div');
 		meta.className = 'mt-0.5 text-sm text-text-muted';
-		meta.textContent = `${albums.length} album${albums.length === 1 ? '' : 's'}`;
+		meta.textContent = `${albums.length} album${albums.length === 1 ? '' : 's'}${averageRating ? ` • Avg ${averageRating}/10` : ''}`;
 		headerContent.appendChild(meta);
-
-		const editBtn = createEditIconButton('Edit artist');
-		editBtn.addEventListener('click', (event) => {
-			event.preventDefault();
-			event.stopPropagation();
-			openEditDialog(artist, albums.length);
-		});
-
-		const chevron = createChevronIcon();
-		const right = document.createElement('div');
-		right.className = 'ml-2 flex shrink-0 items-center justify-between gap-1';
-		right.appendChild(editBtn);
-		const chevronToggle = document.createElement('button');
-		chevronToggle.type = 'button';
-		chevronToggle.className = 'flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-surface-raised transition-colors hover:bg-border/30';
-		chevronToggle.setAttribute('aria-label', 'Toggle artist details');
-		chevronToggle.appendChild(chevron);
-		chevronToggle.addEventListener('click', (event) => {
-			event.preventDefault();
-			event.stopPropagation();
-			details.open = !details.open;
-		});
-		right.appendChild(chevronToggle);
-
-		header.appendChild(headerContent);
-		header.appendChild(right);
-		summary.appendChild(header);
-		addDisclosureBehavior(details, chevron);
+		left.appendChild(headerContent);
 
 		const body = document.createElement('div');
 		body.className = 'border-t border-border/30 bg-surface-raised/50 p-4 sm:p-5';
@@ -264,14 +347,14 @@ import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditI
 			list.className = 'flex flex-col';
 			for (const album of sortAlbums(albums)) {
 				const item = document.createElement('li');
-				item.className = 'flex flex-col gap-2 border-b border-border/20 px-4 py-3 last:border-0 sm:flex-row sm:items-center sm:justify-between';
+				item.className = 'flex items-center justify-between gap-2 border-b border-border/20 px-3 py-2 last:border-0';
 				const left = document.createElement('div');
 				left.className = 'min-w-0 flex-1';
 				const albumTitle = document.createElement('p');
-				albumTitle.className = 'truncate font-medium text-text';
+				albumTitle.className = 'truncate text-sm font-medium text-text';
 				albumTitle.textContent = album.title;
 				const albumMeta = document.createElement('p');
-				albumMeta.className = 'mt-0.5 text-xs text-text-muted';
+				albumMeta.className = 'text-[11px] text-text-muted';
 				left.appendChild(albumTitle);
 				if (album.year != null) {
 					albumMeta.textContent = String(album.year);
@@ -279,9 +362,13 @@ import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditI
 				}
 
 				const rightPills = document.createElement('div');
-				rightPills.className = 'flex flex-wrap items-center gap-x-3 gap-y-1 sm:justify-end';
+				rightPills.className = 'flex shrink-0 items-center gap-1.5';
 				if (!album.listened) rightPills.appendChild(createArtistChip('New', ICON_PATHS.newSparkle, 'secondary'));
-				if (album.listened && album.rating != null) rightPills.appendChild(createArtistChip(`${album.rating}/10`, ICON_PATHS.ratingStar, 'primary'));
+				if (album.listened && album.rating != null) {
+					const ratingChip = createArtistChip(`${album.rating}/10`, ICON_PATHS.ratingStar, 'neutral');
+					applyRatingTone(ratingChip, Number(album.rating), '--surface');
+					rightPills.appendChild(ratingChip);
+				}
 				item.appendChild(left);
 				item.appendChild(rightPills);
 				list.appendChild(item);
@@ -289,22 +376,15 @@ import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditI
 			body.appendChild(list);
 		}
 
-		details.appendChild(summary);
-		details.appendChild(body);
-
-		bindSwipe(wrapper, details,
-			() => deleteArtist(artist.id, artist.name, albums.length), // Swipe Left -> Delete
-			() => openEditDialog(artist, albums.length)                // Swipe Right -> Edit
-		);
-
-		wrapper.appendChild(details);
+		setBody(body);
 		return wrapper;
 	};
 
 	const loadArtists = async () => {
 		const listRoot = getListRoot();
 		if (!listRoot) return;
-		setMessage('Loading artists...');
+		initializeSortControls();
+		listRoot.innerHTML = '';
 		try {
 			const [artistsRes, albumsRes] = await Promise.all([
 				apiFetch('/api/artists', { method: 'GET' }, { auth: true }),
@@ -327,7 +407,19 @@ import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditI
 				current.push(album);
 				grouped.set(album.artist_id, current);
 			}
-			const sortedArtists = [...artists].sort((a, b) => a.name.localeCompare(b.name));
+			const sortedArtists = [...artists].sort((a, b) => {
+				let base = 0;
+				if (currentSortBy === 'alphabetical') {
+					base = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+				} else if (currentSortBy === 'createdAt') {
+					base = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+				} else if (currentSortBy === 'averageRating') {
+					base = compareOptionalNumber(getAverageArtistRating(grouped.get(a.id) ?? []), getAverageArtistRating(grouped.get(b.id) ?? []));
+				}
+
+				if (base === 0) base = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+				return currentSortDirection === 'asc' ? base : -base;
+			});
 			for (const artist of sortedArtists) listRoot.appendChild(renderArtistCard(artist, grouped.get(artist.id) ?? []));
 		} catch {
 			setMessage('An unexpected error occurred while loading artists.', true);
@@ -340,8 +432,10 @@ import { ICON_PATHS, bindSwipe, createArtistChip, createChevronIcon, createEditI
 	window.addEventListener('album-created', () => void loadArtists());
 	document.addEventListener('astro:page-load', () => {
 		bindEditHandlers();
+		initializeSortControls();
 		void loadArtists();
 	});
 
+	initializeSortControls();
 	void loadArtists();
 </script>

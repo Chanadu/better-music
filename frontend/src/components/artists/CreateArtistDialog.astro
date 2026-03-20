@@ -1,33 +1,69 @@
 ---
 import ModalHeader from '../ui/ModalHeader.astro';
+import BaseDialog from '../ui/BaseDialog.astro';
 ---
 
-<dialog
+<BaseDialog
 	id="artist-modal"
-	class="w-[min(92vw,32rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50"
+	className="w-[min(92vw,32rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50"
+	contentClassName="p-5 sm:p-6"
 >
-	<form id="artist-form" class="space-y-4 p-5 sm:p-6">
-		<ModalHeader title="Create Artist" modalId="artist-modal" />
+		<ModalHeader title="Create Artist" />
 
-		<div>
-			<label for="artist-name" class="block text-sm font-semibold">Name</label>
-			<input id="artist-name" name="name" required class="mt-2 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="The Beatles" />
+		<!-- Tab switcher -->
+		<div class="mt-4 flex rounded-xl border border-border/60 bg-surface-raised/50 p-1 gap-1">
+			<button type="button" id="artist-tab-manual" class="flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 text-text-muted hover:text-text">
+				Manual
+			</button>
+			<button type="button" id="artist-tab-spotify" class="flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200 bg-surface text-text shadow-sm">
+				<span class="inline-flex items-center justify-center gap-1.5">
+					<svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-[#1DB954]" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+					Spotify
+				</span>
+			</button>
 		</div>
 
-		<p id="artist-form-status" class="text-sm text-text-muted"></p>
+		<!-- Manual Tab -->
+		<form id="artist-form" class="mt-4 space-y-4 hidden">
+			<div class="relative">
+				<input id="artist-name" name="name" required placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
+				<label for="artist-name" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Name</label>
+			</div>
 
-		<button type="submit" id="artist-create-btn" class="mx-auto mt-4 block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto">
-			Create Artist
-		</button>
-	</form>
-</dialog>
+			<div class="relative">
+				<input id="artist-cover-url" name="cover_url" placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
+				<label for="artist-cover-url" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Cover URL (optional)</label>
+			</div>
+
+			<p id="artist-form-status" class="text-sm text-text-muted" role="alert" aria-live="assertive"></p>
+
+			<button type="submit" id="artist-create-btn" class="mx-auto mt-4 block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto">
+				Create Artist
+			</button>
+		</form>
+
+		<!-- Spotify Tab -->
+		<div id="artist-spotify-tab" class="mt-4">
+			<div class="relative" id="artist-spotify-search-wrap">
+				<input id="artist-spotify-search" type="text" autocomplete="off" placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-[#1DB954]/60 focus:bg-surface-raised focus:ring-4 focus:ring-[#1DB954]/10" />
+				<label for="artist-spotify-search" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Search Spotify Artists</label>
+				<div id="artist-spotify-spinner" class="absolute right-3 top-1/2 hidden -translate-y-1/2">
+					<svg class="h-4 w-4 animate-spin text-text-muted" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+				</div>
+			</div>
+			<ul id="artist-spotify-results" class="mt-2 hidden overflow-hidden rounded-xl border border-border/60 bg-surface shadow-lg"></ul>
+			<p class="mt-3 text-center text-xs text-text-muted">Select an artist to auto-fill the form</p>
+		</div>
+</BaseDialog>
 
 <script>
 	import { apiFetch, getErrorMessage } from '../../lib/api';
+import { searchArtists } from '../../lib/spotify';
 
 	const getArtistModal = () => document.getElementById('artist-modal') as HTMLDialogElement | null;
 	const getArtistForm = () => document.getElementById('artist-form') as HTMLFormElement | null;
 	const getArtistNameInput = () => document.getElementById('artist-name') as HTMLInputElement | null;
+	const getArtistCoverURLInput = () => document.getElementById('artist-cover-url') as HTMLInputElement | null;
 	const getArtistFormStatus = () => document.getElementById('artist-form-status') as HTMLParagraphElement | null;
 	const getArtistCreateBtn = () => document.getElementById('artist-create-btn') as HTMLButtonElement | null;
 
@@ -59,11 +95,144 @@ import ModalHeader from '../ui/ModalHeader.astro';
 		artistModal.close();
 	};
 
+	// --- Tab switching ---
+	const switchTab = (tab: 'manual' | 'spotify') => {
+		const manualForm = document.getElementById('artist-form');
+		const spotifyTab = document.getElementById('artist-spotify-tab');
+		const manualBtn = document.getElementById('artist-tab-manual');
+		const spotifyBtn = document.getElementById('artist-tab-spotify');
+
+		const isManual = tab === 'manual';
+		manualForm?.classList.toggle('hidden', !isManual);
+		spotifyTab?.classList.toggle('hidden', isManual);
+
+		const activeClass = ['bg-surface', 'text-text', 'shadow-sm'];
+		const inactiveClass = ['text-text-muted', 'hover:text-text'];
+
+		if (isManual) {
+			manualBtn?.classList.add(...activeClass);
+			manualBtn?.classList.remove(...inactiveClass);
+			spotifyBtn?.classList.remove(...activeClass);
+			spotifyBtn?.classList.add(...inactiveClass);
+		} else {
+			spotifyBtn?.classList.add(...activeClass);
+			spotifyBtn?.classList.remove(...inactiveClass);
+			manualBtn?.classList.remove(...activeClass);
+			manualBtn?.classList.add(...inactiveClass);
+			document.getElementById('artist-spotify-search')?.focus();
+		}
+	};
+
+	// --- Spotify search helpers ---
+	const hideArtistResults = () => {
+		const artistSpotifyResults = document.getElementById('artist-spotify-results');
+		artistSpotifyResults?.classList.add('hidden');
+	};
+
+	let artistSearchDebounce: ReturnType<typeof setTimeout>;
+	let selectedSpotifyArtistID: string | null = null;
+
+	// --- Main Delegated Listeners ---
+	const windowWithArtistInputFlag = window as Window & { __artistModalInputBound?: boolean };
+	if (!windowWithArtistInputFlag.__artistModalInputBound) {
+		windowWithArtistInputFlag.__artistModalInputBound = true;
+		document.addEventListener('input', (event) => {
+			const target = event.target as HTMLInputElement | null;
+			if (!target || target.id !== 'artist-spotify-search') return;
+
+			clearTimeout(artistSearchDebounce);
+			const q = target.value.trim();
+			if (!q) { 
+				console.log('[Artist Search] Query cleared');
+				hideArtistResults(); 
+				return; 
+			}
+
+			console.log(`[Artist Search] Query: "${q}"`);
+			artistSearchDebounce = setTimeout(async () => {
+				const artistSpotifyResults = document.getElementById('artist-spotify-results') as HTMLUListElement | null;
+				const artistSpotifySpinner = document.getElementById('artist-spotify-spinner') as HTMLDivElement | null;
+				if (!artistSpotifyResults || !artistSpotifySpinner) {
+					console.warn('[Artist Search] Could not find results/spinner elements in DOM');
+					return;
+				}
+
+				artistSpotifySpinner.classList.remove('hidden');
+				try {
+					console.log(`[Artist Search] Fetching for: "${q}"...`);
+					const artists = await searchArtists(q);
+					console.log(`[Artist Search] Found ${artists.length} results`);
+					artistSpotifyResults.innerHTML = '';
+					if (!artists.length) {
+						artistSpotifyResults.innerHTML = '<li class="px-4 py-3 text-sm text-text-muted text-center italic">No results found on Spotify</li>';
+					} else {
+						for (const artist of artists) {
+							const img = artist.images[artist.images.length - 1];
+							const li = document.createElement('li');
+							li.className = 'flex cursor-pointer items-center gap-3 px-4 py-3 text-sm font-medium text-text transition-colors hover:bg-surface-raised border-b border-border/30 last:border-0';
+							li.innerHTML = `
+								${img ? `<img src="${img.url}" alt="" class="h-10 w-10 rounded-full object-cover shrink-0 border border-border/40" />` : '<div class="h-10 w-10 rounded-full bg-surface-raised shrink-0 border border-border/40 flex items-center justify-center text-text-muted text-xs">?</div>'}
+								<span class="truncate">${artist.name}</span>
+								<span class="ml-auto shrink-0 text-xs text-secondary font-medium">Select →</span>
+							`;
+							li.addEventListener('click', () => {
+								console.log(`[Artist Search] Selected: ${artist.name}`);
+								const nameInput = getArtistNameInput();
+								const coverURLInput = getArtistCoverURLInput();
+								const selectedImage = artist.images[0]?.url ?? artist.images[artist.images.length - 1]?.url ?? '';
+								selectedSpotifyArtistID = artist.id;
+								if (nameInput) nameInput.value = artist.name;
+								if (coverURLInput) coverURLInput.value = selectedImage;
+								
+								// Clear search after selection
+								const sInput = document.getElementById('artist-spotify-search') as HTMLInputElement | null;
+								if (sInput) sInput.value = '';
+								hideArtistResults();
+								switchTab('manual');
+							});
+							artistSpotifyResults.appendChild(li);
+						}
+					}
+					artistSpotifyResults.classList.remove('hidden');
+				} catch (err) {
+					console.error('[Artist Search] Error:', err);
+					const msg = err instanceof Error ? err.message : 'Search failed. Try again.';
+					artistSpotifyResults.innerHTML = `<li class="px-4 py-3 text-sm text-[var(--error)] text-center font-medium">${msg}</li>`;
+					artistSpotifyResults.classList.remove('hidden');
+				} finally {
+					artistSpotifySpinner.classList.add('hidden');
+				}
+			}, 350);
+		});
+	}
+
+	const windowWithArtistTabClickFlag = window as Window & { __artistModalTabClickBound?: boolean };
+	if (!windowWithArtistTabClickFlag.__artistModalTabClickBound) {
+		windowWithArtistTabClickFlag.__artistModalTabClickBound = true;
+		document.addEventListener('click', (event) => {
+			const target = event.target as HTMLElement | null;
+			const tabBtn = target?.closest('#artist-tab-manual, #artist-tab-spotify');
+			if (!tabBtn) return;
+
+			if (tabBtn.id === 'artist-tab-manual') {
+				switchTab('manual');
+			} else {
+				switchTab('spotify');
+			}
+		});
+	}
+	// --- End Delegated Listeners ---
+	// --- End Spotify ---
+
 	const windowWithOpenFlag = window as Window & { __openArtistModalBound?: boolean };
 	if (!windowWithOpenFlag.__openArtistModalBound) {
 		windowWithOpenFlag.__openArtistModalBound = true;
 		window.addEventListener('open-artist-modal', () => {
-			requestAnimationFrame(() => openModal());
+			requestAnimationFrame(() => {
+				openModal();
+					selectedSpotifyArtistID = null;
+				switchTab('spotify');
+			});
 		});
 	}
 
@@ -72,16 +241,7 @@ import ModalHeader from '../ui/ModalHeader.astro';
 		windowWithClickFlag.__artistModalClickBound = true;
 		document.addEventListener('click', (event) => {
 			const target = event.target as Element | null;
-			const artistModal = getArtistModal();
-
-			if (target?.id === 'artist-modal') {
-				closeModal();
-				return;
-			}
-
-			if (artistModal && target?.closest('[data-close-modal="artist-modal"]')) {
-				closeModal();
-			}
+			if (target?.id === 'artist-modal') closeModal();
 		});
 	}
 
@@ -94,13 +254,16 @@ import ModalHeader from '../ui/ModalHeader.astro';
 			event.preventDefault();
 
 			const artistNameInput = getArtistNameInput();
+			const artistCoverURLInput = getArtistCoverURLInput();
 			const artistFormStatus = getArtistFormStatus();
 			const artistCreateBtn = getArtistCreateBtn();
 			if (!artistNameInput) return;
 
 			const name = artistNameInput.value.trim();
+			const coverURL = artistCoverURLInput?.value.trim() ?? '';
 
 			if (!name) {
+				switchTab('manual');
 				setStatus(artistFormStatus, 'Artist name is required.', 'error');
 				return;
 			}
@@ -117,10 +280,15 @@ import ModalHeader from '../ui/ModalHeader.astro';
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({ name }),
+				body: JSON.stringify({
+					name,
+					...(selectedSpotifyArtistID ? { spotify_id: selectedSpotifyArtistID } : {}),
+					...(coverURL ? { cover_url: coverURL } : {}),
+				}),
 			}, { auth: true });
 
 			if (!createResponse.ok) {
+				switchTab('manual');
 				setStatus(artistFormStatus, await getErrorMessage(createResponse), 'error');
 				if (artistCreateBtn) {
 					artistCreateBtn.disabled = false;
@@ -133,6 +301,7 @@ import ModalHeader from '../ui/ModalHeader.astro';
 
 			setStatus(artistFormStatus, 'Artist created successfully.', 'success');
 			target.reset();
+			selectedSpotifyArtistID = null;
 			if (artistCreateBtn) {
 				artistCreateBtn.disabled = false;
 				artistCreateBtn.textContent = 'Create Artist';

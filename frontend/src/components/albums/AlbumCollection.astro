@@ -1,40 +1,72 @@
-<div id="albums-list" class="space-y-3"></div>
+---
+import BaseDialog from '../ui/BaseDialog.astro';
+import InteractiveListToolkit from '../ui/InteractiveListToolkit.astro';
+import SortControls from '../ui/SortControls.astro';
+interface Props {
+	view?: 'unlistened' | 'listened';
+}
 
-<dialog id="edit-album-modal" class="m-auto w-full rounded-b-none rounded-t-3xl border-t border-border bg-surface p-0 text-text shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] backdrop:bg-black/60 sm:w-[min(92vw,36rem)] sm:rounded-2xl sm:border sm:shadow-2xl sm:backdrop:bg-black/45">
+const { view = 'unlistened' } = Astro.props as Props;
+---
+
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+	<SortControls controlId="albums-sort-by" />
+</div>
+
+<div id="albums-list" data-view={view} class="space-y-3"></div>
+
+<InteractiveListToolkit />
+
+
+<BaseDialog id="edit-album-modal" className="m-auto w-full rounded-b-none rounded-t-3xl border-t border-border bg-surface p-0 text-text shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] backdrop:bg-black/60 sm:w-[min(92vw,36rem)] sm:rounded-2xl sm:border sm:shadow-2xl sm:backdrop:bg-black/45" contentClassName="">
 	<form id="edit-album-form" class="space-y-4 p-6 sm:p-5 pb-8 sm:pb-5">
-		<div class="mx-auto h-1.5 w-12 rounded-full bg-border/60 sm:hidden"></div>
 		<div class="flex items-center justify-between">
 			<h3 class="text-lg font-semibold">Edit Album</h3>
-			<button type="button" id="edit-album-close" class="inline-flex cursor-pointer items-center justify-center rounded-md p-1 text-text-muted hover:bg-surface-raised" aria-label="Close">
-				<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-					<path d="M6 6l12 12"></path>
-					<path d="M18 6L6 18"></path>
-				</svg>
-			</button>
 		</div>
 
 		<input id="edit-album-id" type="hidden" />
-		<input id="edit-album-title" required class="w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="Title" />
-		<select id="edit-album-artist-id" required class="w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10"></select>
-		<input id="edit-album-cover-url" class="w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="Cover URL" />
-		<input id="edit-album-year" type="number" min="0" class="w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" placeholder="Year" />
+		<div class="relative">
+			<input id="edit-album-title" required placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
+			<label for="edit-album-title" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Title</label>
+		</div>
+		<div class="relative">
+			<select id="edit-album-artist-id" required class="w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10"></select>
+			<label for="edit-album-artist-id" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted">Artist</label>
+		</div>
+		<div class="relative">
+			<input id="edit-album-cover-url" placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
+			<label for="edit-album-cover-url" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Cover URL</label>
+		</div>
+		<div class="relative">
+			<input id="edit-album-year" type="number" min="0" placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
+			<label for="edit-album-year" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Year</label>
+		</div>
+		<button type="button" id="edit-album-spotify-refresh-btn" class="w-full cursor-pointer rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-sm font-semibold text-text transition-all duration-200 hover:bg-surface-raised focus:ring-4 focus:ring-[#1DB954]/10">Refresh from Spotify ID</button>
 		<label for="edit-album-listened" class="flex items-center gap-2 text-sm font-semibold"><input id="edit-album-listened" type="checkbox" class="h-5 w-5 rounded border border-border/60 bg-surface-raised/50 text-primary transition-all duration-200 focus:ring-2 focus:ring-primary/50" /> Listened</label>
-		<input id="edit-album-rating" type="number" min="1" max="10" class="w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10 disabled:opacity-50" placeholder="Rating" />
-		<div class="w-full overflow-hidden rounded-xl border border-border/60 bg-surface-raised/50 transition-all duration-200 focus-within:border-primary/60 focus-within:bg-surface-raised focus-within:ring-4 focus-within:ring-primary/10 disabled:opacity-50">
-			<input id="edit-album-listened-at" type="date" class="ios-date-field w-full border-0 bg-transparent px-4 py-3 text-base text-text disabled:opacity-50" />
+		<div class="flex items-center gap-2 sm:gap-3">
+			<input id="edit-album-rating-slider" type="range" min="0" max="10" step="0.1" value="5" class="h-3 w-full cursor-pointer appearance-none rounded-lg bg-border/50 accent-primary disabled:opacity-50" />
+			<div class="relative w-20 shrink-0">
+				<input id="edit-album-rating" type="number" min="0" max="10" step="0.1" inputmode="decimal" placeholder=" " class="peer h-11 w-full rounded-xl border border-border/60 bg-surface-raised/50 px-2 pb-1 pt-4 text-sm text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10 disabled:opacity-50" />
+				<label for="edit-album-rating" class="pointer-events-none absolute left-2 top-1 text-[10px] font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-xs peer-placeholder-shown:font-normal peer-focus:top-1 peer-focus:translate-y-0 peer-focus:text-[10px] peer-focus:font-semibold">Rating</label>
+			</div>
+		</div>
+		<div class="relative w-full overflow-hidden rounded-xl border border-border/60 bg-surface-raised/50 transition-all duration-200 focus-within:border-primary/60 focus-within:bg-surface-raised focus-within:ring-4 focus-within:ring-primary/10 disabled:opacity-50">
+			<input id="edit-album-listened-at" type="date" class="ios-date-field w-full border-0 bg-transparent px-4 pb-2 pt-6 text-base text-text disabled:opacity-50" />
+			<label for="edit-album-listened-at" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted">Listened At (optional)</label>
 		</div>
 		<p id="edit-album-status" class="text-sm text-text-muted"></p>
 		<div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0">
-			<button type="button" id="edit-album-delete" class="w-full cursor-pointer rounded-xl bg-error/90 px-4 py-3 text-base font-semibold text-white shadow-sm shadow-error/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-error hover:shadow-md hover:shadow-error/30 focus:ring-4 focus:ring-error/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:py-2 sm:text-sm">Delete</button>
 			<button type="submit" id="edit-album-submit" class="w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto sm:py-2 sm:text-sm">Save</button>
 		</div>
 	</form>
-</dialog>
+</BaseDialog>
 
 <script>
-	import { apiFetch } from '../../lib/api';
+	import Sortable from 'sortablejs';
+import { apiFetch } from '../../lib/api';
 import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
-import { ICON_PATHS, bindSwipe, createAlbumPill, createChevronIcon, createEditIconButton } from '../../lib/ui';
+import { getAlbumBySpotifyID } from '../../lib/spotify';
+import { applyRatingTone, createThemedDropdown } from '../../lib/ui';
 
 	type Album = {
 		id: number;
@@ -55,82 +87,236 @@ import { ICON_PATHS, bindSwipe, createAlbumPill, createChevronIcon, createEditIc
 		name: string;
 	};
 
+	type SortableEndEvent = {
+		newIndex?: number | null;
+		oldIndex?: number | null;
+	};
+
+	type AlbumSortKey = 'artist' | 'title' | 'year' | 'rating' | 'createdAt' | 'listenedAt';
+	type SortDirection = 'asc' | 'desc';
+
+	type StatusType = 'neutral' | 'error' | 'success';
+
+	type InteractiveCardOptions = {
+		onEdit: () => void;
+		onDelete: () => void;
+		editLabel: string;
+		deleteLabel: string;
+		toggleLabel: string;
+		enableSwipe?: boolean;
+	};
+
+	type InteractiveCardParts = {
+		wrapper: HTMLDivElement;
+		left: HTMLDivElement;
+		right: HTMLDivElement;
+		setBody: (body: HTMLElement) => void;
+	};
+
+	type InteractiveListToolkitAPI = {
+		setListRootMessage: (listRoot: HTMLDivElement | null, message: string, isError?: boolean) => void;
+		setStatusText: (target: HTMLElement | null, message: string, type?: StatusType) => void;
+		showDialogSafely: (dialog: HTMLDialogElement | null) => void;
+		createInteractiveListCard: (options: InteractiveCardOptions) => InteractiveCardParts;
+	};
+
+	const getToolkit = () => {
+		const toolkit = (window as Window & { __interactiveListToolkit?: InteractiveListToolkitAPI }).__interactiveListToolkit;
+		if (!toolkit) throw new Error('Interactive list toolkit unavailable');
+		return toolkit;
+	};
+
 	const getListRoot = () => document.getElementById('albums-list') as HTMLDivElement | null;
+	const getView = (): 'unlistened' | 'listened' => {
+		const mode = getListRoot()?.dataset.view;
+		return mode === 'listened' ? 'listened' : 'unlistened';
+	};
 	let editAlbumDialog: HTMLDialogElement | null = null;
 	let editAlbumForm: HTMLFormElement | null = null;
-	let editAlbumClose: HTMLButtonElement | null = null;
 	let editAlbumIDInput: HTMLInputElement | null = null;
 	let editAlbumTitleInput: HTMLInputElement | null = null;
 	let editAlbumArtistInput: HTMLSelectElement | null = null;
 	let editAlbumCoverInput: HTMLInputElement | null = null;
 	let editAlbumYearInput: HTMLInputElement | null = null;
 	let editAlbumListenedInput: HTMLInputElement | null = null;
+	let editAlbumRatingSliderInput: HTMLInputElement | null = null;
 	let editAlbumRatingInput: HTMLInputElement | null = null;
 	let editAlbumListenedAtInput: HTMLInputElement | null = null;
 	let editAlbumStatus: HTMLParagraphElement | null = null;
 	let editAlbumSubmit: HTMLButtonElement | null = null;
-	let editAlbumDeleteBtn: HTMLButtonElement | null = null;
+	let listenedSortable: any = null;
+	let currentEditAlbumSpotifyID: string | null = null;
+	let currentSortBy: AlbumSortKey = getView() === 'listened' ? 'rating' : 'artist';
+	let currentSortDirection: SortDirection = getView() === 'listened' ? 'desc' : 'asc';
+	let sortDropdown: ReturnType<typeof createThemedDropdown> | null = null;
 
 	const refreshEditRefs = () => {
 		editAlbumDialog = document.getElementById('edit-album-modal') as HTMLDialogElement | null;
 		editAlbumForm = document.getElementById('edit-album-form') as HTMLFormElement | null;
-		editAlbumClose = document.getElementById('edit-album-close') as HTMLButtonElement | null;
 		editAlbumIDInput = document.getElementById('edit-album-id') as HTMLInputElement | null;
 		editAlbumTitleInput = document.getElementById('edit-album-title') as HTMLInputElement | null;
 		editAlbumArtistInput = document.getElementById('edit-album-artist-id') as HTMLSelectElement | null;
 		editAlbumCoverInput = document.getElementById('edit-album-cover-url') as HTMLInputElement | null;
 		editAlbumYearInput = document.getElementById('edit-album-year') as HTMLInputElement | null;
 		editAlbumListenedInput = document.getElementById('edit-album-listened') as HTMLInputElement | null;
+		editAlbumRatingSliderInput = document.getElementById('edit-album-rating-slider') as HTMLInputElement | null;
 		editAlbumRatingInput = document.getElementById('edit-album-rating') as HTMLInputElement | null;
 		editAlbumListenedAtInput = document.getElementById('edit-album-listened-at') as HTMLInputElement | null;
 		editAlbumStatus = document.getElementById('edit-album-status') as HTMLParagraphElement | null;
 		editAlbumSubmit = document.getElementById('edit-album-submit') as HTMLButtonElement | null;
-		editAlbumDeleteBtn = document.getElementById('edit-album-delete') as HTMLButtonElement | null;
+	};
+
+	const clampRating = (value: number) => Math.min(10, Math.max(0, value));
+
+	const syncEditRatingControls = (source: 'slider' | 'manual') => {
+		if (!editAlbumRatingSliderInput || !editAlbumRatingInput) return;
+
+		if (source === 'slider') {
+			const value = clampRating(Number(editAlbumRatingSliderInput.value));
+			if (!Number.isFinite(value)) return;
+			editAlbumRatingInput.value = value.toFixed(1);
+			return;
+		}
+
+		const parsed = Number(editAlbumRatingInput.value);
+		if (!Number.isFinite(parsed)) return;
+		const value = clampRating(parsed);
+		editAlbumRatingSliderInput.value = value.toFixed(1);
+		editAlbumRatingInput.value = value.toFixed(1);
 	};
 
 	let artistsCache: Artist[] = [];
 
-	const sortAlbums = (albums: Album[]): Album[] => {
+	const compareText = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
+
+	const compareOptionalNumber = (a?: number | null, b?: number | null) => {
+		if (a == null && b == null) return 0;
+		if (a == null) return 1;
+		if (b == null) return -1;
+		return a - b;
+	};
+
+	const compareOptionalDate = (a?: string | null, b?: string | null) => {
+		if (!a && !b) return 0;
+		if (!a) return 1;
+		if (!b) return -1;
+		return new Date(a).getTime() - new Date(b).getTime();
+	};
+
+	const sortAlbums = (albums: Album[], artistNameMap: Map<number, string>): Album[] => {
+		const mode = getView();
+		const isListenedView = mode === 'listened';
 		return [...albums].sort((a, b) => {
-			if (a.listened !== b.listened) return a.listened ? -1 : 1;
-			const aRating = a.rating ?? -1;
-			const bRating = b.rating ?? -1;
-			if (aRating !== bRating) return bRating - aRating;
-			return a.title.localeCompare(b.title);
+			const artistA = artistNameMap.get(a.artist_id) ?? '';
+			const artistB = artistNameMap.get(b.artist_id) ?? '';
+
+			let base = 0;
+			if (currentSortBy === 'artist') {
+				base = compareText(artistA, artistB);
+			} else if (currentSortBy === 'title') {
+				base = compareText(a.title, b.title);
+			} else if (currentSortBy === 'year') {
+				base = compareOptionalNumber(a.year, b.year);
+			} else if (currentSortBy === 'rating' && isListenedView) {
+				base = compareOptionalNumber(a.rating, b.rating);
+			} else if (currentSortBy === 'createdAt') {
+				base = compareOptionalDate(a.created_at, b.created_at);
+			} else if (currentSortBy === 'listenedAt' && isListenedView) {
+				base = compareOptionalDate(a.listened_at, b.listened_at);
+			}
+
+			if (base === 0) {
+				base = compareText(a.title, b.title);
+				if (base === 0) base = compareText(artistA, artistB);
+			}
+
+			return currentSortDirection === 'asc' ? base : -base;
 		});
 	};
 
-	const setMessage = (message: string, isError = false) => {
-		const listRoot = getListRoot();
-		if (!listRoot) return;
-		listRoot.innerHTML = '';
-		const p = document.createElement('p');
-		p.className = 'text-sm';
-		p.style.color = isError ? 'var(--error)' : 'var(--text-muted)';
-		p.textContent = message;
-		listRoot.appendChild(p);
+	const syncSortDirectionButtonLabel = () => {
+		const button = document.getElementById('albums-sort-direction') as HTMLButtonElement | null;
+		if (!button) return;
+		if (currentSortDirection === 'asc') {
+			button.title = 'Ascending';
+			button.setAttribute('aria-label', 'Sort direction: ascending');
+			button.innerHTML = '<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M12 7l-4 6h8z" fill="currentColor"></path></svg>';
+			return;
+		}
+
+		button.title = 'Descending';
+		button.setAttribute('aria-label', 'Sort direction: descending');
+		button.innerHTML = '<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M12 17l4-6H8z" fill="currentColor"></path></svg>';
 	};
 
-	const setEditStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
-		if (!editAlbumStatus) return;
-		editAlbumStatus.textContent = message;
-		if (type === 'error') editAlbumStatus.style.color = 'var(--error)';
-		else if (type === 'success') editAlbumStatus.style.color = 'var(--success)';
-		else editAlbumStatus.style.color = 'var(--text-muted)';
-	};
+	const initializeSortControls = () => {
+		const directionButton = document.getElementById('albums-sort-direction') as HTMLButtonElement | null;
+		if (!directionButton) return;
 
-	const showDialogSafely = (dialog: HTMLDialogElement | null) => {
-		if (!dialog || dialog.open) return;
-		try {
-			dialog.showModal();
-		} catch {
-			dialog.setAttribute('open', '');
+		if (!sortDropdown) {
+			sortDropdown = createThemedDropdown({
+				triggerId: 'albums-sort-by-trigger',
+				valueId: 'albums-sort-by-value',
+				menuId: 'albums-sort-by-menu',
+				onSelect: (value) => {
+					currentSortBy = value as AlbumSortKey;
+					void loadAlbums();
+				},
+			});
+		}
+		if (!sortDropdown) return;
+
+		const mode = getView();
+		const options: Array<{ value: AlbumSortKey; label: string }> =
+			mode === 'listened'
+				? [
+					{ value: 'rating', label: 'Rating' },
+					{ value: 'artist', label: 'Artist Name' },
+					{ value: 'title', label: 'Album Name' },
+					{ value: 'year', label: 'Year' },
+					{ value: 'createdAt', label: 'Creation Date' },
+					{ value: 'listenedAt', label: 'Listened Date' },
+				]
+				: [
+					{ value: 'artist', label: 'Artist Name' },
+					{ value: 'title', label: 'Album Name' },
+					{ value: 'year', label: 'Year' },
+					{ value: 'createdAt', label: 'Creation Date' },
+				];
+
+		if (!options.some((option) => option.value === currentSortBy)) {
+			currentSortBy = mode === 'listened' ? 'rating' : 'artist';
+		}
+		sortDropdown.setOptions(options, currentSortBy);
+		syncSortDirectionButtonLabel();
+
+		if (directionButton.dataset.bound !== 'true') {
+			directionButton.dataset.bound = 'true';
+			directionButton.addEventListener('click', () => {
+				currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+				syncSortDirectionButtonLabel();
+				void loadAlbums();
+			});
 		}
 	};
 
-	const deleteAlbum = async (id: number, title: string) => {
+	const setMessage = (message: string, isError = false) => getToolkit().setListRootMessage(getListRoot(), message, isError);
+
+	const setEditStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
+		getToolkit().setStatusText(editAlbumStatus, message, type);
+	};
+
+	const showDialogSafely = (dialog: HTMLDialogElement | null) => {
+		getToolkit().showDialogSafely(dialog);
+	};
+
+	const deleteAlbum = async (id: number, title: string, artistID: number) => {
 		if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
-		const response = await apiFetch(`/api/albums/${id}`, { method: 'DELETE' }, { auth: true });
+		const response = await apiFetch(`/api/albums/${id}`, {
+			method: 'DELETE',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ artist_id: artistID }),
+		}, { auth: true });
 		if (!response.ok) {
 			window.alert('Failed to delete album.');
 			return;
@@ -139,19 +325,22 @@ import { ICON_PATHS, bindSwipe, createAlbumPill, createChevronIcon, createEditIc
 		window.dispatchEvent(new CustomEvent('album-created'));
 	};
 
-	const addDisclosureBehavior = (details: HTMLDetailsElement, chevron: SVGSVGElement) => {
-		const syncChevron = () => {
-			chevron.style.transform = details.open ? 'rotate(180deg)' : 'rotate(0deg)';
-		};
-		details.addEventListener('toggle', syncChevron);
-		syncChevron();
-	};
-
 	const syncEditListenedState = () => {
 		const listened = editAlbumListenedInput?.checked ?? false;
+		if (editAlbumRatingSliderInput) {
+			editAlbumRatingSliderInput.disabled = !listened;
+		}
 		if (editAlbumRatingInput) {
 			editAlbumRatingInput.disabled = !listened;
-			if (!listened) editAlbumRatingInput.value = '';
+			editAlbumRatingInput.required = listened;
+			if (!listened) {
+				editAlbumRatingInput.value = '';
+				if (editAlbumRatingSliderInput) editAlbumRatingSliderInput.value = '5';
+			} else if (editAlbumRatingInput.value.trim()) {
+				syncEditRatingControls('manual');
+			} else if (editAlbumRatingSliderInput) {
+				editAlbumRatingInput.value = editAlbumRatingSliderInput.value;
+			}
 		}
 		if (editAlbumListenedAtInput) {
 			editAlbumListenedAtInput.disabled = !listened;
@@ -182,147 +371,171 @@ import { ICON_PATHS, bindSwipe, createAlbumPill, createChevronIcon, createEditIc
 		editAlbumYearInput.value = album.year == null ? '' : String(album.year);
 		editAlbumListenedInput.checked = album.listened;
 		editAlbumRatingInput.value = album.rating == null ? '' : String(album.rating);
+		if (editAlbumRatingSliderInput) {
+			const rating = album.rating == null ? 5 : clampRating(Number(album.rating));
+			editAlbumRatingSliderInput.value = rating.toFixed(1);
+		}
 		editAlbumListenedAtInput.value = toDateLocal(album.listened_at);
+		currentEditAlbumSpotifyID = album.spotify_id ?? null;
 		syncEditListenedState();
 		setEditStatus('');
 		showDialogSafely(editAlbumDialog);
 	};
 
 	const renderAlbumCard = (album: Album, artistName: string) => {
-		const wrapper = document.createElement('div');
-		wrapper.className = 'relative mb-3 overflow-hidden rounded-2xl last:mb-0';
-
-		const bgActions = document.createElement('div');
-		bgActions.className = 'absolute inset-0 flex';
-		bgActions.innerHTML = `
-			<div class="flex flex-1 items-center justify-start bg-primary px-6 text-primary-fg"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.edit}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-			<div class="flex flex-1 items-center justify-end bg-error px-6 text-white"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.trash}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-		`;
-		wrapper.appendChild(bgActions);
-
-		const details = document.createElement('details');
-		details.className = 'group relative z-10 w-full overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm transition-transform duration-300 ease-out hover:shadow-md dark:shadow-black/20';
-
-		const summary = document.createElement('summary');
-		summary.className = 'cursor-pointer list-none';
-
-		const topRow = document.createElement('div');
-		topRow.className = 'flex min-w-0 items-center justify-between gap-4 p-4';
-
-		const leftWrap = document.createElement('div');
-		leftWrap.className = 'flex min-w-0 flex-1 items-center gap-4';
+		const mode = getView();
+		const isListenedView = mode === 'listened';
+		const card = getToolkit().createInteractiveListCard({
+			onEdit: () => openEditDialog(album),
+			onDelete: () => void deleteAlbum(album.id, album.title, album.artist_id),
+			editLabel: 'Edit album',
+			deleteLabel: 'Delete album',
+			toggleLabel: 'Toggle album details',
+		});
+		const { wrapper, left, right, setBody } = card;
+		wrapper.dataset.albumId = String(album.id);
 
 		if (album.cover_url) {
-			const imgWrap = document.createElement('div');
-			imgWrap.className = 'relative shrink-0';
-			const img = document.createElement('img');
-			img.src = album.cover_url;
-			img.alt = `${album.title} cover`;
-			img.className = 'h-16 w-16 rounded-xl border border-border/40 object-cover shadow-sm transition-transform duration-300 group-hover:scale-105 sm:h-20 sm:w-20';
-			imgWrap.appendChild(img);
-			leftWrap.appendChild(imgWrap);
+			const coverWrap = document.createElement('div');
+			coverWrap.className = 'relative shrink-0 overflow-hidden rounded-xl border border-border/40 shadow-sm';
+			const cover = document.createElement('img');
+			cover.src = album.cover_url;
+			cover.alt = `${album.title} cover`;
+			cover.className = 'h-14 w-14 object-cover sm:h-16 sm:w-16';
+			coverWrap.appendChild(cover);
+			left.appendChild(coverWrap);
 		}
 
-		const content = document.createElement('div');
-		content.className = 'flex min-w-0 flex-1 flex-col justify-center';
-
-		const titleRow = document.createElement('div');
-		titleRow.className = 'flex min-h-8 items-center';
+		const headerContent = document.createElement('div');
+		headerContent.className = 'min-w-0 flex-1';
 		const title = document.createElement('h3');
 		title.className = 'truncate text-base font-bold text-text sm:text-lg';
 		title.textContent = album.title;
-		titleRow.appendChild(title);
-		content.appendChild(titleRow);
+		headerContent.appendChild(title);
 
-		const metaRow = document.createElement('div');
-		metaRow.className = 'mt-1 flex flex-wrap items-center justify-between gap-2';
-		const artistYearWrap = document.createElement('div');
-		artistYearWrap.className = 'flex min-w-0 items-baseline gap-2';
 		const meta = document.createElement('p');
-		meta.className = 'truncate text-sm text-text-muted';
-		meta.textContent = artistName;
-		artistYearWrap.appendChild(meta);
-		if (album.year != null) {
-			const separator = document.createElement('span');
-			separator.className = 'text-xs text-text-muted/60';
-			separator.textContent = '•';
-			artistYearWrap.appendChild(separator);
+		meta.className = 'mt-0.5 truncate text-sm text-text-muted';
+		meta.textContent = album.year == null ? artistName : `${artistName} • ${album.year}`;
+		headerContent.appendChild(meta);
 
-			const yearLine = document.createElement('span');
-			yearLine.className = 'text-sm text-text-muted';
-			yearLine.textContent = String(album.year);
-			artistYearWrap.appendChild(yearLine);
+		left.appendChild(headerContent);
+
+		if (album.listened && album.rating != null) {
+			const ratingBadge = document.createElement('div');
+			ratingBadge.className = 'album-rating-badge flex min-w-[3.9rem] items-center justify-center gap-1.5 rounded-xl border px-2 py-1 sm:min-w-[4.2rem] sm:px-2.5 sm:py-1.5';
+			applyRatingTone(ratingBadge, Number(album.rating), '--surface-raised');
+			ratingBadge.innerHTML = `<span class="album-rating-value text-xl font-black leading-none sm:text-2xl">${album.rating}</span>`;
+			right.insertBefore(ratingBadge, right.lastElementChild);
 		}
-		metaRow.appendChild(artistYearWrap);
 
-		const pillRow = document.createElement('div');
-		pillRow.className = 'flex flex-wrap items-center gap-2';
-		if (!album.listened) pillRow.appendChild(createAlbumPill('New', ICON_PATHS.newSparkle, 'secondary'));
-		if (album.listened && album.rating != null) pillRow.appendChild(createAlbumPill(`${album.rating}/10`, ICON_PATHS.ratingStar, 'primary'));
-		metaRow.appendChild(pillRow);
-		content.appendChild(metaRow);
-		leftWrap.appendChild(content);
-		topRow.appendChild(leftWrap);
+		const body = document.createElement('div');
+		body.className = 'border-t border-border/30 bg-surface-raised/50 p-4 text-sm text-text-muted sm:p-5';
 
-		const editBtn = createEditIconButton('Edit album');
-		editBtn.addEventListener('click', (event) => {
-			event.preventDefault();
-			event.stopPropagation();
-			openEditDialog(album);
-		});
+		const fullTitle = document.createElement('p');
+		fullTitle.textContent = `Title: ${album.title}`;
+		body.appendChild(fullTitle);
 
-		const chevron = createChevronIcon();
-		chevron.classList.add('shrink-0', 'self-center');
-		const actionWrap = document.createElement('div');
-		actionWrap.className = 'ml-2 flex shrink-0 flex-col items-center gap-1';
-
-		const chevronToggle = document.createElement('button');
-		chevronToggle.type = 'button';
-		chevronToggle.className = 'flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-raised hover:text-text';
-		chevronToggle.setAttribute('aria-label', 'Toggle album details');
-		chevronToggle.appendChild(chevron);
-		chevronToggle.addEventListener('click', (event) => {
-			event.preventDefault();
-			event.stopPropagation();
-			details.open = !details.open;
-		});
-
-		actionWrap.appendChild(editBtn);
-		actionWrap.appendChild(chevronToggle);
-		topRow.appendChild(actionWrap);
-		summary.appendChild(topRow);
-		addDisclosureBehavior(details, chevron);
-
-		const dropdown = document.createElement('div');
-		dropdown.className = 'border-t border-border/30 bg-surface-raised/50 p-4 text-sm text-text-muted sm:p-5';
 		const created = document.createElement('p');
 		created.textContent = `Created: ${formatDateTime(album.created_at)}`;
-		dropdown.appendChild(created);
+		body.appendChild(created);
+
 		if (album.listened) {
 			const listenedAt = document.createElement('p');
 			listenedAt.textContent = `Listened at: ${formatDateTime(album.listened_at)}`;
-			dropdown.appendChild(listenedAt);
+			body.appendChild(listenedAt);
 		}
+
 		const comment = document.createElement('p');
 		comment.textContent = `Comment: ${album.comment?.trim() || 'No comment'}`;
-		dropdown.appendChild(comment);
-
-		details.appendChild(summary);
-		details.appendChild(dropdown);
-
-		bindSwipe(wrapper, details,
-			() => deleteAlbum(album.id, album.title), // Swipe Left -> Delete
-			() => openEditDialog(album)               // Swipe Right -> Edit
-		);
-
-		wrapper.appendChild(details);
+		body.appendChild(comment);
+		setBody(body);
 		return wrapper;
+	};
+
+	const updateAlbumRating = async (album: Album, newRating: number): Promise<boolean> => {
+		const response = await apiFetch(`/api/albums/${album.id}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				artist_id: album.artist_id,
+				title: album.title,
+				listened: true,
+				rating: newRating,
+			}),
+		}, { auth: true });
+		return response.ok;
+	};
+
+	const setupListenedReorder = (albums: Album[]) => {
+		if (getView() !== 'listened') return;
+		const listRoot = getListRoot();
+		if (!listRoot) return;
+
+		if (listenedSortable) {
+			listenedSortable.destroy();
+			listenedSortable = null;
+		}
+
+		const albumById = new Map<number, Album>();
+		for (const album of albums) albumById.set(album.id, album);
+
+		listenedSortable = new Sortable(listRoot, {
+			animation: 180,
+			ghostClass: 'album-drag-ghost',
+			chosenClass: 'album-drag-chosen',
+			dragClass: 'album-drag-active',
+			forceFallback: false,
+			delay: 280,
+			delayOnTouchOnly: true,
+			touchStartThreshold: 4,
+			onEnd: async (event: SortableEndEvent) => {
+				if (event.newIndex == null || event.oldIndex == null || event.newIndex === event.oldIndex) return;
+
+				const items = Array.from(listRoot.children) as HTMLElement[];
+				const movedItem = items[event.newIndex];
+				const movedId = Number(movedItem?.dataset.albumId);
+				if (!movedId) return;
+				const movedAlbum = albumById.get(movedId);
+				if (!movedAlbum) return;
+
+				const nextId = Number(items[event.newIndex + 1]?.dataset.albumId || 0);
+				const prevId = Number(items[event.newIndex - 1]?.dataset.albumId || 0);
+				const nextAlbum = nextId ? albumById.get(nextId) : undefined;
+				const prevAlbum = prevId ? albumById.get(prevId) : undefined;
+
+				const neighborRating = nextAlbum?.rating ?? prevAlbum?.rating ?? null;
+				if (neighborRating == null || neighborRating < 1 || neighborRating > 10) {
+					window.alert('Could not infer a target rating from neighboring albums.');
+					void loadAlbums();
+					return;
+				}
+
+				const previousRating = movedAlbum.rating;
+				if (previousRating === neighborRating) return;
+
+				movedAlbum.rating = neighborRating;
+				const ratingValue = movedItem.querySelector('.album-rating-value');
+				const ratingBadge = movedItem.querySelector('.album-rating-badge') as HTMLElement | null;
+				if (ratingValue) ratingValue.textContent = String(neighborRating);
+				if (ratingBadge) applyRatingTone(ratingBadge, Number(neighborRating), '--surface-raised');
+
+				const saved = await updateAlbumRating(movedAlbum, neighborRating);
+				if (!saved) {
+					movedAlbum.rating = previousRating;
+					if (ratingValue) ratingValue.textContent = String(previousRating ?? '');
+					if (ratingBadge && previousRating != null) applyRatingTone(ratingBadge, Number(previousRating), '--surface-raised');
+					window.alert('Failed to update album ranking.');
+					void loadAlbums();
+					return;
+				}
+			},
+		});
 	};
 
 	const loadAlbums = async () => {
 		const listRoot = getListRoot();
 		if (!listRoot) return;
-		setMessage('Loading albums...');
+		listRoot.innerHTML = '';
 		try {
 			const [albumsRes, artistsRes] = await Promise.all([
 				apiFetch('/api/albums', { method: 'GET' }, { auth: true }),
@@ -335,14 +548,34 @@ import { ICON_PATHS, bindSwipe, createAlbumPill, createChevronIcon, createEditIc
 			const albums = (await albumsRes.json()) as Album[];
 			const artists = (await artistsRes.json()) as Artist[];
 			artistsCache = [...artists].sort((a, b) => a.name.localeCompare(b.name));
+			const mode = getView();
+			initializeSortControls();
+			const filteredAlbums = albums.filter((album) => album.listened === (mode === 'listened'));
 			listRoot.innerHTML = '';
-			if (!albums.length) {
-				setMessage('No albums found yet. Use Create to add one.');
+			if (!filteredAlbums.length) {
+				if (listenedSortable) {
+					listenedSortable.destroy();
+					listenedSortable = null;
+				}
+				setMessage(mode === 'listened' ? 'No listened albums yet.' : 'No unlistened albums found yet.');
 				return;
 			}
 			const artistNameMap = new Map<number, string>();
 			for (const artist of artists) artistNameMap.set(artist.id, artist.name);
-			for (const album of sortAlbums(albums)) {
+
+			if (mode === 'listened') {
+				const oldHint = listRoot.parentElement?.querySelector('[data-listened-hint="true"]');
+				if (oldHint) oldHint.remove();
+				setupListenedReorder(filteredAlbums);
+			} else if (listenedSortable) {
+				listenedSortable.destroy();
+				listenedSortable = null;
+				const oldHint = listRoot.parentElement?.querySelector('[data-listened-hint="true"]');
+				if (oldHint) oldHint.remove();
+			}
+
+			const sortedAlbums = sortAlbums(filteredAlbums, artistNameMap);
+			for (const album of sortedAlbums) {
 				const artistName = artistNameMap.get(album.artist_id) ?? `Artist #${album.artist_id}`;
 				listRoot.appendChild(renderAlbumCard(album, artistName));
 			}
@@ -356,25 +589,49 @@ import { ICON_PATHS, bindSwipe, createAlbumPill, createChevronIcon, createEditIc
 		if (!editAlbumForm || editAlbumForm.dataset.bound === 'true') return;
 		editAlbumForm.dataset.bound = 'true';
 
-		editAlbumClose?.addEventListener('click', () => editAlbumDialog?.close());
 		editAlbumDialog?.addEventListener('click', (event) => {
 			if (editAlbumDialog && event.target === editAlbumDialog) editAlbumDialog.close();
 		});
 		editAlbumListenedInput?.addEventListener('change', syncEditListenedState);
+		editAlbumRatingSliderInput?.addEventListener('input', () => syncEditRatingControls('slider'));
+		editAlbumRatingInput?.addEventListener('input', () => syncEditRatingControls('manual'));
+		editAlbumRatingInput?.addEventListener('change', () => syncEditRatingControls('manual'));
 
-		editAlbumDeleteBtn?.addEventListener('click', async () => {
-			if (!editAlbumIDInput || !editAlbumTitleInput || !editAlbumDeleteBtn || !editAlbumSubmit) return;
-			editAlbumDeleteBtn.disabled = true;
-			editAlbumSubmit.disabled = true;
-			setEditStatus('Deleting...');
-			await deleteAlbum(Number(editAlbumIDInput.value), editAlbumTitleInput.value);
-			editAlbumDeleteBtn.disabled = false;
-			editAlbumSubmit.disabled = false;
+		const refreshSpotifyButton = document.getElementById('edit-album-spotify-refresh-btn') as HTMLButtonElement | null;
+		refreshSpotifyButton?.addEventListener('click', async () => {
+			if (!editAlbumTitleInput || !editAlbumCoverInput || !editAlbumYearInput) return;
+			if (!currentEditAlbumSpotifyID) {
+				setEditStatus('No Spotify ID is saved for this album, so it cannot be refreshed.', 'error');
+				return;
+			}
+
+			refreshSpotifyButton.disabled = true;
+			refreshSpotifyButton.textContent = 'Refreshing...';
+			setEditStatus('Refreshing from Spotify...');
+
+			try {
+				const album = await getAlbumBySpotifyID(currentEditAlbumSpotifyID);
+				const cover = album.images[0]?.url ?? '';
+				const year = album.release_date ? album.release_date.slice(0, 4) : '';
+				editAlbumTitleInput.value = album.name;
+				if (cover) editAlbumCoverInput.value = cover;
+				if (year) editAlbumYearInput.value = year;
+				setEditStatus('Spotify metadata applied. Review and save.', 'success');
+			} catch {
+				setEditStatus('Failed to refresh from Spotify.', 'error');
+			} finally {
+				refreshSpotifyButton.disabled = false;
+				refreshSpotifyButton.textContent = 'Refresh from Spotify ID';
+			}
 		});
 
 		editAlbumForm.addEventListener('submit', async (event) => {
 			event.preventDefault();
 			if (!editAlbumIDInput || !editAlbumTitleInput || !editAlbumArtistInput || !editAlbumCoverInput || !editAlbumYearInput || !editAlbumListenedInput || !editAlbumRatingInput || !editAlbumListenedAtInput || !editAlbumSubmit) return;
+			if (editAlbumListenedInput.checked && !editAlbumRatingInput.value.trim()) {
+				setEditStatus('Rating is required when album is marked as listened.', 'error');
+				return;
+			}
 			const payload: Record<string, unknown> = {
 				artist_id: Number(editAlbumArtistInput.value),
 				title: editAlbumTitleInput.value.trim(),
@@ -382,7 +639,7 @@ import { ICON_PATHS, bindSwipe, createAlbumPill, createChevronIcon, createEditIc
 			};
 			if (editAlbumCoverInput.value.trim()) payload.cover_url = editAlbumCoverInput.value.trim();
 			if (editAlbumYearInput.value.trim()) payload.year = Number(editAlbumYearInput.value.trim());
-			if (editAlbumListenedInput.checked && editAlbumRatingInput.value.trim()) payload.rating = Number(editAlbumRatingInput.value.trim());
+			if (editAlbumListenedInput.checked) payload.rating = Number(editAlbumRatingInput.value.trim());
 			if (editAlbumListenedInput.checked && editAlbumListenedAtInput.value) payload.listened_at = new Date(editAlbumListenedAtInput.value).toISOString();
 
 			editAlbumSubmit.disabled = true;
@@ -415,8 +672,10 @@ import { ICON_PATHS, bindSwipe, createAlbumPill, createChevronIcon, createEditIc
 	window.addEventListener('artist-created', () => void loadAlbums());
 	document.addEventListener('astro:page-load', () => {
 		bindEditHandlers();
+		initializeSortControls();
 		void loadAlbums();
 	});
 
+	initializeSortControls();
 	void loadAlbums();
 </script>

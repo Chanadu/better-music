@@ -1,6 +1,6 @@
 ---
 interface Props {
-	current: 'home' | 'albums' | 'artists';
+	current: 'home' | 'unlistened' | 'listened' | 'artists';
 }
 
 const { current } = Astro.props;
@@ -27,12 +27,21 @@ const inactiveClass = 'text-text-muted hover:text-text';
 			</a>
 		</div>
 		<div class='flex-1'>
-			<a href='/albums' class={`${baseClass} ${current === 'albums' ? activeClass : inactiveClass}`}>
+			<a href='/albums' class={`${baseClass} ${current === 'unlistened' ? activeClass : inactiveClass}`}>
 				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<circle cx='12' cy='12' r='8'></circle>
 					<circle cx='12' cy='12' r='2'></circle>
 				</svg>
-				<span class='mt-1 text-sm'>Albums</span>
+				<span class='mt-1 text-sm'>Unlistened</span>
+			</a>
+		</div>
+		<div class='flex-1'>
+			<a href='/albums/listened' class={`${baseClass} ${current === 'listened' ? activeClass : inactiveClass}`}>
+				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
+					<path d='M5 12l4 4 10-10'></path>
+					<circle cx='12' cy='12' r='9'></circle>
+				</svg>
+				<span class='mt-1 text-sm'>Listened</span>
 			</a>
 		</div>
 		<div class='flex-1'>

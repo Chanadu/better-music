@@ -5,17 +5,17 @@ import (
 )
 
 type Album struct {
-	ID         int     `json:"id"`
-	ArtistID   int     `json:"artist_id"`
-	Title      string  `json:"title"`
-	CoverUrl   *string `json:"cover_url,omitempty"`
-	Year       *int    `json:"year,omitempty"`
-	SpotifyID  *string `json:"spotify_id,omitempty"`
-	Listened   bool    `json:"listened"`
-	Rating     *int    `json:"rating,omitempty"`
-	Comment    *string `json:"comment,omitempty"`
-	ListenedAt *string `json:"listened_at,omitempty"`
-	CreatedAt  string  `json:"created_at"`
+	ID         int      `json:"id"`
+	ArtistID   int      `json:"artist_id"`
+	Title      string   `json:"title"`
+	CoverUrl   *string  `json:"cover_url,omitempty"`
+	Year       *int     `json:"year,omitempty"`
+	SpotifyID  *string  `json:"spotify_id,omitempty"`
+	Listened   bool     `json:"listened"`
+	Rating     *float64 `json:"rating,omitempty"`
+	Comment    *string  `json:"comment,omitempty"`
+	ListenedAt *string  `json:"listened_at,omitempty"`
+	CreatedAt  string   `json:"created_at"`
 }
 
 func GetAlbumsByUser(database *sql.DB, userID int) ([]Album, error) {
@@ -92,15 +92,15 @@ func AlbumExistsByID(database *sql.DB, userID int, artistID int, albumID int) (b
 	return exists, err
 }
 
-func CreateAlbum(database *sql.DB, userID int, artistID int, title string) (*Album, error) {
+func CreateAlbum(database *sql.DB, userID int, artistID int, title string, spotifyID *string) (*Album, error) {
 	var album Album
 
 	err := database.QueryRow(
-		`INSERT INTO albums (user_id, artist_id, title)
-         VALUES ($1, $2, $3)
-		 RETURNING id, artist_id, title, listened, created_at`,
-		userID, artistID, title,
-	).Scan(&album.ID, &album.ArtistID, &album.Title, &album.Listened, &album.CreatedAt)
+		`INSERT INTO albums (user_id, artist_id, title, spotify_id)
+	         VALUES ($1, $2, $3, $4)
+		 RETURNING id, artist_id, title, spotify_id, listened, created_at`,
+		userID, artistID, title, spotifyID,
+	).Scan(&album.ID, &album.ArtistID, &album.Title, &album.SpotifyID, &album.Listened, &album.CreatedAt)
 
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func GetAlbumByID(database *sql.DB, userID int, artistID int, albumID int) (*Alb
 	return &album, nil
 }
 
-func UpdateAlbum(database *sql.DB, userID int, artistID int, albumID int, title *string, coverURL *string, year *int, spotifyID *string, listened *bool, rating *int, comment *string, listenedAt *string) error {
+func UpdateAlbum(database *sql.DB, userID int, artistID int, albumID int, title *string, coverURL *string, year *int, spotifyID *string, listened *bool, rating *float64, comment *string, listenedAt *string) error {
 	result, err := database.Exec(
 		`UPDATE albums
 		SET title = COALESCE($4, title),

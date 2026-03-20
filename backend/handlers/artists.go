@@ -11,12 +11,15 @@ import (
 
 // CreateArtistRequest represents the request body for creating an artist
 type CreateArtistRequest struct {
-	Name string `json:"name" example:"The Beatles"`
+	Name      string  `json:"name" example:"The Beatles"`
+	CoverURL  *string `json:"cover_url,omitempty" example:"https://example.com/artist.jpg"`
+	SpotifyID *string `json:"spotify_id,omitempty" example:"6ml0jHmy7SNFWckrZblO5B"`
 }
 
 // UpdateArtistRequest represents the request body for updating an artist
 type UpdateArtistRequest struct {
 	Name      *string `json:"name,omitempty" example:"The Beatles"`
+	CoverURL  *string `json:"cover_url,omitempty" example:"https://example.com/artist.jpg"`
 	SpotifyID *string `json:"spotify_id,omitempty" example:"6ml0jHmy7SNFWckrZblO5B"`
 }
 
@@ -124,7 +127,7 @@ func (h *Handler) CreateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	artist, err := models.CreateArtist(h.Database, userID, body.Name)
+	artist, err := models.CreateArtist(h.Database, userID, body.Name, body.CoverURL, body.SpotifyID)
 
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to create artist: "+err.Error()))
@@ -221,7 +224,7 @@ func (h *Handler) UpdateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if isEmpty(body.Name) && isEmpty(body.SpotifyID) {
+	if isEmpty(body.Name) && isEmpty(body.CoverURL) && isEmpty(body.SpotifyID) {
 		writeJSON(w, http.StatusBadRequest, apiError("at least one field must be provided"))
 		return
 	}
@@ -236,7 +239,7 @@ func (h *Handler) UpdateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := models.UpdateArtist(h.Database, userID, artistID, body.Name, body.SpotifyID)
+	err := models.UpdateArtist(h.Database, userID, artistID, body.Name, body.CoverURL, body.SpotifyID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to update artist: "+err.Error()))
 		return

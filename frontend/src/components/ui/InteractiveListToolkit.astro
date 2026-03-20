@@ -1,0 +1,189 @@
+---
+---
+
+<script>
+	import { ICON_PATHS, bindSwipe, createChevronIcon } from '../../lib/ui';
+
+	type StatusType = 'neutral' | 'error' | 'success';
+
+	type InteractiveCardOptions = {
+		onEdit: () => void;
+		onDelete: () => void;
+		editLabel: string;
+		deleteLabel: string;
+		toggleLabel: string;
+		enableSwipe?: boolean;
+	};
+
+	type InteractiveCardParts = {
+		wrapper: HTMLDivElement;
+		details: HTMLDetailsElement;
+		summary: HTMLElement;
+		header: HTMLDivElement;
+		left: HTMLDivElement;
+		right: HTMLDivElement;
+		setBody: (body: HTMLElement) => void;
+	};
+
+	type InteractiveListToolkit = {
+		setListRootMessage: (listRoot: HTMLDivElement | null, message: string, isError?: boolean) => void;
+		setStatusText: (target: HTMLElement | null, message: string, type?: StatusType) => void;
+		showDialogSafely: (dialog: HTMLDialogElement | null) => void;
+		createInteractiveListCard: (options: InteractiveCardOptions) => InteractiveCardParts;
+	};
+
+	type WindowWithToolkit = Window & { __interactiveListToolkit?: InteractiveListToolkit };
+
+	const globalWindow = window as WindowWithToolkit;
+	if (!globalWindow.__interactiveListToolkit) {
+		const setListRootMessage = (listRoot: HTMLDivElement | null, message: string, isError = false) => {
+			if (!listRoot) return;
+			listRoot.innerHTML = '';
+			const p = document.createElement('p');
+			p.className = 'text-sm';
+			p.style.color = isError ? 'var(--error)' : 'var(--text-muted)';
+			p.textContent = message;
+			listRoot.appendChild(p);
+		};
+
+		const setStatusText = (target: HTMLElement | null, message: string, type: StatusType = 'neutral') => {
+			if (!target) return;
+			target.textContent = message;
+			if (type === 'error') target.style.color = 'var(--error)';
+			else if (type === 'success') target.style.color = 'var(--success)';
+			else target.style.color = 'var(--text-muted)';
+		};
+
+		const showDialogSafely = (dialog: HTMLDialogElement | null) => {
+			if (!dialog || dialog.open) return;
+			try {
+				dialog.showModal();
+			} catch {
+				dialog.setAttribute('open', '');
+			}
+		};
+
+		const createInteractiveListCard = ({
+			onEdit,
+			onDelete,
+			editLabel,
+			deleteLabel,
+			toggleLabel,
+			enableSwipe = true,
+		}: InteractiveCardOptions): InteractiveCardParts => {
+			const wrapper = document.createElement('div');
+			wrapper.className = 'interactive-list-card relative mb-3 overflow-hidden rounded-2xl last:mb-0';
+
+			const bgActions = document.createElement('div');
+			bgActions.className = 'absolute inset-0 flex transition-colors duration-200';
+			bgActions.innerHTML = `
+				<div class="flex flex-1 items-center justify-start px-6" style="background: var(--primary); color: var(--primary-fg)"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.edit}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+				<div class="flex flex-1 items-center justify-end px-6" style="background: var(--error); color: var(--primary-fg)"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.trash}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+			`;
+			wrapper.appendChild(bgActions);
+
+			const details = document.createElement('details');
+			details.className = 'interactive-card-details group relative z-10 w-full overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm transition-transform duration-300 ease-out hover:shadow-md dark:shadow-black/20';
+
+			const summary = document.createElement('summary');
+			summary.className = 'cursor-pointer list-none';
+			summary.setAttribute('aria-label', toggleLabel);
+
+			const header = document.createElement('div');
+			header.className = 'flex items-center justify-between gap-3 p-4 sm:p-5';
+
+			const left = document.createElement('div');
+			left.className = 'flex min-w-0 flex-1 items-center gap-3';
+
+			const right = document.createElement('div');
+			right.className = 'ml-2 flex shrink-0 items-center justify-between gap-1';
+
+			const editBtn = document.createElement('button');
+			editBtn.type = 'button';
+			editBtn.className = 'hidden md:flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-primary/70 opacity-0 pointer-events-none transition-all duration-200 hover:bg-primary/10 hover:text-primary group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto';
+			editBtn.setAttribute('aria-label', editLabel);
+			editBtn.innerHTML = `<svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICON_PATHS.edit}"/></svg>`;
+			editBtn.addEventListener('click', (event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				onEdit();
+			});
+
+			const deleteBtn = document.createElement('button');
+			deleteBtn.type = 'button';
+			deleteBtn.className = 'hidden md:flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-error/70 opacity-0 pointer-events-none transition-all duration-200 hover:bg-error/10 hover:text-error group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto';
+			deleteBtn.setAttribute('aria-label', deleteLabel);
+			deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICON_PATHS.trash}"/></svg>`;
+			deleteBtn.addEventListener('click', (event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				onDelete();
+			});
+
+			const chevron = createChevronIcon();
+			const chevronIndicator = document.createElement('span');
+			chevronIndicator.className = 'ml-1 inline-flex h-7 w-7 items-center justify-center text-text-muted';
+			chevronIndicator.setAttribute('aria-hidden', 'true');
+			chevronIndicator.appendChild(chevron);
+
+			const syncActionVisibility = () => {
+				if (details.open) {
+					editBtn.style.opacity = '1';
+					editBtn.style.pointerEvents = 'auto';
+					deleteBtn.style.opacity = '1';
+					deleteBtn.style.pointerEvents = 'auto';
+					return;
+				}
+
+				editBtn.style.opacity = '';
+				editBtn.style.pointerEvents = '';
+				deleteBtn.style.opacity = '';
+				deleteBtn.style.pointerEvents = '';
+			};
+
+			const syncChevron = () => {
+				chevron.style.transform = details.open ? 'rotate(180deg)' : 'rotate(0deg)';
+				syncActionVisibility();
+			};
+			details.addEventListener('toggle', syncChevron);
+			syncChevron();
+
+			right.appendChild(editBtn);
+			right.appendChild(deleteBtn);
+			right.appendChild(chevronIndicator);
+
+			header.appendChild(left);
+			header.appendChild(right);
+			summary.appendChild(header);
+			details.appendChild(summary);
+
+			if (enableSwipe) {
+				bindSwipe(wrapper, details, () => onDelete(), () => onEdit());
+			}
+
+			wrapper.appendChild(details);
+
+			const setBody = (body: HTMLElement) => {
+				body.classList.add('interactive-card-body');
+				details.appendChild(body);
+			};
+
+			return {
+				wrapper,
+				details,
+				summary,
+				header,
+				left,
+				right,
+				setBody,
+			};
+		};
+
+		globalWindow.__interactiveListToolkit = {
+			setListRootMessage,
+			setStatusText,
+			showDialogSafely,
+			createInteractiveListCard,
+		};
+	}
+</script>

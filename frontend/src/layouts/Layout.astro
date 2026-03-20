@@ -14,6 +14,31 @@ import { ClientRouter } from 'astro:transitions';
 		<!-- <link rel='icon' href='/favicon.ico' /> -->
 		<meta name='generator' content={Astro.generator} />
 		<title>Better-Music</title>
+		<style is:inline>
+			::view-transition-old(root),
+			::view-transition-new(root) {
+				animation-duration: 20ms;
+				animation-timing-function: ease-out;
+			}
+
+			::view-transition-old(root) {
+				animation-name: fade-out;
+			}
+
+			::view-transition-new(root) {
+				animation-name: fade-in;
+			}
+
+			@keyframes fade-out {
+				from { opacity: 1; }
+				to { opacity: 0.94; }
+			}
+
+			@keyframes fade-in {
+				from { opacity: 0.94; }
+				to { opacity: 1; }
+			}
+		</style>
 		<!-- Apply saved or system-preferred theme before first paint to avoid flash -->
 		<script is:inline>
 			(function () {
@@ -45,6 +70,7 @@ import { ClientRouter } from 'astro:transitions';
 					toggleTheme: () => void;
 					__routePreloadBound?: boolean;
 					__preloadedRoutes?: Record<string, boolean>;
+					__linkPrefetchBound?: boolean;
 				}
 			}
 			window.toggleTheme = (): void => {
@@ -57,7 +83,7 @@ import { ClientRouter } from 'astro:transitions';
 			};
 
 			const preloadRoutes = (): void => {
-				const routes = ['/', '/albums', '/artists', '/login', '/register', '/offline'];
+				const routes = ['/', '/albums', '/albums/listened', '/artists', '/login', '/register', '/offline'];
 				const currentPath = window.location.pathname;
 				const preloadState = (window.__preloadedRoutes ??= {});
 
@@ -85,6 +111,35 @@ import { ClientRouter } from 'astro:transitions';
 				};
 				document.addEventListener('astro:page-load', kickOffPreload);
 				kickOffPreload();
+			}
+
+			const prefetchRoute = (route: string): void => {
+				if (!route || route.startsWith('http') || route.startsWith('mailto:') || route.startsWith('tel:')) return;
+				const cleanRoute = route.split('#')[0].split('?')[0] || route;
+				const preloadState = (window.__preloadedRoutes ??= {});
+				if (cleanRoute === window.location.pathname || preloadState[cleanRoute]) return;
+				preloadState[cleanRoute] = true;
+				void fetch(cleanRoute, {
+					method: 'GET',
+					credentials: 'same-origin',
+					headers: { 'x-preload': '1' },
+				}).catch(() => {
+					preloadState[cleanRoute] = false;
+				});
+			};
+
+			if (!window.__linkPrefetchBound) {
+				window.__linkPrefetchBound = true;
+				const handleLinkHint = (event: Event) => {
+					const target = event.target as Element | null;
+					const link = target?.closest('a[href]') as HTMLAnchorElement | null;
+					if (!link) return;
+					prefetchRoute(link.getAttribute('href') ?? '');
+				};
+
+				document.addEventListener('pointerenter', handleLinkHint, { capture: true });
+				document.addEventListener('touchstart', handleLinkHint, { capture: true, passive: true });
+				document.addEventListener('focusin', handleLinkHint, { capture: true });
 			}
 		</script>
 	</body>
