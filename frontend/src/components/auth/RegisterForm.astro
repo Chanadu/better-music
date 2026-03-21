@@ -32,32 +32,15 @@ import AuthInputField from './AuthInputField.astro';
 <script>
   import { navigate } from 'astro:transitions/client';
 import { apiFetch, getErrorMessage, storeAuthTokens } from '../../lib/api';
+import { setupAuthForm } from '../../lib/auth-form';
 
   const form = document.querySelector('form');
   const errorMessage = document.getElementById('error-message');
-  const emailInput = form?.querySelector('input[name="email"]') as HTMLInputElement;
-  const passwordInput = form?.querySelector('input[name="password"]') as HTMLInputElement;
-  const confirmPasswordInput = form?.querySelector('input[name="confirm-password"]') as HTMLInputElement;
-  const button = form?.querySelector('button[type="submit"]') as HTMLButtonElement;
-
-  // Clear error and re-enable button when user starts typing
-  const handleInput = () => {
-    errorMessage!.classList.add('hidden');
-    button!.disabled = false;
-    button!.textContent = button!.getAttribute('data-original-text') || 'Create Account';
-  };
-
-  emailInput?.addEventListener('input', handleInput);
-  passwordInput?.addEventListener('input', handleInput);
-  confirmPasswordInput?.addEventListener('input', handleInput);
-
-  // Store original button text on load
-  if (button) {
-    button.setAttribute('data-original-text', button.textContent || 'Create Account');
-  }
+  const authForm = setupAuthForm(form, errorMessage, 'Create Account', ['email', 'password', 'confirm-password']);
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!authForm) return;
 
     const formData = new FormData(form);
     const email = formData.get('email');
@@ -65,14 +48,11 @@ import { apiFetch, getErrorMessage, storeAuthTokens } from '../../lib/api';
     const confirmPassword = formData.get('confirm-password');
 
     if (password !== confirmPassword) {
-      errorMessage!.textContent = 'Passwords do not match.';
-      errorMessage!.classList.remove('hidden');
+      authForm.setFailureState('Passwords do not match.', 'Create Account');
       return;
     }
 
-    const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-    submitButton.disabled = true;
-    submitButton.textContent = 'Creating account...';
+    authForm.setSubmittingState('Creating account...');
 
     try {
 		  const response = await apiFetch('/api/auth/register', {
@@ -85,10 +65,7 @@ import { apiFetch, getErrorMessage, storeAuthTokens } from '../../lib/api';
 
       if (!response.ok) {
 			const errorText = await getErrorMessage(response, 'Registration failed');
-        errorMessage!.textContent = errorText;
-        errorMessage!.classList.remove('hidden');
-        submitButton.disabled = true;
-        submitButton.textContent = 'Try again';
+        authForm.setFailureState(errorText);
         return;
       }
 
@@ -96,11 +73,8 @@ import { apiFetch, getErrorMessage, storeAuthTokens } from '../../lib/api';
       storeAuthTokens(data);
 			void navigate('/');
     } catch (err) {
-      errorMessage!.textContent = 'An error occurred. Please try again.';
-      errorMessage!.classList.remove('hidden');
+      authForm.setFailureState('An error occurred. Please try again.');
       console.error(err);
-      submitButton.disabled = true;
-      submitButton.textContent = 'Try again';
     }
   });
 </script>

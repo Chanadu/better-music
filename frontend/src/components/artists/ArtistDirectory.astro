@@ -34,10 +34,11 @@ import SortControls from '../ui/SortControls.astro';
 </BaseDialog>
 
 <script>
-	import { apiFetch } from '../../lib/api';
+import { apiFetch } from '../../lib/api';
 import { formatDateTime } from '../../lib/date';
 import { getArtistBySpotifyID } from '../../lib/spotify';
-import { ICON_PATHS, applyRatingTone, createArtistChip, createThemedDropdown } from '../../lib/ui';
+import { initializeSortControls, type SortDirection } from '../../lib/sort';
+import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 
 	type Artist = {
 		id: number;
@@ -61,7 +62,6 @@ import { ICON_PATHS, applyRatingTone, createArtistChip, createThemedDropdown } f
 
 	type StatusType = 'neutral' | 'error' | 'success';
 	type ArtistSortKey = 'alphabetical' | 'createdAt' | 'averageRating';
-	type SortDirection = 'asc' | 'desc';
 
 	type InteractiveCardOptions = {
 		onEdit: () => void;
@@ -104,7 +104,6 @@ import { ICON_PATHS, applyRatingTone, createArtistChip, createThemedDropdown } f
 	let currentEditArtistSpotifyID: string | null = null;
 	let currentSortBy: ArtistSortKey = 'alphabetical';
 	let currentSortDirection: SortDirection = 'asc';
-	let sortDropdown: ReturnType<typeof createThemedDropdown> | null = null;
 
 	const refreshEditRefs = () => {
 		editArtistDialog = document.getElementById('edit-artist-modal') as HTMLDialogElement | null;
@@ -139,51 +138,26 @@ import { ICON_PATHS, applyRatingTone, createArtistChip, createThemedDropdown } f
 		return a - b;
 	};
 
-	const syncSortDirectionButton = () => {
-		const button = document.getElementById('artists-sort-direction') as HTMLButtonElement | null;
-		if (!button) return;
-		if (currentSortDirection === 'asc') {
-			button.title = 'Ascending';
-			button.setAttribute('aria-label', 'Sort direction: ascending');
-			button.innerHTML = '<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M12 7l-4 6h8z" fill="currentColor"></path></svg>';
-			return;
-		}
-		button.title = 'Descending';
-		button.setAttribute('aria-label', 'Sort direction: descending');
-		button.innerHTML = '<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M12 17l4-6H8z" fill="currentColor"></path></svg>';
-	};
-
-	const initializeSortControls = () => {
-		const directionButton = document.getElementById('artists-sort-direction') as HTMLButtonElement | null;
-		if (!directionButton) return;
-
-		sortDropdown = createThemedDropdown({
-			triggerId: 'artists-sort-by-trigger',
-			valueId: 'artists-sort-by-value',
-			menuId: 'artists-sort-by-menu',
-			onSelect: (value) => {
-				currentSortBy = value as ArtistSortKey;
-				void loadArtists();
-			},
-		});
-		if (!sortDropdown) return;
-
+	const syncArtistSortControls = () => {
 		const options: Array<{ value: ArtistSortKey; label: string }> = [
 			{ value: 'alphabetical', label: 'Alphabetical' },
 			{ value: 'createdAt', label: 'Creation Date' },
 			{ value: 'averageRating', label: 'Average Rating' },
 		];
-		sortDropdown.setOptions(options, currentSortBy);
-		syncSortDirectionButton();
 
-		if (directionButton.dataset.bound !== 'true') {
-			directionButton.dataset.bound = 'true';
-			directionButton.addEventListener('click', () => {
-				currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-				syncSortDirectionButton();
-				void loadArtists();
-			});
-		}
+		initializeSortControls({
+			controlPrefix: 'artists-sort',
+			options,
+			getSortBy: () => currentSortBy,
+			setSortBy: (value) => {
+				currentSortBy = value;
+			},
+			getSortDirection: () => currentSortDirection,
+			setSortDirection: (value) => {
+				currentSortDirection = value;
+			},
+			onChange: () => void loadArtists(),
+		});
 	};
 
 	const resetSortControls = () => {
@@ -381,7 +355,7 @@ import { ICON_PATHS, applyRatingTone, createArtistChip, createThemedDropdown } f
 	const loadArtists = async () => {
 		const listRoot = getListRoot();
 		if (!listRoot) return;
-		initializeSortControls();
+		syncArtistSortControls();
 		listRoot.innerHTML = '';
 		try {
 			const [artistsRes, albumsRes] = await Promise.all([
@@ -431,11 +405,11 @@ import { ICON_PATHS, applyRatingTone, createArtistChip, createThemedDropdown } f
 	document.addEventListener('astro:page-load', () => {
 		bindEditHandlers();
 		resetSortControls();
-		initializeSortControls();
+		syncArtistSortControls();
 		void loadArtists();
 	});
 
 	resetSortControls();
-	initializeSortControls();
+	syncArtistSortControls();
 	void loadArtists();
 </script>

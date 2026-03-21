@@ -29,37 +29,21 @@ import AuthInputField from './AuthInputField.astro';
 <script>
   import { navigate } from 'astro:transitions/client';
 import { apiFetch, getErrorMessage, storeAuthTokens } from '../../lib/api';
+import { setupAuthForm } from '../../lib/auth-form';
 
   const form = document.querySelector('form');
   const errorMessage = document.getElementById('error-message');
-  const emailInput = form?.querySelector('input[name="email"]') as HTMLInputElement;
-  const passwordInput = form?.querySelector('input[name="password"]') as HTMLInputElement;
-  const button = form?.querySelector('button[type="submit"]') as HTMLButtonElement;
-
-  const handleInput = () => {
-    errorMessage!.classList.add('hidden');
-    button!.disabled = false;
-    button!.textContent = button!.getAttribute('data-original-text') || 'Sign In';
-  };
-
-  emailInput?.addEventListener('input', handleInput);
-  passwordInput?.addEventListener('input', handleInput);
-
-  // Store original button text on load
-  if (button) {
-    button.setAttribute('data-original-text', button.textContent || 'Sign In');
-  }
+  const authForm = setupAuthForm(form, errorMessage, 'Sign In', ['email', 'password']);
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!authForm) return;
 
     const formData = new FormData(form);
     const email = formData.get('email');
     const password = formData.get('password');
 
-    const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-    submitButton.disabled = true;
-    submitButton.textContent = 'Signing in...';
+    authForm.setSubmittingState('Signing in...');
 
     try {
 		  const response = await apiFetch('/api/auth/login', {
@@ -72,10 +56,7 @@ import { apiFetch, getErrorMessage, storeAuthTokens } from '../../lib/api';
 
       if (!response.ok) {
 			const errorText = await getErrorMessage(response, 'Invalid email or password');
-        errorMessage!.textContent = errorText;
-        errorMessage!.classList.remove('hidden');
-        submitButton.disabled = true;
-        submitButton.textContent = 'Try again';
+        authForm.setFailureState(errorText);
         return;
       }
 
@@ -83,11 +64,8 @@ import { apiFetch, getErrorMessage, storeAuthTokens } from '../../lib/api';
       storeAuthTokens(data);
 			void navigate('/');
     } catch (err) {
-      errorMessage!.textContent = 'An error occurred. Please try again.';
-      errorMessage!.classList.remove('hidden');
+      authForm.setFailureState('An error occurred. Please try again.');
       console.error(err);
-      submitButton.disabled = true;
-      submitButton.textContent = 'Try again';
     }
   });
 </script>

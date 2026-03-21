@@ -59,11 +59,12 @@ const { view = 'unlistened' } = Astro.props as Props;
 </BaseDialog>
 
 <script>
-	import Sortable from 'sortablejs';
+import Sortable from 'sortablejs';
 import { apiFetch } from '../../lib/api';
 import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
 import { getAlbumBySpotifyID } from '../../lib/spotify';
-import { applyRatingTone, createThemedDropdown } from '../../lib/ui';
+import { initializeSortControls, type SortDirection } from '../../lib/sort';
+import { applyRatingTone } from '../../lib/ui';
 
 	type Album = {
 		id: number;
@@ -90,7 +91,6 @@ import { applyRatingTone, createThemedDropdown } from '../../lib/ui';
 	};
 
 	type AlbumSortKey = 'artist' | 'title' | 'year' | 'rating' | 'createdAt' | 'listenedAt';
-	type SortDirection = 'asc' | 'desc';
 	type AlbumView = 'unlistened' | 'listened';
 
 	type StatusType = 'neutral' | 'error' | 'success';
@@ -146,7 +146,6 @@ import { applyRatingTone, createThemedDropdown } from '../../lib/ui';
 	let currentEditAlbumSpotifyID: string | null = null;
 	let currentSortBy: AlbumSortKey = 'artist';
 	let currentSortDirection: SortDirection = 'asc';
-	let sortDropdown: ReturnType<typeof createThemedDropdown> | null = null;
 	let initializedSortView: AlbumView | null = null;
 
 	const getDefaultSortState = (view: AlbumView): { sortBy: AlbumSortKey; sortDirection: SortDirection } => {
@@ -239,25 +238,8 @@ import { applyRatingTone, createThemedDropdown } from '../../lib/ui';
 		});
 	};
 
-	const syncSortDirectionButtonLabel = () => {
-		const button = document.getElementById('albums-sort-direction') as HTMLButtonElement | null;
-		if (!button) return;
-		if (currentSortDirection === 'asc') {
-			button.title = 'Ascending';
-			button.setAttribute('aria-label', 'Sort direction: ascending');
-			button.innerHTML = '<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M12 7l-4 6h8z" fill="currentColor"></path></svg>';
-			return;
-		}
-
-		button.title = 'Descending';
-		button.setAttribute('aria-label', 'Sort direction: descending');
-		button.innerHTML = '<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M12 17l4-6H8z" fill="currentColor"></path></svg>';
-	};
-
-	const initializeSortControls = () => {
+	const syncAlbumSortControls = () => {
 		const mode = getView();
-		const directionButton = document.getElementById('albums-sort-direction') as HTMLButtonElement | null;
-		if (!directionButton) return;
 
 		if (initializedSortView !== mode) {
 			const defaults = getDefaultSortState(mode);
@@ -265,17 +247,6 @@ import { applyRatingTone, createThemedDropdown } from '../../lib/ui';
 			currentSortDirection = defaults.sortDirection;
 			initializedSortView = mode;
 		}
-
-		sortDropdown = createThemedDropdown({
-			triggerId: 'albums-sort-by-trigger',
-			valueId: 'albums-sort-by-value',
-			menuId: 'albums-sort-by-menu',
-			onSelect: (value) => {
-				currentSortBy = value as AlbumSortKey;
-				void loadAlbums();
-			},
-		});
-		if (!sortDropdown) return;
 
 		const options: Array<{ value: AlbumSortKey; label: string }> =
 			mode === 'listened'
@@ -294,20 +265,19 @@ import { applyRatingTone, createThemedDropdown } from '../../lib/ui';
 					{ value: 'createdAt', label: 'Creation Date' },
 				];
 
-		if (!options.some((option) => option.value === currentSortBy)) {
-			currentSortBy = mode === 'listened' ? 'rating' : 'artist';
-		}
-		sortDropdown.setOptions(options, currentSortBy);
-		syncSortDirectionButtonLabel();
-
-		if (directionButton.dataset.bound !== 'true') {
-			directionButton.dataset.bound = 'true';
-			directionButton.addEventListener('click', () => {
-				currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-				syncSortDirectionButtonLabel();
-				void loadAlbums();
-			});
-		}
+		initializeSortControls({
+			controlPrefix: 'albums-sort',
+			options,
+			getSortBy: () => currentSortBy,
+			setSortBy: (value) => {
+				currentSortBy = value;
+			},
+			getSortDirection: () => currentSortDirection,
+			setSortDirection: (value) => {
+				currentSortDirection = value;
+			},
+			onChange: () => void loadAlbums(),
+		});
 	};
 
 	const setMessage = (message: string, isError = false) => getToolkit().setListRootMessage(getListRoot(), message, isError);
@@ -559,7 +529,7 @@ import { applyRatingTone, createThemedDropdown } from '../../lib/ui';
 			const artists = (await artistsRes.json()) as Artist[];
 			artistsCache = [...artists].sort((a, b) => a.name.localeCompare(b.name));
 			const mode = getView();
-			initializeSortControls();
+			syncAlbumSortControls();
 			const filteredAlbums = albums.filter((album) => album.listened === (mode === 'listened'));
 			listRoot.innerHTML = '';
 			if (!filteredAlbums.length) {
@@ -682,10 +652,10 @@ import { applyRatingTone, createThemedDropdown } from '../../lib/ui';
 	window.addEventListener('artist-created', () => void loadAlbums());
 	document.addEventListener('astro:page-load', () => {
 		bindEditHandlers();
-		initializeSortControls();
+		syncAlbumSortControls();
 		void loadAlbums();
 	});
 
-	initializeSortControls();
+	syncAlbumSortControls();
 	void loadAlbums();
 </script>
