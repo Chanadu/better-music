@@ -122,6 +122,15 @@
 	}
 }
 
+@keyframes skeleton-shimmer {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(100%);
+	}
+}
+
 @keyframes page-enter {
 	0% {
 		opacity: 0;
@@ -244,6 +253,320 @@ body {
 	transform: translate3d(0, 0, 0);
 	backface-visibility: hidden;
 	touch-action: pan-y;
+}
+
+.page-swipe-preview-root {
+	position: fixed;
+	inset: 0;
+	z-index: 14;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.14s ease;
+}
+
+.page-swipe-preview-root.is-visible {
+	opacity: 1;
+}
+
+.page-skeleton-preview-shell {
+	min-height: 100vh;
+	background-color: var(--bg);
+	background:
+		radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--primary) 9%, transparent) 0%, transparent 34%),
+		radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--secondary) 7%, transparent) 0%, transparent 28%),
+		linear-gradient(180deg, color-mix(in srgb, var(--surface) 54%, transparent) 0%, transparent 24%),
+		linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 88%, var(--surface)) 100%);
+	transition:
+		transform 0.18s ease,
+		opacity 0.18s ease;
+}
+
+.page-skeleton-preview-header {
+	border-bottom: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+	background: var(--surface);
+	backdrop-filter: blur(14px);
+}
+
+.page-skeleton-preview-header-inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	max-width: 80rem;
+	margin: 0 auto;
+	padding: max(env(safe-area-inset-top), 0.75rem) 1rem 0.75rem;
+}
+
+.page-skeleton-preview-brand {
+	display: flex;
+	min-width: 0;
+	flex: 1;
+	align-items: center;
+	gap: 0.85rem;
+}
+
+.page-skeleton-preview-brand-copy {
+	display: flex;
+	min-width: 0;
+	flex: 1;
+	flex-direction: column;
+	gap: 0.45rem;
+}
+
+.page-skeleton-preview-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+}
+
+.page-skeleton-preview-main,
+.page-skeleton-loading-shell {
+	min-height: 100%;
+}
+
+.page-skeleton-content-shell {
+	max-width: 64rem;
+	margin: 0 auto;
+	padding: 1.5rem 1rem calc(var(--safe-bottom) + 7rem);
+}
+
+.page-skeleton-toolbar {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+
+.page-skeleton-toolbar-controls {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+}
+
+.page-skeleton-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.page-skeleton-card {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+	padding: 1rem;
+	border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+	border-radius: 1.45rem;
+	background: var(--surface);
+	box-shadow: 0 14px 28px -26px rgba(15, 23, 42, 0.28);
+}
+
+.page-skeleton-card-lines {
+	display: flex;
+	min-width: 0;
+	flex: 1;
+	flex-direction: column;
+	gap: 0.55rem;
+}
+
+.page-skeleton-pill-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.45rem;
+	margin-top: 0.1rem;
+}
+
+.page-loading-overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 15;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.18s ease;
+}
+
+.page-loading-overlay.is-visible {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.page-loading-overlay::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: color-mix(in srgb, var(--bg) 86%, transparent);
+	backdrop-filter: blur(10px);
+}
+
+.page-loading-overlay > .page-skeleton-loading-shell {
+	position: relative;
+	min-height: 100%;
+}
+
+.page-skeleton-block {
+	position: relative;
+	display: block;
+	overflow: hidden;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--surface-raised) 88%, var(--border));
+}
+
+.page-skeleton-block::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, white 52%, transparent) 50%, transparent 100%);
+	transform: translateX(-100%);
+	animation: skeleton-shimmer 1.45s ease-in-out infinite;
+}
+
+.page-skeleton-brand-icon {
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: 1rem;
+}
+
+.page-skeleton-kicker {
+	width: 4.9rem;
+	height: 0.6rem;
+}
+
+.page-skeleton-preview-title {
+	height: 1.35rem;
+	border-radius: 999px;
+}
+
+.page-skeleton-title-queue {
+	width: 9.75rem;
+}
+
+.page-skeleton-title-done {
+	width: 8.5rem;
+}
+
+.page-skeleton-title-artists {
+	width: 6.25rem;
+}
+
+.page-skeleton-header-action {
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: 1rem;
+}
+
+.page-skeleton-header-action-wide {
+	display: none;
+	width: 5.5rem;
+}
+
+.page-skeleton-toolbar-label {
+	width: 3.8rem;
+	height: 0.75rem;
+}
+
+.page-skeleton-toolbar-pill {
+	flex: 1;
+	height: 2.75rem;
+	border-radius: 1rem;
+}
+
+.page-skeleton-toolbar-icon {
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: 1rem;
+}
+
+.page-skeleton-card-cover {
+	width: 3.5rem;
+	height: 3.5rem;
+	border-radius: 1rem;
+	flex-shrink: 0;
+}
+
+.page-skeleton-card-cover-artist {
+	border-radius: 1.15rem;
+}
+
+.page-skeleton-line-title {
+	height: 1rem;
+}
+
+.page-skeleton-line-meta {
+	height: 0.78rem;
+}
+
+.page-skeleton-line-wide {
+	width: 72%;
+}
+
+.page-skeleton-line-medium {
+	width: 58%;
+}
+
+.page-skeleton-line-short {
+	width: 42%;
+}
+
+.page-skeleton-rating-badge {
+	width: 4.35rem;
+	height: 2.55rem;
+	border-radius: 1rem;
+	flex-shrink: 0;
+}
+
+.page-skeleton-queue-chip {
+	width: 3.4rem;
+	height: 1.9rem;
+	border-radius: 999px;
+	flex-shrink: 0;
+}
+
+.page-skeleton-pill {
+	width: 4.4rem;
+	height: 1.5rem;
+	border-radius: 999px;
+}
+
+.page-skeleton-pill-short {
+	width: 3.2rem;
+}
+
+@media (min-width: 640px) {
+	.page-skeleton-preview-header-inner {
+		padding-inline: 1.5rem;
+		padding-bottom: 0.95rem;
+	}
+
+	.page-skeleton-content-shell {
+		padding-inline: 1.5rem;
+		padding-top: 1.85rem;
+		padding-bottom: calc(var(--safe-bottom) + 8rem);
+	}
+
+	.page-skeleton-toolbar {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.page-skeleton-toolbar-controls {
+		flex: 1;
+		max-width: 22rem;
+		justify-content: flex-end;
+	}
+
+	.page-skeleton-card {
+		padding: 1.15rem 1.25rem;
+		border-radius: 1.6rem;
+	}
+
+	.page-skeleton-card-cover {
+		width: 4rem;
+		height: 4rem;
+	}
+
+	.page-skeleton-header-action-wide {
+		display: block;
+	}
 }
 
 ::selection {

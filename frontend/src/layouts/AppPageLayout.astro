@@ -32,13 +32,17 @@ const currentRoute = currentRouteByPage[current];
 
 <Layout>
 	<AuthGuard />
-	<div data-app-shell='true' data-current-route={currentRoute} class='page-swipe-shell'>
+	<div data-page-preview-root='true' class='page-swipe-preview-root' aria-hidden='true'></div>
+	<div data-app-shell='true' data-current-route={currentRoute} class='page-swipe-shell relative z-20'>
 		<AppHeader title={title} />
-		<main class={mainClassName}>
-			<div class={`mx-auto ${maxWidthClass} ${containerClassName}`}>
-				<slot />
-			</div>
-		</main>
+		<div class='relative' data-page-stage='true'>
+			<main class={mainClassName}>
+				<div class={`mx-auto ${maxWidthClass} ${containerClassName}`}>
+					<slot />
+				</div>
+			</main>
+			<div data-page-loading-overlay='true' class='page-loading-overlay' aria-hidden='true'></div>
+		</div>
 	</div>
 	<BottomTabBar current={current} />
 	<CreateMenuModal />
@@ -46,9 +50,11 @@ const currentRoute = currentRouteByPage[current];
 
 <script>
 	import { bindOnce } from '../lib/events';
+	import { syncPageSkeletonRoute } from '../lib/page-skeletons';
 	import { refreshAppShellGesture } from '../lib/page-swipe';
 
 	const refreshAppShell = () => {
+		syncPageSkeletonRoute();
 		refreshAppShellGesture();
 	};
 

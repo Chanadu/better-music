@@ -1,6 +1,7 @@
 import { navigate } from 'astro:transitions/client';
 
 import { warmLibraryData } from './library-cache';
+import { clearSwipePreview, setSwipePreview } from './page-skeletons';
 
 const APP_ROUTES = ['/albums', '/listened', '/artists'] as const;
 const AXIS_LOCK_PX = 10;
@@ -91,6 +92,7 @@ const prefetchRoute = (route: AppRoute | null) => {
 const resetSwipe = (state: SwipeState) => {
 	state.shell.style.transition = RESET_TRANSITION;
 	setShellOffset(state.shell, 0);
+	clearSwipePreview();
 	window.setTimeout(() => clearShellOffset(state.shell), 220);
 };
 
@@ -158,6 +160,7 @@ const finishSwipeNavigation = (state: SwipeState, destination: AppRoute) => {
 const cancelActiveSwipe = () => {
 	if (!swipeState) return;
 	clearShellOffset(swipeState.shell);
+	clearSwipePreview();
 	swipeState = null;
 };
 
@@ -218,6 +221,7 @@ const handleTouchMove = (event: TouchEvent) => {
 		swipeState.direction = null;
 		swipeState.currentX = 0;
 		setShellOffset(swipeState.shell, 0);
+		clearSwipePreview();
 		return;
 	}
 
@@ -226,6 +230,11 @@ const handleTouchMove = (event: TouchEvent) => {
 
 	if (event.cancelable) event.preventDefault();
 	setShellOffset(swipeState.shell, rawDeltaX);
+	setSwipePreview(
+		destination,
+		candidateDirection,
+		Math.min(1, Math.abs(rawDeltaX) / Math.max(window.innerWidth * 0.45, 1)),
+	);
 };
 
 const handleTouchEnd = () => {
@@ -235,6 +244,7 @@ const handleTouchEnd = () => {
 	swipeState = null;
 
 	if (!state.direction) {
+		clearSwipePreview();
 		clearShellOffset(state.shell);
 		return;
 	}
@@ -260,6 +270,7 @@ const handleTouchEnd = () => {
 
 const handleNavigationSettled = () => {
 	navigationPending = false;
+	clearSwipePreview();
 	applyEntryAnimation();
 	warmLibraryData();
 };

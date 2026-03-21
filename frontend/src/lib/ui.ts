@@ -246,6 +246,14 @@ export const bindSwipe = (
 			isDragging = true;
 			isScrolling = null;
 			foreground.style.transition = 'none';
+
+			const bg = container.firstElementChild as HTMLElement | null;
+			if (bg && bg.children.length >= 2) {
+				const leftAction = bg.firstElementChild as HTMLElement;
+				const rightAction = bg.lastElementChild as HTMLElement;
+				leftAction.style.opacity = '0';
+				rightAction.style.opacity = '0';
+			}
 		},
 		{ passive: true },
 	);
@@ -290,6 +298,9 @@ export const bindSwipe = (
 					// Swiping Left -> Right-side action (Delete, Error)
 					leftAction.style.opacity = '0';
 					rightAction.style.opacity = '1';
+				} else {
+					leftAction.style.opacity = '0';
+					rightAction.style.opacity = '0';
 				}
 			}
 		},
@@ -339,8 +350,8 @@ export const bindSwipe = (
 			const rightAction = bg.lastElementChild as HTMLElement;
 			setTimeout(() => {
 				if (!isDragging) {
-					leftAction.style.opacity = '1';
-					rightAction.style.opacity = '1';
+					leftAction.style.opacity = '0';
+					rightAction.style.opacity = '0';
 				}
 			}, slideOutDuration);
 		}

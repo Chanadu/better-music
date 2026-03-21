@@ -49,6 +49,8 @@ export const warmLibraryData = (): void => {
 	void loadLibraryData().catch(() => undefined);
 };
 
+export const hasCachedLibraryData = (): boolean => Boolean(cachedLibraryData);
+
 export const invalidateLibraryData = (): void => {
 	cachedLibraryData = null;
 };

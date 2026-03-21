@@ -73,7 +73,8 @@ import { syncCoverPreview } from '../../lib/cover-preview';
 import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
 import { createEmptyState } from '../../lib/empty-state';
 import { bindOnce } from '../../lib/events';
-import { invalidateLibraryData, loadLibraryData } from '../../lib/library-cache';
+import { hasCachedLibraryData, invalidateLibraryData, loadLibraryData } from '../../lib/library-cache';
+import { hidePageLoadingSkeleton, showPageLoadingSkeleton } from '../../lib/page-skeletons';
 import { getAlbumBySpotifyID } from '../../lib/spotify';
 import { initializeSortControls, type SortDirection } from '../../lib/sort';
 import { applyRatingTone } from '../../lib/ui';
@@ -552,6 +553,9 @@ import { applyRatingTone } from '../../lib/ui';
 	const loadAlbums = async () => {
 		const listRoot = getListRoot();
 		if (!listRoot) return;
+		const route = getView() === 'listened' ? '/listened' : '/albums';
+		const shouldShowSkeleton = !hasCachedLibraryData();
+		if (shouldShowSkeleton) showPageLoadingSkeleton(route);
 		listRoot.innerHTML = '';
 		try {
 			const { albums, artists } = await loadLibraryData();
@@ -591,6 +595,8 @@ import { applyRatingTone } from '../../lib/ui';
 			}
 		} catch {
 			setMessage('An unexpected error occurred while loading albums.', true);
+		} finally {
+			if (shouldShowSkeleton) hidePageLoadingSkeleton(route);
 		}
 	};
 

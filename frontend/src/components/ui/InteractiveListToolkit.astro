@@ -77,8 +77,8 @@
 			const bgActions = document.createElement('div');
 			bgActions.className = 'absolute inset-0 transition-colors duration-200';
 			bgActions.innerHTML = `
-				<div class="absolute inset-0 flex items-center justify-start px-6 transition-opacity duration-150" style="background: var(--primary); color: var(--primary-fg)"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.edit}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-				<div class="absolute inset-0 flex items-center justify-end px-6 transition-opacity duration-150" style="background: var(--error); color: var(--primary-fg)"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.trash}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+				<div class="absolute inset-0 flex items-center justify-start px-6 transition-opacity duration-150" style="background: var(--primary); color: var(--primary-fg); opacity: 0"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.edit}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+				<div class="absolute inset-0 flex items-center justify-end px-6 transition-opacity duration-150" style="background: var(--error); color: var(--primary-fg); opacity: 0"><svg viewBox="0 0 24 24" class="h-6 w-6"><path d="${ICON_PATHS.trash}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
 			`;
 			wrapper.appendChild(bgActions);
 
