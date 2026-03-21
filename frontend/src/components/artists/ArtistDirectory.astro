@@ -46,6 +46,8 @@ import { apiFetch } from '../../lib/api';
 import { syncCoverPreview } from '../../lib/cover-preview';
 import { formatDateTime } from '../../lib/date';
 import { createEmptyState } from '../../lib/empty-state';
+import { bindOnce } from '../../lib/events';
+import { invalidateLibraryData, loadLibraryData } from '../../lib/library-cache';
 import { getArtistBySpotifyID } from '../../lib/spotify';
 import { initializeSortControls, type SortDirection } from '../../lib/sort';
 import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
@@ -388,28 +390,21 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 		syncArtistSortControls();
 		listRoot.innerHTML = '';
 		try {
-			const [artistsRes, albumsRes] = await Promise.all([
-				apiFetch('/api/artists', { method: 'GET' }, { auth: true }),
-				apiFetch('/api/albums', { method: 'GET' }, { auth: true }),
-			]);
-			if (!artistsRes.ok || !albumsRes.ok) {
-				setMessage('Failed to load artists/albums.', true);
-				return;
-			}
-			const artists = (await artistsRes.json()) as Artist[];
-			const albums = (await albumsRes.json()) as Album[];
+			const { artists, albums } = await loadLibraryData();
+			const artistData = artists as Artist[];
+			const albumData = albums as Album[];
 			listRoot.innerHTML = '';
-			if (!artists.length) {
+			if (!artistData.length) {
 				renderEmptyArtistsState();
 				return;
 			}
 			const grouped = new Map<number, Album[]>();
-			for (const album of albums) {
+			for (const album of albumData) {
 				const current = grouped.get(album.artist_id) ?? [];
 				current.push(album);
 				grouped.set(album.artist_id, current);
 			}
-			const sortedArtists = [...artists].sort((a, b) => {
+			const sortedArtists = [...artistData].sort((a, b) => {
 				let base = 0;
 				if (currentSortBy === 'alphabetical') {
 					base = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
@@ -428,18 +423,24 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 		}
 	};
 
-	bindEditHandlers();
-
-	window.addEventListener('artist-created', () => void loadArtists());
-	window.addEventListener('album-created', () => void loadArtists());
-	document.addEventListener('astro:page-load', () => {
+	const refreshArtistsView = () => {
 		bindEditHandlers();
 		resetSortControls();
 		syncArtistSortControls();
 		void loadArtists();
+	};
+
+	bindOnce('__artistDirectoryBound', () => {
+		window.addEventListener('artist-created', () => {
+			invalidateLibraryData();
+			void loadArtists();
+		});
+		window.addEventListener('album-created', () => {
+			invalidateLibraryData();
+			void loadArtists();
+		});
+		document.addEventListener('astro:page-load', refreshArtistsView);
 	});
 
-	resetSortControls();
-	syncArtistSortControls();
-	void loadArtists();
+	refreshArtistsView();
 </script>

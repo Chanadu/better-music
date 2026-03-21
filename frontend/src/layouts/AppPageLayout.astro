@@ -20,17 +20,41 @@ const {
 	mainClassName = 'min-h-screen px-4 pt-6 pb-32 sm:px-6 sm:pt-8 sm:pb-36 md:px-8',
 	containerClassName = 'space-y-6 sm:space-y-7',
 } = Astro.props as Props;
+
+const currentRouteByPage = {
+	unlistened: '/albums',
+	listened: '/listened',
+	artists: '/artists',
+} as const;
+
+const currentRoute = currentRouteByPage[current];
 ---
 
 <Layout>
 	<AuthGuard />
-	<AppHeader title={title} />
-	<main class={mainClassName}>
-		<div class={`mx-auto ${maxWidthClass} ${containerClassName}`}>
-			<slot />
-		</div>
-	</main>
-
-	<CreateMenuModal />
+	<div data-app-shell='true' data-current-route={currentRoute} class='page-swipe-shell'>
+		<AppHeader title={title} />
+		<main class={mainClassName}>
+			<div class={`mx-auto ${maxWidthClass} ${containerClassName}`}>
+				<slot />
+			</div>
+		</main>
+	</div>
 	<BottomTabBar current={current} />
+	<CreateMenuModal />
 </Layout>
+
+<script>
+	import { bindOnce } from '../lib/events';
+	import { refreshAppShellGesture } from '../lib/page-swipe';
+
+	const refreshAppShell = () => {
+		refreshAppShellGesture();
+	};
+
+	bindOnce('__appPageLayoutBound', () => {
+		document.addEventListener('astro:page-load', refreshAppShell);
+	});
+
+	refreshAppShell();
+</script>

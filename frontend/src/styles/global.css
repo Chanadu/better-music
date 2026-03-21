@@ -240,6 +240,12 @@ body {
 	text-rendering: optimizeLegibility;
 }
 
+.page-swipe-shell {
+	transform: translate3d(0, 0, 0);
+	backface-visibility: hidden;
+	touch-action: pan-y;
+}
+
 ::selection {
 	background: color-mix(in srgb, var(--primary) 20%, transparent);
 	color: var(--text);

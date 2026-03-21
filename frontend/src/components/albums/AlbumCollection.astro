@@ -72,6 +72,8 @@ import { apiFetch } from '../../lib/api';
 import { syncCoverPreview } from '../../lib/cover-preview';
 import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
 import { createEmptyState } from '../../lib/empty-state';
+import { bindOnce } from '../../lib/events';
+import { invalidateLibraryData, loadLibraryData } from '../../lib/library-cache';
 import { getAlbumBySpotifyID } from '../../lib/spotify';
 import { initializeSortControls, type SortDirection } from '../../lib/sort';
 import { applyRatingTone } from '../../lib/ui';
@@ -477,6 +479,7 @@ import { applyRatingTone } from '../../lib/ui';
 				rating: newRating,
 			}),
 		}, { auth: true });
+		if (response.ok) invalidateLibraryData();
 		return response.ok;
 	};
 
@@ -551,20 +554,13 @@ import { applyRatingTone } from '../../lib/ui';
 		if (!listRoot) return;
 		listRoot.innerHTML = '';
 		try {
-			const [albumsRes, artistsRes] = await Promise.all([
-				apiFetch('/api/albums', { method: 'GET' }, { auth: true }),
-				apiFetch('/api/artists', { method: 'GET' }, { auth: true }),
-			]);
-			if (!albumsRes.ok || !artistsRes.ok) {
-				setMessage('Failed to load albums/artists.', true);
-				return;
-			}
-			const albums = (await albumsRes.json()) as Album[];
-			const artists = (await artistsRes.json()) as Artist[];
-			artistsCache = [...artists].sort((a, b) => a.name.localeCompare(b.name));
+			const { albums, artists } = await loadLibraryData();
+			const albumData = albums as Album[];
+			const artistData = artists as Artist[];
+			artistsCache = [...artistData].sort((a, b) => a.name.localeCompare(b.name));
 			const mode = getView();
 			syncAlbumSortControls();
-			const filteredAlbums = albums.filter((album) => album.listened === (mode === 'listened'));
+			const filteredAlbums = albumData.filter((album) => album.listened === (mode === 'listened'));
 			listRoot.innerHTML = '';
 			if (!filteredAlbums.length) {
 				if (listenedSortable) {
@@ -575,7 +571,7 @@ import { applyRatingTone } from '../../lib/ui';
 				return;
 			}
 			const artistNameMap = new Map<number, string>();
-			for (const artist of artists) artistNameMap.set(artist.id, artist.name);
+			for (const artist of artistData) artistNameMap.set(artist.id, artist.name);
 
 			if (mode === 'listened') {
 				const oldHint = listRoot.parentElement?.querySelector('[data-listened-hint="true"]');
@@ -596,6 +592,12 @@ import { applyRatingTone } from '../../lib/ui';
 		} catch {
 			setMessage('An unexpected error occurred while loading albums.', true);
 		}
+	};
+
+	const refreshAlbumsView = () => {
+		bindEditHandlers();
+		syncAlbumSortControls();
+		void loadAlbums();
 	};
 
 	const bindEditHandlers = () => {
@@ -680,16 +682,17 @@ import { applyRatingTone } from '../../lib/ui';
 		});
 	};
 
-	bindEditHandlers();
-
-	window.addEventListener('album-created', () => void loadAlbums());
-	window.addEventListener('artist-created', () => void loadAlbums());
-	document.addEventListener('astro:page-load', () => {
-		bindEditHandlers();
-		syncAlbumSortControls();
-		void loadAlbums();
+	bindOnce('__albumCollectionBound', () => {
+		window.addEventListener('album-created', () => {
+			invalidateLibraryData();
+			void loadAlbums();
+		});
+		window.addEventListener('artist-created', () => {
+			invalidateLibraryData();
+			void loadAlbums();
+		});
+		document.addEventListener('astro:page-load', refreshAlbumsView);
 	});
 
-	syncAlbumSortControls();
-	void loadAlbums();
+	refreshAlbumsView();
 </script>
