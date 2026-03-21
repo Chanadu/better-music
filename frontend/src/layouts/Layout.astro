@@ -83,7 +83,7 @@ import { ClientRouter } from 'astro:transitions';
 			};
 
 			const preloadRoutes = (): void => {
-				const routes = ['/', '/albums', '/albums/listened', '/artists', '/login', '/register', '/offline'];
+				const routes = ['/', '/albums', '/listened', '/artists', '/login', '/register', '/offline'];
 				const currentPath = window.location.pathname;
 				const preloadState = (window.__preloadedRoutes ??= {});
 
