@@ -1,6 +1,7 @@
 ---
 import ModalHeader from '../ui/ModalHeader.astro';
 import BaseDialog from '../ui/BaseDialog.astro';
+import FloatingInput from '../ui/FloatingInput.astro';
 ---
 
 <BaseDialog
@@ -25,15 +26,8 @@ import BaseDialog from '../ui/BaseDialog.astro';
 
 		<!-- Manual Tab -->
 		<form id="artist-form" class="mt-4 space-y-4 hidden">
-			<div class="relative">
-				<input id="artist-name" name="name" required placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
-				<label for="artist-name" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Name</label>
-			</div>
-
-			<div class="relative">
-				<input id="artist-cover-url" name="cover_url" placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:ring-4 focus:ring-primary/10" />
-				<label for="artist-cover-url" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Cover URL (optional)</label>
-			</div>
+			<FloatingInput id="artist-name" name="name" label="Name" required />
+			<FloatingInput id="artist-cover-url" name="cover_url" label="Cover URL (optional)" />
 
 			<p id="artist-form-status" class="text-sm text-text-muted" role="alert" aria-live="assertive"></p>
 
@@ -45,8 +39,13 @@ import BaseDialog from '../ui/BaseDialog.astro';
 		<!-- Spotify Tab -->
 		<div id="artist-spotify-tab" class="mt-4">
 			<div class="relative" id="artist-spotify-search-wrap">
-				<input id="artist-spotify-search" type="text" autocomplete="off" placeholder=" " class="peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 text-base text-text transition-all duration-200 focus:border-[#1DB954]/60 focus:bg-surface-raised focus:ring-4 focus:ring-[#1DB954]/10" />
-				<label for="artist-spotify-search" class="pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:font-semibold">Search Spotify Artists</label>
+				<FloatingInput
+					id="artist-spotify-search"
+					label="Search Spotify Artists"
+					type="text"
+					autocomplete="off"
+					inputClassName="focus:border-[#1DB954]/60 focus:ring-[#1DB954]/10"
+				/>
 				<div id="artist-spotify-spinner" class="absolute right-3 top-1/2 hidden -translate-y-1/2">
 					<svg class="h-4 w-4 animate-spin text-text-muted" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
 				</div>
@@ -58,7 +57,9 @@ import BaseDialog from '../ui/BaseDialog.astro';
 
 <script>
 	import { apiFetch, getErrorMessage } from '../../lib/api';
+import { closeDialogSafely, openDialogSafely, toggleCreateTabs } from '../../lib/dialog';
 import { searchArtists } from '../../lib/spotify';
+import { setInlineStatus } from '../../lib/status';
 
 	const getArtistModal = () => document.getElementById('artist-modal') as HTMLDialogElement | null;
 	const getArtistForm = () => document.getElementById('artist-form') as HTMLFormElement | null;
@@ -67,60 +68,22 @@ import { searchArtists } from '../../lib/spotify';
 	const getArtistFormStatus = () => document.getElementById('artist-form-status') as HTMLParagraphElement | null;
 	const getArtistCreateBtn = () => document.getElementById('artist-create-btn') as HTMLButtonElement | null;
 
-	const setStatus = (el: HTMLElement | null, message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
-		if (!el) return;
-		el.textContent = message;
-		if (type === 'error') {
-			el.style.color = 'var(--error)';
-		} else if (type === 'success') {
-			el.style.color = 'var(--success)';
-		} else {
-			el.style.color = 'var(--text-muted)';
-		}
-	};
-
 	const openModal = () => {
-		const artistModal = getArtistModal();
-		if (!artistModal || artistModal.open || !artistModal.isConnected) return;
-		try {
-			artistModal.showModal();
-		} catch {
-			// Guard against transient disconnected state during client-side swaps.
-		}
+		openDialogSafely(getArtistModal());
 	};
 
 	const closeModal = () => {
-		const artistModal = getArtistModal();
-		if (!artistModal?.open) return;
-		artistModal.close();
+		closeDialogSafely(getArtistModal());
 	};
 
-	// --- Tab switching ---
 	const switchTab = (tab: 'manual' | 'spotify') => {
-		const manualForm = document.getElementById('artist-form');
-		const spotifyTab = document.getElementById('artist-spotify-tab');
-		const manualBtn = document.getElementById('artist-tab-manual');
-		const spotifyBtn = document.getElementById('artist-tab-spotify');
-
-		const isManual = tab === 'manual';
-		manualForm?.classList.toggle('hidden', !isManual);
-		spotifyTab?.classList.toggle('hidden', isManual);
-
-		const activeClass = ['bg-surface', 'text-text', 'shadow-sm'];
-		const inactiveClass = ['text-text-muted', 'hover:text-text'];
-
-		if (isManual) {
-			manualBtn?.classList.add(...activeClass);
-			manualBtn?.classList.remove(...inactiveClass);
-			spotifyBtn?.classList.remove(...activeClass);
-			spotifyBtn?.classList.add(...inactiveClass);
-		} else {
-			spotifyBtn?.classList.add(...activeClass);
-			spotifyBtn?.classList.remove(...inactiveClass);
-			manualBtn?.classList.remove(...activeClass);
-			manualBtn?.classList.add(...inactiveClass);
-			document.getElementById('artist-spotify-search')?.focus();
-		}
+		toggleCreateTabs(tab, {
+			manualPanel: document.getElementById('artist-form'),
+			spotifyPanel: document.getElementById('artist-spotify-tab'),
+			manualButton: document.getElementById('artist-tab-manual'),
+			spotifyButton: document.getElementById('artist-tab-spotify'),
+			searchInput: document.getElementById('artist-spotify-search'),
+		});
 	};
 
 	// --- Spotify search helpers ---
@@ -264,7 +227,7 @@ import { searchArtists } from '../../lib/spotify';
 
 			if (!name) {
 				switchTab('manual');
-				setStatus(artistFormStatus, 'Artist name is required.', 'error');
+				setInlineStatus(artistFormStatus, 'Artist name is required.', 'error');
 				return;
 			}
 
@@ -273,7 +236,7 @@ import { searchArtists } from '../../lib/spotify';
 				artistCreateBtn.textContent = 'Creating...';
 			}
 
-			setStatus(artistFormStatus, 'Creating artist...');
+			setInlineStatus(artistFormStatus, 'Creating artist...');
 
 			const createResponse = await apiFetch('/api/artists', {
 				method: 'POST',
@@ -289,7 +252,7 @@ import { searchArtists } from '../../lib/spotify';
 
 			if (!createResponse.ok) {
 				switchTab('manual');
-				setStatus(artistFormStatus, await getErrorMessage(createResponse), 'error');
+				setInlineStatus(artistFormStatus, await getErrorMessage(createResponse), 'error');
 				if (artistCreateBtn) {
 					artistCreateBtn.disabled = false;
 					artistCreateBtn.textContent = 'Create Artist';
@@ -299,7 +262,7 @@ import { searchArtists } from '../../lib/spotify';
 
 			await createResponse.json();
 
-			setStatus(artistFormStatus, 'Artist created successfully.', 'success');
+			setInlineStatus(artistFormStatus, 'Artist created successfully.', 'success');
 			target.reset();
 			selectedSpotifyArtistID = null;
 			if (artistCreateBtn) {

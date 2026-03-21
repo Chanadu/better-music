@@ -29,27 +29,15 @@ import BaseDialog from '../ui/BaseDialog.astro';
 </BaseDialog>
 
 <script>
+	import { closeDialogSafely, openDialogSafely } from '../../lib/dialog';
+
 	const getCreatePicker = () => document.getElementById('create-picker-modal') as HTMLDialogElement | null;
-
-	const openModal = (modal: HTMLDialogElement | null) => {
-		if (!modal || modal.open || !modal.isConnected) return;
-		try {
-			modal.showModal();
-		} catch {
-			// Ignore transient disconnection while Astro swaps pages.
-		}
-	};
-
-	const closeModal = (modal: HTMLDialogElement | null) => {
-		if (!modal?.open) return;
-		modal.close();
-	};
 
 	const windowWithFlag = window as Window & { __createPickerOpenBound?: boolean };
 	if (!windowWithFlag.__createPickerOpenBound) {
 		windowWithFlag.__createPickerOpenBound = true;
 		window.addEventListener('open-create-menu', () => {
-			requestAnimationFrame(() => openModal(getCreatePicker()));
+			requestAnimationFrame(() => openDialogSafely(getCreatePicker()));
 		});
 	}
 
@@ -61,13 +49,13 @@ import BaseDialog from '../ui/BaseDialog.astro';
 			const createPicker = getCreatePicker();
 
 			if (target?.closest('#open-artist-modal')) {
-				closeModal(createPicker);
+				closeDialogSafely(createPicker);
 				requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('open-artist-modal')));
 				return;
 			}
 
 			if (target?.closest('#open-album-modal')) {
-				closeModal(createPicker);
+				closeDialogSafely(createPicker);
 				requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('open-album-modal')));
 			}
 		});

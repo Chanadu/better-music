@@ -1,0 +1,32 @@
+---
+import HomeActionCard from './HomeActionCard.astro';
+---
+
+<div class="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+	<HomeActionCard title="Artists" description="Manage the creators behind the music." href="/artists" buttonLabel="View Library">
+		<svg slot="icon" viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
+			<circle cx="12" cy="7" r="4"></circle>
+			<path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"></path>
+		</svg>
+	</HomeActionCard>
+
+	<HomeActionCard title="Albums" description="Track all of your favorite specific releases." href="/albums" buttonLabel="View Library">
+		<svg slot="icon" viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
+			<circle cx="12" cy="12" r="8"></circle>
+			<circle cx="12" cy="12" r="2"></circle>
+		</svg>
+	</HomeActionCard>
+
+	<HomeActionCard
+		title="Create"
+		description="Expand your personalized library database."
+		buttonLabel="New Entry"
+		buttonId="home-open-create"
+		buttonVariant="secondary"
+		cardClassName="sm:col-span-2 lg:col-span-1"
+	>
+		<svg slot="icon" viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
+			<path d="M12 5v14M5 12h14"></path>
+		</svg>
+	</HomeActionCard>
+</div>

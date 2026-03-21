@@ -1,0 +1,31 @@
+---
+interface Props {
+	id: string;
+	label: string;
+	wrapperClassName?: string;
+	inputClassName?: string;
+	labelClassName?: string;
+	[name: string]: unknown;
+}
+
+const {
+	id,
+	label,
+	wrapperClassName = '',
+	inputClassName = '',
+	labelClassName = '',
+	...inputProps
+} = Astro.props as Props;
+
+const baseWrapperClass =
+	'relative w-full overflow-hidden rounded-xl border border-border/60 bg-surface-raised/50 transition-all duration-200 focus-within:border-primary/60 focus-within:bg-surface-raised focus-within:ring-4 focus-within:ring-primary/10';
+const baseInputClass = 'ios-date-field w-full border-0 bg-transparent px-4 pb-2 pt-6 text-base text-text disabled:opacity-50';
+const baseLabelClass = 'pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted';
+---
+
+<div class:list={[baseWrapperClass, wrapperClassName]}>
+	<input id={id} type="date" class:list={[baseInputClass, inputClassName]} {...inputProps} />
+	<label for={id} class:list={[baseLabelClass, labelClassName]}>
+		{label}
+	</label>
+</div>
