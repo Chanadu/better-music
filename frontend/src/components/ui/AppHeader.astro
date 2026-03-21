@@ -8,24 +8,27 @@ interface Props {
 const { title } = Astro.props;
 ---
 
-<header class="sticky top-0 z-30 w-full border-b border-border/50 bg-surface/85 shadow-sm backdrop-blur-md transition-all">
-	<div class="mx-auto flex max-w-4xl items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:px-8">
-		<div class="flex items-center gap-3">
-			<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-fg shadow-md">
+<header class="sticky top-0 z-30 w-full border-b border-border/50 bg-surface/78 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl transition-all">
+	<div class="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:px-8">
+		<div class="flex min-w-0 items-center gap-3 sm:gap-4">
+			<div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-primary to-primary-hover text-primary-fg shadow-[var(--shell-shadow)]">
 				<svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
 					<path d="M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm11-2a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"></path>
 					<path d="M9 18V6l11-2v12"></path>
 					<path d="M9 10l11-2"></path>
 				</svg>
 			</div>
-			<h1 class="text-xl font-extrabold tracking-tight text-text sm:text-2xl">{title}</h1>
+			<div class="min-w-0">
+				<p class="hidden text-[11px] font-semibold uppercase tracking-[0.22em] text-text-muted sm:block">Better Music</p>
+				<h1 class="truncate text-xl font-extrabold tracking-tight text-text sm:text-[1.65rem]">{title}</h1>
+			</div>
 		</div>
 
-		<div class="flex items-center gap-3">
+		<div class="flex items-center gap-2 sm:gap-3">
 			<ThemeToggleButton />
 			<button
 				data-logout-button
-				class="flex cursor-pointer items-center justify-center rounded-lg border border-border/60 bg-surface px-3 py-2 text-text shadow-sm transition-all hover:-translate-y-0.5 hover:shadow hover:opacity-90 active:scale-95"
+				class="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-border/70 bg-surface/92 px-3 text-text shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-surface-raised active:scale-95 sm:px-4"
 				aria-label="Log out"
 			>
 				<svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -33,6 +36,7 @@ const { title } = Astro.props;
 					<path d="M16 17l5-5-5-5"></path>
 					<path d="M21 12H9"></path>
 				</svg>
+				<span class="hidden text-sm font-semibold sm:inline">Log out</span>
 			</button>
 		</div>
 	</div>

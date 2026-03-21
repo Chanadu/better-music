@@ -8,7 +8,7 @@ interface Props {
 const {
 	controlId,
 	label = 'Sort',
-	containerClass = 'flex items-center gap-2',
+	containerClass = 'flex items-center gap-2 sm:gap-3',
 } = Astro.props as Props;
 
 const triggerId = `${controlId}-trigger`;
@@ -18,14 +18,14 @@ const directionId = controlId.replace(/-by$/, '-direction');
 ---
 
 <div class={containerClass}>
-	<label for={triggerId} class="text-sm font-semibold text-text-muted">{label}</label>
-	<div class="relative min-w-0 flex-1 sm:flex-none" data-themed-dropdown-root>
+	<label for={triggerId} class="shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted sm:text-xs sm:tracking-[0.22em]">{label}</label>
+	<div class="relative min-w-0 flex-1" data-themed-dropdown-root>
 		<button
 			id={triggerId}
 			type="button"
 			aria-haspopup="listbox"
 			aria-expanded="false"
-			class="inline-flex w-full min-w-[12rem] items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface px-3 py-2 text-sm text-text shadow-sm transition-all duration-200 hover:border-primary/35 hover:bg-surface-raised focus:ring-2 focus:ring-primary/10"
+			class="inline-flex h-10 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-border/70 bg-surface/92 px-3 py-2 text-sm text-text shadow-sm transition-all duration-200 hover:border-primary/30 hover:bg-surface-raised focus:ring-2 focus:ring-primary/10 sm:h-11 sm:min-w-[12rem] sm:rounded-2xl sm:px-4"
 		>
 			<span id={valueId} class="truncate">Select</span>
 			<svg viewBox="0 0 24 24" class="h-4 w-4 text-text-muted" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -33,7 +33,7 @@ const directionId = controlId.replace(/-by$/, '-direction');
 		<div
 			id={menuId}
 			role="listbox"
-			class="absolute left-0 top-[calc(100%+0.4rem)] z-30 hidden max-h-64 w-full overflow-y-auto rounded-xl border border-border/60 bg-surface p-2 shadow-xl"
+			class="absolute left-0 top-[calc(100%+0.45rem)] z-30 hidden max-h-64 w-full overflow-y-auto rounded-2xl border border-border/70 bg-surface p-2 shadow-[var(--shell-shadow)]"
 		></div>
 	</div>
 	<button
@@ -41,7 +41,7 @@ const directionId = controlId.replace(/-by$/, '-direction');
 		type="button"
 		aria-label="Sort direction"
 		title="Ascending"
-		class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface text-text transition-all duration-200 hover:bg-surface-raised focus:ring-2 focus:ring-primary/10"
+		class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-surface/92 text-text transition-all duration-200 hover:border-primary/30 hover:bg-surface-raised focus:ring-2 focus:ring-primary/10 sm:h-11 sm:w-11 sm:rounded-2xl"
 	>
 		<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M12 7l-4 6h8z" fill="currentColor"></path></svg>
 	</button>

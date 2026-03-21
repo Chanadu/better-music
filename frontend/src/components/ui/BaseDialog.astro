@@ -4,6 +4,7 @@ interface Props {
 	className?: string;
 	contentClassName?: string;
 	swipeToClose?: boolean;
+	mobilePlacement?: 'top' | 'center' | 'bottom';
 }
 
 const {
@@ -11,10 +12,18 @@ const {
 	className = 'w-[min(92vw,32rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50',
 	contentClassName = 'p-5 sm:p-6',
 	swipeToClose = true,
+	mobilePlacement = 'top',
 } = Astro.props as Props;
+
+const placementClass =
+	mobilePlacement === 'bottom'
+		? ''
+		: mobilePlacement === 'center'
+			? 'm-auto'
+			: 'mt-[7vh] mb-0 mx-auto sm:m-auto';
 ---
 
-<dialog id={id} class={className} data-swipe-close={swipeToClose ? 'true' : 'false'}>
+<dialog id={id} class:list={[className, placementClass]} data-swipe-close={swipeToClose ? 'true' : 'false'}>
 	<div class={contentClassName}>
 		{swipeToClose && <div class="mx-auto mb-4 mt-2 h-1.5 w-12 rounded-full bg-border/70 sm:hidden" aria-hidden="true"></div>}
 		<slot />

@@ -6,12 +6,14 @@ import BaseDialog from '../ui/BaseDialog.astro';
 
 <BaseDialog
 	id="create-picker-modal"
-	className="w-[min(92vw,28rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50"
-	contentClassName="space-y-4 p-5 sm:p-6"
+	className="w-[min(92vw,30rem)] m-auto rounded-[2rem] border border-border/70 bg-linear-to-br from-surface via-surface to-surface-raised/45 p-0 text-text shadow-[var(--shell-shadow)] backdrop:bg-black/40"
+	contentClassName="space-y-5 p-5 sm:space-y-6 sm:p-6"
+	mobilePlacement="top"
 >
 		<ModalHeader title="Choose What To Create" />
+		<p class="text-sm leading-6 text-text-muted">Start with the kind of entry you want to add, then fill it in manually or pull details from Spotify.</p>
 
-		<div class="grid grid-rows-2 gap-3">
+		<div class="grid gap-3 sm:grid-cols-2">
 			<CreateOptionCard id="open-artist-modal" label="Artist">
 				<svg viewBox="0 0 24 24" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
 					<circle cx="12" cy="7" r="4"></circle>

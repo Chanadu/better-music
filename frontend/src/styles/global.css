@@ -33,30 +33,28 @@
 	--color-warning: var(--warning);
 
 	/* Font family */
-	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ── Light mode (default) ────────────────────────────────────────────────── */
 :root {
 	color-scheme: light;
 
-	--bg: oklch(98.5% 0.005 270);
-	--surface: oklch(100% 0 0);
-	--surface-raised: oklch(96% 0.01 270);
-	--border: oklch(90% 0.015 270);
+	--bg: oklch(98.4% 0.007 240);
+	--surface: oklch(99.6% 0.004 240);
+	--surface-raised: oklch(97.2% 0.01 240);
+	--border: oklch(89% 0.018 240);
 
-	/* Vibrant primary blue */
-	--primary: #2563eb;
+	--primary: #0f6cdb;
 	--primary-fg: #ffffff;
-	--primary-hover: #3b82f6;
+	--primary-hover: #2685f2;
 
-	/* Soft secondary */
-	--secondary: oklch(50% 0.15 285);
-	--secondary-hover: oklch(55% 0.18 285);
+	--secondary: #d97706;
+	--secondary-hover: #ea8a14;
 	--secondary-fg: oklch(100% 0 0);
 
-	--text: oklch(20% 0.01 270);
-	--text-muted: oklch(0.55 0.02 245);
+	--text: oklch(24% 0.02 248);
+	--text-muted: oklch(0.55 0.024 240);
 
 	--success: oklch(0.65 0.15 150);
 	--error: oklch(0.6 0.18 20);
@@ -67,6 +65,8 @@
 
 	/* Mobile Safe Area */
 	--safe-bottom: env(safe-area-inset-bottom, 16px);
+	--shell-shadow: 0 20px 48px -30px rgba(15, 23, 42, 0.22);
+	--panel-shadow: 0 18px 38px -28px rgba(15, 23, 42, 0.22);
 }
 
 @keyframes modal-pop {
@@ -108,22 +108,21 @@ dialog::backdrop {
 .dark {
 	color-scheme: dark;
 
-	/* Elegant, deep slate background */
-	--bg: #0f172a;
-	--surface: #1e293b;
-	--surface-raised: #334155;
-	--border: #475569;
+	--bg: #09111f;
+	--surface: #132033;
+	--surface-raised: #1a2a40;
+	--border: #31465f;
 
-	--primary: #3b82f6;
+	--primary: #5aa2ff;
 	--primary-fg: #ffffff;
-	--primary-hover: #60a5fa;
+	--primary-hover: #7bb7ff;
 
-	--secondary: oklch(58% 0.2 285);
-	--secondary-hover: oklch(66% 0.22 285);
+	--secondary: #f5a623;
+	--secondary-hover: #ffb53b;
 	--secondary-fg: oklch(100% 0 0);
 
-	--text: oklch(96% 0.01 270);
-	--text-muted: oklch(70% 0.03 270);
+	--text: oklch(96% 0.01 250);
+	--text-muted: oklch(74% 0.03 245);
 
 	--success: oklch(68% 0.19 142);
 	--error: oklch(65% 0.22 25);
@@ -131,19 +130,30 @@ dialog::backdrop {
 	--rating-low: oklch(0.72 0.18 25);
 	--rating-mid: oklch(0.9 0.14 95);
 	--rating-high: oklch(0.82 0.16 150);
+	--shell-shadow: 0 28px 70px -38px rgba(0, 0, 0, 0.55);
+	--panel-shadow: 0 22px 48px -34px rgba(0, 0, 0, 0.58);
 }
 
 /* ── Base styles ─────────────────────────────────────────────────────────── */
 body {
 	background-color: var(--bg);
 	background-image:
-		radial-gradient(circle at 14% 12%, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 42%),
-		radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--secondary) 10%, transparent) 0%, transparent 40%);
+		radial-gradient(circle at 14% 10%, color-mix(in srgb, var(--primary) 7%, transparent) 0%, transparent 34%),
+		radial-gradient(circle at 84% 12%, color-mix(in srgb, var(--secondary) 6%, transparent) 0%, transparent 30%),
+		radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--surface) 68%, transparent) 0%, transparent 42%),
+		linear-gradient(180deg, color-mix(in srgb, var(--surface) 40%, transparent) 0%, transparent 30%);
 	background-attachment: fixed;
 	color: var(--text);
 	transition:
 		background-color 0.2s ease,
 		color 0.2s ease;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+::selection {
+	background: color-mix(in srgb, var(--primary) 20%, transparent);
+	color: var(--text);
 }
 
 @keyframes card-body-reveal {
@@ -160,13 +170,15 @@ body {
 .interactive-list-card {
 	transition:
 		transform 0.24s ease,
-		filter 0.24s ease;
+		filter 0.24s ease,
+		box-shadow 0.24s ease;
 }
 
 @media (hover: hover) {
 	.interactive-list-card:hover {
-		transform: translateY(-1px);
+		transform: translateY(-2px);
 		filter: saturate(1.03);
+		box-shadow: var(--panel-shadow);
 	}
 }
 

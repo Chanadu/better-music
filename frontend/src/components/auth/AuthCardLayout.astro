@@ -2,11 +2,11 @@
 import Panel from '../ui/Panel.astro';
 ---
 
-<main class="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-bg to-surface-raised px-4 py-8 sm:px-6 sm:py-12 md:px-8">
-	<div class="w-full max-w-sm space-y-6">
-		<div class="space-y-3 text-center">
+<main class="flex min-h-screen flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-12 md:px-8">
+	<div class="w-full max-w-md space-y-6 sm:space-y-8">
+		<div class="space-y-4 text-center">
 			<div class="flex justify-center">
-				<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-fg shadow-md sm:h-14 sm:w-14">
+				<div class="flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-linear-to-br from-primary to-primary-hover text-primary-fg shadow-[var(--shell-shadow)] sm:h-16 sm:w-16">
 					<svg viewBox="0 0 24 24" class="h-7 w-7 sm:h-8 sm:w-8" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
 						<path d="M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm11-2a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"></path>
 						<path d="M9 18V6l11-2v12"></path>
@@ -15,9 +15,11 @@ import Panel from '../ui/Panel.astro';
 				</div>
 			</div>
 			<div>
-				<h1 class="text-3xl font-bold text-text sm:text-4xl">
+				<p class="mb-2 text-xs font-semibold uppercase tracking-[0.28em] text-text-muted">Personal Catalog</p>
+				<h1 class="text-3xl font-bold tracking-tight text-text sm:text-4xl">
 					Better Music
 				</h1>
+				<p class="mt-2 text-sm text-text-muted sm:text-base">Track artists, albums, and the records that still deserve a proper listen.</p>
 			</div>
 		</div>
 

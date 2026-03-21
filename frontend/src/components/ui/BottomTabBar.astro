@@ -6,51 +6,51 @@ interface Props {
 const { current } = Astro.props;
 
 const baseClass =
-	'flex min-h-[4rem] flex-col items-center justify-center rounded-2xl px-2 py-1 text-[11px] font-semibold leading-tight transition-all duration-300 active:scale-95';
-const activeClass = 'text-primary';
+	'flex min-h-[3.4rem] flex-col items-center justify-center rounded-[1rem] px-1.5 py-1 text-[10px] font-semibold leading-tight transition-all duration-300 active:scale-95 sm:min-h-[4.25rem] sm:rounded-[1.3rem] sm:px-2 sm:text-[11px]';
+const activeClass = 'bg-primary/10 text-primary shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--primary)_16%,transparent)]';
 const inactiveClass = 'text-text-muted hover:text-text';
 ---
 
 <nav
-	class='fixed right-4 left-4 z-40 mx-auto max-w-md rounded-[2.5rem] border border-border/50 bg-surface-raised/90 p-2 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:shadow-black/40'
-	style='bottom: calc(var(--safe-bottom) + 0.5rem);'
+	class='fixed right-3 left-3 z-40 mx-auto max-w-xl rounded-[1.5rem] border border-border/60 bg-surface/90 p-1.5 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/10 sm:right-6 sm:left-6 sm:max-w-2xl sm:rounded-[2rem] sm:p-2.5 sm:shadow-[var(--shell-shadow)]'
+	style='bottom: calc(var(--safe-bottom) + 0.4rem);'
 >
-	<div class='flex w-full items-center justify-between gap-1'>
+	<div class='grid w-full grid-cols-5 items-center gap-1 sm:gap-2'>
 		<div class='flex-1'>
 			<a href='/' class={`${baseClass} ${current === 'home' ? activeClass : inactiveClass}`}>
-				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
+				<svg viewBox='0 0 24 24' class='h-5.5 w-5.5 sm:h-7.5 sm:w-7.5' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<path d='M3 11.5 12 4l9 7.5'></path>
 					<path d='M5.5 10.5V20h13V10.5'></path>
 					<path d='M10 20v-5h4v5'></path>
 				</svg>
-				<span class='mt-1 text-sm'>Home</span>
+				<span class='mt-0.5 sm:mt-1 text-[10px] sm:text-sm'>Home</span>
 			</a>
 		</div>
 		<div class='flex-1'>
 			<a href='/albums' class={`${baseClass} ${current === 'unlistened' ? activeClass : inactiveClass}`}>
-				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
+				<svg viewBox='0 0 24 24' class='h-5.5 w-5.5 sm:h-7.5 sm:w-7.5' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<circle cx='12' cy='12' r='8'></circle>
 					<circle cx='12' cy='12' r='2'></circle>
 				</svg>
-				<span class='mt-1 text-sm'>Unlistened</span>
+				<span class='mt-0.5 sm:mt-1 text-[10px] sm:text-sm'>Queue</span>
 			</a>
 		</div>
 		<div class='flex-1'>
 			<a href='/albums/listened' class={`${baseClass} ${current === 'listened' ? activeClass : inactiveClass}`}>
-				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
+				<svg viewBox='0 0 24 24' class='h-5.5 w-5.5 sm:h-7.5 sm:w-7.5' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<path d='M5 12l4 4 10-10'></path>
 					<circle cx='12' cy='12' r='9'></circle>
 				</svg>
-				<span class='mt-1 text-sm'>Listened</span>
+				<span class='mt-0.5 sm:mt-1 text-[10px] sm:text-sm'>Done</span>
 			</a>
 		</div>
 		<div class='flex-1'>
 			<a href='/artists' class={`${baseClass} ${current === 'artists' ? activeClass : inactiveClass}`}>
-				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
+				<svg viewBox='0 0 24 24' class='h-5.5 w-5.5 sm:h-7.5 sm:w-7.5' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<circle cx='12' cy='7' r='4'></circle>
 					<path d='M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7'></path>
 				</svg>
-				<span class='mt-1 text-sm'>Artists</span>
+				<span class='mt-0.5 sm:mt-1 text-[10px] sm:text-sm'>Artists</span>
 			</a>
 		</div>
 		<div class='flex-1'>
@@ -60,11 +60,11 @@ const inactiveClass = 'text-text-muted hover:text-text';
 				class={`${baseClass} ${inactiveClass} w-full`}
 				aria-label='Open create menu'
 			>
-				<svg viewBox='0 0 24 24' class='h-8 w-8' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
+				<svg viewBox='0 0 24 24' class='h-5.5 w-5.5 sm:h-7.5 sm:w-7.5' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<path d='M12 5v14'></path>
 					<path d='M5 12h14'></path>
 				</svg>
-				<span class='mt-1 text-sm'>Create</span>
+				<span class='mt-0.5 sm:mt-1 text-[10px] sm:text-sm'>Create</span>
 			</button>
 		</div>
 	</div>
