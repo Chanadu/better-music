@@ -31,10 +31,9 @@ const placementClass =
 </dialog>
 
 <script>
-	const windowWithFlag = window as Window & { __baseDialogBound?: boolean };
-	if (!windowWithFlag.__baseDialogBound) {
-		windowWithFlag.__baseDialogBound = true;
+	import { bindOnce } from '../../lib/events';
 
+	bindOnce('__baseDialogBound', () => {
 		type SwipeState = {
 			startX: number;
 			startY: number;
@@ -92,5 +91,5 @@ const placementClass =
 
 		document.addEventListener('astro:page-load', bindAllDialogs);
 		bindAllDialogs();
-	}
+	});
 </script>

@@ -106,6 +106,7 @@ import { apiFetch, getErrorMessage } from '../../lib/api';
 import { syncCoverPreview } from '../../lib/cover-preview';
 import { getCurrentDateLocal } from '../../lib/date';
 import { closeDialogSafely, openDialogSafely, toggleCreateTabs } from '../../lib/dialog';
+import { bindOnce } from '../../lib/events';
 import { searchAlbums } from '../../lib/spotify';
 import { setInlineStatus } from '../../lib/status';
 
@@ -154,9 +155,7 @@ import { setInlineStatus } from '../../lib/status';
 	let selectedSpotifyAlbumID: string | null = null;
 
 	// --- Main Delegated Listeners ---
-	const windowWithInputFlag = window as Window & { __albumModalInputBound?: boolean };
-	if (!windowWithInputFlag.__albumModalInputBound) {
-		windowWithInputFlag.__albumModalInputBound = true;
+	bindOnce('__albumModalInputBound', () => {
 		document.addEventListener('input', (event) => {
 			const target = event.target as HTMLInputElement | null;
 			if (!target || target.id !== 'album-spotify-search') return;
@@ -241,11 +240,9 @@ import { setInlineStatus } from '../../lib/status';
 				}
 			}, 350);
 		});
-	}
+	});
 
-	const windowWithTabClickFlag = window as Window & { __albumModalTabClickBound?: boolean };
-	if (!windowWithTabClickFlag.__albumModalTabClickBound) {
-		windowWithTabClickFlag.__albumModalTabClickBound = true;
+	bindOnce('__albumModalTabClickBound', () => {
 		document.addEventListener('click', (event) => {
 			const target = event.target as HTMLElement | null;
 			const tabBtn = target?.closest('#album-tab-manual, #album-tab-spotify');
@@ -257,7 +254,7 @@ import { setInlineStatus } from '../../lib/status';
 				switchAlbumTab('spotify');
 			}
 		});
-	}
+	});
 	// --- End Delegated Listeners ---
 	// --- End Spotify ---
 
@@ -364,9 +361,7 @@ import { setInlineStatus } from '../../lib/status';
 		manual.value = value.toFixed(1);
 	};
 
-	const windowWithOpenFlag = window as Window & { __openAlbumModalBound?: boolean };
-	if (!windowWithOpenFlag.__openAlbumModalBound) {
-		windowWithOpenFlag.__openAlbumModalBound = true;
+	bindOnce('__openAlbumModalBound', () => {
 		window.addEventListener('open-album-modal', async () => {
 			await new Promise<void>((resolve) => {
 				requestAnimationFrame(() => {
@@ -379,30 +374,24 @@ import { setInlineStatus } from '../../lib/status';
 			switchAlbumTab('spotify');
 			await loadArtists();
 		});
-	}
+	});
 
-	const windowWithArtistCreatedFlag = window as Window & { __albumModalArtistCreatedBound?: boolean };
-	if (!windowWithArtistCreatedFlag.__albumModalArtistCreatedBound) {
-		windowWithArtistCreatedFlag.__albumModalArtistCreatedBound = true;
+	bindOnce('__albumModalArtistCreatedBound', () => {
 		window.addEventListener('artist-created', async () => {
 			if (getAlbumModal()?.open) {
 				await loadArtists();
 			}
 		});
-	}
+	});
 
-	const windowWithClickFlag = window as Window & { __albumModalClickBound?: boolean };
-	if (!windowWithClickFlag.__albumModalClickBound) {
-		windowWithClickFlag.__albumModalClickBound = true;
+	bindOnce('__albumModalClickBound', () => {
 		document.addEventListener('click', (event) => {
 			const target = event.target as Element | null;
 			if (target?.id === 'album-modal') closeModal();
 		});
-	}
+	});
 
-	const windowWithChangeFlag = window as Window & { __albumModalChangeBound?: boolean };
-	if (!windowWithChangeFlag.__albumModalChangeBound) {
-		windowWithChangeFlag.__albumModalChangeBound = true;
+	bindOnce('__albumModalChangeBound', () => {
 		document.addEventListener('change', (event) => {
 			const target = event.target as HTMLInputElement | null;
 			if (!target) return;
@@ -414,11 +403,9 @@ import { setInlineStatus } from '../../lib/status';
 				syncRatingControls('manual');
 			}
 		});
-	}
+	});
 
-	const windowWithRatingInputFlag = window as Window & { __albumModalRatingInputBound?: boolean };
-	if (!windowWithRatingInputFlag.__albumModalRatingInputBound) {
-		windowWithRatingInputFlag.__albumModalRatingInputBound = true;
+	bindOnce('__albumModalRatingInputBound', () => {
 		document.addEventListener('input', (event) => {
 			const target = event.target as HTMLInputElement | null;
 			if (!target) return;
@@ -430,13 +417,11 @@ import { setInlineStatus } from '../../lib/status';
 				syncRatingControls('manual');
 			}
 		});
-	}
+	});
 
 	syncListenedFields();
 
-	const windowWithSubmitFlag = window as Window & { __albumModalSubmitBound?: boolean };
-	if (!windowWithSubmitFlag.__albumModalSubmitBound) {
-		windowWithSubmitFlag.__albumModalSubmitBound = true;
+	bindOnce('__albumModalSubmitBound', () => {
 		document.addEventListener('submit', async (event) => {
 			const target = event.target as HTMLFormElement | null;
 			if (!target || target.id !== 'album-form') return;
@@ -546,5 +531,5 @@ import { setInlineStatus } from '../../lib/status';
 			window.dispatchEvent(new CustomEvent('album-created'));
 			setTimeout(() => closeModal(), 400);
 		});
-	}
+	});
 </script>

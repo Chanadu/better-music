@@ -69,6 +69,7 @@ import FloatingInput from '../ui/FloatingInput.astro';
 import { apiFetch, getErrorMessage } from '../../lib/api';
 import { syncCoverPreview } from '../../lib/cover-preview';
 import { closeDialogSafely, openDialogSafely, toggleCreateTabs } from '../../lib/dialog';
+import { bindOnce } from '../../lib/events';
 import { searchArtists } from '../../lib/spotify';
 import { setInlineStatus } from '../../lib/status';
 
@@ -113,9 +114,7 @@ import { setInlineStatus } from '../../lib/status';
 	let selectedSpotifyArtistID: string | null = null;
 
 	// --- Main Delegated Listeners ---
-	const windowWithArtistInputFlag = window as Window & { __artistModalInputBound?: boolean };
-	if (!windowWithArtistInputFlag.__artistModalInputBound) {
-		windowWithArtistInputFlag.__artistModalInputBound = true;
+	bindOnce('__artistModalInputBound', () => {
 		document.addEventListener('input', (event) => {
 			const target = event.target as HTMLInputElement | null;
 			if (!target || target.id !== 'artist-spotify-search') return;
@@ -183,11 +182,9 @@ import { setInlineStatus } from '../../lib/status';
 				}
 			}, 350);
 		});
-	}
+	});
 
-	const windowWithArtistTabClickFlag = window as Window & { __artistModalTabClickBound?: boolean };
-	if (!windowWithArtistTabClickFlag.__artistModalTabClickBound) {
-		windowWithArtistTabClickFlag.__artistModalTabClickBound = true;
+	bindOnce('__artistModalTabClickBound', () => {
 		document.addEventListener('click', (event) => {
 			const target = event.target as HTMLElement | null;
 			const tabBtn = target?.closest('#artist-tab-manual, #artist-tab-spotify');
@@ -199,13 +196,11 @@ import { setInlineStatus } from '../../lib/status';
 				switchTab('spotify');
 			}
 		});
-	}
+	});
 	// --- End Delegated Listeners ---
 	// --- End Spotify ---
 
-	const windowWithOpenFlag = window as Window & { __openArtistModalBound?: boolean };
-	if (!windowWithOpenFlag.__openArtistModalBound) {
-		windowWithOpenFlag.__openArtistModalBound = true;
+	bindOnce('__openArtistModalBound', () => {
 		window.addEventListener('open-artist-modal', () => {
 			requestAnimationFrame(() => {
 				openModal();
@@ -214,20 +209,16 @@ import { setInlineStatus } from '../../lib/status';
 				switchTab('spotify');
 			});
 		});
-	}
+	});
 
-	const windowWithClickFlag = window as Window & { __artistModalClickBound?: boolean };
-	if (!windowWithClickFlag.__artistModalClickBound) {
-		windowWithClickFlag.__artistModalClickBound = true;
+	bindOnce('__artistModalClickBound', () => {
 		document.addEventListener('click', (event) => {
 			const target = event.target as Element | null;
 			if (target?.id === 'artist-modal') closeModal();
 		});
-	}
+	});
 
-	const windowWithSubmitFlag = window as Window & { __artistModalSubmitBound?: boolean };
-	if (!windowWithSubmitFlag.__artistModalSubmitBound) {
-		windowWithSubmitFlag.__artistModalSubmitBound = true;
+	bindOnce('__artistModalSubmitBound', () => {
 		document.addEventListener('submit', async (event) => {
 			const target = event.target as HTMLFormElement | null;
 			if (!target || target.id !== 'artist-form') return;
@@ -291,5 +282,5 @@ import { setInlineStatus } from '../../lib/status';
 			window.dispatchEvent(new CustomEvent('artist-created'));
 			setTimeout(() => closeModal(), 400);
 		});
-	}
+	});
 </script>

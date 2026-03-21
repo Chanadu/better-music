@@ -45,10 +45,9 @@ const { title } = Astro.props;
 <script>
 	import { navigate } from 'astro:transitions/client';
 	import { logout } from '../../lib/api';
+	import { bindOnce } from '../../lib/events';
 
-	const windowWithLogoutFlag = window as Window & { __logoutBound?: boolean };
-	if (!windowWithLogoutFlag.__logoutBound) {
-		windowWithLogoutFlag.__logoutBound = true;
+	bindOnce('__logoutBound', () => {
 		document.addEventListener('click', async (event) => {
 			const target = event.target as Element | null;
 			if (target?.closest('[data-logout-button]')) {
@@ -56,5 +55,5 @@ const { title } = Astro.props;
 				void navigate('/login');
 			}
 		});
-	}
+	});
 </script>
