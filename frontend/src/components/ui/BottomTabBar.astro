@@ -20,7 +20,7 @@ const inactiveClass = 'text-text-muted hover:text-text';
 			<a href='/albums' class={`ui-pressable ${baseClass} ${current === 'unlistened' ? activeClass : inactiveClass}`}>
 				<svg viewBox='0 0 24 24' class='h-5.5 w-5.5 sm:h-7.5 sm:w-7.5' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
 					<circle cx='12' cy='12' r='8'></circle>
-					<circle cx='12' cy='12' r='2'></circle>
+					<path d='M12 8v4l2.8 1.8'></path>
 				</svg>
 				<span class='mt-0.5 sm:mt-1 text-[10px] sm:text-sm'>Queue</span>
 			</a>
@@ -28,8 +28,8 @@ const inactiveClass = 'text-text-muted hover:text-text';
 		<div class='flex-1'>
 			<a href='/listened' class={`ui-pressable ${baseClass} ${current === 'listened' ? activeClass : inactiveClass}`}>
 				<svg viewBox='0 0 24 24' class='h-5.5 w-5.5 sm:h-7.5 sm:w-7.5' fill='none' stroke='currentColor' stroke-width='1.8' aria-hidden='true'>
-					<path d='M5 12l4 4 10-10'></path>
-					<circle cx='12' cy='12' r='9'></circle>
+					<circle cx='11' cy='12' r='7'></circle>
+					<circle cx='11' cy='12' r='1.7'></circle>
 				</svg>
 				<span class='mt-0.5 sm:mt-1 text-[10px] sm:text-sm'>Done</span>
 			</a>

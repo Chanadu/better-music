@@ -13,12 +13,12 @@
 	/* Border */
 	--color-border: var(--border);
 
-	/* Primary accent (purple / violet) */
+	/* Primary accent (blue) */
 	--color-primary: var(--primary);
 	--color-primary-fg: var(--primary-fg);
 	--color-primary-hover: var(--primary-hover);
 
-	/* Secondary accent (One Dark blue) */
+	/* Secondary accent (amber) */
 	--color-secondary: var(--secondary);
 	--color-secondary-hover: var(--secondary-hover);
 	--color-secondary-fg: var(--secondary-fg);
@@ -40,28 +40,28 @@
 :root {
 	color-scheme: light;
 
-	--bg: oklch(98.4% 0.007 240);
-	--surface: oklch(99.6% 0.004 240);
-	--surface-raised: oklch(97.2% 0.01 240);
-	--border: oklch(89% 0.018 240);
+	--bg: #edf3fb;
+	--surface: #fbfdff;
+	--surface-raised: #f2f6fc;
+	--border: #d5dfed;
 
-	--primary: #0f6cdb;
+	--primary: #2563eb;
 	--primary-fg: #ffffff;
-	--primary-hover: #2685f2;
+	--primary-hover: #3b82f6;
 
-	--secondary: #d97706;
-	--secondary-hover: #ea8a14;
+	--secondary: #c67a20;
+	--secondary-hover: #db8a2f;
 	--secondary-fg: oklch(100% 0 0);
 
-	--text: oklch(24% 0.02 248);
-	--text-muted: oklch(0.55 0.024 240);
+	--text: #1c2738;
+	--text-muted: #64748b;
 
-	--success: oklch(0.65 0.15 150);
-	--error: oklch(0.6 0.18 20);
-	--warning: oklch(72% 0.18 70);
-	--rating-low: oklch(0.62 0.2 25);
-	--rating-mid: oklch(0.86 0.18 95);
-	--rating-high: oklch(0.72 0.18 150);
+	--success: #2b9a68;
+	--error: #c04f42;
+	--warning: #d7a23d;
+	--rating-low: oklch(0.66 0.17 34);
+	--rating-mid: oklch(0.87 0.14 92);
+	--rating-high: oklch(0.74 0.16 158);
 
 	/* Mobile Safe Area */
 	--safe-bottom: env(safe-area-inset-bottom, 16px);
@@ -196,28 +196,28 @@ dialog[open] > .dialog-content {
 .dark {
 	color-scheme: dark;
 
-	--bg: #09111f;
-	--surface: #132033;
-	--surface-raised: #1a2a40;
-	--border: #31465f;
+	--bg: #091324;
+	--surface: #111d33;
+	--surface-raised: #172643;
+	--border: #32486f;
 
-	--primary: #5aa2ff;
+	--primary: #7aaeff;
 	--primary-fg: #ffffff;
-	--primary-hover: #7bb7ff;
+	--primary-hover: #98c1ff;
 
-	--secondary: #f5a623;
-	--secondary-hover: #ffb53b;
+	--secondary: #efb25f;
+	--secondary-hover: #ffc47d;
 	--secondary-fg: oklch(100% 0 0);
 
-	--text: oklch(96% 0.01 250);
-	--text-muted: oklch(74% 0.03 245);
+	--text: #eef4ff;
+	--text-muted: #a8b4ca;
 
-	--success: oklch(68% 0.19 142);
-	--error: oklch(65% 0.22 25);
-	--warning: oklch(76% 0.18 70);
-	--rating-low: oklch(0.72 0.18 25);
-	--rating-mid: oklch(0.9 0.14 95);
-	--rating-high: oklch(0.82 0.16 150);
+	--success: #5bc98e;
+	--error: #ff7c68;
+	--warning: #f0c86d;
+	--rating-low: oklch(0.74 0.16 34);
+	--rating-mid: oklch(0.9 0.11 92);
+	--rating-high: oklch(0.83 0.14 158);
 	--shell-shadow: 0 28px 70px -38px rgba(0, 0, 0, 0.55);
 	--panel-shadow: 0 22px 48px -34px rgba(0, 0, 0, 0.58);
 }
@@ -226,10 +226,11 @@ dialog[open] > .dialog-content {
 body {
 	background-color: var(--bg);
 	background-image:
-		radial-gradient(circle at 14% 10%, color-mix(in srgb, var(--primary) 7%, transparent) 0%, transparent 34%),
-		radial-gradient(circle at 84% 12%, color-mix(in srgb, var(--secondary) 6%, transparent) 0%, transparent 30%),
-		radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--surface) 68%, transparent) 0%, transparent 42%),
-		linear-gradient(180deg, color-mix(in srgb, var(--surface) 40%, transparent) 0%, transparent 30%);
+		radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--primary) 16%, transparent) 0%, transparent 31%),
+		radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--secondary) 10%, transparent) 0%, transparent 27%),
+		radial-gradient(circle at 50% -4%, color-mix(in srgb, var(--surface-raised) 92%, transparent) 0%, transparent 40%),
+		linear-gradient(180deg, color-mix(in srgb, var(--surface) 52%, transparent) 0%, transparent 24%),
+		linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 86%, var(--surface)) 100%);
 	background-attachment: fixed;
 	color: var(--text);
 	transition:
