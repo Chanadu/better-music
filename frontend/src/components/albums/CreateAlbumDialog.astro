@@ -1,6 +1,7 @@
 ---
 import ModalHeader from '../ui/ModalHeader.astro';
 import BaseDialog from '../ui/BaseDialog.astro';
+import CoverPreviewField from '../ui/CoverPreviewField.astro';
 import FloatingDateField from '../ui/FloatingDateField.astro';
 import FloatingInput from '../ui/FloatingInput.astro';
 import FloatingSelect from '../ui/FloatingSelect.astro';
@@ -30,7 +31,15 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 				<option value="">Select an artist</option>
 			</FloatingSelect>
 
-			<FloatingInput id="album-cover-url" name="cover_url" label="Cover URL (optional)" />
+			<CoverPreviewField
+				inputId="album-cover-url"
+				name="cover_url"
+				imageId="album-cover-preview"
+				emptyId="album-cover-empty"
+				label="Cover Art"
+				emptyLabel="Use Spotify search to add cover art"
+				imageAlt="Album cover preview"
+			/>
 
 			<FloatingInput id="album-year" name="year" label="Year (optional)" type="number" min="0" />
 
@@ -93,7 +102,8 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 </BaseDialog>
 
 <script>
-	import { apiFetch, getErrorMessage } from '../../lib/api';
+import { apiFetch, getErrorMessage } from '../../lib/api';
+import { syncCoverPreview } from '../../lib/cover-preview';
 import { getCurrentDateLocal } from '../../lib/date';
 import { closeDialogSafely, openDialogSafely, toggleCreateTabs } from '../../lib/dialog';
 import { searchAlbums } from '../../lib/spotify';
@@ -108,6 +118,9 @@ import { setInlineStatus } from '../../lib/status';
 	const getAlbumRatingSliderInput = () => document.getElementById('album-rating-slider') as HTMLInputElement | null;
 	const getAlbumRatingInput = () => document.getElementById('album-rating') as HTMLInputElement | null;
 	const getAlbumListenedAtInput = () => document.getElementById('album-listened-at') as HTMLInputElement | null;
+	const getAlbumCoverInput = () => document.getElementById('album-cover-url') as HTMLInputElement | null;
+	const getAlbumCoverPreview = () => document.getElementById('album-cover-preview') as HTMLImageElement | null;
+	const getAlbumCoverEmptyState = () => document.getElementById('album-cover-empty') as HTMLParagraphElement | null;
 
 	const openModal = () => {
 		openDialogSafely(getAlbumModal());
@@ -131,6 +144,10 @@ import { setInlineStatus } from '../../lib/status';
 	const hideAlbumResults = () => {
 		const albumSpotifyResults = document.getElementById('album-spotify-results');
 		albumSpotifyResults?.classList.add('hidden');
+	};
+
+	const setAlbumCover = (url: string | null | undefined) => {
+		syncCoverPreview(getAlbumCoverInput(), getAlbumCoverPreview(), getAlbumCoverEmptyState(), url);
 	};
 
 	let albumSearchDebounce: ReturnType<typeof setTimeout>;
@@ -187,12 +204,11 @@ import { setInlineStatus } from '../../lib/status';
 							li.addEventListener('click', () => {
 								console.log(`[Album Search] Selected: ${album.name}`);
 								const titleInput = document.getElementById('album-title') as HTMLInputElement | null;
-								const coverInput = document.getElementById('album-cover-url') as HTMLInputElement | null;
 								const yearInput = document.getElementById('album-year') as HTMLInputElement | null;
 								const albumFormStatus = getAlbumFormStatus();
 								selectedSpotifyAlbumID = album.id;
 								if (titleInput) titleInput.value = album.name;
-								if (coverInput && img) coverInput.value = img.url;
+								setAlbumCover(img?.url ?? '');
 								if (yearInput && year) yearInput.value = year;
 
 								const spotifyArtists = album.artists.map((artist: { name: string }) => artist.name);
@@ -358,7 +374,8 @@ import { setInlineStatus } from '../../lib/status';
 					resolve();
 				});
 			});
-				selectedSpotifyAlbumID = null;
+			selectedSpotifyAlbumID = null;
+			setAlbumCover('');
 			switchAlbumTab('spotify');
 			await loadArtists();
 		});
@@ -427,7 +444,7 @@ import { setInlineStatus } from '../../lib/status';
 
 			const albumTitleInput = document.getElementById('album-title') as HTMLInputElement | null;
 			const albumArtistSelect = getAlbumArtistSelect();
-			const albumCoverURLInput = document.getElementById('album-cover-url') as HTMLInputElement | null;
+			const albumCoverURLInput = getAlbumCoverInput();
 			const albumYearInput = document.getElementById('album-year') as HTMLInputElement | null;
 			const albumListenedInput = getAlbumListenedInput();
 			const albumRatingInput = getAlbumRatingInput();
@@ -519,6 +536,7 @@ import { setInlineStatus } from '../../lib/status';
 			setInlineStatus(albumFormStatus, 'Album created successfully.', 'success', { boxed: true });
 			target.reset();
 			selectedSpotifyAlbumID = null;
+			setAlbumCover('');
 			syncListenedFields();
 			if (albumCreateBtn) {
 				albumCreateBtn.disabled = false;

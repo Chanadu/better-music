@@ -29,23 +29,23 @@ const iconClass = buttonVariant === 'secondary' ? 'bg-secondary/10 text-secondar
 
 <div
 	class:list={[
-		'group relative overflow-hidden rounded-[1.9rem] border border-border/60 bg-linear-to-br from-surface via-surface-raised/75 to-surface p-6 shadow-[var(--panel-shadow)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-[var(--shell-shadow)] sm:p-7',
+		'motion-page-enter-soft group relative overflow-hidden rounded-[1.9rem] border border-border/60 bg-linear-to-br from-surface via-surface-raised/75 to-surface p-6 shadow-[var(--panel-shadow)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-[var(--shell-shadow)] sm:p-7',
 		cardClassName,
 	]}
 >
-	<div class="absolute inset-0 bg-linear-to-br from-white/50 via-transparent to-transparent opacity-70 dark:from-white/3"></div>
-	<div class:list={['relative mb-5 inline-flex h-13 w-13 items-center justify-center rounded-[1.15rem] transition-transform duration-300 group-hover:scale-110', iconClass]}>
+	<div class="motion-glow absolute inset-0 bg-linear-to-br from-white/50 via-transparent to-transparent opacity-70 dark:from-white/3"></div>
+	<div class:list={['motion-float relative mb-5 inline-flex h-13 w-13 items-center justify-center rounded-[1.15rem] transition-transform duration-300 group-hover:scale-110', iconClass]}>
 		<slot name="icon" />
 	</div>
 	<h3 class:list={['relative text-xl font-bold tracking-tight text-text', headingHoverClass]}>{title}</h3>
 	<p class="relative mt-2 text-sm leading-6 text-text-muted">{description}</p>
 
 	{href ? (
-		<a href={href} class:list={['relative mt-7 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all active:scale-95', buttonClass]}>
+		<a href={href} class:list={['ui-pressable relative mt-7 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold active:scale-95', buttonClass]}>
 			{buttonLabel}
 		</a>
 	) : (
-		<button id={buttonId} type="button" class:list={['relative mt-7 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all active:scale-95', buttonClass]}>
+		<button id={buttonId} type="button" class:list={['ui-pressable relative mt-7 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold active:scale-95', buttonClass]}>
 			{buttonLabel}
 		</button>
 	)}

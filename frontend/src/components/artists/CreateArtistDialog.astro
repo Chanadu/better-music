@@ -1,6 +1,7 @@
 ---
 import ModalHeader from '../ui/ModalHeader.astro';
 import BaseDialog from '../ui/BaseDialog.astro';
+import CoverPreviewField from '../ui/CoverPreviewField.astro';
 import FloatingInput from '../ui/FloatingInput.astro';
 ---
 
@@ -28,7 +29,15 @@ import FloatingInput from '../ui/FloatingInput.astro';
 		<!-- Manual Tab -->
 		<form id="artist-form" class="mt-4 space-y-4 hidden">
 			<FloatingInput id="artist-name" name="name" label="Name" required />
-			<FloatingInput id="artist-cover-url" name="cover_url" label="Cover URL (optional)" />
+			<CoverPreviewField
+				inputId="artist-cover-url"
+				name="cover_url"
+				imageId="artist-cover-preview"
+				emptyId="artist-cover-empty"
+				label="Cover Art"
+				emptyLabel="Use Spotify search to add cover art"
+				imageAlt="Artist cover preview"
+			/>
 
 			<p id="artist-form-status" class="text-sm text-text-muted" role="alert" aria-live="assertive"></p>
 
@@ -57,7 +66,8 @@ import FloatingInput from '../ui/FloatingInput.astro';
 </BaseDialog>
 
 <script>
-	import { apiFetch, getErrorMessage } from '../../lib/api';
+import { apiFetch, getErrorMessage } from '../../lib/api';
+import { syncCoverPreview } from '../../lib/cover-preview';
 import { closeDialogSafely, openDialogSafely, toggleCreateTabs } from '../../lib/dialog';
 import { searchArtists } from '../../lib/spotify';
 import { setInlineStatus } from '../../lib/status';
@@ -66,6 +76,8 @@ import { setInlineStatus } from '../../lib/status';
 	const getArtistForm = () => document.getElementById('artist-form') as HTMLFormElement | null;
 	const getArtistNameInput = () => document.getElementById('artist-name') as HTMLInputElement | null;
 	const getArtistCoverURLInput = () => document.getElementById('artist-cover-url') as HTMLInputElement | null;
+	const getArtistCoverPreview = () => document.getElementById('artist-cover-preview') as HTMLImageElement | null;
+	const getArtistCoverEmptyState = () => document.getElementById('artist-cover-empty') as HTMLParagraphElement | null;
 	const getArtistFormStatus = () => document.getElementById('artist-form-status') as HTMLParagraphElement | null;
 	const getArtistCreateBtn = () => document.getElementById('artist-create-btn') as HTMLButtonElement | null;
 
@@ -91,6 +103,10 @@ import { setInlineStatus } from '../../lib/status';
 	const hideArtistResults = () => {
 		const artistSpotifyResults = document.getElementById('artist-spotify-results');
 		artistSpotifyResults?.classList.add('hidden');
+	};
+
+	const setArtistCover = (url: string | null | undefined) => {
+		syncCoverPreview(getArtistCoverURLInput(), getArtistCoverPreview(), getArtistCoverEmptyState(), url);
 	};
 
 	let artistSearchDebounce: ReturnType<typeof setTimeout>;
@@ -142,11 +158,10 @@ import { setInlineStatus } from '../../lib/status';
 							li.addEventListener('click', () => {
 								console.log(`[Artist Search] Selected: ${artist.name}`);
 								const nameInput = getArtistNameInput();
-								const coverURLInput = getArtistCoverURLInput();
 								const selectedImage = artist.images[0]?.url ?? artist.images[artist.images.length - 1]?.url ?? '';
 								selectedSpotifyArtistID = artist.id;
 								if (nameInput) nameInput.value = artist.name;
-								if (coverURLInput) coverURLInput.value = selectedImage;
+								setArtistCover(selectedImage);
 								
 								// Clear search after selection
 								const sInput = document.getElementById('artist-spotify-search') as HTMLInputElement | null;
@@ -194,7 +209,8 @@ import { setInlineStatus } from '../../lib/status';
 		window.addEventListener('open-artist-modal', () => {
 			requestAnimationFrame(() => {
 				openModal();
-					selectedSpotifyArtistID = null;
+				selectedSpotifyArtistID = null;
+				setArtistCover('');
 				switchTab('spotify');
 			});
 		});
@@ -266,6 +282,7 @@ import { setInlineStatus } from '../../lib/status';
 			setInlineStatus(artistFormStatus, 'Artist created successfully.', 'success');
 			target.reset();
 			selectedSpotifyArtistID = null;
+			setArtistCover('');
 			if (artistCreateBtn) {
 				artistCreateBtn.disabled = false;
 				artistCreateBtn.textContent = 'Create Artist';

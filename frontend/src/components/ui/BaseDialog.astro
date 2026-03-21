@@ -19,12 +19,12 @@ const placementClass =
 	mobilePlacement === 'bottom'
 		? ''
 		: mobilePlacement === 'center'
-			? 'm-auto'
-			: 'mt-[7vh] mb-0 mx-auto sm:m-auto';
+			? 'dialog-safe-centered m-auto'
+			: 'dialog-safe-centered m-auto';
 ---
 
 <dialog id={id} class:list={[className, placementClass]} data-swipe-close={swipeToClose ? 'true' : 'false'}>
-	<div class={contentClassName}>
+	<div class:list={['dialog-content', contentClassName]}>
 		{swipeToClose && <div class="mx-auto mb-4 mt-2 h-1.5 w-12 rounded-full bg-border/70 sm:hidden" aria-hidden="true"></div>}
 		<slot />
 	</div>

@@ -1,5 +1,6 @@
 ---
 import BaseDialog from '../ui/BaseDialog.astro';
+import CoverPreviewField from '../ui/CoverPreviewField.astro';
 import FloatingDateField from '../ui/FloatingDateField.astro';
 import FloatingInput from '../ui/FloatingInput.astro';
 import FloatingSelect from '../ui/FloatingSelect.astro';
@@ -21,7 +22,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 <InteractiveListToolkit />
 
 
-<BaseDialog id="edit-album-modal" className="m-auto w-full rounded-b-none rounded-t-3xl border-t border-border bg-surface p-0 text-text shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] backdrop:bg-black/60 sm:w-[min(92vw,36rem)] sm:rounded-2xl sm:border sm:shadow-2xl sm:backdrop:bg-black/45" contentClassName="" mobilePlacement="bottom">
+<BaseDialog id="edit-album-modal" className="w-[min(92vw,36rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/45" contentClassName="" mobilePlacement="center">
 	<form id="edit-album-form" class="space-y-4 p-6 sm:p-5 pb-8 sm:pb-5">
 		<div class="flex items-center justify-between">
 			<h3 class="text-lg font-semibold">Edit Album</h3>
@@ -30,7 +31,14 @@ const { view = 'unlistened' } = Astro.props as Props;
 		<input id="edit-album-id" type="hidden" />
 		<FloatingInput id="edit-album-title" label="Title" required />
 		<FloatingSelect id="edit-album-artist-id" label="Artist" required />
-		<FloatingInput id="edit-album-cover-url" label="Cover URL" />
+		<CoverPreviewField
+			inputId="edit-album-cover-url"
+			imageId="edit-album-cover-preview"
+			emptyId="edit-album-cover-empty"
+			label="Cover Art"
+			emptyLabel="No cover image available"
+			imageAlt="Album cover preview"
+		/>
 		<FloatingInput id="edit-album-year" label="Year" type="number" min="0" />
 		<button type="button" id="edit-album-spotify-refresh-btn" class="w-full cursor-pointer rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-sm font-semibold text-text transition-all duration-200 hover:bg-surface-raised focus:ring-4 focus:ring-[#1DB954]/10">Refresh from Spotify ID</button>
 		<label for="edit-album-listened" class="flex items-center gap-2 text-sm font-semibold"><input id="edit-album-listened" type="checkbox" class="h-5 w-5 rounded border border-border/60 bg-surface-raised/50 text-primary transition-all duration-200 focus:ring-2 focus:ring-primary/50" /> Listened</label>
@@ -61,7 +69,9 @@ const { view = 'unlistened' } = Astro.props as Props;
 <script>
 import Sortable from 'sortablejs';
 import { apiFetch } from '../../lib/api';
+import { syncCoverPreview } from '../../lib/cover-preview';
 import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
+import { createEmptyState } from '../../lib/empty-state';
 import { getAlbumBySpotifyID } from '../../lib/spotify';
 import { initializeSortControls, type SortDirection } from '../../lib/sort';
 import { applyRatingTone } from '../../lib/ui';
@@ -168,6 +178,15 @@ import { applyRatingTone } from '../../lib/ui';
 		editAlbumListenedAtInput = document.getElementById('edit-album-listened-at') as HTMLInputElement | null;
 		editAlbumStatus = document.getElementById('edit-album-status') as HTMLParagraphElement | null;
 		editAlbumSubmit = document.getElementById('edit-album-submit') as HTMLButtonElement | null;
+	};
+
+	const setEditAlbumCover = (url: string | null | undefined) => {
+		syncCoverPreview(
+			editAlbumCoverInput,
+			document.getElementById('edit-album-cover-preview') as HTMLImageElement | null,
+			document.getElementById('edit-album-cover-empty') as HTMLParagraphElement | null,
+			url,
+		);
 	};
 
 	const clampRating = (value: number) => Math.min(10, Math.max(0, value));
@@ -282,6 +301,21 @@ import { applyRatingTone } from '../../lib/ui';
 
 	const setMessage = (message: string, isError = false) => getToolkit().setListRootMessage(getListRoot(), message, isError);
 
+	const renderEmptyAlbumsState = (view: AlbumView) => {
+		const listRoot = getListRoot();
+		if (!listRoot) return;
+
+		const isListened = view === 'listened';
+		listRoot.replaceChildren(createEmptyState({
+			title: isListened ? 'No listened albums yet' : 'No albums in queue',
+			description: isListened
+				? 'Add an album and mark it listened when you are ready to rate it.'
+				: 'Add an album to your queue to keep track of what to hear next.',
+			buttonLabel: 'Create Album',
+			onClick: () => window.dispatchEvent(new CustomEvent('open-album-modal')),
+		}));
+	};
+
 	const setEditStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
 		getToolkit().setStatusText(editAlbumStatus, message, type);
 	};
@@ -347,7 +381,7 @@ import { applyRatingTone } from '../../lib/ui';
 		editAlbumIDInput.value = String(album.id);
 		editAlbumTitleInput.value = album.title;
 		populateArtistSelect(album.artist_id);
-		editAlbumCoverInput.value = album.cover_url ?? '';
+		setEditAlbumCover(album.cover_url);
 		editAlbumYearInput.value = album.year == null ? '' : String(album.year);
 		editAlbumListenedInput.checked = album.listened;
 		editAlbumRatingInput.value = album.rating == null ? '' : String(album.rating);
@@ -537,7 +571,7 @@ import { applyRatingTone } from '../../lib/ui';
 					listenedSortable.destroy();
 					listenedSortable = null;
 				}
-				setMessage(mode === 'listened' ? 'No listened albums yet.' : 'No unlistened albums found yet.');
+				renderEmptyAlbumsState(mode);
 				return;
 			}
 			const artistNameMap = new Map<number, string>();
@@ -594,7 +628,7 @@ import { applyRatingTone } from '../../lib/ui';
 				const cover = album.images[0]?.url ?? '';
 				const year = album.release_date ? album.release_date.slice(0, 4) : '';
 				editAlbumTitleInput.value = album.name;
-				if (cover) editAlbumCoverInput.value = cover;
+				setEditAlbumCover(cover);
 				if (year) editAlbumYearInput.value = year;
 				setEditStatus('Spotify metadata applied. Review and save.', 'success');
 			} catch {

@@ -284,12 +284,10 @@ export const bindSwipe = (
 				const rightAction = bg.lastElementChild as HTMLElement;
 				if (currentX > 0) {
 					// Swiping Right -> Left-side action (Edit, Primary)
-					bg.style.backgroundColor = getComputedStyle(leftAction).backgroundColor;
 					leftAction.style.opacity = '1';
 					rightAction.style.opacity = '0';
 				} else if (currentX < 0) {
 					// Swiping Left -> Right-side action (Delete, Error)
-					bg.style.backgroundColor = getComputedStyle(rightAction).backgroundColor;
 					leftAction.style.opacity = '0';
 					rightAction.style.opacity = '1';
 				}
@@ -343,7 +341,6 @@ export const bindSwipe = (
 				if (!isDragging) {
 					leftAction.style.opacity = '1';
 					rightAction.style.opacity = '1';
-					bg.style.backgroundColor = ''; // Reset background
 				}
 			}, slideOutDuration);
 		}

@@ -1,5 +1,6 @@
 ---
 import BaseDialog from '../ui/BaseDialog.astro';
+import CoverPreviewField from '../ui/CoverPreviewField.astro';
 import FloatingInput from '../ui/FloatingInput.astro';
 import InteractiveListToolkit from '../ui/InteractiveListToolkit.astro';
 import SortControls from '../ui/SortControls.astro';
@@ -20,7 +21,14 @@ import SortControls from '../ui/SortControls.astro';
 		</div>
 		<input id="edit-artist-id" type="hidden" />
 		<FloatingInput id="edit-artist-name" label="Name" required />
-		<FloatingInput id="edit-artist-cover-url" label="Cover URL" />
+		<CoverPreviewField
+			inputId="edit-artist-cover-url"
+			imageId="edit-artist-cover-preview"
+			emptyId="edit-artist-cover-empty"
+			label="Cover Art"
+			emptyLabel="No cover image available"
+			imageAlt="Artist cover preview"
+		/>
 		<div class="space-y-2 rounded-xl border border-border/60 bg-surface-raised/30 p-3">
 			<p class="text-xs font-semibold uppercase tracking-wide text-text-muted">Sync from Spotify</p>
 			<button type="button" id="edit-artist-spotify-refresh-btn" class="w-full cursor-pointer rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-sm font-semibold text-text transition-all duration-200 hover:bg-surface-raised focus:ring-4 focus:ring-[#1DB954]/10">Refresh from Spotify ID</button>
@@ -35,7 +43,9 @@ import SortControls from '../ui/SortControls.astro';
 
 <script>
 import { apiFetch } from '../../lib/api';
+import { syncCoverPreview } from '../../lib/cover-preview';
 import { formatDateTime } from '../../lib/date';
+import { createEmptyState } from '../../lib/empty-state';
 import { getArtistBySpotifyID } from '../../lib/spotify';
 import { initializeSortControls, type SortDirection } from '../../lib/sort';
 import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
@@ -115,6 +125,15 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 		editArtistSubmit = document.getElementById('edit-artist-submit') as HTMLButtonElement | null;
 	};
 
+	const setEditArtistCover = (url: string | null | undefined) => {
+		syncCoverPreview(
+			editArtistCoverURLInput,
+			document.getElementById('edit-artist-cover-preview') as HTMLImageElement | null,
+			document.getElementById('edit-artist-cover-empty') as HTMLParagraphElement | null,
+			url,
+		);
+	};
+
 	const sortAlbums = (albums: Album[]): Album[] => {
 		return [...albums].sort((a, b) => {
 			if (a.listened !== b.listened) return a.listened ? -1 : 1;
@@ -167,6 +186,17 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 
 	const setMessage = (message: string, isError = false) => getToolkit().setListRootMessage(getListRoot(), message, isError);
 
+	const renderEmptyArtistsState = () => {
+		const listRoot = getListRoot();
+		if (!listRoot) return;
+		listRoot.replaceChildren(createEmptyState({
+			title: 'No artists yet',
+			description: 'Add your first artist to start building the library.',
+			buttonLabel: 'Create Artist',
+			onClick: () => window.dispatchEvent(new CustomEvent('open-artist-modal')),
+		}));
+	};
+
 	const setEditStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
 		getToolkit().setStatusText(editArtistStatus, message, type);
 	};
@@ -195,7 +225,7 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 		if (!editArtistDialog || !editArtistIDInput || !editArtistNameInput || !editArtistCoverURLInput) return;
 		editArtistIDInput.value = String(artist.id);
 		editArtistNameInput.value = artist.name;
-		editArtistCoverURLInput.value = artist.cover_url ?? '';
+		setEditArtistCover(artist.cover_url);
 		currentEditArtistSpotifyID = artist.spotify_id ?? null;
 		currentArtistAlbumCount = albumCount;
 		setEditStatus('');
@@ -227,7 +257,7 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 				const artist = await getArtistBySpotifyID(currentEditArtistSpotifyID);
 				const cover = artist.images[0]?.url ?? artist.images[artist.images.length - 1]?.url ?? '';
 				editArtistNameInput.value = artist.name;
-				if (cover) editArtistCoverURLInput.value = cover;
+				setEditArtistCover(cover);
 				setEditStatus('Spotify metadata applied. Review and save.', 'success');
 			} catch {
 				setEditStatus('Failed to refresh from Spotify.', 'error');
@@ -370,7 +400,7 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 			const albums = (await albumsRes.json()) as Album[];
 			listRoot.innerHTML = '';
 			if (!artists.length) {
-				setMessage('No artists found yet. Use Create to add one.');
+				renderEmptyArtistsState();
 				return;
 			}
 			const grouped = new Map<number, Album[]>();

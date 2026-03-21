@@ -72,7 +72,7 @@
 @keyframes modal-pop {
 	0% {
 		opacity: 0;
-		transform: scale(0.95) translateY(10px);
+		transform: scale(0.965) translateY(18px);
 	}
 	100% {
 		opacity: 1;
@@ -89,18 +89,106 @@
 	}
 }
 
+@keyframes modal-content-rise {
+	0% {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes surface-float {
+	0%,
+	100% {
+		transform: translate3d(0, 0, 0);
+	}
+	50% {
+		transform: translate3d(0, -4px, 0);
+	}
+}
+
+@keyframes subtle-glow-shift {
+	0%,
+	100% {
+		opacity: 0.72;
+		transform: translate3d(0, 0, 0) scale(1);
+	}
+	50% {
+		opacity: 0.92;
+		transform: translate3d(0, -6px, 0) scale(1.02);
+	}
+}
+
+@keyframes page-enter {
+	0% {
+		opacity: 0;
+		transform: translate3d(0, 12px, 0);
+	}
+	100% {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+@keyframes page-enter-soft {
+	0% {
+		opacity: 0;
+		transform: translate3d(0, 8px, 0);
+	}
+	100% {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+@keyframes icon-bob {
+	0%,
+	100% {
+		transform: translate3d(0, 0, 0);
+	}
+	50% {
+		transform: translate3d(0, -3px, 0);
+	}
+}
+
 dialog[open] {
-	animation: modal-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	animation: modal-pop 0.34s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	transform-origin: center top;
 }
 
 dialog::backdrop {
-	animation: backdrop-fade 0.3s ease-out forwards;
+	animation: backdrop-fade 0.24s ease-out forwards;
+}
+
+dialog[open] > .dialog-content {
+	animation: modal-content-rise 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+	animation-delay: 40ms;
+}
+
+@media (max-width: 639px) {
+	dialog.dialog-safe-centered[open] {
+		inset-block-start: max(env(safe-area-inset-top), 0.75rem);
+		inset-block-end: max(env(safe-area-inset-bottom), 0.75rem);
+		margin-block: auto;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
 	dialog[open],
-	dialog::backdrop {
+	dialog::backdrop,
+	dialog[open] > .dialog-content {
 		animation: none;
+	}
+
+	.motion-page-enter,
+	.motion-page-enter-soft,
+	.motion-float,
+	.motion-glow,
+	.motion-icon-bob {
+		animation: none !important;
 	}
 }
 
@@ -156,6 +244,38 @@ body {
 	color: var(--text);
 }
 
+.motion-page-enter {
+	animation: page-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-page-enter-soft {
+	animation: page-enter-soft 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-float {
+	animation: surface-float 7s ease-in-out infinite;
+}
+
+.motion-glow {
+	animation: subtle-glow-shift 8s ease-in-out infinite;
+}
+
+.motion-icon-bob {
+	animation: icon-bob 4.6s ease-in-out infinite;
+}
+
+.motion-delay-1 {
+	animation-delay: 80ms;
+}
+
+.motion-delay-2 {
+	animation-delay: 160ms;
+}
+
+.motion-delay-3 {
+	animation-delay: 240ms;
+}
+
 @keyframes card-body-reveal {
 	0% {
 		opacity: 0;
@@ -172,6 +292,7 @@ body {
 		transform 0.24s ease,
 		filter 0.24s ease,
 		box-shadow 0.24s ease;
+	will-change: transform;
 }
 
 @media (hover: hover) {
@@ -199,6 +320,22 @@ body {
 .album-drag-ghost {
 	opacity: 0.42 !important;
 	filter: saturate(0.8) blur(0.2px);
+}
+
+.ui-pressable {
+	transition:
+		transform 0.2s ease,
+		box-shadow 0.2s ease,
+		border-color 0.2s ease,
+		background-color 0.2s ease,
+		color 0.2s ease;
+	will-change: transform;
+}
+
+@media (hover: hover) {
+	.ui-pressable:hover {
+		transform: translateY(-1px);
+	}
 }
 
 /* Keep iOS datetime controls from overflowing narrow dialog layouts. */

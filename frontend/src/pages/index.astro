@@ -1,16 +1,3 @@
 ---
-import HomeActionGrid from '../components/home/HomeActionGrid.astro';
-import HomeHero from '../components/home/HomeHero.astro';
-import AppPageLayout from '../layouts/AppPageLayout.astro';
+return Astro.redirect('/artists');
 ---
-
-<AppPageLayout title="Your Library" current="home" maxWidthClass="max-w-5xl" mainClassName="min-h-screen bg-linear-to-br from-bg to-surface-raised px-4 pt-6 pb-28 sm:px-6 sm:pt-8 md:px-8" containerClassName="">
-	<HomeHero />
-	<HomeActionGrid />
-</AppPageLayout>
-
-<script>
-	document.getElementById('home-open-create')?.addEventListener('click', () => {
-		window.dispatchEvent(new CustomEvent('open-create-menu'));
-	});
-</script>
