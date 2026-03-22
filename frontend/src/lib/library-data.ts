@@ -43,6 +43,7 @@ export type CreateArtistInput = {
 export type UpdateArtistInput = {
 	name: string;
 	cover_url?: string;
+	spotify_id?: string;
 };
 
 export type CreateAlbumInput = {
@@ -61,6 +62,7 @@ export type UpdateAlbumInput = {
 	title: string;
 	cover_url?: string;
 	year?: number;
+	spotify_id?: string;
 	listened: boolean;
 	rating?: number;
 	listened_at?: string;
@@ -386,6 +388,7 @@ const buildAlbumUpdateBody = (payload: AlbumPayload): Record<string, unknown> =>
 	};
 	if (payload.cover_url) body.cover_url = payload.cover_url;
 	if (typeof payload.year === 'number') body.year = payload.year;
+	if (payload.spotify_id) body.spotify_id = payload.spotify_id;
 	if (payload.listened) {
 		body.rating = payload.rating;
 		if (payload.listened_at) body.listened_at = payload.listened_at;

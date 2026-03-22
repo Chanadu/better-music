@@ -3,14 +3,24 @@ import BaseDialog from '../ui/BaseDialog.astro';
 import CoverPreviewField from '../ui/CoverPreviewField.astro';
 import FloatingInput from '../ui/FloatingInput.astro';
 import InteractiveListToolkit from '../ui/InteractiveListToolkit.astro';
+import SearchField from '../ui/SearchField.astro';
 import SortControls from '../ui/SortControls.astro';
 ---
 
-<div class='mb-4'>
-	<SortControls controlId='artists-sort-by' />
-</div>
+<section data-artist-directory-root='true'>
+	<div class='mb-4 flex items-center gap-2 sm:gap-3 md:gap-4'>
+		<SearchField
+			inputId='artists-search'
+			label='Search artists'
+			placeholder='Search artists or album titles'
+			wrapperClassName='min-w-0 flex-1'
+			data-artists-search='true'
+		/>
+		<SortControls controlId='artists-sort-by' />
+	</div>
 
-<div id='artists-list' class='space-y-3'></div>
+	<div id='artists-list' class='space-y-3'></div>
+</section>
 
 <InteractiveListToolkit />
 
@@ -25,24 +35,83 @@ import SortControls from '../ui/SortControls.astro';
 			<h3 class='text-lg font-semibold'>Edit Artist</h3>
 		</div>
 		<input id='edit-artist-id' type='hidden' />
-		<FloatingInput id='edit-artist-name' label='Name' required />
-		<CoverPreviewField
-			inputId='edit-artist-cover-url'
-			imageId='edit-artist-cover-preview'
-			emptyId='edit-artist-cover-empty'
-			label='Cover Art'
-			emptyLabel='No cover image available'
-			imageAlt='Artist cover preview'
-		/>
-		<div class='border-border/60 bg-surface-raised/30 space-y-2 rounded-xl border p-3'>
-			<p class='text-text-muted text-xs font-semibold tracking-wide uppercase'>Sync from Spotify</p>
+		<div class='border-border/60 bg-surface-raised/55 flex gap-1 rounded-[1.2rem] border p-1.5'>
 			<button
 				type='button'
-				id='edit-artist-spotify-refresh-btn'
-				class='border-border/60 bg-surface-raised/50 text-text hover:bg-surface-raised w-full cursor-pointer rounded-xl border px-4 py-3 text-sm font-semibold transition-all duration-200 focus:ring-4 focus:ring-[#1DB954]/10'
-				>Refresh from Spotify ID</button
+				id='edit-artist-tab-manual'
+				class='bg-surface text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200'
 			>
-			<p class='text-text-muted text-xs'>Uses this artist's saved Spotify ID to refresh name and cover.</p>
+				Manual
+			</button>
+			<button
+				type='button'
+				id='edit-artist-tab-spotify'
+				class='text-text-muted hover:text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold transition-all duration-200'
+			>
+				<span class='inline-flex items-center justify-center gap-1.5'>
+					<svg viewBox='0 0 24 24' class='h-3.5 w-3.5 fill-[#1DB954]' aria-hidden='true'
+						><path
+							d='M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z'
+						></path></svg
+					>
+					Spotify
+				</span>
+			</button>
+		</div>
+		<div id='edit-artist-manual-panel' class='space-y-3'>
+			<FloatingInput id='edit-artist-name' label='Name' required />
+			<CoverPreviewField
+				inputId='edit-artist-cover-url'
+				imageId='edit-artist-cover-preview'
+				emptyId='edit-artist-cover-empty'
+				label='Cover Art'
+				emptyLabel='No cover image available'
+				imageAlt='Artist cover preview'
+			/>
+			<div class='border-border/60 bg-surface-raised/30 space-y-2 rounded-xl border p-3'>
+				<p class='text-text-muted text-xs font-semibold tracking-wide uppercase'>Sync from Spotify</p>
+				<button
+					type='button'
+					id='edit-artist-spotify-refresh-btn'
+					class='border-border/60 bg-surface-raised/50 text-text hover:bg-surface-raised w-full cursor-pointer rounded-xl border px-4 py-3 text-sm font-semibold transition-all duration-200 focus:ring-4 focus:ring-[#1DB954]/10'
+					>Refresh from Spotify ID</button
+				>
+				<p class='text-text-muted text-xs'>Uses this artist's saved Spotify ID to refresh name and cover.</p>
+			</div>
+		</div>
+		<div id='edit-artist-spotify-panel' class='hidden space-y-3'>
+			<p
+				id='edit-artist-spotify-offline-warning'
+				class='border-border/60 bg-surface-raised/70 text-text hidden rounded-xl border px-3 py-2 text-sm'
+			>
+				Spotify search is unavailable offline. Switch back to Manual to keep editing without reconnecting.
+			</p>
+			<div class='relative'>
+				<FloatingInput
+					id='edit-artist-spotify-search'
+					label='Search Spotify Artists'
+					type='text'
+					autocomplete='off'
+					inputClassName='focus:border-[#1DB954]/60 focus:ring-[#1DB954]/10'
+				/>
+				<div id='edit-artist-spotify-spinner' class='absolute top-1/2 right-3 hidden -translate-y-1/2'>
+					<svg class='text-text-muted h-4 w-4 animate-spin' viewBox='0 0 24 24' fill='none'
+						><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'
+						></circle><path
+							class='opacity-75'
+							fill='currentColor'
+							d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'></path></svg
+					>
+				</div>
+			</div>
+			<ul
+				id='edit-artist-spotify-results'
+				class='border-border/60 bg-surface hidden overflow-hidden rounded-xl border shadow-lg'
+			>
+			</ul>
+			<p class='text-text-muted text-center text-xs'>
+				Select a Spotify artist to replace the saved metadata for this entry.
+			</p>
 		</div>
 		<p id='edit-artist-status' class='text-text-muted text-sm'></p>
 		<div class='flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0'>
@@ -50,7 +119,7 @@ import SortControls from '../ui/SortControls.astro';
 				type='submit'
 				id='edit-artist-submit'
 				class='bg-primary text-primary-fg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/30 focus:ring-primary/20 w-full cursor-pointer rounded-xl px-4 py-3 text-base font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto sm:py-2 sm:text-sm'
-				>Save</button
+				>Save Artist</button
 			>
 		</div>
 	</form>
@@ -59,6 +128,7 @@ import SortControls from '../ui/SortControls.astro';
 <script>
 	import { syncCoverPreview } from '../../lib/cover-preview';
 	import { formatDateTime } from '../../lib/date';
+	import { toggleCreateTabs } from '../../lib/dialog';
 	import { createEmptyState } from '../../lib/empty-state';
 	import { bindOnce } from '../../lib/events';
 	import {
@@ -68,7 +138,7 @@ import SortControls from '../ui/SortControls.astro';
 		updateArtistRecord,
 	} from '../../lib/library-cache';
 	import { hidePageLoadingSkeleton, showPageLoadingSkeleton } from '../../lib/page-skeletons';
-	import { getArtistBySpotifyID } from '../../lib/spotify';
+	import { getArtistBySpotifyID, searchArtists } from '../../lib/spotify';
 	import { initializeSortControls, type SortDirection } from '../../lib/sort';
 	import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 
@@ -90,6 +160,12 @@ import SortControls from '../ui/SortControls.astro';
 		comment?: string | null;
 		listened_at?: string | null;
 		created_at: string;
+	};
+
+	type SpotifyArtistLookup = {
+		id: string;
+		name: string;
+		images: Array<{ url: string }>;
 	};
 
 	type StatusType = 'neutral' | 'error' | 'success';
@@ -127,20 +203,29 @@ import SortControls from '../ui/SortControls.astro';
 		return toolkit;
 	};
 
+	const getComponentRoot = () => document.querySelector('[data-artist-directory-root="true"]') as HTMLElement | null;
 	const getListRoot = () => document.getElementById('artists-list') as HTMLDivElement | null;
+	const getSearchInput = () =>
+		getComponentRoot()?.querySelector('[data-artists-search="true"]') as HTMLInputElement | null;
+	const isOnline = () => (typeof navigator === 'undefined' ? true : navigator.onLine);
 	let editArtistDialog: HTMLDialogElement | null = null;
 	let editArtistForm: HTMLFormElement | null = null;
 	let editArtistIDInput: HTMLInputElement | null = null;
 	let editArtistNameInput: HTMLInputElement | null = null;
 	let editArtistCoverURLInput: HTMLInputElement | null = null;
+	let editArtistSpotifySearchInput: HTMLInputElement | null = null;
 	let editArtistStatus: HTMLParagraphElement | null = null;
 	let editArtistSubmit: HTMLButtonElement | null = null;
 	let currentArtistAlbumCount = 0;
 	let currentEditArtistSpotifyID: string | null = null;
 	let currentSortBy: ArtistSortKey = 'alphabetical';
 	let currentSortDirection: SortDirection = 'asc';
+	let currentSearchQuery = '';
 	let toolkitRetryCount = 0;
+	let editArtistSpotifySearchDebounce: ReturnType<typeof setTimeout>;
 	const MAX_TOOLKIT_RETRIES = 18;
+
+	const getNormalizedSearchQuery = () => currentSearchQuery.trim().toLocaleLowerCase();
 
 	const refreshEditRefs = () => {
 		editArtistDialog = document.getElementById('edit-artist-modal') as HTMLDialogElement | null;
@@ -148,6 +233,7 @@ import SortControls from '../ui/SortControls.astro';
 		editArtistIDInput = document.getElementById('edit-artist-id') as HTMLInputElement | null;
 		editArtistNameInput = document.getElementById('edit-artist-name') as HTMLInputElement | null;
 		editArtistCoverURLInput = document.getElementById('edit-artist-cover-url') as HTMLInputElement | null;
+		editArtistSpotifySearchInput = document.getElementById('edit-artist-spotify-search') as HTMLInputElement | null;
 		editArtistStatus = document.getElementById('edit-artist-status') as HTMLParagraphElement | null;
 		editArtistSubmit = document.getElementById('edit-artist-submit') as HTMLButtonElement | null;
 	};
@@ -159,6 +245,47 @@ import SortControls from '../ui/SortControls.astro';
 			document.getElementById('edit-artist-cover-empty') as HTMLParagraphElement | null,
 			url,
 		);
+	};
+
+	const switchEditArtistTab = (tab: 'manual' | 'spotify') => {
+		toggleCreateTabs(tab, {
+			manualPanel: document.getElementById('edit-artist-manual-panel'),
+			spotifyPanel: document.getElementById('edit-artist-spotify-panel'),
+			manualButton: document.getElementById('edit-artist-tab-manual'),
+			spotifyButton: document.getElementById('edit-artist-tab-spotify'),
+			searchInput: document.getElementById('edit-artist-spotify-search'),
+		});
+	};
+
+	const hideEditArtistSpotifyResults = () => {
+		const results = document.getElementById('edit-artist-spotify-results');
+		results?.classList.add('hidden');
+	};
+
+	const resetEditArtistSpotifySearch = () => {
+		if (editArtistSpotifySearchInput) editArtistSpotifySearchInput.value = '';
+		const spinner = document.getElementById('edit-artist-spotify-spinner');
+		spinner?.classList.add('hidden');
+		hideEditArtistSpotifyResults();
+	};
+
+	const syncEditArtistSpotifyAvailability = () => {
+		const offline = !isOnline();
+		const warning = document.getElementById('edit-artist-spotify-offline-warning');
+		const spinner = document.getElementById('edit-artist-spotify-spinner');
+
+		if (editArtistSpotifySearchInput) {
+			editArtistSpotifySearchInput.disabled = offline;
+			editArtistSpotifySearchInput.placeholder = offline ? 'Spotify search requires a connection' : ' ';
+			if (offline) editArtistSpotifySearchInput.value = '';
+		}
+
+		warning?.classList.toggle('hidden', !offline);
+
+		if (offline) {
+			spinner?.classList.add('hidden');
+			hideEditArtistSpotifyResults();
+		}
 	};
 
 	const sortAlbums = (albums: Album[]): Album[] => {
@@ -227,8 +354,101 @@ import SortControls from '../ui/SortControls.astro';
 		);
 	};
 
+	const clearArtistSearch = () => {
+		currentSearchQuery = '';
+		const searchInput = getSearchInput();
+		if (searchInput) searchInput.value = '';
+	};
+
+	const renderArtistSearchEmptyState = () => {
+		const listRoot = getListRoot();
+		if (!listRoot) return;
+
+		listRoot.replaceChildren(
+			createEmptyState({
+				title: 'No matching artists',
+				description: `Nothing matched "${currentSearchQuery}". Try a different search or clear it to see your full library again.`,
+				buttonLabel: 'Clear Search',
+				onClick: () => {
+					clearArtistSearch();
+					void loadArtists();
+				},
+			}),
+		);
+	};
+
 	const setEditStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
 		getToolkit().setStatusText(editArtistStatus, message, type);
+	};
+
+	const applySpotifyArtistToEditForm = (artist: SpotifyArtistLookup, options: { switchToManual?: boolean } = {}) => {
+		if (!editArtistNameInput) return;
+		const selectedImage = artist.images[0]?.url ?? artist.images[artist.images.length - 1]?.url ?? '';
+		currentEditArtistSpotifyID = artist.id;
+		editArtistNameInput.value = artist.name;
+		setEditArtistCover(selectedImage);
+		resetEditArtistSpotifySearch();
+		if (options.switchToManual ?? true) switchEditArtistTab('manual');
+		setEditStatus('Spotify metadata applied. Review and save.', 'success');
+	};
+
+	const bindEditArtistSpotifySearch = () => {
+		if (!editArtistSpotifySearchInput || editArtistSpotifySearchInput.dataset.bound === 'true') return;
+		editArtistSpotifySearchInput.dataset.bound = 'true';
+		editArtistSpotifySearchInput.addEventListener('input', () => {
+			if (!editArtistSpotifySearchInput) return;
+			clearTimeout(editArtistSpotifySearchDebounce);
+			const query = editArtistSpotifySearchInput.value.trim();
+
+			if (!isOnline()) {
+				syncEditArtistSpotifyAvailability();
+				return;
+			}
+
+			if (!query) {
+				hideEditArtistSpotifyResults();
+				return;
+			}
+
+			editArtistSpotifySearchDebounce = setTimeout(async () => {
+				const results = document.getElementById('edit-artist-spotify-results') as HTMLUListElement | null;
+				const spinner = document.getElementById('edit-artist-spotify-spinner') as HTMLDivElement | null;
+				if (!results || !spinner) return;
+
+				spinner.classList.remove('hidden');
+				try {
+					const artists = await searchArtists(query);
+					results.innerHTML = '';
+					if (!artists.length) {
+						results.innerHTML =
+							'<li class="px-4 py-3 text-center text-sm italic text-text-muted">No results found on Spotify</li>';
+					} else {
+						for (const artist of artists) {
+							const img = artist.images[artist.images.length - 1];
+							const li = document.createElement('li');
+							li.className =
+								'border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm font-medium text-text transition-colors hover:bg-surface-raised last:border-0';
+							li.innerHTML = `
+								${img ? `<img src="${img.url}" alt="" class="h-10 w-10 shrink-0 rounded-full border border-border/40 object-cover" />` : '<div class="bg-surface-raised flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border/40 text-xs text-text-muted">?</div>'}
+								<span class="truncate">${artist.name}</span>
+								<span class="text-secondary ml-auto shrink-0 text-xs font-medium">Select →</span>
+							`;
+							li.addEventListener('click', () => {
+								applySpotifyArtistToEditForm(artist);
+							});
+							results.appendChild(li);
+						}
+					}
+					results.classList.remove('hidden');
+				} catch (error) {
+					const message = error instanceof Error ? error.message : 'Search failed. Try again.';
+					results.innerHTML = `<li class="px-4 py-3 text-center text-sm font-medium text-[var(--error)]">${message}</li>`;
+					results.classList.remove('hidden');
+				} finally {
+					spinner.classList.add('hidden');
+				}
+			}, 350);
+		});
 	};
 
 	const showDialogSafely = (dialog: HTMLDialogElement | null) => {
@@ -257,6 +477,9 @@ import SortControls from '../ui/SortControls.astro';
 		setEditArtistCover(artist.cover_url);
 		currentEditArtistSpotifyID = artist.spotify_id ?? null;
 		currentArtistAlbumCount = albumCount;
+		resetEditArtistSpotifySearch();
+		switchEditArtistTab('manual');
+		syncEditArtistSpotifyAvailability();
 		setEditStatus('');
 		showDialogSafely(editArtistDialog);
 	};
@@ -269,6 +492,14 @@ import SortControls from '../ui/SortControls.astro';
 		editArtistDialog?.addEventListener('click', (event) => {
 			if (editArtistDialog && event.target === editArtistDialog) editArtistDialog.close();
 		});
+		document
+			.getElementById('edit-artist-tab-manual')
+			?.addEventListener('click', () => switchEditArtistTab('manual'));
+		document.getElementById('edit-artist-tab-spotify')?.addEventListener('click', () => {
+			syncEditArtistSpotifyAvailability();
+			switchEditArtistTab('spotify');
+		});
+		bindEditArtistSpotifySearch();
 
 		const refreshSpotifyButton = document.getElementById(
 			'edit-artist-spotify-refresh-btn',
@@ -286,10 +517,7 @@ import SortControls from '../ui/SortControls.astro';
 
 			try {
 				const artist = await getArtistBySpotifyID(currentEditArtistSpotifyID);
-				const cover = artist.images[0]?.url ?? artist.images[artist.images.length - 1]?.url ?? '';
-				editArtistNameInput.value = artist.name;
-				setEditArtistCover(cover);
-				setEditStatus('Spotify metadata applied. Review and save.', 'success');
+				applySpotifyArtistToEditForm(artist, { switchToManual: false });
 			} catch {
 				setEditStatus('Failed to refresh from Spotify.', 'error');
 			} finally {
@@ -307,6 +535,7 @@ import SortControls from '../ui/SortControls.astro';
 			try {
 				const result = await updateArtistRecord(Number(editArtistIDInput.value), {
 					name: editArtistNameInput.value.trim(),
+					...(currentEditArtistSpotifyID ? { spotify_id: currentEditArtistSpotifyID } : {}),
 					...(editArtistCoverURLInput.value.trim() ?
 						{ cover_url: editArtistCoverURLInput.value.trim() }
 					:	{}),
@@ -421,6 +650,36 @@ import SortControls from '../ui/SortControls.astro';
 		return wrapper;
 	};
 
+	const matchesArtistSearch = (artist: Artist, albums: Album[]) => {
+		const query = getNormalizedSearchQuery();
+		if (!query) return true;
+
+		const artistMatches = artist.name.toLocaleLowerCase().includes(query);
+		if (artistMatches) return true;
+
+		return albums.some((album) =>
+			[album.title, album.year == null ? '' : String(album.year), album.comment ?? ''].some((value) =>
+				value.toLocaleLowerCase().includes(query),
+			),
+		);
+	};
+
+	const bindSearchHandlers = () => {
+		const searchInput = getSearchInput();
+		if (!searchInput || searchInput.dataset.bound === 'true') return;
+
+		searchInput.dataset.bound = 'true';
+		searchInput.value = currentSearchQuery;
+		searchInput.addEventListener('input', () => {
+			currentSearchQuery = searchInput.value;
+			void loadArtists();
+		});
+		searchInput.addEventListener('search', () => {
+			currentSearchQuery = searchInput.value;
+			void loadArtists();
+		});
+	};
+
 	const loadArtists = async () => {
 		const listRoot = getListRoot();
 		if (!listRoot) return;
@@ -444,7 +703,14 @@ import SortControls from '../ui/SortControls.astro';
 				current.push(album);
 				grouped.set(album.artist_id, current);
 			}
-			const sortedArtists = [...artistData].sort((a, b) => {
+			const visibleArtists = artistData.filter((artist) =>
+				matchesArtistSearch(artist, grouped.get(artist.id) ?? []),
+			);
+			if (!visibleArtists.length) {
+				renderArtistSearchEmptyState();
+				return;
+			}
+			const sortedArtists = [...visibleArtists].sort((a, b) => {
 				let base = 0;
 				if (currentSortBy === 'alphabetical') {
 					base = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
@@ -479,6 +745,7 @@ import SortControls from '../ui/SortControls.astro';
 		}
 
 		toolkitRetryCount = 0;
+		bindSearchHandlers();
 		bindEditHandlers();
 		resetSortControls();
 		syncArtistSortControls();
@@ -490,6 +757,12 @@ import SortControls from '../ui/SortControls.astro';
 			void loadArtists();
 		});
 		document.addEventListener('astro:page-load', refreshArtistsView);
+	});
+
+	bindOnce('__editArtistSpotifyAvailabilityBound', () => {
+		window.addEventListener('online', syncEditArtistSpotifyAvailability);
+		window.addEventListener('offline', syncEditArtistSpotifyAvailability);
+		document.addEventListener('astro:page-load', syncEditArtistSpotifyAvailability);
 	});
 
 	refreshArtistsView();

@@ -5,6 +5,7 @@ import FloatingDateField from '../ui/FloatingDateField.astro';
 import FloatingInput from '../ui/FloatingInput.astro';
 import FloatingSelect from '../ui/FloatingSelect.astro';
 import InteractiveListToolkit from '../ui/InteractiveListToolkit.astro';
+import SearchField from '../ui/SearchField.astro';
 import SortControls from '../ui/SortControls.astro';
 interface Props {
 	view?: 'unlistened' | 'listened';
@@ -13,11 +14,20 @@ interface Props {
 const { view = 'unlistened' } = Astro.props as Props;
 ---
 
-<div class='mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-	<SortControls controlId='albums-sort-by' />
-</div>
+<section data-album-collection-root='true' data-view={view}>
+	<div class='mb-4 flex items-center gap-2 sm:gap-3 md:gap-4'>
+		<SearchField
+			inputId='albums-search'
+			label='Search albums'
+			placeholder='Search albums, artists, years, or notes'
+			wrapperClassName='min-w-0 flex-1'
+			data-albums-search='true'
+		/>
+		<SortControls controlId='albums-sort-by' />
+	</div>
 
-<div id='albums-list' data-view={view} class='space-y-3'></div>
+	<div id='albums-list' data-view={view} class='space-y-3'></div>
+</section>
 
 <InteractiveListToolkit />
 
@@ -33,62 +43,127 @@ const { view = 'unlistened' } = Astro.props as Props;
 		</div>
 
 		<input id='edit-album-id' type='hidden' />
-		<FloatingInput id='edit-album-title' label='Title' required />
-		<FloatingSelect id='edit-album-artist-id' label='Artist' required />
-		<CoverPreviewField
-			inputId='edit-album-cover-url'
-			imageId='edit-album-cover-preview'
-			emptyId='edit-album-cover-empty'
-			label='Cover Art'
-			emptyLabel='No cover image available'
-			imageAlt='Album cover preview'
-		/>
-		<FloatingInput id='edit-album-year' label='Year' type='number' min='0' />
-		<button
-			type='button'
-			id='edit-album-spotify-refresh-btn'
-			class='border-border/60 bg-surface-raised/50 text-text hover:bg-surface-raised w-full cursor-pointer rounded-xl border px-4 py-3 text-sm font-semibold transition-all duration-200 focus:ring-4 focus:ring-[#1DB954]/10'
-			>Refresh from Spotify ID</button
-		>
-		<label for='edit-album-listened' class='flex items-center gap-2 text-sm font-semibold'
-			><input
-				id='edit-album-listened'
-				type='checkbox'
-				class='border-border/60 bg-surface-raised/50 text-primary focus:ring-primary/50 h-5 w-5 rounded border transition-all duration-200 focus:ring-2'
-			/> Listened</label
-		>
-		<div class='flex items-center gap-2 sm:gap-3'>
-			<input
-				id='edit-album-rating-slider'
-				type='range'
-				min='0'
-				max='10'
-				step='0.1'
-				value='5'
-				class='bg-border/50 accent-primary h-3 w-full cursor-pointer appearance-none rounded-lg disabled:opacity-50'
+		<div class='border-border/60 bg-surface-raised/55 flex gap-1 rounded-[1.2rem] border p-1.5'>
+			<button
+				type='button'
+				id='edit-album-tab-manual'
+				class='bg-surface text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200'
+			>
+				Manual
+			</button>
+			<button
+				type='button'
+				id='edit-album-tab-spotify'
+				class='text-text-muted hover:text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold transition-all duration-200'
+			>
+				<span class='inline-flex items-center justify-center gap-1.5'>
+					<svg viewBox='0 0 24 24' class='h-3.5 w-3.5 fill-[#1DB954]' aria-hidden='true'
+						><path
+							d='M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z'
+						></path></svg
+					>
+					Spotify
+				</span>
+			</button>
+		</div>
+		<div id='edit-album-manual-panel' class='space-y-4'>
+			<FloatingInput id='edit-album-title' label='Title' required />
+			<FloatingSelect id='edit-album-artist-id' label='Artist' required />
+			<CoverPreviewField
+				inputId='edit-album-cover-url'
+				imageId='edit-album-cover-preview'
+				emptyId='edit-album-cover-empty'
+				label='Cover Art'
+				emptyLabel='No cover image available'
+				imageAlt='Album cover preview'
 			/>
-			<div class='relative w-20 shrink-0'>
-				<FloatingInput
-					id='edit-album-rating'
-					label='Rating'
-					type='number'
+			<FloatingInput id='edit-album-year' label='Year' type='number' min='0' />
+			<div class='border-border/60 bg-surface-raised/30 space-y-2 rounded-xl border p-3'>
+				<p class='text-text-muted text-xs font-semibold tracking-wide uppercase'>Sync from Spotify</p>
+				<button
+					type='button'
+					id='edit-album-spotify-refresh-btn'
+					class='border-border/60 bg-surface-raised/50 text-text hover:bg-surface-raised w-full cursor-pointer rounded-xl border px-4 py-3 text-sm font-semibold transition-all duration-200 focus:ring-4 focus:ring-[#1DB954]/10'
+					>Refresh from Spotify ID</button
+				>
+				<p class='text-text-muted text-xs'>
+					Uses this album's saved Spotify ID to refresh title, cover art, year, and artist match.
+				</p>
+			</div>
+			<label for='edit-album-listened' class='flex items-center gap-2 text-sm font-semibold'
+				><input
+					id='edit-album-listened'
+					type='checkbox'
+					class='border-border/60 bg-surface-raised/50 text-primary focus:ring-primary/50 h-5 w-5 rounded border transition-all duration-200 focus:ring-2'
+				/> Listened</label
+			>
+			<div class='flex items-center gap-2 sm:gap-3'>
+				<input
+					id='edit-album-rating-slider'
+					type='range'
 					min='0'
 					max='10'
 					step='0.1'
-					inputmode='decimal'
-					inputClassName='h-11 px-2 pb-1 pt-4 text-sm disabled:opacity-50'
-					labelClassName='left-2 top-1 text-[10px] peer-placeholder-shown:text-xs peer-focus:top-1 peer-focus:text-[10px]'
+					value='5'
+					class='bg-border/50 accent-primary h-3 w-full cursor-pointer appearance-none rounded-lg disabled:opacity-50'
 				/>
+				<div class='relative w-20 shrink-0'>
+					<FloatingInput
+						id='edit-album-rating'
+						label='Rating'
+						type='number'
+						min='0'
+						max='10'
+						step='0.1'
+						inputmode='decimal'
+						inputClassName='h-11 px-2 pb-1 pt-4 text-sm disabled:opacity-50'
+						labelClassName='left-2 top-1 text-[10px] peer-placeholder-shown:text-xs peer-focus:top-1 peer-focus:text-[10px]'
+					/>
+				</div>
 			</div>
+			<FloatingDateField id='edit-album-listened-at' label='Listened At (optional)' />
 		</div>
-		<FloatingDateField id='edit-album-listened-at' label='Listened At (optional)' />
+		<div id='edit-album-spotify-panel' class='hidden space-y-3'>
+			<p
+				id='edit-album-spotify-offline-warning'
+				class='border-border/60 bg-surface-raised/70 text-text hidden rounded-xl border px-3 py-2 text-sm'
+			>
+				Spotify search is unavailable offline. Switch back to Manual to keep editing without reconnecting.
+			</p>
+			<div class='relative'>
+				<FloatingInput
+					id='edit-album-spotify-search'
+					label='Search Spotify Albums'
+					type='text'
+					autocomplete='off'
+					inputClassName='focus:border-[#1DB954]/60 focus:ring-[#1DB954]/10'
+				/>
+				<div id='edit-album-spotify-spinner' class='absolute top-1/2 right-3 hidden -translate-y-1/2'>
+					<svg class='text-text-muted h-4 w-4 animate-spin' viewBox='0 0 24 24' fill='none'
+						><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'
+						></circle><path
+							class='opacity-75'
+							fill='currentColor'
+							d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'></path></svg
+					>
+				</div>
+			</div>
+			<ul
+				id='edit-album-spotify-results'
+				class='border-border/60 bg-surface hidden overflow-hidden rounded-xl border shadow-lg'
+			>
+			</ul>
+			<p class='text-text-muted text-center text-xs'>
+				Select a Spotify album to replace the saved metadata for this entry.
+			</p>
+		</div>
 		<p id='edit-album-status' class='text-text-muted text-sm'></p>
 		<div class='flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0'>
 			<button
 				type='submit'
 				id='edit-album-submit'
 				class='bg-primary text-primary-fg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/30 focus:ring-primary/20 w-full cursor-pointer rounded-xl px-4 py-3 text-base font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto sm:py-2 sm:text-sm'
-				>Save</button
+				>Save Album</button
 			>
 		</div>
 	</form>
@@ -98,6 +173,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 	import Sortable from 'sortablejs';
 	import { syncCoverPreview } from '../../lib/cover-preview';
 	import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
+	import { toggleCreateTabs } from '../../lib/dialog';
 	import { createEmptyState } from '../../lib/empty-state';
 	import { bindOnce } from '../../lib/events';
 	import {
@@ -108,7 +184,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 		type UpdateAlbumInput,
 	} from '../../lib/library-cache';
 	import { hidePageLoadingSkeleton, showPageLoadingSkeleton } from '../../lib/page-skeletons';
-	import { getAlbumBySpotifyID } from '../../lib/spotify';
+	import { getAlbumBySpotifyID, searchAlbums } from '../../lib/spotify';
 	import { initializeSortControls, type SortDirection } from '../../lib/sort';
 	import { applyRatingTone } from '../../lib/ui';
 
@@ -129,6 +205,14 @@ const { view = 'unlistened' } = Astro.props as Props;
 	type Artist = {
 		id: number;
 		name: string;
+	};
+
+	type SpotifyAlbumLookup = {
+		id: string;
+		name: string;
+		artists: Array<{ name: string }>;
+		images: Array<{ url: string }>;
+		release_date: string;
 	};
 
 	type SortableEndEvent = {
@@ -173,11 +257,15 @@ const { view = 'unlistened' } = Astro.props as Props;
 		return toolkit;
 	};
 
+	const getComponentRoot = () => document.querySelector('[data-album-collection-root="true"]') as HTMLElement | null;
 	const getListRoot = () => document.getElementById('albums-list') as HTMLDivElement | null;
+	const getSearchInput = () =>
+		getComponentRoot()?.querySelector('[data-albums-search="true"]') as HTMLInputElement | null;
 	const getView = (): 'unlistened' | 'listened' => {
 		const mode = getListRoot()?.dataset.view;
 		return mode === 'listened' ? 'listened' : 'unlistened';
 	};
+	const isOnline = () => (typeof navigator === 'undefined' ? true : navigator.onLine);
 	let editAlbumDialog: HTMLDialogElement | null = null;
 	let editAlbumForm: HTMLFormElement | null = null;
 	let editAlbumIDInput: HTMLInputElement | null = null;
@@ -185,6 +273,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 	let editAlbumArtistInput: HTMLSelectElement | null = null;
 	let editAlbumCoverInput: HTMLInputElement | null = null;
 	let editAlbumYearInput: HTMLInputElement | null = null;
+	let editAlbumSpotifySearchInput: HTMLInputElement | null = null;
 	let editAlbumListenedInput: HTMLInputElement | null = null;
 	let editAlbumRatingSliderInput: HTMLInputElement | null = null;
 	let editAlbumRatingInput: HTMLInputElement | null = null;
@@ -195,9 +284,13 @@ const { view = 'unlistened' } = Astro.props as Props;
 	let currentEditAlbumSpotifyID: string | null = null;
 	let currentSortBy: AlbumSortKey = 'artist';
 	let currentSortDirection: SortDirection = 'asc';
+	let currentSearchQuery = '';
 	let initializedSortView: AlbumView | null = null;
 	let toolkitRetryCount = 0;
+	let editAlbumSpotifySearchDebounce: ReturnType<typeof setTimeout>;
 	const MAX_TOOLKIT_RETRIES = 18;
+
+	const getNormalizedSearchQuery = () => currentSearchQuery.trim().toLocaleLowerCase();
 
 	const getDefaultSortState = (view: AlbumView): { sortBy: AlbumSortKey; sortDirection: SortDirection } => {
 		return view === 'listened' ?
@@ -213,6 +306,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 		editAlbumArtistInput = document.getElementById('edit-album-artist-id') as HTMLSelectElement | null;
 		editAlbumCoverInput = document.getElementById('edit-album-cover-url') as HTMLInputElement | null;
 		editAlbumYearInput = document.getElementById('edit-album-year') as HTMLInputElement | null;
+		editAlbumSpotifySearchInput = document.getElementById('edit-album-spotify-search') as HTMLInputElement | null;
 		editAlbumListenedInput = document.getElementById('edit-album-listened') as HTMLInputElement | null;
 		editAlbumRatingSliderInput = document.getElementById('edit-album-rating-slider') as HTMLInputElement | null;
 		editAlbumRatingInput = document.getElementById('edit-album-rating') as HTMLInputElement | null;
@@ -228,6 +322,47 @@ const { view = 'unlistened' } = Astro.props as Props;
 			document.getElementById('edit-album-cover-empty') as HTMLParagraphElement | null,
 			url,
 		);
+	};
+
+	const switchEditAlbumTab = (tab: 'manual' | 'spotify') => {
+		toggleCreateTabs(tab, {
+			manualPanel: document.getElementById('edit-album-manual-panel'),
+			spotifyPanel: document.getElementById('edit-album-spotify-panel'),
+			manualButton: document.getElementById('edit-album-tab-manual'),
+			spotifyButton: document.getElementById('edit-album-tab-spotify'),
+			searchInput: document.getElementById('edit-album-spotify-search'),
+		});
+	};
+
+	const hideEditAlbumSpotifyResults = () => {
+		const results = document.getElementById('edit-album-spotify-results');
+		results?.classList.add('hidden');
+	};
+
+	const resetEditAlbumSpotifySearch = () => {
+		if (editAlbumSpotifySearchInput) editAlbumSpotifySearchInput.value = '';
+		const spinner = document.getElementById('edit-album-spotify-spinner');
+		spinner?.classList.add('hidden');
+		hideEditAlbumSpotifyResults();
+	};
+
+	const syncEditAlbumSpotifyAvailability = () => {
+		const offline = !isOnline();
+		const warning = document.getElementById('edit-album-spotify-offline-warning');
+		const spinner = document.getElementById('edit-album-spotify-spinner');
+
+		if (editAlbumSpotifySearchInput) {
+			editAlbumSpotifySearchInput.disabled = offline;
+			editAlbumSpotifySearchInput.placeholder = offline ? 'Spotify search requires a connection' : ' ';
+			if (offline) editAlbumSpotifySearchInput.value = '';
+		}
+
+		warning?.classList.toggle('hidden', !offline);
+
+		if (offline) {
+			spinner?.classList.add('hidden');
+			hideEditAlbumSpotifyResults();
+		}
 	};
 
 	const clampRating = (value: number) => Math.min(10, Math.max(0, value));
@@ -252,6 +387,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 	let artistsCache: Artist[] = [];
 
 	const compareText = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
+	const normalizeArtistName = (value: string) => value.trim().toLowerCase();
 
 	const compareOptionalNumber = (a?: number | null, b?: number | null) => {
 		if (a == null && b == null) return 0;
@@ -361,8 +497,91 @@ const { view = 'unlistened' } = Astro.props as Props;
 		);
 	};
 
+	const clearAlbumSearch = () => {
+		currentSearchQuery = '';
+		const searchInput = getSearchInput();
+		if (searchInput) searchInput.value = '';
+	};
+
+	const renderAlbumSearchEmptyState = (view: AlbumView) => {
+		const listRoot = getListRoot();
+		if (!listRoot) return;
+
+		const modeLabel = view === 'listened' ? 'listened albums' : 'queue';
+		listRoot.replaceChildren(
+			createEmptyState({
+				title: `No matches in ${modeLabel}`,
+				description: `Nothing matched "${currentSearchQuery}". Try a different search or clear it to see everything again.`,
+				buttonLabel: 'Clear Search',
+				onClick: () => {
+					clearAlbumSearch();
+					void loadAlbums();
+				},
+			}),
+		);
+	};
+
+	const clearListenedState = () => {
+		if (listenedSortable) {
+			listenedSortable.destroy();
+			listenedSortable = null;
+		}
+
+		const oldHint = getComponentRoot()?.querySelector('[data-listened-hint="true"]');
+		if (oldHint) oldHint.remove();
+	};
+
 	const setEditStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
 		getToolkit().setStatusText(editAlbumStatus, message, type);
+	};
+
+	const autoSelectEditArtistFromSpotifyNames = (spotifyArtistNames: string[]): boolean => {
+		if (!editAlbumArtistInput || spotifyArtistNames.length === 0) return false;
+
+		const targets = new Set(spotifyArtistNames.map(normalizeArtistName));
+		for (const option of Array.from(editAlbumArtistInput.options)) {
+			if (!option.value) continue;
+			if (targets.has(normalizeArtistName(option.textContent ?? ''))) {
+				editAlbumArtistInput.value = option.value;
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	const applySpotifyAlbumToEditForm = (album: SpotifyAlbumLookup, options: { switchToManual?: boolean } = {}) => {
+		if (!editAlbumTitleInput || !editAlbumYearInput) return;
+
+		const cover = album.images[0]?.url ?? '';
+		const year = album.release_date ? album.release_date.slice(0, 4) : '';
+		const spotifyArtists = album.artists.map((artist) => artist.name);
+		const matchedArtist = autoSelectEditArtistFromSpotifyNames(spotifyArtists);
+
+		currentEditAlbumSpotifyID = album.id;
+		editAlbumTitleInput.value = album.name;
+		setEditAlbumCover(cover);
+		editAlbumYearInput.value = year;
+		resetEditAlbumSpotifySearch();
+		if (options.switchToManual ?? true) switchEditAlbumTab('manual');
+
+		if (spotifyArtists.length === 0) {
+			setEditStatus('Spotify metadata applied. Review and save.', 'success');
+			return;
+		}
+
+		if (matchedArtist) {
+			setEditStatus(
+				`Spotify metadata applied. Matched artist: ${spotifyArtists[0]}. Review and save.`,
+				'success',
+			);
+			return;
+		}
+
+		setEditStatus(
+			`Spotify metadata applied. No local artist matched ${spotifyArtists[0]}, so choose one manually before saving.`,
+			'neutral',
+		);
 	};
 
 	const showDialogSafely = (dialog: HTMLDialogElement | null) => {
@@ -441,6 +660,9 @@ const { view = 'unlistened' } = Astro.props as Props;
 		}
 		editAlbumListenedAtInput.value = toDateLocal(album.listened_at);
 		currentEditAlbumSpotifyID = album.spotify_id ?? null;
+		resetEditAlbumSpotifySearch();
+		switchEditAlbumTab('manual');
+		syncEditAlbumSpotifyAvailability();
 		syncEditListenedState();
 		setEditStatus('');
 		showDialogSafely(editAlbumDialog);
@@ -536,10 +758,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 		const listRoot = getListRoot();
 		if (!listRoot) return;
 
-		if (listenedSortable) {
-			listenedSortable.destroy();
-			listenedSortable = null;
-		}
+		clearListenedState();
 
 		const albumById = new Map<number, Album>();
 		for (const album of albums) albumById.set(album.id, album);
@@ -598,6 +817,99 @@ const { view = 'unlistened' } = Astro.props as Props;
 		});
 	};
 
+	const matchesAlbumSearch = (album: Album, artistName: string) => {
+		const query = getNormalizedSearchQuery();
+		if (!query) return true;
+
+		return [
+			album.title,
+			artistName,
+			album.year == null ? '' : String(album.year),
+			album.comment ?? '',
+			album.rating == null ? '' : String(album.rating),
+		].some((value) => value.toLocaleLowerCase().includes(query));
+	};
+
+	const bindEditAlbumSpotifySearch = () => {
+		if (!editAlbumSpotifySearchInput || editAlbumSpotifySearchInput.dataset.bound === 'true') return;
+		editAlbumSpotifySearchInput.dataset.bound = 'true';
+		editAlbumSpotifySearchInput.addEventListener('input', () => {
+			if (!editAlbumSpotifySearchInput) return;
+			clearTimeout(editAlbumSpotifySearchDebounce);
+			const query = editAlbumSpotifySearchInput.value.trim();
+
+			if (!isOnline()) {
+				syncEditAlbumSpotifyAvailability();
+				return;
+			}
+
+			if (!query) {
+				hideEditAlbumSpotifyResults();
+				return;
+			}
+
+			editAlbumSpotifySearchDebounce = setTimeout(async () => {
+				const results = document.getElementById('edit-album-spotify-results') as HTMLUListElement | null;
+				const spinner = document.getElementById('edit-album-spotify-spinner') as HTMLDivElement | null;
+				if (!results || !spinner) return;
+
+				spinner.classList.remove('hidden');
+				try {
+					const albums = await searchAlbums(query);
+					results.innerHTML = '';
+					if (!albums.length) {
+						results.innerHTML =
+							'<li class="px-4 py-3 text-center text-sm italic text-text-muted">No results found on Spotify</li>';
+					} else {
+						for (const album of albums) {
+							const img = album.images[0];
+							const year = album.release_date ? album.release_date.slice(0, 4) : '';
+							const artistNames = album.artists.map((artist) => artist.name).join(', ');
+							const li = document.createElement('li');
+							li.className =
+								'border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm transition-colors hover:bg-surface-raised last:border-0';
+							li.innerHTML = `
+								${img ? `<img src="${img.url}" alt="" class="h-11 w-11 shrink-0 rounded-lg border border-border/40 object-cover" />` : '<div class="bg-surface-raised flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/40 text-xs text-text-muted">?</div>'}
+								<div class="min-w-0 flex-1">
+									<p class="truncate font-medium text-text">${album.name}</p>
+									<p class="truncate text-xs text-text-muted">${artistNames}${year ? ` · ${year}` : ''}</p>
+								</div>
+								<span class="text-secondary ml-auto shrink-0 text-xs font-medium">Select →</span>
+							`;
+							li.addEventListener('click', () => {
+								applySpotifyAlbumToEditForm(album);
+							});
+							results.appendChild(li);
+						}
+					}
+					results.classList.remove('hidden');
+				} catch (error) {
+					const message = error instanceof Error ? error.message : 'Search failed. Try again.';
+					results.innerHTML = `<li class="px-4 py-3 text-center text-sm font-medium text-[var(--error)]">${message}</li>`;
+					results.classList.remove('hidden');
+				} finally {
+					spinner.classList.add('hidden');
+				}
+			}, 350);
+		});
+	};
+
+	const bindSearchHandlers = () => {
+		const searchInput = getSearchInput();
+		if (!searchInput || searchInput.dataset.bound === 'true') return;
+
+		searchInput.dataset.bound = 'true';
+		searchInput.value = currentSearchQuery;
+		searchInput.addEventListener('input', () => {
+			currentSearchQuery = searchInput.value;
+			void loadAlbums();
+		});
+		searchInput.addEventListener('search', () => {
+			currentSearchQuery = searchInput.value;
+			void loadAlbums();
+		});
+	};
+
 	const loadAlbums = async () => {
 		const listRoot = getListRoot();
 		if (!listRoot) return;
@@ -615,28 +927,28 @@ const { view = 'unlistened' } = Astro.props as Props;
 			const filteredAlbums = albumData.filter((album) => album.listened === (mode === 'listened'));
 			listRoot.innerHTML = '';
 			if (!filteredAlbums.length) {
-				if (listenedSortable) {
-					listenedSortable.destroy();
-					listenedSortable = null;
-				}
+				clearListenedState();
 				renderEmptyAlbumsState(mode);
 				return;
 			}
 			const artistNameMap = new Map<number, string>();
 			for (const artist of artistData) artistNameMap.set(artist.id, artist.name);
-
-			if (mode === 'listened') {
-				const oldHint = listRoot.parentElement?.querySelector('[data-listened-hint="true"]');
-				if (oldHint) oldHint.remove();
-				setupListenedReorder(filteredAlbums);
-			} else if (listenedSortable) {
-				listenedSortable.destroy();
-				listenedSortable = null;
-				const oldHint = listRoot.parentElement?.querySelector('[data-listened-hint="true"]');
-				if (oldHint) oldHint.remove();
+			const visibleAlbums = filteredAlbums.filter((album) =>
+				matchesAlbumSearch(album, artistNameMap.get(album.artist_id) ?? ''),
+			);
+			if (!visibleAlbums.length) {
+				clearListenedState();
+				renderAlbumSearchEmptyState(mode);
+				return;
 			}
 
-			const sortedAlbums = sortAlbums(filteredAlbums, artistNameMap);
+			if (mode === 'listened' && !getNormalizedSearchQuery()) {
+				setupListenedReorder(visibleAlbums);
+			} else {
+				clearListenedState();
+			}
+
+			const sortedAlbums = sortAlbums(visibleAlbums, artistNameMap);
 			for (const album of sortedAlbums) {
 				const artistName = artistNameMap.get(album.artist_id) ?? `Artist #${album.artist_id}`;
 				listRoot.appendChild(renderAlbumCard(album, artistName));
@@ -658,6 +970,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 		}
 
 		toolkitRetryCount = 0;
+		bindSearchHandlers();
 		bindEditHandlers();
 		syncAlbumSortControls();
 		void loadAlbums();
@@ -671,6 +984,12 @@ const { view = 'unlistened' } = Astro.props as Props;
 		editAlbumDialog?.addEventListener('click', (event) => {
 			if (editAlbumDialog && event.target === editAlbumDialog) editAlbumDialog.close();
 		});
+		document.getElementById('edit-album-tab-manual')?.addEventListener('click', () => switchEditAlbumTab('manual'));
+		document.getElementById('edit-album-tab-spotify')?.addEventListener('click', () => {
+			syncEditAlbumSpotifyAvailability();
+			switchEditAlbumTab('spotify');
+		});
+		bindEditAlbumSpotifySearch();
 		editAlbumListenedInput?.addEventListener('change', syncEditListenedState);
 		editAlbumRatingSliderInput?.addEventListener('input', () => syncEditRatingControls('slider'));
 		editAlbumRatingInput?.addEventListener('input', () => syncEditRatingControls('manual'));
@@ -692,12 +1011,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 
 			try {
 				const album = await getAlbumBySpotifyID(currentEditAlbumSpotifyID);
-				const cover = album.images[0]?.url ?? '';
-				const year = album.release_date ? album.release_date.slice(0, 4) : '';
-				editAlbumTitleInput.value = album.name;
-				setEditAlbumCover(cover);
-				if (year) editAlbumYearInput.value = year;
-				setEditStatus('Spotify metadata applied. Review and save.', 'success');
+				applySpotifyAlbumToEditForm(album, { switchToManual: false });
 			} catch {
 				setEditStatus('Failed to refresh from Spotify.', 'error');
 			} finally {
@@ -727,6 +1041,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 			const payload: UpdateAlbumInput = {
 				artist_id: Number(editAlbumArtistInput.value),
 				title: editAlbumTitleInput.value.trim(),
+				...(currentEditAlbumSpotifyID ? { spotify_id: currentEditAlbumSpotifyID } : {}),
 				listened: editAlbumListenedInput.checked,
 			};
 			if (editAlbumCoverInput.value.trim()) payload.cover_url = editAlbumCoverInput.value.trim();
@@ -765,6 +1080,12 @@ const { view = 'unlistened' } = Astro.props as Props;
 			void loadAlbums();
 		});
 		document.addEventListener('astro:page-load', refreshAlbumsView);
+	});
+
+	bindOnce('__editAlbumSpotifyAvailabilityBound', () => {
+		window.addEventListener('online', syncEditAlbumSpotifyAvailability);
+		window.addEventListener('offline', syncEditAlbumSpotifyAvailability);
+		document.addEventListener('astro:page-load', syncEditAlbumSpotifyAvailability);
 	});
 
 	refreshAlbumsView();

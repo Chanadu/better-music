@@ -1,0 +1,49 @@
+---
+interface Props {
+	inputId: string;
+	label?: string;
+	placeholder?: string;
+	wrapperClassName?: string;
+	inputClassName?: string;
+	[name: string]: unknown;
+}
+
+const {
+	inputId,
+	label = 'Search',
+	placeholder = 'Search',
+	wrapperClassName = '',
+	inputClassName = '',
+	...inputProps
+} = Astro.props as Props;
+
+const baseInputClass =
+	'w-full rounded-2xl border border-border/70 bg-surface/92 py-3 pr-4 pl-11 text-sm text-text shadow-sm transition-all duration-200 placeholder:text-text-muted/75 hover:border-primary/30 hover:bg-surface-raised focus:border-primary/40 focus:outline-none focus:ring-4 focus:ring-primary/10 sm:h-11 sm:py-2';
+---
+
+<label class:list={['block', wrapperClassName]}>
+	<span class='sr-only'>{label}</span>
+	<div class='relative'>
+		<svg
+			viewBox='0 0 24 24'
+			class='text-text-muted pointer-events-none absolute top-1/2 left-4 h-4.5 w-4.5 -translate-y-1/2'
+			fill='none'
+			stroke='currentColor'
+			stroke-width='1.8'
+			aria-hidden='true'
+		>
+			<circle cx='11' cy='11' r='6'></circle>
+			<path d='m20 20-3.5-3.5'></path>
+		</svg>
+		<input
+			id={inputId}
+			type='search'
+			placeholder={placeholder}
+			class:list={[baseInputClass, inputClassName]}
+			autocomplete='off'
+			enterkeyhint='search'
+			spellcheck='false'
+			{...inputProps}
+		/>
+	</div>
+</label>
