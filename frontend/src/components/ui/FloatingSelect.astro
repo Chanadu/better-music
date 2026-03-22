@@ -18,53 +18,26 @@ const {
 	...selectProps
 } = Astro.props as Props;
 
-const baseSelectClass =
-	'w-full appearance-none rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 pr-11 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:outline-none focus:ring-4 focus:ring-primary/10';
 const baseLabelClass = 'pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted';
 const customTriggerClass =
-	'relative inline-flex w-full items-center gap-0 rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 pr-11 text-left text-base text-text transition-all duration-200 hover:bg-surface-raised focus:border-primary/60 focus:bg-surface-raised focus:outline-none focus:ring-4 focus:ring-primary/10';
+	'ui-subtle-pressable relative inline-flex w-full items-center gap-0 overflow-hidden rounded-xl border border-border/70 bg-linear-to-b from-surface-raised/96 to-surface/92 px-4 pb-2 pt-6 pr-12 text-left text-base text-text shadow-[0_16px_30px_-24px_rgba(15,23,42,0.46)] transition-all duration-200 hover:border-primary/25 hover:bg-surface-raised focus:border-primary/60 focus:bg-surface-raised focus:outline-none focus:ring-4 focus:ring-primary/10 active:translate-y-0 active:scale-[0.985]';
 const triggerId = `${id}-trigger`;
 const valueId = `${id}-value`;
 const menuId = `${id}-menu`;
-const nativeValueId = `${id}-native-value`;
 const nativeSelectOverlayClass =
-	'peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none rounded-xl opacity-0 focus:outline-none disabled:cursor-not-allowed';
+	'absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none rounded-xl opacity-0 focus:outline-none disabled:cursor-not-allowed';
 ---
 
-<div class:list={['relative', wrapperClassName]} data-floating-select-root='true'>
-	<div class='relative hidden' data-floating-select-native-wrapper='true'>
-		<select
-			id={id}
-			class:list={[nativeSelectOverlayClass, selectClassName]}
-			data-floating-select-native='true'
-			{...selectProps}
-		>
-			<slot />
-		</select>
-		<div
-			class:list={[
-				customTriggerClass,
-				'pointer-events-none peer-focus:ring-4 peer-focus:ring-primary/10 peer-disabled:opacity-50',
-			]}
-		>
-			<span id={nativeValueId} data-floating-select-native-value='true' class='min-w-0 flex-1 truncate text-left'>Select</span>
-			<svg
-				viewBox='0 0 24 24'
-				class='text-text-muted pointer-events-none absolute inset-y-0 right-4 my-auto h-4 w-4 shrink-0'
-				aria-hidden='true'
-			>
-				<path
-					d='M6 9l6 6 6-6'
-					fill='none'
-					stroke='currentColor'
-					stroke-width='2'
-					stroke-linecap='round'
-					stroke-linejoin='round'
-				></path>
-			</svg>
-		</div>
-	</div>
-	<div class='relative' data-themed-dropdown-root data-floating-select-custom='true'>
+<div class:list={['relative', wrapperClassName]} data-floating-select-root='true' data-themed-dropdown-root>
+	<select
+		id={id}
+		class:list={[nativeSelectOverlayClass, selectClassName]}
+		data-floating-select-native='true'
+		{...selectProps}
+	>
+		<slot />
+	</select>
+	<div class='relative'>
 		<button
 			id={triggerId}
 			type='button'
@@ -73,27 +46,37 @@ const nativeSelectOverlayClass =
 			class={customTriggerClass}
 			data-floating-select-trigger='true'
 		>
+			<span
+				class='pointer-events-none absolute inset-x-3 top-0 h-px bg-linear-to-r from-transparent via-white/65 to-transparent dark:via-white/10'
+				aria-hidden='true'
+			></span>
 			<span id={valueId} data-floating-select-custom-value='true' class='min-w-0 flex-1 truncate text-left'>Select</span>
-			<svg
-				viewBox='0 0 24 24'
-				class='text-text-muted pointer-events-none absolute inset-y-0 right-4 my-auto h-4 w-4 shrink-0'
+			<span
+				class='pointer-events-none absolute inset-y-0 right-2 my-auto inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-surface/94 text-text-muted shadow-sm'
 				aria-hidden='true'
 			>
-				<path
-					d='M6 9l6 6 6-6'
-					fill='none'
-					stroke='currentColor'
-					stroke-width='2'
-					stroke-linecap='round'
-					stroke-linejoin='round'
-				></path>
-			</svg>
+				<svg
+					viewBox='0 0 24 24'
+					data-dropdown-chevron='true'
+					class='h-4 w-4 shrink-0 transition-transform duration-200'
+					aria-hidden='true'
+				>
+					<path
+						d='M6 9l6 6 6-6'
+						fill='none'
+						stroke='currentColor'
+						stroke-width='2'
+						stroke-linecap='round'
+						stroke-linejoin='round'
+					></path>
+				</svg>
+			</span>
 		</button>
 		<div
 			id={menuId}
 			role='listbox'
 			data-floating-select-menu='true'
-			class='border-border/70 bg-surface absolute top-[calc(100%+0.45rem)] left-0 z-30 hidden max-h-64 w-full overflow-y-auto rounded-2xl border p-2 shadow-[var(--shell-shadow)]'
+			class='border-border/75 bg-surface/96 absolute top-[calc(100%+0.55rem)] left-0 z-30 hidden max-h-72 w-full overflow-y-auto rounded-[1.35rem] border p-1.5 shadow-[0_24px_54px_-28px_rgba(15,23,42,0.58)] ring-1 ring-white/55 backdrop-blur-xl dark:ring-white/6'
 		></div>
 	</div>
 	<label for={id} class:list={[baseLabelClass, labelClassName]}>
@@ -108,19 +91,27 @@ const nativeSelectOverlayClass =
 
 	bindOnce('__floatingSelectBound', () => {
 		const syncFloatingSelectMode = (container: HTMLDivElement) => {
-			const nativeWrapper = container.querySelector(
-				'[data-floating-select-native-wrapper="true"]',
-			) as HTMLDivElement | null;
-			const customSelect = container.querySelector(
-				'[data-floating-select-custom="true"]',
-			) as HTMLDivElement | null;
+			const nativeSelect = container.querySelector(
+				'[data-floating-select-native="true"]',
+			) as HTMLSelectElement | null;
+			const customTrigger = container.querySelector(
+				'[data-floating-select-trigger="true"]',
+			) as HTMLButtonElement | null;
 			const customMenu = container.querySelector(
 				'[data-floating-select-menu="true"]',
 			) as HTMLDivElement | null;
 			const useSystemMenus = getDropdownMenuMode() === 'system';
 
-			nativeWrapper?.classList.toggle('hidden', !useSystemMenus);
-			customSelect?.classList.toggle('hidden', useSystemMenus);
+			if (nativeSelect) {
+				nativeSelect.classList.toggle('pointer-events-none', !useSystemMenus);
+				nativeSelect.tabIndex = useSystemMenus ? 0 : -1;
+				nativeSelect.setAttribute('aria-hidden', useSystemMenus ? 'false' : 'true');
+			}
+			if (customTrigger) {
+				customTrigger.classList.toggle('pointer-events-none', useSystemMenus);
+				customTrigger.tabIndex = useSystemMenus ? -1 : 0;
+				customTrigger.setAttribute('aria-hidden', useSystemMenus ? 'true' : 'false');
+			}
 			if (useSystemMenus) customMenu?.classList.add('hidden');
 		};
 
@@ -133,16 +124,13 @@ const nativeSelectOverlayClass =
 				const trigger = container.querySelector(
 					'[data-floating-select-trigger="true"]',
 				) as HTMLButtonElement | null;
-				const nativeValueNode = container.querySelector(
-					'[data-floating-select-native-value="true"]',
-				) as HTMLSpanElement | null;
 				const valueNode = container.querySelector(
 					'[data-floating-select-custom-value="true"]',
 				) as HTMLSpanElement | null;
 				const menu = container.querySelector(
 					'[data-floating-select-menu="true"]',
 				) as HTMLDivElement | null;
-				if (!select || !trigger || !nativeValueNode || !valueNode || !menu) continue;
+				if (!select || !trigger || !valueNode || !menu) continue;
 
 				if (container.dataset.bound === 'true') {
 					syncFloatingSelectMode(container);
@@ -171,8 +159,6 @@ const nativeSelectOverlayClass =
 					const nextValue =
 						options.some((option) => option.value === select.value) ? select.value : options[0].value;
 					if (select.value !== nextValue) select.value = nextValue;
-					const selectedOption = options.find((option) => option.value === nextValue) ?? options[0];
-					nativeValueNode.textContent = selectedOption.label;
 					controller.setOptions(options, nextValue);
 				};
 

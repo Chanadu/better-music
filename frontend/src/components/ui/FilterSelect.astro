@@ -1,5 +1,5 @@
 ---
-import { BUTTON_COMPACT_SECONDARY_CLASS } from '../../lib/button-styles';
+import { DROPDOWN_ROW_TRIGGER_CLASS } from '../../lib/button-styles';
 
 interface Props {
 	selectId: string;
@@ -24,12 +24,15 @@ const nativeSelectOverlayClass =
 	'peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none rounded-xl opacity-0 focus:outline-none disabled:cursor-not-allowed';
 ---
 
-<div
-	class:list={['relative min-w-0', wrapperClassName]}
-	data-filter-select-root='true'
->
-	<span class='sr-only'>{label}</span>
-	<div class='relative hidden' data-filter-native-wrapper='true'>
+<div class:list={['grid min-w-0 grid-cols-1 items-center gap-1.5 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-3', wrapperClassName]}>
+	<label
+		for={triggerId}
+		class='text-text-muted hidden shrink-0 whitespace-nowrap text-[11px] font-semibold tracking-[0.16em] uppercase sm:block sm:text-xs sm:tracking-[0.22em]'
+	>
+		{label}
+	</label>
+	<div class='relative min-w-0' data-filter-select-root='true' data-themed-dropdown-root>
+		<span class='sr-only'>{label}</span>
 		<select
 			id={selectId}
 			class:list={[nativeSelectOverlayClass, selectClassName]}
@@ -38,42 +41,22 @@ const nativeSelectOverlayClass =
 		>
 			<slot />
 		</select>
-		<div
-			class:list={[
-				BUTTON_COMPACT_SECONDARY_CLASS,
-				'pointer-events-none relative w-full gap-0 pr-10 text-left peer-focus:ring-2 peer-focus:ring-primary/10 peer-disabled:opacity-50 sm:pr-11',
-			]}
-		>
-			<span data-filter-native-value='true' class='min-w-0 flex-1 truncate text-left'>Select</span>
-			<svg
-				viewBox='0 0 24 24'
-				class='text-text-muted pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 shrink-0 sm:right-4'
-				aria-hidden='true'
-			>
-				<path
-					d='M6 9l6 6 6-6'
-					fill='none'
-					stroke='currentColor'
-					stroke-width='2'
-					stroke-linecap='round'
-					stroke-linejoin='round'
-				></path>
-			</svg>
-		</div>
-	</div>
-	<div data-themed-dropdown-root data-filter-custom-dropdown='true'>
 		<button
 			id={triggerId}
 			type='button'
 			aria-haspopup='listbox'
 			aria-expanded='false'
 			data-filter-custom-trigger='true'
-			class:list={[BUTTON_COMPACT_SECONDARY_CLASS, 'relative w-full gap-0 pr-10 text-left sm:pr-11']}
+			class:list={[
+				DROPDOWN_ROW_TRIGGER_CLASS,
+				'relative gap-0 pr-10 peer-focus-visible:border-primary/25 peer-focus-visible:ring-2 peer-focus-visible:ring-primary/10 sm:pr-11',
+			]}
 		>
 			<span id={valueId} data-filter-custom-value='true' class='min-w-0 flex-1 truncate text-left'>Select</span>
 			<svg
 				viewBox='0 0 24 24'
-				class='text-text-muted pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 shrink-0 sm:right-4'
+				data-dropdown-chevron='true'
+				class='text-text-muted pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 shrink-0 transition-transform duration-200 sm:right-4'
 				aria-hidden='true'
 			>
 				<path
@@ -90,7 +73,7 @@ const nativeSelectOverlayClass =
 			id={menuId}
 			role='listbox'
 			data-filter-custom-menu='true'
-			class='border-border/70 bg-surface absolute top-[calc(100%+0.45rem)] left-0 z-30 hidden max-h-64 w-full overflow-y-auto rounded-2xl border p-2 shadow-[var(--shell-shadow)]'
+			class='border-border/75 bg-surface/96 absolute top-[calc(100%+0.55rem)] left-0 z-30 hidden max-h-72 w-full overflow-y-auto rounded-[1.35rem] border p-1.5 shadow-[0_24px_54px_-28px_rgba(15,23,42,0.58)] ring-1 ring-white/55 backdrop-blur-xl dark:ring-white/6'
 		></div>
 	</div>
 </div>
@@ -102,17 +85,23 @@ const nativeSelectOverlayClass =
 
 	bindOnce('__filterSelectBound', () => {
 		const syncFilterSelectMode = (container: HTMLDivElement) => {
-			const nativeWrapper = container.querySelector(
-				'[data-filter-native-wrapper="true"]',
-			) as HTMLDivElement | null;
-			const customDropdown = container.querySelector(
-				'[data-filter-custom-dropdown="true"]',
-			) as HTMLDivElement | null;
+			const select = container.querySelector('[data-filter-native-select="true"]') as HTMLSelectElement | null;
+			const trigger = container.querySelector(
+				'[data-filter-custom-trigger="true"]',
+			) as HTMLButtonElement | null;
 			const menu = container.querySelector('[data-filter-custom-menu="true"]') as HTMLDivElement | null;
 			const useSystemMenus = getDropdownMenuMode() === 'system';
 
-			nativeWrapper?.classList.toggle('hidden', !useSystemMenus);
-			customDropdown?.classList.toggle('hidden', useSystemMenus);
+			if (select) {
+				select.classList.toggle('pointer-events-none', !useSystemMenus);
+				select.tabIndex = useSystemMenus ? 0 : -1;
+				select.setAttribute('aria-hidden', useSystemMenus ? 'false' : 'true');
+			}
+			if (trigger) {
+				trigger.classList.toggle('pointer-events-none', useSystemMenus);
+				trigger.tabIndex = useSystemMenus ? -1 : 0;
+				trigger.setAttribute('aria-hidden', useSystemMenus ? 'true' : 'false');
+			}
 			if (useSystemMenus) menu?.classList.add('hidden');
 		};
 
@@ -123,14 +112,11 @@ const nativeSelectOverlayClass =
 				const trigger = container.querySelector(
 					'[data-filter-custom-trigger="true"]',
 				) as HTMLButtonElement | null;
-				const nativeValueNode = container.querySelector(
-					'[data-filter-native-value="true"]',
-				) as HTMLSpanElement | null;
 				const valueNode = container.querySelector(
 					'[data-filter-custom-value="true"]',
 				) as HTMLSpanElement | null;
 				const menu = container.querySelector('[data-filter-custom-menu="true"]') as HTMLDivElement | null;
-				if (!select || !trigger || !valueNode || !nativeValueNode || !menu) continue;
+				if (!select || !trigger || !valueNode || !menu) continue;
 
 				if (container.dataset.bound === 'true') {
 					syncFilterSelectMode(container);
@@ -159,8 +145,6 @@ const nativeSelectOverlayClass =
 					const nextValue =
 						options.some((option) => option.value === select.value) ? select.value : options[0].value;
 					if (select.value !== nextValue) select.value = nextValue;
-					const selectedOption = options.find((option) => option.value === nextValue) ?? options[0];
-					nativeValueNode.textContent = selectedOption.label;
 					controller.setOptions(options, nextValue);
 				};
 

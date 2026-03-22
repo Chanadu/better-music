@@ -86,7 +86,7 @@
 			details.className = 'interactive-card-details group relative z-10 w-full overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm transition-transform duration-300 ease-out hover:shadow-md dark:shadow-black/20';
 
 			const summary = document.createElement('summary');
-			summary.className = 'cursor-pointer list-none';
+			summary.className = 'ui-subtle-pressable cursor-pointer list-none';
 			summary.setAttribute('aria-label', toggleLabel);
 
 			const header = document.createElement('div');
@@ -100,7 +100,7 @@
 
 			const editBtn = document.createElement('button');
 			editBtn.type = 'button';
-			editBtn.className = 'hidden md:flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-primary/70 opacity-0 pointer-events-none transition-all duration-200 hover:bg-primary/10 hover:text-primary group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto';
+			editBtn.className = 'hidden md:flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-primary/70 opacity-0 pointer-events-none transition-all duration-200 hover:bg-primary/10 hover:text-primary active:scale-95 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto';
 			editBtn.setAttribute('aria-label', editLabel);
 			editBtn.innerHTML = `<svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICON_PATHS.edit}"/></svg>`;
 			editBtn.addEventListener('click', (event) => {
@@ -111,7 +111,7 @@
 
 			const deleteBtn = document.createElement('button');
 			deleteBtn.type = 'button';
-			deleteBtn.className = 'hidden md:flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-error/70 opacity-0 pointer-events-none transition-all duration-200 hover:bg-error/10 hover:text-error group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto';
+			deleteBtn.className = 'hidden md:flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-error/70 opacity-0 pointer-events-none transition-all duration-200 hover:bg-error/10 hover:text-error active:scale-95 group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto';
 			deleteBtn.setAttribute('aria-label', deleteLabel);
 			deleteBtn.innerHTML = `<svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICON_PATHS.trash}"/></svg>`;
 			deleteBtn.addEventListener('click', (event) => {

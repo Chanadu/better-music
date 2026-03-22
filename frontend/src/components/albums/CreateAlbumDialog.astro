@@ -106,7 +106,7 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 		<button
 			type='submit'
 			id='album-create-btn'
-			class:list={[BUTTON_PRIMARY_CLASS, 'mx-auto mt-6 w-full sm:w-auto']}
+			class:list={[BUTTON_PRIMARY_CLASS, 'mx-auto mt-6 w-full cursor-pointer disabled:cursor-not-allowed sm:w-auto']}
 		>
 			Create Album
 		</button>
@@ -344,7 +344,7 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 		const artistNames = album.artists.map((artist) => artist.name).join(', ');
 		const item = document.createElement('li');
 		item.className =
-			'border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm transition-colors hover:bg-surface-raised last:border-0';
+			'ui-subtle-pressable border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm transition-colors hover:bg-surface-raised last:border-0';
 		item.innerHTML = `
 			${img ? `<img src="${img.url}" alt="" class="h-11 w-11 shrink-0 rounded-lg border border-border/40 object-cover" />` : '<div class="bg-surface-raised flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/40 text-xs text-text-muted">?</div>'}
 			<div class="min-w-0 flex-1">

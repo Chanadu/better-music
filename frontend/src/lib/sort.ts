@@ -57,13 +57,13 @@ export const initializeSortControls = <TValue extends string>({
 	const nativeSelect = document.getElementById(
 		`${controlPrefix}-by-native`,
 	) as HTMLSelectElement | null;
-	const nativeValueNode = document.getElementById(
-		`${controlPrefix}-by-native-value`,
+	const valueNode = document.getElementById(
+		`${controlPrefix}-by-value`,
 	) as HTMLSpanElement | null;
-	const syncNativeValueNode = () => {
-		if (!nativeSelect || !nativeValueNode) return;
+	const syncVisibleValueNode = () => {
+		if (!nativeSelect || !valueNode) return;
 		const selectedOption = nativeSelect.selectedOptions[0];
-		nativeValueNode.textContent = selectedOption?.textContent ?? options[0]?.label ?? 'Select';
+		valueNode.textContent = selectedOption?.textContent ?? options[0]?.label ?? 'Select';
 	};
 	if (nativeSelect) {
 		nativeSelect.innerHTML = '';
@@ -74,12 +74,12 @@ export const initializeSortControls = <TValue extends string>({
 			nativeSelect.appendChild(nativeOption);
 		}
 		nativeSelect.value = getSortBy();
-		syncNativeValueNode();
+		syncVisibleValueNode();
 		if (nativeSelect.dataset.bound !== 'true') {
 			nativeSelect.dataset.bound = 'true';
 			nativeSelect.addEventListener('change', () => {
 				setSortBy(nativeSelect.value as TValue);
-				syncNativeValueNode();
+				syncVisibleValueNode();
 				onChange();
 			});
 		}
@@ -95,7 +95,7 @@ export const initializeSortControls = <TValue extends string>({
 		},
 	});
 	sortDropdown?.setOptions(options, getSortBy());
-	syncNativeValueNode();
+	syncVisibleValueNode();
 	syncSortDirectionButton(directionButton, getSortDirection());
 
 	if (directionButton.dataset.bound !== 'true') {

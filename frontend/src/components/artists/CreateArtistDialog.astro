@@ -41,7 +41,7 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 		<button
 			type='submit'
 			id='artist-create-btn'
-			class:list={[BUTTON_PRIMARY_CLASS, 'mx-auto mt-4 w-full sm:w-auto']}
+			class:list={[BUTTON_PRIMARY_CLASS, 'mx-auto mt-4 w-full cursor-pointer disabled:cursor-not-allowed sm:w-auto']}
 		>
 			Create Artist
 		</button>
@@ -138,7 +138,7 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 		const img = artist.images[artist.images.length - 1];
 		const item = document.createElement('li');
 		item.className =
-			'border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm font-medium text-text transition-colors hover:bg-surface-raised last:border-0';
+			'ui-subtle-pressable border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm font-medium text-text transition-colors hover:bg-surface-raised last:border-0';
 		item.innerHTML = `
 			${img ? `<img src="${img.url}" alt="" class="h-10 w-10 shrink-0 rounded-full border border-border/40 object-cover" />` : '<div class="bg-surface-raised flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border/40 text-xs text-text-muted">?</div>'}
 			<span class="truncate">${artist.name}</span>

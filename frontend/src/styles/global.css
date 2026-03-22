@@ -249,6 +249,52 @@ body {
 	text-rendering: optimizeLegibility;
 }
 
+.ui-pressable,
+button:not(:disabled),
+a[href],
+summary,
+label[for],
+input[type='checkbox']:not(:disabled),
+input[type='radio']:not(:disabled),
+input[type='range']:not(:disabled),
+select:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+[role='menuitem']:not([aria-disabled='true']) {
+	cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled='true'] {
+	cursor: not-allowed;
+}
+
+.ui-subtle-pressable {
+	transition:
+		transform 0.16s ease,
+		filter 0.16s ease,
+		box-shadow 0.16s ease,
+		background-color 0.16s ease,
+		border-color 0.16s ease,
+		color 0.16s ease,
+		opacity 0.16s ease;
+	will-change: transform;
+}
+
+@media (hover: hover) {
+	.ui-subtle-pressable:hover {
+		transform: translateY(-1px);
+		filter: saturate(1.02);
+	}
+}
+
+.ui-subtle-pressable:active {
+	transform: translateY(0) scale(0.985);
+	filter: saturate(0.98);
+}
+
 .page-swipe-shell {
 	transform: translate3d(0, 0, 0);
 	backface-visibility: hidden;

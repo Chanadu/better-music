@@ -1,7 +1,7 @@
 ---
 import {
 	BUTTON_COMPACT_ICON_SECONDARY_CLASS,
-	BUTTON_COMPACT_SECONDARY_CLASS,
+	DROPDOWN_ROW_TRIGGER_CLASS,
 } from '../../lib/button-styles';
 
 interface Props {
@@ -20,7 +20,6 @@ const triggerId = `${controlId}-trigger`;
 const valueId = `${controlId}-value`;
 const menuId = `${controlId}-menu`;
 const nativeSelectId = `${controlId}-native`;
-const nativeValueId = `${controlId}-native-value`;
 const directionId = controlId.replace(/-by$/, '-direction');
 const nativeSelectOverlayClass =
 	'peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none rounded-xl opacity-0 focus:outline-none disabled:cursor-not-allowed';
@@ -34,20 +33,32 @@ const nativeSelectOverlayClass =
 		{label}
 	</label>
 	<div
-		class='relative hidden min-w-0 w-full max-w-none sm:w-fit sm:max-w-[11rem] md:max-w-[13rem]'
-		data-sort-native-wrapper='true'
+		class='relative min-w-0 w-full max-w-none sm:w-fit sm:max-w-[11rem] md:max-w-[13rem]'
+		data-themed-dropdown-root
 	>
 		<select id={nativeSelectId} class={nativeSelectOverlayClass} data-sort-native-select='true'></select>
-		<div
+		<button
+			id={triggerId}
+			type='button'
+			aria-haspopup='listbox'
+			aria-expanded='false'
+			data-sort-custom-trigger='true'
 			class:list={[
-				BUTTON_COMPACT_SECONDARY_CLASS,
-				'pointer-events-none relative w-full gap-0 pr-10 text-left peer-focus:ring-2 peer-focus:ring-primary/10 peer-disabled:opacity-50 sm:pr-11',
+				DROPDOWN_ROW_TRIGGER_CLASS,
+				'relative gap-0 pr-10 peer-focus-visible:border-primary/25 peer-focus-visible:ring-2 peer-focus-visible:ring-primary/10 sm:pr-11',
 			]}
 		>
-			<span id={nativeValueId} data-sort-native-value='true' class='min-w-0 flex-1 truncate text-left sm:max-w-[7rem] md:max-w-[9rem]'>Select</span>
+			<span
+				id={valueId}
+				data-sort-custom-value='true'
+				class='min-w-0 flex-1 truncate text-left sm:max-w-[7rem] md:max-w-[9rem]'
+			>
+				Select
+			</span>
 			<svg
 				viewBox='0 0 24 24'
-				class='text-text-muted pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 shrink-0 sm:right-4'
+				data-dropdown-chevron='true'
+				class='text-text-muted pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 shrink-0 transition-transform duration-200 sm:right-4'
 				aria-hidden='true'
 			>
 				<path
@@ -59,47 +70,12 @@ const nativeSelectOverlayClass =
 					stroke-linejoin='round'
 				></path>
 			</svg>
-		</div>
-	</div>
-	<div
-		class='relative min-w-0 w-full max-w-none sm:w-fit sm:max-w-[11rem] md:max-w-[13rem]'
-		data-themed-dropdown-root
-		data-sort-custom-dropdown='true'
-	>
-		<button
-			id={triggerId}
-			type='button'
-			aria-haspopup='listbox'
-			aria-expanded='false'
-			data-sort-custom-trigger='true'
-			class:list={[BUTTON_COMPACT_SECONDARY_CLASS, 'relative w-full gap-0 pr-10 text-left sm:pr-11']}
-		>
-			<span
-				id={valueId}
-				data-sort-custom-value='true'
-				class='min-w-0 flex-1 truncate text-left sm:max-w-[7rem] md:max-w-[9rem]'
-			>
-				Select
-			</span>
-			<svg
-				viewBox='0 0 24 24'
-				class='text-text-muted pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 shrink-0 sm:right-4'
-				aria-hidden='true'
-			>
-				><path
-					d='M6 9l6 6 6-6'
-					fill='none'
-					stroke='currentColor'
-					stroke-width='2'
-					stroke-linecap='round'
-					stroke-linejoin='round'></path></svg
-			>
 		</button>
 		<div
 			id={menuId}
 			role='listbox'
 			data-sort-custom-menu='true'
-			class='border-border/70 bg-surface absolute top-[calc(100%+0.45rem)] left-0 z-30 hidden max-h-64 w-full overflow-y-auto rounded-2xl border p-2 shadow-[var(--shell-shadow)]'
+			class='border-border/75 bg-surface/96 absolute top-[calc(100%+0.55rem)] left-0 z-30 hidden max-h-72 w-full overflow-y-auto rounded-[1.35rem] border p-1.5 shadow-[0_24px_54px_-28px_rgba(15,23,42,0.58)] ring-1 ring-white/55 backdrop-blur-xl dark:ring-white/6'
 		>
 		</div>
 	</div>
@@ -124,19 +100,27 @@ const nativeSelectOverlayClass =
 		const syncSortControlsMode = () => {
 			for (const root of document.querySelectorAll('[data-sort-controls-root="true"]')) {
 				const container = root as HTMLDivElement;
-				const nativeWrapper = container.querySelector(
-					'[data-sort-native-wrapper="true"]',
-				) as HTMLDivElement | null;
-				const customDropdown = container.querySelector(
-					'[data-sort-custom-dropdown="true"]',
-				) as HTMLDivElement | null;
+				const nativeSelect = container.querySelector(
+					'[data-sort-native-select="true"]',
+				) as HTMLSelectElement | null;
+				const customTrigger = container.querySelector(
+					'[data-sort-custom-trigger="true"]',
+				) as HTMLButtonElement | null;
 				const customMenu = container.querySelector(
 					'[data-sort-custom-menu="true"]',
 				) as HTMLDivElement | null;
 				const useSystemMenus = getDropdownMenuMode() === 'system';
 
-				nativeWrapper?.classList.toggle('hidden', !useSystemMenus);
-				customDropdown?.classList.toggle('hidden', useSystemMenus);
+				if (nativeSelect) {
+					nativeSelect.classList.toggle('pointer-events-none', !useSystemMenus);
+					nativeSelect.tabIndex = useSystemMenus ? 0 : -1;
+					nativeSelect.setAttribute('aria-hidden', useSystemMenus ? 'false' : 'true');
+				}
+				if (customTrigger) {
+					customTrigger.classList.toggle('pointer-events-none', useSystemMenus);
+					customTrigger.tabIndex = useSystemMenus ? -1 : 0;
+					customTrigger.setAttribute('aria-hidden', useSystemMenus ? 'true' : 'false');
+				}
 				if (useSystemMenus) customMenu?.classList.add('hidden');
 			}
 		};

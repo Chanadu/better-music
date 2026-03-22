@@ -1,0 +1,284 @@
+---
+import { BUTTON_ICON_SECONDARY_CLASS } from '../../lib/button-styles';
+---
+
+<div class='relative' data-header-settings-root='true'>
+	<button
+		type='button'
+		class={BUTTON_ICON_SECONDARY_CLASS}
+		data-settings-trigger='true'
+		aria-label='Open settings'
+		aria-haspopup='menu'
+		aria-expanded='false'
+	>
+		<svg
+			viewBox='0 0 24 24'
+			class='h-5 w-5'
+			fill='none'
+			stroke='currentColor'
+			stroke-width='1.8'
+			aria-hidden='true'
+		>
+			<path d='M9.6 3.6h4.8l.7 2.2a6.8 6.8 0 0 1 1.6.9l2.1-.9 2.4 4.2-1.7 1.5a7.1 7.1 0 0 1 0 1.8l1.7 1.5-2.4 4.2-2.1-.9a6.8 6.8 0 0 1-1.6.9l-.7 2.2H9.6l-.7-2.2a6.8 6.8 0 0 1-1.6-.9l-2.1.9-2.4-4.2 1.7-1.5a7.1 7.1 0 0 1 0-1.8L2.8 10l2.4-4.2 2.1.9a6.8 6.8 0 0 1 1.6-.9l.7-2.2Z'></path>
+			<circle cx='12' cy='12' r='2.6'></circle>
+		</svg>
+	</button>
+
+	<div
+		class='border-border/75 bg-surface/96 absolute top-[calc(100%+0.6rem)] right-0 z-40 hidden w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-[1.35rem] border p-1.5 shadow-[0_24px_54px_-28px_rgba(15,23,42,0.58)] ring-1 ring-white/55 backdrop-blur-xl dark:ring-white/6'
+		data-settings-menu='true'
+		role='menu'
+		aria-label='Settings'
+	>
+		<button
+			type='button'
+			class='ui-subtle-pressable group flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-left text-sm font-medium text-text transition-all duration-150 hover:border-border/55 hover:bg-surface-raised/78 focus:outline-none focus:ring-2 focus:ring-primary/10'
+			data-settings-theme='true'
+			role='menuitem'
+		>
+			<span class='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/55 bg-surface/90 text-text-muted'>
+				<svg
+					viewBox='0 0 24 24'
+					class='h-4.5 w-4.5'
+					data-settings-theme-moon='true'
+					fill='none'
+					stroke='currentColor'
+					stroke-width='1.8'
+					aria-hidden='true'
+				>
+					<path d='M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z'></path>
+				</svg>
+				<svg
+					viewBox='0 0 24 24'
+					class='hidden h-4.5 w-4.5'
+					data-settings-theme-sun='true'
+					fill='none'
+					stroke='currentColor'
+					stroke-width='1.8'
+					aria-hidden='true'
+				>
+					<circle cx='12' cy='12' r='4'></circle>
+					<path d='M12 2v2'></path>
+					<path d='M12 20v2'></path>
+					<path d='M4.9 4.9l1.4 1.4'></path>
+					<path d='M17.7 17.7l1.4 1.4'></path>
+					<path d='M2 12h2'></path>
+					<path d='M20 12h2'></path>
+					<path d='M4.9 19.1l1.4-1.4'></path>
+					<path d='M17.7 6.3l1.4-1.4'></path>
+				</svg>
+			</span>
+			<span class='min-w-0 flex-1'>
+				<span class='block truncate'>Theme</span>
+				<span class='text-text-muted block text-xs' data-settings-theme-description='true'>Current mode</span>
+			</span>
+			<span
+				class='text-text-muted shrink-0 text-[11px] font-semibold tracking-[0.18em] uppercase'
+				data-settings-theme-value='true'
+			>
+				Dark
+			</span>
+		</button>
+
+		<button
+			type='button'
+			class='ui-subtle-pressable group flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-left text-sm font-medium text-text transition-all duration-150 hover:border-border/55 hover:bg-surface-raised/78 focus:outline-none focus:ring-2 focus:ring-primary/10'
+			data-settings-dropdown-mode='true'
+			role='menuitem'
+		>
+			<span class='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/55 bg-surface/90 text-text-muted'>
+				<svg
+					viewBox='0 0 24 24'
+					class='h-4.5 w-4.5'
+					data-settings-dropdown-custom-icon='true'
+					fill='none'
+					stroke='currentColor'
+					stroke-width='1.8'
+					aria-hidden='true'
+				>
+					<path d='M4 7h11'></path>
+					<path d='M4 12h16'></path>
+					<path d='M4 17h13'></path>
+					<path d='M18 4v4'></path>
+					<path d='M16 6h4'></path>
+				</svg>
+				<svg
+					viewBox='0 0 24 24'
+					class='hidden h-4.5 w-4.5'
+					data-settings-dropdown-system-icon='true'
+					fill='none'
+					stroke='currentColor'
+					stroke-width='1.8'
+					aria-hidden='true'
+				>
+					<rect x='4' y='6' width='16' height='12' rx='2'></rect>
+					<path d='M10 11l2 2 2-2'></path>
+				</svg>
+			</span>
+			<span class='min-w-0 flex-1'>
+				<span class='block truncate'>Dropdown Menus</span>
+				<span class='text-text-muted block text-xs' data-settings-dropdown-description='true'>
+					Current mode
+				</span>
+			</span>
+			<span
+				class='text-text-muted shrink-0 text-[11px] font-semibold tracking-[0.18em] uppercase'
+				data-settings-dropdown-value='true'
+			>
+				Custom
+			</span>
+		</button>
+
+		<div class='mx-2 my-1 h-px bg-border/45'></div>
+
+		<button
+			type='button'
+			class='ui-subtle-pressable group flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-left text-sm font-medium text-text transition-all duration-150 hover:border-border/55 hover:bg-surface-raised/78 focus:outline-none focus:ring-2 focus:ring-primary/10'
+			data-settings-logout='true'
+			role='menuitem'
+		>
+			<span class='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/55 bg-surface/90 text-text-muted'>
+				<svg
+					viewBox='0 0 24 24'
+					class='h-4.5 w-4.5'
+					fill='none'
+					stroke='currentColor'
+					stroke-width='1.8'
+					aria-hidden='true'
+				>
+					<path d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'></path>
+					<path d='M16 17l5-5-5-5'></path>
+					<path d='M21 12H9'></path>
+				</svg>
+			</span>
+			<span class='min-w-0 flex-1'>
+				<span class='block truncate'>Log Out</span>
+				<span class='text-text-muted block text-xs'>Sign out of this device</span>
+			</span>
+		</button>
+	</div>
+</div>
+
+<script>
+	import { LOGIN_PATH, logout } from '../../lib/api';
+	import {
+		DROPDOWN_MENU_MODE_EVENT,
+		applyDropdownMenuMode,
+		getDropdownMenuMode,
+		toggleDropdownMenuMode,
+	} from '../../lib/dropdown-mode';
+	import { bindOnce } from '../../lib/events';
+
+	type ThemeWindow = Window & {
+		toggleTheme?: () => void;
+	};
+
+	const getSettingsRoot = () =>
+		document.querySelector('[data-header-settings-root="true"]') as HTMLDivElement | null;
+	const getSettingsTrigger = () =>
+		document.querySelector('[data-settings-trigger="true"]') as HTMLButtonElement | null;
+	const getSettingsMenu = () =>
+		document.querySelector('[data-settings-menu="true"]') as HTMLDivElement | null;
+
+	const setSettingsMenuOpen = (isOpen: boolean) => {
+		const trigger = getSettingsTrigger();
+		const menu = getSettingsMenu();
+		if (!trigger || !menu) return;
+		menu.classList.toggle('hidden', !isOpen);
+		trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+	};
+
+	const syncThemeSetting = () => {
+		const isDark = document.documentElement.classList.contains('dark');
+		const moonIcon = document.querySelector('[data-settings-theme-moon="true"]') as SVGSVGElement | null;
+		const sunIcon = document.querySelector('[data-settings-theme-sun="true"]') as SVGSVGElement | null;
+		const value = document.querySelector('[data-settings-theme-value="true"]') as HTMLSpanElement | null;
+		const description = document.querySelector(
+			'[data-settings-theme-description="true"]',
+		) as HTMLSpanElement | null;
+
+		moonIcon?.classList.toggle('hidden', isDark);
+		sunIcon?.classList.toggle('hidden', !isDark);
+		if (value) value.textContent = isDark ? 'Dark' : 'Light';
+		if (description) {
+			description.textContent =
+				isDark ? 'Switch to the light theme' : 'Switch to the dark theme';
+		}
+	};
+
+	const syncDropdownSetting = () => {
+		const mode = applyDropdownMenuMode(getDropdownMenuMode());
+		const isSystem = mode === 'system';
+		const customIcon = document.querySelector(
+			'[data-settings-dropdown-custom-icon="true"]',
+		) as SVGSVGElement | null;
+		const systemIcon = document.querySelector(
+			'[data-settings-dropdown-system-icon="true"]',
+		) as SVGSVGElement | null;
+		const value = document.querySelector('[data-settings-dropdown-value="true"]') as HTMLSpanElement | null;
+		const description = document.querySelector(
+			'[data-settings-dropdown-description="true"]',
+		) as HTMLSpanElement | null;
+
+		customIcon?.classList.toggle('hidden', isSystem);
+		systemIcon?.classList.toggle('hidden', !isSystem);
+		if (value) value.textContent = isSystem ? 'System' : 'Custom';
+		if (description) {
+			description.textContent =
+				isSystem ? 'Switch to custom styled menus' : 'Switch to system menus';
+		}
+	};
+
+	const syncSettingsMenu = () => {
+		syncThemeSetting();
+		syncDropdownSetting();
+		setSettingsMenuOpen(false);
+	};
+
+	bindOnce('__headerSettingsMenuBound', () => {
+		document.addEventListener('click', async (event) => {
+			const target = event.target as Element | null;
+			if (!target) return;
+
+			if (target.closest('[data-settings-trigger="true"]')) {
+				event.preventDefault();
+				const menu = getSettingsMenu();
+				setSettingsMenuOpen(Boolean(menu?.classList.contains('hidden')));
+				return;
+			}
+
+			if (target.closest('[data-settings-theme="true"]')) {
+				event.preventDefault();
+				(window as ThemeWindow).toggleTheme?.();
+				syncThemeSetting();
+				return;
+			}
+
+			if (target.closest('[data-settings-dropdown-mode="true"]')) {
+				event.preventDefault();
+				toggleDropdownMenuMode();
+				syncDropdownSetting();
+				return;
+			}
+
+			if (target.closest('[data-settings-logout="true"]')) {
+				event.preventDefault();
+				setSettingsMenuOpen(false);
+				await logout();
+				window.location.replace(LOGIN_PATH);
+				return;
+			}
+
+			const root = getSettingsRoot();
+			if (root && !root.contains(target)) setSettingsMenuOpen(false);
+		});
+
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape') setSettingsMenuOpen(false);
+		});
+
+		document.addEventListener('astro:page-load', syncSettingsMenu);
+		window.addEventListener(DROPDOWN_MENU_MODE_EVENT, syncDropdownSetting);
+		syncSettingsMenu();
+	});
+</script>

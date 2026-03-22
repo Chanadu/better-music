@@ -34,8 +34,8 @@ const { view = 'unlistened' } = Astro.props as Props;
 	<div class='mb-4 flex items-center gap-2 sm:mx-auto sm:w-fit sm:max-w-full sm:justify-center sm:gap-3'>
 		<FilterSelect
 			selectId='albums-artist-filter'
-			label='Filter by artist'
-			wrapperClassName='min-w-0 flex-1 sm:w-[14rem] sm:flex-none'
+			label='Filter'
+			wrapperClassName='min-w-0 flex-1 sm:flex-none sm:grid-cols-[auto_14rem]'
 			data-albums-artist-filter='true'
 		>
 			<option value='all'>All artists</option>
@@ -713,7 +713,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 		const artistNames = album.artists.map((artist) => artist.name).join(', ');
 		const item = document.createElement('li');
 		item.className =
-			'border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm transition-colors hover:bg-surface-raised last:border-0';
+			'ui-subtle-pressable border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm transition-colors hover:bg-surface-raised last:border-0';
 		item.innerHTML = `
 			${img ? `<img src="${img.url}" alt="" class="h-11 w-11 shrink-0 rounded-lg border border-border/40 object-cover" />` : '<div class="bg-surface-raised flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/40 text-xs text-text-muted">?</div>'}
 			<div class="min-w-0 flex-1">

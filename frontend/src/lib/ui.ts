@@ -128,15 +128,24 @@ export const createThemedDropdown = (config: ThemedDropdownConfig): ThemedDropdo
 
 	const root = trigger.closest('[data-themed-dropdown-root]') as HTMLDivElement | null;
 	if (!root) return null;
+	const chevron = trigger.querySelector('[data-dropdown-chevron="true"]') as SVGSVGElement | null;
+
+	const syncOpenState = (isOpen: boolean) => {
+		trigger.classList.toggle('border-primary/25', isOpen);
+		trigger.classList.toggle('bg-surface-raised/78', isOpen);
+		chevron?.classList.toggle('rotate-180', isOpen);
+	};
 
 	const close = () => {
 		menu.classList.add('hidden');
 		trigger.setAttribute('aria-expanded', 'false');
+		syncOpenState(false);
 	};
 
 	const open = () => {
 		menu.classList.remove('hidden');
 		trigger.setAttribute('aria-expanded', 'true');
+		syncOpenState(true);
 	};
 
 	if (trigger.dataset.bound !== 'true') {
@@ -172,14 +181,28 @@ export const createThemedDropdown = (config: ThemedDropdownConfig): ThemedDropdo
 			optionButton.setAttribute('role', 'option');
 			optionButton.setAttribute('aria-selected', option.value === selectedValue ? 'true' : 'false');
 			optionButton.className =
-				'themed-dropdown-option w-full cursor-pointer rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-200';
+				'themed-dropdown-option ui-subtle-pressable group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-all duration-150';
+
+			const labelNode = document.createElement('span');
+			labelNode.className = 'min-w-0 flex-1 truncate';
+			labelNode.textContent = option.label;
+
+			const indicator = document.createElement('span');
+			indicator.className =
+				'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-150';
+
 			if (option.value === selectedValue) {
-				optionButton.classList.add('bg-primary/15', 'text-primary');
+				optionButton.classList.add('border-primary/25', 'bg-primary/12', 'text-primary', 'shadow-sm');
+				indicator.classList.add('border-primary/20', 'bg-primary/12', 'text-primary');
+				indicator.appendChild(createStrokeIcon('M7 12l3 3 7-7', 'h-3 w-3'));
 				selectedLabel = option.label;
 			} else {
-				optionButton.classList.add('text-text', 'hover:bg-surface-raised/70');
+				optionButton.classList.add('border-transparent', 'text-text', 'hover:border-border/55', 'hover:bg-surface-raised/78');
+				indicator.classList.add('border-border/55', 'bg-surface/80', 'text-transparent', 'group-hover:border-primary/15');
 			}
-			optionButton.textContent = option.label;
+
+			optionButton.appendChild(labelNode);
+			optionButton.appendChild(indicator);
 			optionButton.addEventListener('click', () => {
 				config.onSelect(option.value);
 				close();
@@ -197,7 +220,8 @@ export const createThemedDropdown = (config: ThemedDropdownConfig): ThemedDropdo
 export const createEditIconButton = (label: string) => {
 	const button = document.createElement('button');
 	button.type = 'button';
-	button.className = 'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border p-0';
+	button.className =
+		'ui-subtle-pressable flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border p-0';
 	button.style.borderColor = 'var(--border)';
 	button.style.color = 'var(--text-muted)';
 	button.setAttribute('aria-label', label);
