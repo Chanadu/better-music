@@ -1,8 +1,9 @@
-import { navigate } from 'astro:transitions/client';
-
 const ACCESS_TOKEN_KEY = 'token';
 const REFRESH_TOKEN_KEY = 'refreshToken';
-const LOGIN_PATH = '/login';
+const TOKEN_EXPIRY_BUFFER_MS = 30_000;
+
+export const LOGIN_PATH = '/';
+export const APP_HOME_PATH = '/artists';
 
 type TokenResponse = {
 	access_token?: string;
@@ -19,7 +20,38 @@ type ApiFetchOptions = {
 let refreshRequest: Promise<string | null> | null = null;
 
 const redirectToLogin = (): void => {
-	void navigate(LOGIN_PATH);
+	window.location.replace(LOGIN_PATH);
+};
+
+const decodeBase64Url = (value: string): string => {
+	const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+	const padding = normalized.length % 4;
+	const padded = padding === 0 ? normalized : `${normalized}${'='.repeat(4 - padding)}`;
+	return atob(padded);
+};
+
+const parseJwtPayload = (token: string): { exp?: number } | null => {
+	const [, payload] = token.split('.');
+	if (!payload) {
+		return null;
+	}
+
+	try {
+		const decoded = decodeBase64Url(payload);
+		const parsed = JSON.parse(decoded) as { exp?: number };
+		return typeof parsed === 'object' && parsed !== null ? parsed : null;
+	} catch {
+		return null;
+	}
+};
+
+export const isAccessTokenValid = (token: string): boolean => {
+	const payload = parseJwtPayload(token);
+	if (typeof payload?.exp !== 'number') {
+		return false;
+	}
+
+	return payload.exp * 1000 > Date.now() + TOKEN_EXPIRY_BUFFER_MS;
 };
 
 const mergeHeaders = (base?: HeadersInit, extra?: Record<string, string>): Headers => {
@@ -46,6 +78,8 @@ export const getRefreshToken = (): string | null => {
 	return token;
 };
 
+export const hasStoredAuthTokens = (): boolean => Boolean(getAccessToken() || getRefreshToken());
+
 export const storeAuthTokens = (payload: TokenResponse): void => {
 	if (payload.access_token) {
 		localStorage.setItem(ACCESS_TOKEN_KEY, payload.access_token);
@@ -58,6 +92,24 @@ export const storeAuthTokens = (payload: TokenResponse): void => {
 export const clearAuthTokens = (): void => {
 	localStorage.removeItem(ACCESS_TOKEN_KEY);
 	localStorage.removeItem(REFRESH_TOKEN_KEY);
+};
+
+export const restoreAuthSession = async (): Promise<boolean> => {
+	const accessToken = getAccessToken();
+	if (accessToken && isAccessTokenValid(accessToken)) {
+		return true;
+	}
+
+	const refreshToken = getRefreshToken();
+	if (!refreshToken) {
+		if (accessToken) {
+			clearAuthTokens();
+		}
+		return false;
+	}
+
+	const refreshedToken = await refreshAccessToken();
+	return Boolean(refreshedToken && isAccessTokenValid(refreshedToken));
 };
 
 export const requireAuth = (): string => {

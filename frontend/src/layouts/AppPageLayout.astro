@@ -50,10 +50,12 @@ const currentRoute = currentRouteByPage[current];
 
 <script>
 	import { bindOnce } from '../lib/events';
+	import { initializeOfflineLibrarySync } from '../lib/library-cache';
 	import { syncPageSkeletonRoute } from '../lib/page-skeletons';
 	import { refreshAppShellGesture } from '../lib/page-swipe';
 
 	const refreshAppShell = () => {
+		initializeOfflineLibrarySync();
 		syncPageSkeletonRoute();
 		refreshAppShellGesture();
 	};

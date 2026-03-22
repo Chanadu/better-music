@@ -2,70 +2,89 @@
 import AuthInputField from './AuthInputField.astro';
 ---
 
-<form class="w-full space-y-5">
-  <AuthInputField id="email" name="email" label="Email Address" type="email" placeholder="you@example.com" required={true} />
+<form class='w-full space-y-5'>
+	<AuthInputField
+		id='email'
+		name='email'
+		label='Email Address'
+		type='email'
+		placeholder='you@example.com'
+		required={true}
+	/>
 
-  <AuthInputField id="password" name="password" label="Password" type="password" placeholder="••••••••" required={true} />
+	<AuthInputField
+		id='password'
+		name='password'
+		label='Password'
+		type='password'
+		placeholder='••••••••'
+		required={true}
+	/>
 
-  <div id="error-message" class="hidden rounded-lg bg-error p-3 text-sm text-white shadow-md">
-  </div>
+	<div id='error-message' class='bg-error hidden rounded-lg p-3 text-sm text-white shadow-md'></div>
 
-  <button
-    type="submit"
-    class="w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
-  >
-    Sign In
-  </button>
+	<button
+		type='submit'
+		class='bg-primary text-primary-fg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/30 focus:ring-primary/20 w-full cursor-pointer rounded-xl px-4 py-3 text-base font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md'
+	>
+		Sign In
+	</button>
 
-  <div class="border-t border-border pt-5">
-    <p class="text-center text-sm text-text-muted">
-      Don't have an account? <a href="/register" class="font-semibold text-primary transition-opacity hover:opacity-80">
-        Create one
-      </a>
-    </p>
-  </div>
+	<div class='border-border border-t pt-5'>
+		<p class='text-text-muted text-center text-sm'>
+			Don't have an account? <a
+				href='/register'
+				class='text-primary font-semibold transition-opacity hover:opacity-80'
+			>
+				Create one
+			</a>
+		</p>
+	</div>
 </form>
 
 <script>
-  import { navigate } from 'astro:transitions/client';
-import { apiFetch, getErrorMessage, storeAuthTokens } from '../../lib/api';
-import { setupAuthForm } from '../../lib/auth-form';
+	import { APP_HOME_PATH, apiFetch, getErrorMessage, storeAuthTokens } from '../../lib/api';
+	import { setupAuthForm } from '../../lib/auth-form';
 
-  const form = document.querySelector('form');
-  const errorMessage = document.getElementById('error-message');
-  const authForm = setupAuthForm(form, errorMessage, 'Sign In', ['email', 'password']);
+	const form = document.querySelector('form');
+	const errorMessage = document.getElementById('error-message');
+	const authForm = setupAuthForm(form, errorMessage, 'Sign In', ['email', 'password']);
 
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!authForm) return;
+	form?.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		if (!authForm) return;
 
-    const formData = new FormData(form);
-    const email = formData.get('email');
-    const password = formData.get('password');
+		const formData = new FormData(form);
+		const email = formData.get('email');
+		const password = formData.get('password');
 
-    authForm.setSubmittingState('Signing in...');
+		authForm.setSubmittingState('Signing in...');
 
-    try {
-		  const response = await apiFetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      }, { auth: false, retryOnUnauthorized: false });
+		try {
+			const response = await apiFetch(
+				'/api/auth/login',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ email, password }),
+				},
+				{ auth: false, retryOnUnauthorized: false },
+			);
 
-      if (!response.ok) {
-			const errorText = await getErrorMessage(response, 'Invalid email or password');
-        authForm.setFailureState(errorText);
-        return;
-      }
+			if (!response.ok) {
+				const errorText = await getErrorMessage(response, 'Invalid email or password');
+				authForm.setFailureState(errorText);
+				return;
+			}
 
-      const data = await response.json();
-      storeAuthTokens(data);
-			void navigate('/');
-    } catch (err) {
-      authForm.setFailureState('An error occurred. Please try again.');
-      console.error(err);
-    }
-  });
+			const data = await response.json();
+			storeAuthTokens(data);
+			window.location.assign(APP_HOME_PATH);
+		} catch (err) {
+			authForm.setFailureState('An error occurred. Please try again.');
+			console.error(err);
+		}
+	});
 </script>

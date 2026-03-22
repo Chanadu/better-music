@@ -7,108 +7,169 @@ import FloatingInput from '../ui/FloatingInput.astro';
 import FloatingSelect from '../ui/FloatingSelect.astro';
 ---
 
-<BaseDialog id="album-modal" className="w-[min(92vw,36rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50" contentClassName="p-5 sm:p-6" mobilePlacement="center">
-		<ModalHeader title="Create Album" />
+<BaseDialog
+	id='album-modal'
+	className='border-border bg-surface text-text m-auto w-[min(92vw,36rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/50'
+	contentClassName='p-5 sm:p-6'
+	mobilePlacement='center'
+>
+	<ModalHeader title='Create Album' />
 
-		<!-- Tab switcher -->
-		<div class="mt-4 flex gap-1 rounded-[1.2rem] border border-border/60 bg-surface-raised/55 p-1.5">
-			<button type="button" id="album-tab-manual" class="flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold transition-all duration-200 text-text-muted hover:text-text">
-				Manual
-			</button>
-			<button type="button" id="album-tab-spotify" class="flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold transition-all duration-200 bg-surface text-text shadow-sm">
-				<span class="inline-flex items-center justify-center gap-1.5">
-					<svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-[#1DB954]" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-					Spotify
-				</span>
-			</button>
-		</div>
+	<!-- Tab switcher -->
+	<div class='border-border/60 bg-surface-raised/55 mt-4 flex gap-1 rounded-[1.2rem] border p-1.5'>
+		<button
+			type='button'
+			id='album-tab-manual'
+			class='text-text-muted hover:text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold transition-all duration-200'
+		>
+			Manual
+		</button>
+		<button
+			type='button'
+			id='album-tab-spotify'
+			class='bg-surface text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200'
+		>
+			<span class='inline-flex items-center justify-center gap-1.5'>
+				<svg viewBox='0 0 24 24' class='h-3.5 w-3.5 fill-[#1DB954]' aria-hidden='true'
+					><path
+						d='M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z'
+					></path></svg
+				>
+				Spotify
+			</span>
+		</button>
+	</div>
 
-		<!-- Manual Tab -->
-		<form id="album-form" class="mt-4 space-y-4 hidden">
-			<FloatingInput id="album-title" name="title" label="Title" required />
+	<!-- Manual Tab -->
+	<form id='album-form' class='mt-4 hidden space-y-4'>
+		<FloatingInput id='album-title' name='title' label='Title' required />
 
-			<FloatingSelect id="album-artist-id" name="artist_id" label="Artist" required>
-				<option value="">Select an artist</option>
-			</FloatingSelect>
+		<FloatingSelect id='album-artist-id' name='artist_id' label='Artist' required>
+			<option value=''>Select an artist</option>
+		</FloatingSelect>
 
-			<CoverPreviewField
-				inputId="album-cover-url"
-				name="cover_url"
-				imageId="album-cover-preview"
-				emptyId="album-cover-empty"
-				label="Cover Art"
-				emptyLabel="Use Spotify search to add cover art"
-				imageAlt="Album cover preview"
+		<CoverPreviewField
+			inputId='album-cover-url'
+			name='cover_url'
+			imageId='album-cover-preview'
+			emptyId='album-cover-empty'
+			label='Cover Art'
+			emptyLabel='Use Spotify search to add cover art'
+			imageAlt='Album cover preview'
+		/>
+
+		<FloatingInput id='album-year' name='year' label='Year (optional)' type='number' min='0' />
+
+		<label for='album-listened' class='flex items-center gap-2 text-sm font-semibold'>
+			<input
+				id='album-listened'
+				name='listened'
+				type='checkbox'
+				class='border-border/60 bg-surface-raised/50 text-primary focus:ring-primary/50 h-5 w-5 rounded border transition-all duration-200 focus:ring-2'
 			/>
+			Listened
+		</label>
 
-			<FloatingInput id="album-year" name="year" label="Year (optional)" type="number" min="0" />
-
-			<label for="album-listened" class="flex items-center gap-2 text-sm font-semibold">
-				<input id="album-listened" name="listened" type="checkbox" class="h-5 w-5 rounded border border-border/60 bg-surface-raised/50 text-primary transition-all duration-200 focus:ring-2 focus:ring-primary/50" />
-				Listened
-			</label>
-
-			<div id="album-listened-options" class="hidden space-y-4">
-				<div>
-					<label for="album-rating" class="block text-sm font-semibold">Rating</label>
-					<div class="mt-2 space-y-3">
-						<div class="flex items-center gap-2 sm:gap-3">
-							<input id="album-rating-slider" type="range" min="0" max="10" step="0.1" value="5" class="h-3 w-full cursor-pointer appearance-none rounded-lg bg-border/50 accent-primary disabled:opacity-50" />
-							<div class="relative w-20 shrink-0">
-								<FloatingInput
-									id="album-rating"
-									name="rating"
-									label="Rating"
-									type="number"
-									min="0"
-									max="10"
-									step="0.1"
-									inputmode="decimal"
-									inputClassName="h-11 px-2 pb-1 pt-4 text-sm disabled:opacity-50"
-									labelClassName="left-2 top-1 text-[10px] peer-placeholder-shown:text-xs peer-focus:top-1 peer-focus:text-[10px]"
-								/>
-							</div>
+		<div id='album-listened-options' class='hidden space-y-4'>
+			<div>
+				<label for='album-rating' class='block text-sm font-semibold'>Rating</label>
+				<div class='mt-2 space-y-3'>
+					<div class='flex items-center gap-2 sm:gap-3'>
+						<input
+							id='album-rating-slider'
+							type='range'
+							min='0'
+							max='10'
+							step='0.1'
+							value='5'
+							class='bg-border/50 accent-primary h-3 w-full cursor-pointer appearance-none rounded-lg disabled:opacity-50'
+						/>
+						<div class='relative w-20 shrink-0'>
+							<FloatingInput
+								id='album-rating'
+								name='rating'
+								label='Rating'
+								type='number'
+								min='0'
+								max='10'
+								step='0.1'
+								inputmode='decimal'
+								inputClassName='h-11 px-2 pb-1 pt-4 text-sm disabled:opacity-50'
+								labelClassName='left-2 top-1 text-[10px] peer-placeholder-shown:text-xs peer-focus:top-1 peer-focus:text-[10px]'
+							/>
 						</div>
 					</div>
 				</div>
-
-				<FloatingDateField id="album-listened-at" name="listened_at" label="Listened At (optional)" wrapperClassName="mt-2" />
 			</div>
 
-			<p id="album-form-status" class="hidden rounded-lg border px-3 py-2 text-sm font-medium" role="alert" aria-live="assertive"></p>
-
-			<button type="submit" id="album-create-btn" class="mx-auto mt-6 block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto">
-				Create Album
-			</button>
-		</form>
-
-		<!-- Spotify Tab -->
-		<div id="album-spotify-tab" class="mt-4">
-			<div class="relative">
-				<FloatingInput
-					id="album-spotify-search"
-					label="Search Spotify Albums"
-					type="text"
-					autocomplete="off"
-					inputClassName="focus:border-[#1DB954]/60 focus:ring-[#1DB954]/10"
-				/>
-				<div id="album-spotify-spinner" class="absolute right-3 top-1/2 hidden -translate-y-1/2">
-					<svg class="h-4 w-4 animate-spin text-text-muted" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-				</div>
-			</div>
-			<ul id="album-spotify-results" class="mt-2 hidden overflow-hidden rounded-xl border border-border/60 bg-surface shadow-lg"></ul>
-			<p class="mt-3 text-center text-xs text-text-muted">Select an album to auto-fill the form</p>
+			<FloatingDateField
+				id='album-listened-at'
+				name='listened_at'
+				label='Listened At (optional)'
+				wrapperClassName='mt-2'
+			/>
 		</div>
+
+		<p
+			id='album-form-status'
+			class='hidden rounded-lg border px-3 py-2 text-sm font-medium'
+			role='alert'
+			aria-live='assertive'
+		>
+		</p>
+
+		<button
+			type='submit'
+			id='album-create-btn'
+			class='bg-primary text-primary-fg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/30 focus:ring-primary/20 mx-auto mt-6 block w-full cursor-pointer rounded-xl px-4 py-3 text-base font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto'
+		>
+			Create Album
+		</button>
+	</form>
+
+	<!-- Spotify Tab -->
+	<div id='album-spotify-tab' class='mt-4'>
+		<p
+			id='album-spotify-offline-warning'
+			class='border-border/60 bg-surface-raised/70 text-text mb-3 hidden rounded-xl border px-3 py-2 text-sm'
+		>
+			Spotify search is unavailable offline. Switch to Manual to create an album without reconnecting.
+		</p>
+		<div class='relative'>
+			<FloatingInput
+				id='album-spotify-search'
+				label='Search Spotify Albums'
+				type='text'
+				autocomplete='off'
+				inputClassName='focus:border-[#1DB954]/60 focus:ring-[#1DB954]/10'
+			/>
+			<div id='album-spotify-spinner' class='absolute top-1/2 right-3 hidden -translate-y-1/2'>
+				<svg class='text-text-muted h-4 w-4 animate-spin' viewBox='0 0 24 24' fill='none'
+					><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'
+					></circle><path
+						class='opacity-75'
+						fill='currentColor'
+						d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'></path></svg
+				>
+			</div>
+		</div>
+		<ul
+			id='album-spotify-results'
+			class='border-border/60 bg-surface mt-2 hidden overflow-hidden rounded-xl border shadow-lg'
+		>
+		</ul>
+		<p class='text-text-muted mt-3 text-center text-xs'>Select an album to auto-fill the form</p>
+	</div>
 </BaseDialog>
 
 <script>
-import { apiFetch, getErrorMessage } from '../../lib/api';
-import { syncCoverPreview } from '../../lib/cover-preview';
-import { getCurrentDateLocal } from '../../lib/date';
-import { closeDialogSafely, openDialogSafely, toggleCreateTabs } from '../../lib/dialog';
-import { bindOnce } from '../../lib/events';
-import { searchAlbums } from '../../lib/spotify';
-import { setInlineStatus } from '../../lib/status';
+	import { syncCoverPreview } from '../../lib/cover-preview';
+	import { getCurrentDateLocal } from '../../lib/date';
+	import { closeDialogSafely, openDialogSafely, toggleCreateTabs } from '../../lib/dialog';
+	import { bindOnce } from '../../lib/events';
+	import { createAlbumRecord, loadLibraryData } from '../../lib/library-cache';
+	import { searchAlbums } from '../../lib/spotify';
+	import { setInlineStatus } from '../../lib/status';
 
 	const getAlbumModal = () => document.getElementById('album-modal') as HTMLDialogElement | null;
 	const getAlbumFormStatus = () => document.getElementById('album-form-status') as HTMLParagraphElement | null;
@@ -122,6 +183,11 @@ import { setInlineStatus } from '../../lib/status';
 	const getAlbumCoverInput = () => document.getElementById('album-cover-url') as HTMLInputElement | null;
 	const getAlbumCoverPreview = () => document.getElementById('album-cover-preview') as HTMLImageElement | null;
 	const getAlbumCoverEmptyState = () => document.getElementById('album-cover-empty') as HTMLParagraphElement | null;
+	const getAlbumSpotifySearchInput = () => document.getElementById('album-spotify-search') as HTMLInputElement | null;
+	const getAlbumSpotifySpinner = () => document.getElementById('album-spotify-spinner') as HTMLDivElement | null;
+	const getAlbumSpotifyOfflineWarning = () =>
+		document.getElementById('album-spotify-offline-warning') as HTMLParagraphElement | null;
+	const isOnline = () => (typeof navigator === 'undefined' ? true : navigator.onLine);
 
 	const openModal = () => {
 		openDialogSafely(getAlbumModal());
@@ -151,6 +217,28 @@ import { setInlineStatus } from '../../lib/status';
 		syncCoverPreview(getAlbumCoverInput(), getAlbumCoverPreview(), getAlbumCoverEmptyState(), url);
 	};
 
+	const syncAlbumSpotifyAvailability = () => {
+		const offline = !isOnline();
+		const searchInput = getAlbumSpotifySearchInput();
+		const spinner = getAlbumSpotifySpinner();
+		const warning = getAlbumSpotifyOfflineWarning();
+
+		if (searchInput) {
+			searchInput.disabled = offline;
+			searchInput.placeholder = offline ? 'Spotify search requires a connection' : ' ';
+			if (offline) searchInput.value = '';
+		}
+
+		if (warning) {
+			warning.classList.toggle('hidden', !offline);
+		}
+
+		if (offline) {
+			spinner?.classList.add('hidden');
+			hideAlbumResults();
+		}
+	};
+
 	let albumSearchDebounce: ReturnType<typeof setTimeout>;
 	let selectedSpotifyAlbumID: string | null = null;
 
@@ -162,10 +250,14 @@ import { setInlineStatus } from '../../lib/status';
 
 			clearTimeout(albumSearchDebounce);
 			const q = target.value.trim();
-			if (!q) { 
+			if (!isOnline()) {
+				syncAlbumSpotifyAvailability();
+				return;
+			}
+			if (!q) {
 				console.log('[Album Search] Query cleared');
-				hideAlbumResults(); 
-				return; 
+				hideAlbumResults();
+				return;
 			}
 
 			console.log(`[Album Search] Query: "${q}"`);
@@ -184,14 +276,16 @@ import { setInlineStatus } from '../../lib/status';
 					console.log(`[Album Search] Found ${albums.length} results`);
 					albumSpotifyResults.innerHTML = '';
 					if (!albums.length) {
-						albumSpotifyResults.innerHTML = '<li class="px-4 py-3 text-sm text-text-muted text-center italic">No results found on Spotify</li>';
+						albumSpotifyResults.innerHTML =
+							'<li class="px-4 py-3 text-sm text-text-muted text-center italic">No results found on Spotify</li>';
 					} else {
 						for (const album of albums) {
 							const img = album.images[0];
 							const year = album.release_date ? album.release_date.substring(0, 4) : '';
 							const artistNames = album.artists.map((a: { name: string }) => a.name).join(', ');
 							const li = document.createElement('li');
-							li.className = 'flex cursor-pointer items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-raised border-b border-border/30 last:border-0';
+							li.className =
+								'flex cursor-pointer items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-raised border-b border-border/30 last:border-0';
 							li.innerHTML = `
 								${img ? `<img src="${img.url}" alt="" class="h-11 w-11 rounded-lg object-cover shrink-0 border border-border/40" />` : '<div class="h-11 w-11 rounded-lg bg-surface-raised shrink-0 border border-border/40 flex items-center justify-center text-text-muted text-xs">?</div>'}
 								<div class="min-w-0 flex-1">
@@ -214,14 +308,26 @@ import { setInlineStatus } from '../../lib/status';
 								const matched = autoSelectArtistFromSpotifyNames(spotifyArtists);
 								if (albumFormStatus && spotifyArtists.length > 0) {
 									if (matched) {
-										setStatus(albumFormStatus, `Auto-selected artist: ${spotifyArtists[0]}.`, 'success');
+										setInlineStatus(
+											albumFormStatus,
+											`Auto-selected artist: ${spotifyArtists[0]}.`,
+											'success',
+											{ boxed: true },
+										);
 									} else {
-										setStatus(albumFormStatus, `No local artist matched ${spotifyArtists[0]}. Please select one manually.`, 'neutral');
+										setInlineStatus(
+											albumFormStatus,
+											`No local artist matched ${spotifyArtists[0]}. Please select one manually.`,
+											'neutral',
+											{ boxed: true },
+										);
 									}
 								}
-								
+
 								// Clear search after selection
-								const sInput = document.getElementById('album-spotify-search') as HTMLInputElement | null;
+								const sInput = document.getElementById(
+									'album-spotify-search',
+								) as HTMLInputElement | null;
 								if (sInput) sInput.value = '';
 								hideAlbumResults();
 								switchAlbumTab('manual');
@@ -264,32 +370,38 @@ import { setInlineStatus } from '../../lib/status';
 		if (!albumArtistSelect) return;
 
 		albumArtistSelect.disabled = true;
-		const response = await apiFetch('/api/artists', { method: 'GET' }, { auth: true });
+		try {
+			const { artists } = await loadLibraryData();
+			const sortedArtists = [...(artists as Array<{ id: number; name: string }>)].sort((a, b) =>
+				a.name.localeCompare(b.name),
+			);
+			albumArtistSelect.innerHTML = '<option value="">Select an artist</option>';
 
-		if (!response.ok) {
+			for (const artist of sortedArtists) {
+				const option = document.createElement('option');
+				option.value = String(artist.id);
+				option.textContent = artist.name;
+				albumArtistSelect.appendChild(option);
+			}
+
+			albumArtistSelect.disabled = sortedArtists.length === 0;
+			if (!sortedArtists.length) {
+				setInlineStatus(albumFormStatus, 'No artists found. Create an artist first.', 'neutral', {
+					boxed: true,
+				});
+				return;
+			}
+			if (albumFormStatus?.dataset.statusType !== 'error') {
+				setInlineStatus(albumFormStatus, '', 'neutral', { boxed: true });
+			}
+		} catch (error) {
 			albumArtistSelect.disabled = false;
-			setInlineStatus(albumFormStatus, await getErrorMessage(response), 'error', { boxed: true });
-			return;
-		}
-
-		const artists = (await response.json()) as Array<{ id: number; name: string }>;
-		artists.sort((a, b) => a.name.localeCompare(b.name));
-		albumArtistSelect.innerHTML = '<option value="">Select an artist</option>';
-
-		for (const artist of artists) {
-			const option = document.createElement('option');
-			option.value = String(artist.id);
-			option.textContent = artist.name;
-			albumArtistSelect.appendChild(option);
-		}
-
-		albumArtistSelect.disabled = artists.length === 0;
-		if (!artists.length) {
-			setInlineStatus(albumFormStatus, 'No artists found. Create an artist first.', 'neutral', { boxed: true });
-			return;
-		}
-		if (albumFormStatus?.dataset.statusType !== 'error') {
-			setInlineStatus(albumFormStatus, '', 'neutral', { boxed: true });
+			setInlineStatus(
+				albumFormStatus,
+				error instanceof Error ? error.message : 'Failed to load artists.',
+				'error',
+				{ boxed: true },
+			);
 		}
 	};
 
@@ -377,11 +489,17 @@ import { setInlineStatus } from '../../lib/status';
 	});
 
 	bindOnce('__albumModalArtistCreatedBound', () => {
-		window.addEventListener('artist-created', async () => {
+		window.addEventListener('library-data-changed', async () => {
 			if (getAlbumModal()?.open) {
 				await loadArtists();
 			}
 		});
+	});
+
+	bindOnce('__albumSpotifyAvailabilityBound', () => {
+		window.addEventListener('online', syncAlbumSpotifyAvailability);
+		window.addEventListener('offline', syncAlbumSpotifyAvailability);
+		document.addEventListener('astro:page-load', syncAlbumSpotifyAvailability);
 	});
 
 	bindOnce('__albumModalClickBound', () => {
@@ -420,6 +538,7 @@ import { setInlineStatus } from '../../lib/status';
 	});
 
 	syncListenedFields();
+	syncAlbumSpotifyAvailability();
 
 	bindOnce('__albumModalSubmitBound', () => {
 		document.addEventListener('submit', async (event) => {
@@ -455,7 +574,9 @@ import { setInlineStatus } from '../../lib/status';
 
 			if (listened && !ratingValue) {
 				switchAlbumTab('manual');
-				setInlineStatus(albumFormStatus, 'Rating is required when album is marked as listened.', 'error', { boxed: true });
+				setInlineStatus(albumFormStatus, 'Rating is required when album is marked as listened.', 'error', {
+					boxed: true,
+				});
 				return;
 			}
 
@@ -464,72 +585,49 @@ import { setInlineStatus } from '../../lib/status';
 				albumCreateBtn.textContent = 'Creating...';
 			}
 
-			setInlineStatus(albumFormStatus, 'Creating album...', 'neutral', { boxed: true });
+			setInlineStatus(albumFormStatus, isOnline() ? 'Saving album...' : 'Saving album offline...', 'neutral', {
+				boxed: true,
+			});
 
-			const createResponse = await apiFetch('/api/albums', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
+			try {
+				const result = await createAlbumRecord({
 					title,
 					artist_id: artistID,
 					...(selectedSpotifyAlbumID ? { spotify_id: selectedSpotifyAlbumID } : {}),
-				}),
-			}, { auth: true });
+					...(coverURL ? { cover_url: coverURL } : {}),
+					...(yearValue ? { year: Number(yearValue) } : {}),
+					listened,
+					...(listened ? { rating: Number(ratingValue) } : {}),
+					...(listened && listenedAt ? { listened_at: new Date(listenedAt).toISOString() } : {}),
+				});
 
-			if (!createResponse.ok) {
+				setInlineStatus(
+					albumFormStatus,
+					result.syncStatus === 'synced' ?
+						'Album created successfully.'
+					:	'Album saved offline. It will sync when you reconnect.',
+					'success',
+					{ boxed: true },
+				);
+				target.reset();
+				selectedSpotifyAlbumID = null;
+				setAlbumCover('');
+				syncListenedFields();
+				setTimeout(() => closeModal(), 400);
+			} catch (error) {
 				switchAlbumTab('manual');
-				setInlineStatus(albumFormStatus, await getErrorMessage(createResponse), 'error', { boxed: true });
+				setInlineStatus(
+					albumFormStatus,
+					error instanceof Error ? error.message : 'Failed to save album.',
+					'error',
+					{ boxed: true },
+				);
+			} finally {
 				if (albumCreateBtn) {
 					albumCreateBtn.disabled = false;
 					albumCreateBtn.textContent = 'Create Album';
 				}
-				return;
 			}
-
-			const createdAlbum = (await createResponse.json()) as { id: number };
-
-			const updatePayload: Record<string, unknown> = { artist_id: artistID };
-			if (coverURL) updatePayload.cover_url = coverURL;
-			if (yearValue) updatePayload.year = Number(yearValue);
-			updatePayload.listened = listened;
-			if (listened) updatePayload.rating = Number(ratingValue);
-			if (listened && listenedAt) updatePayload.listened_at = new Date(listenedAt).toISOString();
-
-			if (Object.keys(updatePayload).length > 1 || updatePayload.listened === true) {
-				setInlineStatus(albumFormStatus, 'Album created. Saving details...', 'neutral', { boxed: true });
-				const updateResponse = await apiFetch(`/api/albums/${createdAlbum.id}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify(updatePayload),
-				}, { auth: true });
-
-				if (!updateResponse.ok) {
-					switchAlbumTab('manual');
-					setInlineStatus(albumFormStatus, `Album created, but details update failed: ${await getErrorMessage(updateResponse)}`, 'error', { boxed: true });
-					if (albumCreateBtn) {
-						albumCreateBtn.disabled = false;
-						albumCreateBtn.textContent = 'Create Album';
-					}
-					return;
-				}
-			}
-
-			setInlineStatus(albumFormStatus, 'Album created successfully.', 'success', { boxed: true });
-			target.reset();
-			selectedSpotifyAlbumID = null;
-			setAlbumCover('');
-			syncListenedFields();
-			if (albumCreateBtn) {
-				albumCreateBtn.disabled = false;
-				albumCreateBtn.textContent = 'Create Album';
-			}
-
-			window.dispatchEvent(new CustomEvent('album-created'));
-			setTimeout(() => closeModal(), 400);
 		});
 	});
 </script>

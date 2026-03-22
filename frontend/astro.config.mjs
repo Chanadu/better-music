@@ -25,6 +25,7 @@ export default defineConfig({
 					theme_color: '#3b82f6',
 					background_color: '#f6f7fb',
 					display: 'standalone',
+					scope: '/',
 					start_url: '/',
 					icons: [
 						{
@@ -37,7 +38,7 @@ export default defineConfig({
 				},
 				workbox: {
 					globPatterns: ['**/*.{js,css,html,ico,svg,png,webp}'],
-					navigateFallback: '/offline/',
+					navigateFallback: '/offline',
 				},
 			}),
 		],

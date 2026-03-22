@@ -13,71 +13,104 @@ interface Props {
 const { view = 'unlistened' } = Astro.props as Props;
 ---
 
-<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-	<SortControls controlId="albums-sort-by" />
+<div class='mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+	<SortControls controlId='albums-sort-by' />
 </div>
 
-<div id="albums-list" data-view={view} class="space-y-3"></div>
+<div id='albums-list' data-view={view} class='space-y-3'></div>
 
 <InteractiveListToolkit />
 
-
-<BaseDialog id="edit-album-modal" className="w-[min(92vw,36rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/45" contentClassName="" mobilePlacement="center">
-	<form id="edit-album-form" class="space-y-4 p-6 sm:p-5 pb-8 sm:pb-5">
-		<div class="flex items-center justify-between">
-			<h3 class="text-lg font-semibold">Edit Album</h3>
+<BaseDialog
+	id='edit-album-modal'
+	className='border-border bg-surface text-text m-auto w-[min(92vw,36rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/45'
+	contentClassName=''
+	mobilePlacement='center'
+>
+	<form id='edit-album-form' class='space-y-4 p-6 pb-8 sm:p-5 sm:pb-5'>
+		<div class='flex items-center justify-between'>
+			<h3 class='text-lg font-semibold'>Edit Album</h3>
 		</div>
 
-		<input id="edit-album-id" type="hidden" />
-		<FloatingInput id="edit-album-title" label="Title" required />
-		<FloatingSelect id="edit-album-artist-id" label="Artist" required />
+		<input id='edit-album-id' type='hidden' />
+		<FloatingInput id='edit-album-title' label='Title' required />
+		<FloatingSelect id='edit-album-artist-id' label='Artist' required />
 		<CoverPreviewField
-			inputId="edit-album-cover-url"
-			imageId="edit-album-cover-preview"
-			emptyId="edit-album-cover-empty"
-			label="Cover Art"
-			emptyLabel="No cover image available"
-			imageAlt="Album cover preview"
+			inputId='edit-album-cover-url'
+			imageId='edit-album-cover-preview'
+			emptyId='edit-album-cover-empty'
+			label='Cover Art'
+			emptyLabel='No cover image available'
+			imageAlt='Album cover preview'
 		/>
-		<FloatingInput id="edit-album-year" label="Year" type="number" min="0" />
-		<button type="button" id="edit-album-spotify-refresh-btn" class="w-full cursor-pointer rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-sm font-semibold text-text transition-all duration-200 hover:bg-surface-raised focus:ring-4 focus:ring-[#1DB954]/10">Refresh from Spotify ID</button>
-		<label for="edit-album-listened" class="flex items-center gap-2 text-sm font-semibold"><input id="edit-album-listened" type="checkbox" class="h-5 w-5 rounded border border-border/60 bg-surface-raised/50 text-primary transition-all duration-200 focus:ring-2 focus:ring-primary/50" /> Listened</label>
-		<div class="flex items-center gap-2 sm:gap-3">
-			<input id="edit-album-rating-slider" type="range" min="0" max="10" step="0.1" value="5" class="h-3 w-full cursor-pointer appearance-none rounded-lg bg-border/50 accent-primary disabled:opacity-50" />
-			<div class="relative w-20 shrink-0">
+		<FloatingInput id='edit-album-year' label='Year' type='number' min='0' />
+		<button
+			type='button'
+			id='edit-album-spotify-refresh-btn'
+			class='border-border/60 bg-surface-raised/50 text-text hover:bg-surface-raised w-full cursor-pointer rounded-xl border px-4 py-3 text-sm font-semibold transition-all duration-200 focus:ring-4 focus:ring-[#1DB954]/10'
+			>Refresh from Spotify ID</button
+		>
+		<label for='edit-album-listened' class='flex items-center gap-2 text-sm font-semibold'
+			><input
+				id='edit-album-listened'
+				type='checkbox'
+				class='border-border/60 bg-surface-raised/50 text-primary focus:ring-primary/50 h-5 w-5 rounded border transition-all duration-200 focus:ring-2'
+			/> Listened</label
+		>
+		<div class='flex items-center gap-2 sm:gap-3'>
+			<input
+				id='edit-album-rating-slider'
+				type='range'
+				min='0'
+				max='10'
+				step='0.1'
+				value='5'
+				class='bg-border/50 accent-primary h-3 w-full cursor-pointer appearance-none rounded-lg disabled:opacity-50'
+			/>
+			<div class='relative w-20 shrink-0'>
 				<FloatingInput
-					id="edit-album-rating"
-					label="Rating"
-					type="number"
-					min="0"
-					max="10"
-					step="0.1"
-					inputmode="decimal"
-					inputClassName="h-11 px-2 pb-1 pt-4 text-sm disabled:opacity-50"
-					labelClassName="left-2 top-1 text-[10px] peer-placeholder-shown:text-xs peer-focus:top-1 peer-focus:text-[10px]"
+					id='edit-album-rating'
+					label='Rating'
+					type='number'
+					min='0'
+					max='10'
+					step='0.1'
+					inputmode='decimal'
+					inputClassName='h-11 px-2 pb-1 pt-4 text-sm disabled:opacity-50'
+					labelClassName='left-2 top-1 text-[10px] peer-placeholder-shown:text-xs peer-focus:top-1 peer-focus:text-[10px]'
 				/>
 			</div>
 		</div>
-		<FloatingDateField id="edit-album-listened-at" label="Listened At (optional)" />
-		<p id="edit-album-status" class="text-sm text-text-muted"></p>
-		<div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0">
-			<button type="submit" id="edit-album-submit" class="w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto sm:py-2 sm:text-sm">Save</button>
+		<FloatingDateField id='edit-album-listened-at' label='Listened At (optional)' />
+		<p id='edit-album-status' class='text-text-muted text-sm'></p>
+		<div class='flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0'>
+			<button
+				type='submit'
+				id='edit-album-submit'
+				class='bg-primary text-primary-fg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/30 focus:ring-primary/20 w-full cursor-pointer rounded-xl px-4 py-3 text-base font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto sm:py-2 sm:text-sm'
+				>Save</button
+			>
 		</div>
 	</form>
 </BaseDialog>
 
 <script>
-import Sortable from 'sortablejs';
-import { apiFetch } from '../../lib/api';
-import { syncCoverPreview } from '../../lib/cover-preview';
-import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
-import { createEmptyState } from '../../lib/empty-state';
-import { bindOnce } from '../../lib/events';
-import { hasCachedLibraryData, invalidateLibraryData, loadLibraryData } from '../../lib/library-cache';
-import { hidePageLoadingSkeleton, showPageLoadingSkeleton } from '../../lib/page-skeletons';
-import { getAlbumBySpotifyID } from '../../lib/spotify';
-import { initializeSortControls, type SortDirection } from '../../lib/sort';
-import { applyRatingTone } from '../../lib/ui';
+	import Sortable from 'sortablejs';
+	import { syncCoverPreview } from '../../lib/cover-preview';
+	import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
+	import { createEmptyState } from '../../lib/empty-state';
+	import { bindOnce } from '../../lib/events';
+	import {
+		deleteAlbumRecord,
+		hasCachedLibraryData,
+		loadLibraryData,
+		updateAlbumRecord,
+		type UpdateAlbumInput,
+	} from '../../lib/library-cache';
+	import { hidePageLoadingSkeleton, showPageLoadingSkeleton } from '../../lib/page-skeletons';
+	import { getAlbumBySpotifyID } from '../../lib/spotify';
+	import { initializeSortControls, type SortDirection } from '../../lib/sort';
+	import { applyRatingTone } from '../../lib/ui';
 
 	type Album = {
 		id: number;
@@ -131,8 +164,11 @@ import { applyRatingTone } from '../../lib/ui';
 		createInteractiveListCard: (options: InteractiveCardOptions) => InteractiveCardParts;
 	};
 
+	const getToolkitInstance = () =>
+		(window as Window & { __interactiveListToolkit?: InteractiveListToolkitAPI }).__interactiveListToolkit ?? null;
+
 	const getToolkit = () => {
-		const toolkit = (window as Window & { __interactiveListToolkit?: InteractiveListToolkitAPI }).__interactiveListToolkit;
+		const toolkit = getToolkitInstance();
 		if (!toolkit) throw new Error('Interactive list toolkit unavailable');
 		return toolkit;
 	};
@@ -160,11 +196,13 @@ import { applyRatingTone } from '../../lib/ui';
 	let currentSortBy: AlbumSortKey = 'artist';
 	let currentSortDirection: SortDirection = 'asc';
 	let initializedSortView: AlbumView | null = null;
+	let toolkitRetryCount = 0;
+	const MAX_TOOLKIT_RETRIES = 18;
 
 	const getDefaultSortState = (view: AlbumView): { sortBy: AlbumSortKey; sortDirection: SortDirection } => {
-		return view === 'listened'
-			? { sortBy: 'rating', sortDirection: 'desc' }
-			: { sortBy: 'artist', sortDirection: 'asc' };
+		return view === 'listened' ?
+				{ sortBy: 'rating', sortDirection: 'desc' }
+			:	{ sortBy: 'artist', sortDirection: 'asc' };
 	};
 
 	const refreshEditRefs = () => {
@@ -271,8 +309,8 @@ import { applyRatingTone } from '../../lib/ui';
 		}
 
 		const options: Array<{ value: AlbumSortKey; label: string }> =
-			mode === 'listened'
-				? [
+			mode === 'listened' ?
+				[
 					{ value: 'rating', label: 'Rating' },
 					{ value: 'artist', label: 'Artist Name' },
 					{ value: 'title', label: 'Album Name' },
@@ -280,7 +318,7 @@ import { applyRatingTone } from '../../lib/ui';
 					{ value: 'createdAt', label: 'Creation Date' },
 					{ value: 'listenedAt', label: 'Listened Date' },
 				]
-				: [
+			:	[
 					{ value: 'artist', label: 'Artist Name' },
 					{ value: 'title', label: 'Album Name' },
 					{ value: 'year', label: 'Year' },
@@ -302,21 +340,25 @@ import { applyRatingTone } from '../../lib/ui';
 		});
 	};
 
-	const setMessage = (message: string, isError = false) => getToolkit().setListRootMessage(getListRoot(), message, isError);
+	const setMessage = (message: string, isError = false) =>
+		getToolkit().setListRootMessage(getListRoot(), message, isError);
 
 	const renderEmptyAlbumsState = (view: AlbumView) => {
 		const listRoot = getListRoot();
 		if (!listRoot) return;
 
 		const isListened = view === 'listened';
-		listRoot.replaceChildren(createEmptyState({
-			title: isListened ? 'No listened albums yet' : 'No albums in queue',
-			description: isListened
-				? 'Add an album and mark it listened when you are ready to rate it.'
-				: 'Add an album to your queue to keep track of what to hear next.',
-			buttonLabel: 'Create Album',
-			onClick: () => window.dispatchEvent(new CustomEvent('open-album-modal')),
-		}));
+		listRoot.replaceChildren(
+			createEmptyState({
+				title: isListened ? 'No listened albums yet' : 'No albums in queue',
+				description:
+					isListened ?
+						'Add an album and mark it listened when you are ready to rate it.'
+					:	'Add an album to your queue to keep track of what to hear next.',
+				buttonLabel: 'Create Album',
+				onClick: () => window.dispatchEvent(new CustomEvent('open-album-modal')),
+			}),
+		);
 	};
 
 	const setEditStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
@@ -329,17 +371,12 @@ import { applyRatingTone } from '../../lib/ui';
 
 	const deleteAlbum = async (id: number, title: string, artistID: number) => {
 		if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
-		const response = await apiFetch(`/api/albums/${id}`, {
-			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ artist_id: artistID }),
-		}, { auth: true });
-		if (!response.ok) {
+		try {
+			await deleteAlbumRecord(id, artistID);
+			editAlbumDialog?.close();
+		} catch {
 			window.alert('Failed to delete album.');
-			return;
 		}
-		editAlbumDialog?.close();
-		window.dispatchEvent(new CustomEvent('album-created'));
 	};
 
 	const syncEditListenedState = () => {
@@ -380,7 +417,17 @@ import { applyRatingTone } from '../../lib/ui';
 
 	const openEditDialog = (album: Album) => {
 		refreshEditRefs();
-		if (!editAlbumDialog || !editAlbumIDInput || !editAlbumTitleInput || !editAlbumCoverInput || !editAlbumYearInput || !editAlbumListenedInput || !editAlbumRatingInput || !editAlbumListenedAtInput) return;
+		if (
+			!editAlbumDialog ||
+			!editAlbumIDInput ||
+			!editAlbumTitleInput ||
+			!editAlbumCoverInput ||
+			!editAlbumYearInput ||
+			!editAlbumListenedInput ||
+			!editAlbumRatingInput ||
+			!editAlbumListenedAtInput
+		)
+			return;
 		editAlbumIDInput.value = String(album.id);
 		editAlbumTitleInput.value = album.title;
 		populateArtistSelect(album.artist_id);
@@ -439,7 +486,8 @@ import { applyRatingTone } from '../../lib/ui';
 
 		if (album.listened && album.rating != null) {
 			const ratingBadge = document.createElement('div');
-			ratingBadge.className = 'album-rating-badge flex min-w-[3.9rem] items-center justify-center gap-1.5 rounded-xl border px-2 py-1 sm:min-w-[4.2rem] sm:px-2.5 sm:py-1.5';
+			ratingBadge.className =
+				'album-rating-badge flex min-w-[3.9rem] items-center justify-center gap-1.5 rounded-xl border px-2 py-1 sm:min-w-[4.2rem] sm:px-2.5 sm:py-1.5';
 			applyRatingTone(ratingBadge, Number(album.rating), '--surface-raised');
 			ratingBadge.innerHTML = `<span class="album-rating-value text-xl font-black leading-none sm:text-2xl">${album.rating}</span>`;
 			right.insertBefore(ratingBadge, right.lastElementChild);
@@ -470,18 +518,17 @@ import { applyRatingTone } from '../../lib/ui';
 	};
 
 	const updateAlbumRating = async (album: Album, newRating: number): Promise<boolean> => {
-		const response = await apiFetch(`/api/albums/${album.id}`, {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
+		try {
+			await updateAlbumRecord(album.id, {
 				artist_id: album.artist_id,
 				title: album.title,
 				listened: true,
 				rating: newRating,
-			}),
-		}, { auth: true });
-		if (response.ok) invalidateLibraryData();
-		return response.ok;
+			});
+			return true;
+		} catch {
+			return false;
+		}
 	};
 
 	const setupListenedReorder = (albums: Album[]) => {
@@ -541,7 +588,8 @@ import { applyRatingTone } from '../../lib/ui';
 				if (!saved) {
 					movedAlbum.rating = previousRating;
 					if (ratingValue) ratingValue.textContent = String(previousRating ?? '');
-					if (ratingBadge && previousRating != null) applyRatingTone(ratingBadge, Number(previousRating), '--surface-raised');
+					if (ratingBadge && previousRating != null)
+						applyRatingTone(ratingBadge, Number(previousRating), '--surface-raised');
 					window.alert('Failed to update album ranking.');
 					void loadAlbums();
 					return;
@@ -601,6 +649,15 @@ import { applyRatingTone } from '../../lib/ui';
 	};
 
 	const refreshAlbumsView = () => {
+		if (!getToolkitInstance()) {
+			if (toolkitRetryCount < MAX_TOOLKIT_RETRIES) {
+				toolkitRetryCount += 1;
+				requestAnimationFrame(refreshAlbumsView);
+			}
+			return;
+		}
+
+		toolkitRetryCount = 0;
 		bindEditHandlers();
 		syncAlbumSortControls();
 		void loadAlbums();
@@ -619,7 +676,9 @@ import { applyRatingTone } from '../../lib/ui';
 		editAlbumRatingInput?.addEventListener('input', () => syncEditRatingControls('manual'));
 		editAlbumRatingInput?.addEventListener('change', () => syncEditRatingControls('manual'));
 
-		const refreshSpotifyButton = document.getElementById('edit-album-spotify-refresh-btn') as HTMLButtonElement | null;
+		const refreshSpotifyButton = document.getElementById(
+			'edit-album-spotify-refresh-btn',
+		) as HTMLButtonElement | null;
 		refreshSpotifyButton?.addEventListener('click', async () => {
 			if (!editAlbumTitleInput || !editAlbumCoverInput || !editAlbumYearInput) return;
 			if (!currentEditAlbumSpotifyID) {
@@ -649,12 +708,23 @@ import { applyRatingTone } from '../../lib/ui';
 
 		editAlbumForm.addEventListener('submit', async (event) => {
 			event.preventDefault();
-			if (!editAlbumIDInput || !editAlbumTitleInput || !editAlbumArtistInput || !editAlbumCoverInput || !editAlbumYearInput || !editAlbumListenedInput || !editAlbumRatingInput || !editAlbumListenedAtInput || !editAlbumSubmit) return;
+			if (
+				!editAlbumIDInput ||
+				!editAlbumTitleInput ||
+				!editAlbumArtistInput ||
+				!editAlbumCoverInput ||
+				!editAlbumYearInput ||
+				!editAlbumListenedInput ||
+				!editAlbumRatingInput ||
+				!editAlbumListenedAtInput ||
+				!editAlbumSubmit
+			)
+				return;
 			if (editAlbumListenedInput.checked && !editAlbumRatingInput.value.trim()) {
 				setEditStatus('Rating is required when album is marked as listened.', 'error');
 				return;
 			}
-			const payload: Record<string, unknown> = {
+			const payload: UpdateAlbumInput = {
 				artist_id: Number(editAlbumArtistInput.value),
 				title: editAlbumTitleInput.value.trim(),
 				listened: editAlbumListenedInput.checked,
@@ -662,39 +732,36 @@ import { applyRatingTone } from '../../lib/ui';
 			if (editAlbumCoverInput.value.trim()) payload.cover_url = editAlbumCoverInput.value.trim();
 			if (editAlbumYearInput.value.trim()) payload.year = Number(editAlbumYearInput.value.trim());
 			if (editAlbumListenedInput.checked) payload.rating = Number(editAlbumRatingInput.value.trim());
-			if (editAlbumListenedInput.checked && editAlbumListenedAtInput.value) payload.listened_at = new Date(editAlbumListenedAtInput.value).toISOString();
+			if (editAlbumListenedInput.checked && editAlbumListenedAtInput.value)
+				payload.listened_at = new Date(editAlbumListenedAtInput.value).toISOString();
 
 			editAlbumSubmit.disabled = true;
 			editAlbumSubmit.textContent = 'Saving...';
 			setEditStatus('Saving album...');
 
-			const response = await apiFetch(`/api/albums/${Number(editAlbumIDInput.value)}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload),
-			}, { auth: true });
-
-			if (!response.ok) {
+			try {
+				const result = await updateAlbumRecord(Number(editAlbumIDInput.value), payload);
+				setEditStatus(
+					result.syncStatus === 'synced' ?
+						'Album updated successfully.'
+					:	'Album updated offline. It will sync when you reconnect.',
+					'success',
+				);
+				editAlbumSubmit.disabled = false;
+				editAlbumSubmit.textContent = 'Save Album';
+				setTimeout(() => editAlbumDialog?.close(), 250);
+				return;
+			} catch {
 				setEditStatus('Failed to update album.', 'error');
 				editAlbumSubmit.disabled = false;
 				editAlbumSubmit.textContent = 'Save Album';
 				return;
 			}
-
-			editAlbumSubmit.disabled = false;
-			editAlbumSubmit.textContent = 'Save Album';
-			editAlbumDialog?.close();
-			window.dispatchEvent(new CustomEvent('album-created'));
 		});
 	};
 
 	bindOnce('__albumCollectionBound', () => {
-		window.addEventListener('album-created', () => {
-			invalidateLibraryData();
-			void loadAlbums();
-		});
-		window.addEventListener('artist-created', () => {
-			invalidateLibraryData();
+		window.addEventListener('library-data-changed', () => {
 			void loadAlbums();
 		});
 		document.addEventListener('astro:page-load', refreshAlbumsView);

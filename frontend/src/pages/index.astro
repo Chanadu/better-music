@@ -1,3 +1,80 @@
 ---
-return Astro.redirect('/artists');
+import LoginForm from '../components/auth/LoginForm.astro';
+import AuthLayout from '../layouts/AuthLayout.astro';
 ---
+
+<AuthLayout>
+	<section data-auth-bootstrap='pending' class='space-y-5'>
+		<div
+			data-auth-loading
+			class='border-border/70 bg-surface-raised/80 text-text-muted space-y-3 rounded-[1.5rem] border px-5 py-4 text-sm shadow-[0_18px_40px_-32px_rgba(15,23,42,0.5)]'
+			aria-live='polite'
+		>
+			<p class='text-text text-base font-semibold'>Checking your session...</p>
+			<p>If your saved tokens are still valid, we&apos;ll bring you straight back into your library.</p>
+		</div>
+
+		<div data-login-form>
+			<LoginForm />
+		</div>
+	</section>
+</AuthLayout>
+
+<style is:inline>
+	[data-auth-bootstrap='pending'] [data-login-form] {
+		display: none;
+	}
+
+	[data-auth-bootstrap='ready'] [data-auth-loading] {
+		display: none;
+	}
+</style>
+
+<script>
+	import { APP_HOME_PATH, hasStoredAuthTokens, restoreAuthSession } from '../lib/api';
+	import { bindOnce } from '../lib/events';
+	import { hasCachedLibraryData } from '../lib/library-cache';
+
+	const getAuthBootstrapRoot = (): HTMLElement | null => {
+		const root = document.querySelector('[data-auth-bootstrap]');
+		return root instanceof HTMLElement ? root : null;
+	};
+
+	const showLoginForm = (): void => {
+		const root = getAuthBootstrapRoot();
+		if (!root) return;
+		root.dataset.authBootstrap = 'ready';
+	};
+
+	const bootstrapAuthSession = async (): Promise<void> => {
+		const root = getAuthBootstrapRoot();
+		if (!root) return;
+
+		root.dataset.authBootstrap = 'pending';
+
+		if (!navigator.onLine && hasStoredAuthTokens() && hasCachedLibraryData()) {
+			window.location.replace(APP_HOME_PATH);
+			return;
+		}
+
+		try {
+			const restored = await restoreAuthSession();
+			if (restored) {
+				window.location.replace(APP_HOME_PATH);
+				return;
+			}
+		} catch (error) {
+			console.error('Failed to restore saved session.', error);
+		}
+
+		showLoginForm();
+	};
+
+	bindOnce('__indexAuthBootstrapBound', () => {
+		document.addEventListener('astro:page-load', () => {
+			void bootstrapAuthSession();
+		});
+	});
+
+	void bootstrapAuthSession();
+</script>

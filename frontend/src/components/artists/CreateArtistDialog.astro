@@ -6,72 +6,104 @@ import FloatingInput from '../ui/FloatingInput.astro';
 ---
 
 <BaseDialog
-	id="artist-modal"
-	className="w-[min(92vw,32rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/50"
-	contentClassName="p-5 sm:p-6"
-	mobilePlacement="center"
+	id='artist-modal'
+	className='border-border bg-surface text-text m-auto w-[min(92vw,32rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/50'
+	contentClassName='p-5 sm:p-6'
+	mobilePlacement='center'
 >
-		<ModalHeader title="Create Artist" />
+	<ModalHeader title='Create Artist' />
 
-		<!-- Tab switcher -->
-		<div class="mt-4 flex gap-1 rounded-[1.2rem] border border-border/60 bg-surface-raised/55 p-1.5">
-			<button type="button" id="artist-tab-manual" class="flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold transition-all duration-200 text-text-muted hover:text-text">
-				Manual
-			</button>
-			<button type="button" id="artist-tab-spotify" class="flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold transition-all duration-200 bg-surface text-text shadow-sm">
-				<span class="inline-flex items-center justify-center gap-1.5">
-					<svg viewBox="0 0 24 24" class="h-3.5 w-3.5 fill-[#1DB954]" aria-hidden="true"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-					Spotify
-				</span>
-			</button>
-		</div>
+	<!-- Tab switcher -->
+	<div class='border-border/60 bg-surface-raised/55 mt-4 flex gap-1 rounded-[1.2rem] border p-1.5'>
+		<button
+			type='button'
+			id='artist-tab-manual'
+			class='text-text-muted hover:text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold transition-all duration-200'
+		>
+			Manual
+		</button>
+		<button
+			type='button'
+			id='artist-tab-spotify'
+			class='bg-surface text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200'
+		>
+			<span class='inline-flex items-center justify-center gap-1.5'>
+				<svg viewBox='0 0 24 24' class='h-3.5 w-3.5 fill-[#1DB954]' aria-hidden='true'
+					><path
+						d='M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z'
+					></path></svg
+				>
+				Spotify
+			</span>
+		</button>
+	</div>
 
-		<!-- Manual Tab -->
-		<form id="artist-form" class="mt-4 space-y-4 hidden">
-			<FloatingInput id="artist-name" name="name" label="Name" required />
-			<CoverPreviewField
-				inputId="artist-cover-url"
-				name="cover_url"
-				imageId="artist-cover-preview"
-				emptyId="artist-cover-empty"
-				label="Cover Art"
-				emptyLabel="Use Spotify search to add cover art"
-				imageAlt="Artist cover preview"
+	<!-- Manual Tab -->
+	<form id='artist-form' class='mt-4 hidden space-y-4'>
+		<FloatingInput id='artist-name' name='name' label='Name' required />
+		<CoverPreviewField
+			inputId='artist-cover-url'
+			name='cover_url'
+			imageId='artist-cover-preview'
+			emptyId='artist-cover-empty'
+			label='Cover Art'
+			emptyLabel='Use Spotify search to add cover art'
+			imageAlt='Artist cover preview'
+		/>
+
+		<p id='artist-form-status' class='text-text-muted text-sm' role='alert' aria-live='assertive'></p>
+
+		<button
+			type='submit'
+			id='artist-create-btn'
+			class='bg-primary text-primary-fg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/30 focus:ring-primary/20 mx-auto mt-4 block w-full cursor-pointer rounded-xl px-4 py-3 text-base font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto'
+		>
+			Create Artist
+		</button>
+	</form>
+
+	<!-- Spotify Tab -->
+	<div id='artist-spotify-tab' class='mt-4'>
+		<p
+			id='artist-spotify-offline-warning'
+			class='border-border/60 bg-surface-raised/70 text-text mb-3 hidden rounded-xl border px-3 py-2 text-sm'
+		>
+			Spotify search is unavailable offline. Switch to Manual to create an artist without reconnecting.
+		</p>
+		<div class='relative' id='artist-spotify-search-wrap'>
+			<FloatingInput
+				id='artist-spotify-search'
+				label='Search Spotify Artists'
+				type='text'
+				autocomplete='off'
+				inputClassName='focus:border-[#1DB954]/60 focus:ring-[#1DB954]/10'
 			/>
-
-			<p id="artist-form-status" class="text-sm text-text-muted" role="alert" aria-live="assertive"></p>
-
-			<button type="submit" id="artist-create-btn" class="mx-auto mt-4 block w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto">
-				Create Artist
-			</button>
-		</form>
-
-		<!-- Spotify Tab -->
-		<div id="artist-spotify-tab" class="mt-4">
-			<div class="relative" id="artist-spotify-search-wrap">
-				<FloatingInput
-					id="artist-spotify-search"
-					label="Search Spotify Artists"
-					type="text"
-					autocomplete="off"
-					inputClassName="focus:border-[#1DB954]/60 focus:ring-[#1DB954]/10"
-				/>
-				<div id="artist-spotify-spinner" class="absolute right-3 top-1/2 hidden -translate-y-1/2">
-					<svg class="h-4 w-4 animate-spin text-text-muted" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-				</div>
+			<div id='artist-spotify-spinner' class='absolute top-1/2 right-3 hidden -translate-y-1/2'>
+				<svg class='text-text-muted h-4 w-4 animate-spin' viewBox='0 0 24 24' fill='none'
+					><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'
+					></circle><path
+						class='opacity-75'
+						fill='currentColor'
+						d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'></path></svg
+				>
 			</div>
-			<ul id="artist-spotify-results" class="mt-2 hidden overflow-hidden rounded-xl border border-border/60 bg-surface shadow-lg"></ul>
-			<p class="mt-3 text-center text-xs text-text-muted">Select an artist to auto-fill the form</p>
 		</div>
+		<ul
+			id='artist-spotify-results'
+			class='border-border/60 bg-surface mt-2 hidden overflow-hidden rounded-xl border shadow-lg'
+		>
+		</ul>
+		<p class='text-text-muted mt-3 text-center text-xs'>Select an artist to auto-fill the form</p>
+	</div>
 </BaseDialog>
 
 <script>
-import { apiFetch, getErrorMessage } from '../../lib/api';
-import { syncCoverPreview } from '../../lib/cover-preview';
-import { closeDialogSafely, openDialogSafely, toggleCreateTabs } from '../../lib/dialog';
-import { bindOnce } from '../../lib/events';
-import { searchArtists } from '../../lib/spotify';
-import { setInlineStatus } from '../../lib/status';
+	import { syncCoverPreview } from '../../lib/cover-preview';
+	import { closeDialogSafely, openDialogSafely, toggleCreateTabs } from '../../lib/dialog';
+	import { bindOnce } from '../../lib/events';
+	import { createArtistRecord } from '../../lib/library-cache';
+	import { searchArtists } from '../../lib/spotify';
+	import { setInlineStatus } from '../../lib/status';
 
 	const getArtistModal = () => document.getElementById('artist-modal') as HTMLDialogElement | null;
 	const getArtistForm = () => document.getElementById('artist-form') as HTMLFormElement | null;
@@ -81,6 +113,12 @@ import { setInlineStatus } from '../../lib/status';
 	const getArtistCoverEmptyState = () => document.getElementById('artist-cover-empty') as HTMLParagraphElement | null;
 	const getArtistFormStatus = () => document.getElementById('artist-form-status') as HTMLParagraphElement | null;
 	const getArtistCreateBtn = () => document.getElementById('artist-create-btn') as HTMLButtonElement | null;
+	const getArtistSpotifySearchInput = () =>
+		document.getElementById('artist-spotify-search') as HTMLInputElement | null;
+	const getArtistSpotifySpinner = () => document.getElementById('artist-spotify-spinner') as HTMLDivElement | null;
+	const getArtistSpotifyOfflineWarning = () =>
+		document.getElementById('artist-spotify-offline-warning') as HTMLParagraphElement | null;
+	const isOnline = () => (typeof navigator === 'undefined' ? true : navigator.onLine);
 
 	const openModal = () => {
 		openDialogSafely(getArtistModal());
@@ -110,6 +148,28 @@ import { setInlineStatus } from '../../lib/status';
 		syncCoverPreview(getArtistCoverURLInput(), getArtistCoverPreview(), getArtistCoverEmptyState(), url);
 	};
 
+	const syncArtistSpotifyAvailability = () => {
+		const offline = !isOnline();
+		const searchInput = getArtistSpotifySearchInput();
+		const spinner = getArtistSpotifySpinner();
+		const warning = getArtistSpotifyOfflineWarning();
+
+		if (searchInput) {
+			searchInput.disabled = offline;
+			searchInput.placeholder = offline ? 'Spotify search requires a connection' : ' ';
+			if (offline) searchInput.value = '';
+		}
+
+		if (warning) {
+			warning.classList.toggle('hidden', !offline);
+		}
+
+		if (offline) {
+			spinner?.classList.add('hidden');
+			hideArtistResults();
+		}
+	};
+
 	let artistSearchDebounce: ReturnType<typeof setTimeout>;
 	let selectedSpotifyArtistID: string | null = null;
 
@@ -121,15 +181,21 @@ import { setInlineStatus } from '../../lib/status';
 
 			clearTimeout(artistSearchDebounce);
 			const q = target.value.trim();
-			if (!q) { 
+			if (!isOnline()) {
+				syncArtistSpotifyAvailability();
+				return;
+			}
+			if (!q) {
 				console.log('[Artist Search] Query cleared');
-				hideArtistResults(); 
-				return; 
+				hideArtistResults();
+				return;
 			}
 
 			console.log(`[Artist Search] Query: "${q}"`);
 			artistSearchDebounce = setTimeout(async () => {
-				const artistSpotifyResults = document.getElementById('artist-spotify-results') as HTMLUListElement | null;
+				const artistSpotifyResults = document.getElementById(
+					'artist-spotify-results',
+				) as HTMLUListElement | null;
 				const artistSpotifySpinner = document.getElementById('artist-spotify-spinner') as HTMLDivElement | null;
 				if (!artistSpotifyResults || !artistSpotifySpinner) {
 					console.warn('[Artist Search] Could not find results/spinner elements in DOM');
@@ -143,12 +209,14 @@ import { setInlineStatus } from '../../lib/status';
 					console.log(`[Artist Search] Found ${artists.length} results`);
 					artistSpotifyResults.innerHTML = '';
 					if (!artists.length) {
-						artistSpotifyResults.innerHTML = '<li class="px-4 py-3 text-sm text-text-muted text-center italic">No results found on Spotify</li>';
+						artistSpotifyResults.innerHTML =
+							'<li class="px-4 py-3 text-sm text-text-muted text-center italic">No results found on Spotify</li>';
 					} else {
 						for (const artist of artists) {
 							const img = artist.images[artist.images.length - 1];
 							const li = document.createElement('li');
-							li.className = 'flex cursor-pointer items-center gap-3 px-4 py-3 text-sm font-medium text-text transition-colors hover:bg-surface-raised border-b border-border/30 last:border-0';
+							li.className =
+								'flex cursor-pointer items-center gap-3 px-4 py-3 text-sm font-medium text-text transition-colors hover:bg-surface-raised border-b border-border/30 last:border-0';
 							li.innerHTML = `
 								${img ? `<img src="${img.url}" alt="" class="h-10 w-10 rounded-full object-cover shrink-0 border border-border/40" />` : '<div class="h-10 w-10 rounded-full bg-surface-raised shrink-0 border border-border/40 flex items-center justify-center text-text-muted text-xs">?</div>'}
 								<span class="truncate">${artist.name}</span>
@@ -157,13 +225,16 @@ import { setInlineStatus } from '../../lib/status';
 							li.addEventListener('click', () => {
 								console.log(`[Artist Search] Selected: ${artist.name}`);
 								const nameInput = getArtistNameInput();
-								const selectedImage = artist.images[0]?.url ?? artist.images[artist.images.length - 1]?.url ?? '';
+								const selectedImage =
+									artist.images[0]?.url ?? artist.images[artist.images.length - 1]?.url ?? '';
 								selectedSpotifyArtistID = artist.id;
 								if (nameInput) nameInput.value = artist.name;
 								setArtistCover(selectedImage);
-								
+
 								// Clear search after selection
-								const sInput = document.getElementById('artist-spotify-search') as HTMLInputElement | null;
+								const sInput = document.getElementById(
+									'artist-spotify-search',
+								) as HTMLInputElement | null;
 								if (sInput) sInput.value = '';
 								hideArtistResults();
 								switchTab('manual');
@@ -218,6 +289,12 @@ import { setInlineStatus } from '../../lib/status';
 		});
 	});
 
+	bindOnce('__artistSpotifyAvailabilityBound', () => {
+		window.addEventListener('online', syncArtistSpotifyAvailability);
+		window.addEventListener('offline', syncArtistSpotifyAvailability);
+		document.addEventListener('astro:page-load', syncArtistSpotifyAvailability);
+	});
+
 	bindOnce('__artistModalSubmitBound', () => {
 		document.addEventListener('submit', async (event) => {
 			const target = event.target as HTMLFormElement | null;
@@ -244,43 +321,41 @@ import { setInlineStatus } from '../../lib/status';
 				artistCreateBtn.textContent = 'Creating...';
 			}
 
-			setInlineStatus(artistFormStatus, 'Creating artist...');
+			setInlineStatus(artistFormStatus, isOnline() ? 'Saving artist...' : 'Saving artist offline...');
 
-			const createResponse = await apiFetch('/api/artists', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
+			try {
+				const result = await createArtistRecord({
 					name,
 					...(selectedSpotifyArtistID ? { spotify_id: selectedSpotifyArtistID } : {}),
 					...(coverURL ? { cover_url: coverURL } : {}),
-				}),
-			}, { auth: true });
+				});
 
-			if (!createResponse.ok) {
+				setInlineStatus(
+					artistFormStatus,
+					result.syncStatus === 'synced' ?
+						'Artist created successfully.'
+					:	'Artist saved offline. It will sync when you reconnect.',
+					'success',
+				);
+				target.reset();
+				selectedSpotifyArtistID = null;
+				setArtistCover('');
+				setTimeout(() => closeModal(), 400);
+			} catch (error) {
 				switchTab('manual');
-				setInlineStatus(artistFormStatus, await getErrorMessage(createResponse), 'error');
+				setInlineStatus(
+					artistFormStatus,
+					error instanceof Error ? error.message : 'Failed to save artist.',
+					'error',
+				);
+			} finally {
 				if (artistCreateBtn) {
 					artistCreateBtn.disabled = false;
 					artistCreateBtn.textContent = 'Create Artist';
 				}
-				return;
 			}
-
-			await createResponse.json();
-
-			setInlineStatus(artistFormStatus, 'Artist created successfully.', 'success');
-			target.reset();
-			selectedSpotifyArtistID = null;
-			setArtistCover('');
-			if (artistCreateBtn) {
-				artistCreateBtn.disabled = false;
-				artistCreateBtn.textContent = 'Create Artist';
-			}
-
-			window.dispatchEvent(new CustomEvent('artist-created'));
-			setTimeout(() => closeModal(), 400);
 		});
 	});
+
+	syncArtistSpotifyAvailability();
 </script>

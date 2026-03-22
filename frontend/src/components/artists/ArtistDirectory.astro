@@ -6,52 +6,71 @@ import InteractiveListToolkit from '../ui/InteractiveListToolkit.astro';
 import SortControls from '../ui/SortControls.astro';
 ---
 
-<div class="mb-4">
-	<SortControls controlId="artists-sort-by" />
+<div class='mb-4'>
+	<SortControls controlId='artists-sort-by' />
 </div>
 
-<div id="artists-list" class="space-y-3"></div>
+<div id='artists-list' class='space-y-3'></div>
 
 <InteractiveListToolkit />
 
-<BaseDialog id="edit-artist-modal" className="w-[min(92vw,32rem)] m-auto rounded-2xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/45" contentClassName="" mobilePlacement="center">
-	<form id="edit-artist-form" class="space-y-3 p-5">
-		<div class="flex items-center justify-between">
-			<h3 class="text-lg font-semibold">Edit Artist</h3>
+<BaseDialog
+	id='edit-artist-modal'
+	className='border-border bg-surface text-text m-auto w-[min(92vw,32rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/45'
+	contentClassName=''
+	mobilePlacement='center'
+>
+	<form id='edit-artist-form' class='space-y-3 p-5'>
+		<div class='flex items-center justify-between'>
+			<h3 class='text-lg font-semibold'>Edit Artist</h3>
 		</div>
-		<input id="edit-artist-id" type="hidden" />
-		<FloatingInput id="edit-artist-name" label="Name" required />
+		<input id='edit-artist-id' type='hidden' />
+		<FloatingInput id='edit-artist-name' label='Name' required />
 		<CoverPreviewField
-			inputId="edit-artist-cover-url"
-			imageId="edit-artist-cover-preview"
-			emptyId="edit-artist-cover-empty"
-			label="Cover Art"
-			emptyLabel="No cover image available"
-			imageAlt="Artist cover preview"
+			inputId='edit-artist-cover-url'
+			imageId='edit-artist-cover-preview'
+			emptyId='edit-artist-cover-empty'
+			label='Cover Art'
+			emptyLabel='No cover image available'
+			imageAlt='Artist cover preview'
 		/>
-		<div class="space-y-2 rounded-xl border border-border/60 bg-surface-raised/30 p-3">
-			<p class="text-xs font-semibold uppercase tracking-wide text-text-muted">Sync from Spotify</p>
-			<button type="button" id="edit-artist-spotify-refresh-btn" class="w-full cursor-pointer rounded-xl border border-border/60 bg-surface-raised/50 px-4 py-3 text-sm font-semibold text-text transition-all duration-200 hover:bg-surface-raised focus:ring-4 focus:ring-[#1DB954]/10">Refresh from Spotify ID</button>
-			<p class="text-xs text-text-muted">Uses this artist's saved Spotify ID to refresh name and cover.</p>
+		<div class='border-border/60 bg-surface-raised/30 space-y-2 rounded-xl border p-3'>
+			<p class='text-text-muted text-xs font-semibold tracking-wide uppercase'>Sync from Spotify</p>
+			<button
+				type='button'
+				id='edit-artist-spotify-refresh-btn'
+				class='border-border/60 bg-surface-raised/50 text-text hover:bg-surface-raised w-full cursor-pointer rounded-xl border px-4 py-3 text-sm font-semibold transition-all duration-200 focus:ring-4 focus:ring-[#1DB954]/10'
+				>Refresh from Spotify ID</button
+			>
+			<p class='text-text-muted text-xs'>Uses this artist's saved Spotify ID to refresh name and cover.</p>
 		</div>
-		<p id="edit-artist-status" class="text-sm text-text-muted"></p>
-		<div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0">
-			<button type="submit" id="edit-artist-submit" class="w-full cursor-pointer rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto sm:py-2 sm:text-sm">Save</button>
+		<p id='edit-artist-status' class='text-text-muted text-sm'></p>
+		<div class='flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0'>
+			<button
+				type='submit'
+				id='edit-artist-submit'
+				class='bg-primary text-primary-fg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/30 focus:ring-primary/20 w-full cursor-pointer rounded-xl px-4 py-3 text-base font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto sm:py-2 sm:text-sm'
+				>Save</button
+			>
 		</div>
 	</form>
 </BaseDialog>
 
 <script>
-import { apiFetch } from '../../lib/api';
-import { syncCoverPreview } from '../../lib/cover-preview';
-import { formatDateTime } from '../../lib/date';
-import { createEmptyState } from '../../lib/empty-state';
-import { bindOnce } from '../../lib/events';
-import { hasCachedLibraryData, invalidateLibraryData, loadLibraryData } from '../../lib/library-cache';
-import { hidePageLoadingSkeleton, showPageLoadingSkeleton } from '../../lib/page-skeletons';
-import { getArtistBySpotifyID } from '../../lib/spotify';
-import { initializeSortControls, type SortDirection } from '../../lib/sort';
-import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
+	import { syncCoverPreview } from '../../lib/cover-preview';
+	import { formatDateTime } from '../../lib/date';
+	import { createEmptyState } from '../../lib/empty-state';
+	import { bindOnce } from '../../lib/events';
+	import {
+		deleteArtistRecord,
+		hasCachedLibraryData,
+		loadLibraryData,
+		updateArtistRecord,
+	} from '../../lib/library-cache';
+	import { hidePageLoadingSkeleton, showPageLoadingSkeleton } from '../../lib/page-skeletons';
+	import { getArtistBySpotifyID } from '../../lib/spotify';
+	import { initializeSortControls, type SortDirection } from '../../lib/sort';
+	import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 
 	type Artist = {
 		id: number;
@@ -99,8 +118,11 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 		createInteractiveListCard: (options: InteractiveCardOptions) => InteractiveCardParts;
 	};
 
+	const getToolkitInstance = () =>
+		(window as Window & { __interactiveListToolkit?: InteractiveListToolkitAPI }).__interactiveListToolkit ?? null;
+
 	const getToolkit = () => {
-		const toolkit = (window as Window & { __interactiveListToolkit?: InteractiveListToolkitAPI }).__interactiveListToolkit;
+		const toolkit = getToolkitInstance();
 		if (!toolkit) throw new Error('Interactive list toolkit unavailable');
 		return toolkit;
 	};
@@ -117,6 +139,8 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 	let currentEditArtistSpotifyID: string | null = null;
 	let currentSortBy: ArtistSortKey = 'alphabetical';
 	let currentSortDirection: SortDirection = 'asc';
+	let toolkitRetryCount = 0;
+	const MAX_TOOLKIT_RETRIES = 18;
 
 	const refreshEditRefs = () => {
 		editArtistDialog = document.getElementById('edit-artist-modal') as HTMLDialogElement | null;
@@ -187,17 +211,20 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 		currentSortDirection = 'asc';
 	};
 
-	const setMessage = (message: string, isError = false) => getToolkit().setListRootMessage(getListRoot(), message, isError);
+	const setMessage = (message: string, isError = false) =>
+		getToolkit().setListRootMessage(getListRoot(), message, isError);
 
 	const renderEmptyArtistsState = () => {
 		const listRoot = getListRoot();
 		if (!listRoot) return;
-		listRoot.replaceChildren(createEmptyState({
-			title: 'No artists yet',
-			description: 'Add your first artist to start building the library.',
-			buttonLabel: 'Create Artist',
-			onClick: () => window.dispatchEvent(new CustomEvent('open-artist-modal')),
-		}));
+		listRoot.replaceChildren(
+			createEmptyState({
+				title: 'No artists yet',
+				description: 'Add your first artist to start building the library.',
+				buttonLabel: 'Create Artist',
+				onClick: () => window.dispatchEvent(new CustomEvent('open-artist-modal')),
+			}),
+		);
 	};
 
 	const setEditStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
@@ -214,13 +241,12 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 			return;
 		}
 		if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
-		const response = await apiFetch(`/api/artists/${id}`, { method: 'DELETE' }, { auth: true });
-		if (!response.ok) {
+		try {
+			await deleteArtistRecord(id);
+			editArtistDialog?.close();
+		} catch {
 			window.alert('Failed to delete artist.');
-			return;
 		}
-		editArtistDialog?.close();
-		window.dispatchEvent(new CustomEvent('artist-created'));
 	};
 
 	const openEditDialog = (artist: Artist, albumCount: number) => {
@@ -244,7 +270,9 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 			if (editArtistDialog && event.target === editArtistDialog) editArtistDialog.close();
 		});
 
-		const refreshSpotifyButton = document.getElementById('edit-artist-spotify-refresh-btn') as HTMLButtonElement | null;
+		const refreshSpotifyButton = document.getElementById(
+			'edit-artist-spotify-refresh-btn',
+		) as HTMLButtonElement | null;
 		refreshSpotifyButton?.addEventListener('click', async () => {
 			if (!editArtistNameInput || !editArtistCoverURLInput) return;
 			if (!currentEditArtistSpotifyID) {
@@ -276,23 +304,29 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 			editArtistSubmit.disabled = true;
 			editArtistSubmit.textContent = 'Saving...';
 			setEditStatus('Saving artist...');
-			const payload: Record<string, unknown> = { name: editArtistNameInput.value.trim() };
-			if (editArtistCoverURLInput.value.trim()) payload.cover_url = editArtistCoverURLInput.value.trim();
-			const response = await apiFetch(`/api/artists/${Number(editArtistIDInput.value)}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload),
-			}, { auth: true });
-			if (!response.ok) {
+			try {
+				const result = await updateArtistRecord(Number(editArtistIDInput.value), {
+					name: editArtistNameInput.value.trim(),
+					...(editArtistCoverURLInput.value.trim() ?
+						{ cover_url: editArtistCoverURLInput.value.trim() }
+					:	{}),
+				});
+				setEditStatus(
+					result.syncStatus === 'synced' ?
+						'Artist updated successfully.'
+					:	'Artist updated offline. It will sync when you reconnect.',
+					'success',
+				);
+				editArtistSubmit.disabled = false;
+				editArtistSubmit.textContent = 'Save Artist';
+				setTimeout(() => editArtistDialog?.close(), 250);
+				return;
+			} catch {
 				setEditStatus('Failed to update artist.', 'error');
 				editArtistSubmit.disabled = false;
 				editArtistSubmit.textContent = 'Save Artist';
 				return;
 			}
-			editArtistSubmit.disabled = false;
-			editArtistSubmit.textContent = 'Save Artist';
-			editArtistDialog?.close();
-			window.dispatchEvent(new CustomEvent('artist-created'));
 		});
 	};
 
@@ -352,7 +386,8 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 			list.className = 'flex flex-col';
 			for (const album of sortAlbums(albums)) {
 				const item = document.createElement('li');
-				item.className = 'flex items-center justify-between gap-2 border-b border-border/20 px-3 py-2 last:border-0';
+				item.className =
+					'flex items-center justify-between gap-2 border-b border-border/20 px-3 py-2 last:border-0';
 				const left = document.createElement('div');
 				left.className = 'min-w-0 flex-1';
 				const albumTitle = document.createElement('p');
@@ -368,7 +403,8 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 
 				const rightPills = document.createElement('div');
 				rightPills.className = 'flex shrink-0 items-center gap-1.5';
-				if (!album.listened) rightPills.appendChild(createArtistChip('New', ICON_PATHS.newSparkle, 'secondary'));
+				if (!album.listened)
+					rightPills.appendChild(createArtistChip('New', ICON_PATHS.newSparkle, 'secondary'));
 				if (album.listened && album.rating != null) {
 					const ratingChip = createArtistChip(`${album.rating}/10`, ICON_PATHS.ratingStar, 'neutral');
 					applyRatingTone(ratingChip, Number(album.rating), '--surface');
@@ -415,13 +451,17 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 				} else if (currentSortBy === 'createdAt') {
 					base = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
 				} else if (currentSortBy === 'averageRating') {
-					base = compareOptionalNumber(getAverageArtistRating(grouped.get(a.id) ?? []), getAverageArtistRating(grouped.get(b.id) ?? []));
+					base = compareOptionalNumber(
+						getAverageArtistRating(grouped.get(a.id) ?? []),
+						getAverageArtistRating(grouped.get(b.id) ?? []),
+					);
 				}
 
 				if (base === 0) base = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 				return currentSortDirection === 'asc' ? base : -base;
 			});
-			for (const artist of sortedArtists) listRoot.appendChild(renderArtistCard(artist, grouped.get(artist.id) ?? []));
+			for (const artist of sortedArtists)
+				listRoot.appendChild(renderArtistCard(artist, grouped.get(artist.id) ?? []));
 		} catch {
 			setMessage('An unexpected error occurred while loading artists.', true);
 		} finally {
@@ -430,6 +470,15 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 	};
 
 	const refreshArtistsView = () => {
+		if (!getToolkitInstance()) {
+			if (toolkitRetryCount < MAX_TOOLKIT_RETRIES) {
+				toolkitRetryCount += 1;
+				requestAnimationFrame(refreshArtistsView);
+			}
+			return;
+		}
+
+		toolkitRetryCount = 0;
 		bindEditHandlers();
 		resetSortControls();
 		syncArtistSortControls();
@@ -437,12 +486,7 @@ import { ICON_PATHS, applyRatingTone, createArtistChip } from '../../lib/ui';
 	};
 
 	bindOnce('__artistDirectoryBound', () => {
-		window.addEventListener('artist-created', () => {
-			invalidateLibraryData();
-			void loadArtists();
-		});
-		window.addEventListener('album-created', () => {
-			invalidateLibraryData();
+		window.addEventListener('library-data-changed', () => {
 			void loadArtists();
 		});
 		document.addEventListener('astro:page-load', refreshArtistsView);

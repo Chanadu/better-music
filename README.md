@@ -3,7 +3,6 @@
 This is a repository for my music application.
 
 - ## TODO:
-  - swiping
   - offline
     - pwa
     - saving
