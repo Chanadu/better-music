@@ -1,5 +1,7 @@
 ---
+import DropdownModeToggleButton from './DropdownModeToggleButton.astro';
 import ThemeToggleButton from './ThemeToggleButton.astro';
+import { BUTTON_SECONDARY_CLASS } from '../../lib/button-styles';
 
 interface Props {
 	title: string;
@@ -41,10 +43,11 @@ const { title } = Astro.props;
 		</div>
 
 		<div class='flex items-center gap-2 sm:gap-3'>
+			<DropdownModeToggleButton />
 			<ThemeToggleButton />
 			<button
 				data-logout-button
-				class='ui-pressable border-border/70 bg-surface/92 text-text hover:border-primary/25 hover:bg-surface-raised flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border px-3 shadow-sm active:scale-95 sm:px-4'
+				class:list={[BUTTON_SECONDARY_CLASS, 'px-3']}
 				aria-label='Log out'
 			>
 				<svg
@@ -59,7 +62,6 @@ const { title } = Astro.props;
 					<path d='M16 17l5-5-5-5'></path>
 					<path d='M21 12H9'></path>
 				</svg>
-				<span class='hidden text-sm font-semibold sm:inline'>Log out</span>
 			</button>
 		</div>
 	</div>

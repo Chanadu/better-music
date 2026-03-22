@@ -39,6 +39,20 @@ import { ClientRouter } from 'astro:transitions';
 				to { opacity: 1; }
 			}
 		</style>
+		<script is:inline>
+			(function () {
+				const storageKey = 'better-music:dropdown-menu-mode';
+
+				const syncDropdownMode = () => {
+					const saved = localStorage.getItem(storageKey);
+					document.documentElement.dataset.dropdownMode = saved === 'system' ? 'system' : 'custom';
+				};
+
+				syncDropdownMode();
+				document.addEventListener('astro:after-swap', syncDropdownMode);
+				document.addEventListener('astro:page-load', syncDropdownMode);
+			})();
+		</script>
 		<!-- Apply saved or system-preferred theme before first paint to avoid flash -->
 		<script is:inline>
 			(function () {

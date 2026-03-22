@@ -1,56 +1,53 @@
 ---
+import { BUTTON_COMPACT_SECONDARY_CLASS } from '../../lib/button-styles';
 
 interface Props {
-	id: string;
-	label: string;
+	selectId: string;
+	label?: string;
 	wrapperClassName?: string;
 	selectClassName?: string;
-	labelClassName?: string;
 	[name: string]: unknown;
 }
 
 const {
-	id,
-	label,
+	selectId,
+	label = 'Filter',
 	wrapperClassName = '',
 	selectClassName = '',
-	labelClassName = '',
 	...selectProps
 } = Astro.props as Props;
 
-const baseSelectClass =
-	'w-full appearance-none rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 pr-11 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:outline-none focus:ring-4 focus:ring-primary/10';
-const baseLabelClass = 'pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted';
-const customTriggerClass =
-	'relative inline-flex w-full items-center gap-0 rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-2 pt-6 pr-11 text-left text-base text-text transition-all duration-200 hover:bg-surface-raised focus:border-primary/60 focus:bg-surface-raised focus:outline-none focus:ring-4 focus:ring-primary/10';
-const triggerId = `${id}-trigger`;
-const valueId = `${id}-value`;
-const menuId = `${id}-menu`;
-const nativeValueId = `${id}-native-value`;
+const triggerId = `${selectId}-trigger`;
+const valueId = `${selectId}-value`;
+const menuId = `${selectId}-menu`;
 const nativeSelectOverlayClass =
 	'peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none rounded-xl opacity-0 focus:outline-none disabled:cursor-not-allowed';
 ---
 
-<div class:list={['relative', wrapperClassName]} data-floating-select-root='true'>
-	<div class='relative hidden' data-floating-select-native-wrapper='true'>
+<div
+	class:list={['relative min-w-0', wrapperClassName]}
+	data-filter-select-root='true'
+>
+	<span class='sr-only'>{label}</span>
+	<div class='relative hidden' data-filter-native-wrapper='true'>
 		<select
-			id={id}
+			id={selectId}
 			class:list={[nativeSelectOverlayClass, selectClassName]}
-			data-floating-select-native='true'
+			data-filter-native-select='true'
 			{...selectProps}
 		>
 			<slot />
 		</select>
 		<div
 			class:list={[
-				customTriggerClass,
-				'pointer-events-none peer-focus:ring-4 peer-focus:ring-primary/10 peer-disabled:opacity-50',
+				BUTTON_COMPACT_SECONDARY_CLASS,
+				'pointer-events-none relative w-full gap-0 pr-10 text-left peer-focus:ring-2 peer-focus:ring-primary/10 peer-disabled:opacity-50 sm:pr-11',
 			]}
 		>
-			<span id={nativeValueId} data-floating-select-native-value='true' class='min-w-0 flex-1 truncate text-left'>Select</span>
+			<span data-filter-native-value='true' class='min-w-0 flex-1 truncate text-left'>Select</span>
 			<svg
 				viewBox='0 0 24 24'
-				class='text-text-muted pointer-events-none absolute inset-y-0 right-4 my-auto h-4 w-4 shrink-0'
+				class='text-text-muted pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 shrink-0 sm:right-4'
 				aria-hidden='true'
 			>
 				<path
@@ -64,19 +61,19 @@ const nativeSelectOverlayClass =
 			</svg>
 		</div>
 	</div>
-	<div class='relative' data-themed-dropdown-root data-floating-select-custom='true'>
+	<div data-themed-dropdown-root data-filter-custom-dropdown='true'>
 		<button
 			id={triggerId}
 			type='button'
 			aria-haspopup='listbox'
 			aria-expanded='false'
-			class={customTriggerClass}
-			data-floating-select-trigger='true'
+			data-filter-custom-trigger='true'
+			class:list={[BUTTON_COMPACT_SECONDARY_CLASS, 'relative w-full gap-0 pr-10 text-left sm:pr-11']}
 		>
-			<span id={valueId} data-floating-select-custom-value='true' class='min-w-0 flex-1 truncate text-left'>Select</span>
+			<span id={valueId} data-filter-custom-value='true' class='min-w-0 flex-1 truncate text-left'>Select</span>
 			<svg
 				viewBox='0 0 24 24'
-				class='text-text-muted pointer-events-none absolute inset-y-0 right-4 my-auto h-4 w-4 shrink-0'
+				class='text-text-muted pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 shrink-0 sm:right-4'
 				aria-hidden='true'
 			>
 				<path
@@ -92,13 +89,10 @@ const nativeSelectOverlayClass =
 		<div
 			id={menuId}
 			role='listbox'
-			data-floating-select-menu='true'
+			data-filter-custom-menu='true'
 			class='border-border/70 bg-surface absolute top-[calc(100%+0.45rem)] left-0 z-30 hidden max-h-64 w-full overflow-y-auto rounded-2xl border p-2 shadow-[var(--shell-shadow)]'
 		></div>
 	</div>
-	<label for={id} class:list={[baseLabelClass, labelClassName]}>
-		{label}
-	</label>
 </div>
 
 <script>
@@ -106,46 +100,40 @@ const nativeSelectOverlayClass =
 	import { bindOnce } from '../../lib/events';
 	import { createThemedDropdown } from '../../lib/ui';
 
-	bindOnce('__floatingSelectBound', () => {
-		const syncFloatingSelectMode = (container: HTMLDivElement) => {
+	bindOnce('__filterSelectBound', () => {
+		const syncFilterSelectMode = (container: HTMLDivElement) => {
 			const nativeWrapper = container.querySelector(
-				'[data-floating-select-native-wrapper="true"]',
+				'[data-filter-native-wrapper="true"]',
 			) as HTMLDivElement | null;
-			const customSelect = container.querySelector(
-				'[data-floating-select-custom="true"]',
+			const customDropdown = container.querySelector(
+				'[data-filter-custom-dropdown="true"]',
 			) as HTMLDivElement | null;
-			const customMenu = container.querySelector(
-				'[data-floating-select-menu="true"]',
-			) as HTMLDivElement | null;
+			const menu = container.querySelector('[data-filter-custom-menu="true"]') as HTMLDivElement | null;
 			const useSystemMenus = getDropdownMenuMode() === 'system';
 
 			nativeWrapper?.classList.toggle('hidden', !useSystemMenus);
-			customSelect?.classList.toggle('hidden', useSystemMenus);
-			if (useSystemMenus) customMenu?.classList.add('hidden');
+			customDropdown?.classList.toggle('hidden', useSystemMenus);
+			if (useSystemMenus) menu?.classList.add('hidden');
 		};
 
-		const bindFloatingSelects = () => {
-			for (const root of document.querySelectorAll('[data-floating-select-root="true"]')) {
+		const bindFilterSelects = () => {
+			for (const root of document.querySelectorAll('[data-filter-select-root="true"]')) {
 				const container = root as HTMLDivElement;
-				const select = container.querySelector(
-					'[data-floating-select-native="true"]',
-				) as HTMLSelectElement | null;
+				const select = container.querySelector('select') as HTMLSelectElement | null;
 				const trigger = container.querySelector(
-					'[data-floating-select-trigger="true"]',
+					'[data-filter-custom-trigger="true"]',
 				) as HTMLButtonElement | null;
 				const nativeValueNode = container.querySelector(
-					'[data-floating-select-native-value="true"]',
+					'[data-filter-native-value="true"]',
 				) as HTMLSpanElement | null;
 				const valueNode = container.querySelector(
-					'[data-floating-select-custom-value="true"]',
+					'[data-filter-custom-value="true"]',
 				) as HTMLSpanElement | null;
-				const menu = container.querySelector(
-					'[data-floating-select-menu="true"]',
-				) as HTMLDivElement | null;
-				if (!select || !trigger || !nativeValueNode || !valueNode || !menu) continue;
+				const menu = container.querySelector('[data-filter-custom-menu="true"]') as HTMLDivElement | null;
+				if (!select || !trigger || !valueNode || !nativeValueNode || !menu) continue;
 
 				if (container.dataset.bound === 'true') {
-					syncFloatingSelectMode(container);
+					syncFilterSelectMode(container);
 					continue;
 				}
 				container.dataset.bound = 'true';
@@ -181,18 +169,18 @@ const nativeSelectOverlayClass =
 					childList: true,
 					subtree: true,
 					attributes: true,
-					attributeFilter: ['selected', 'label', 'value', 'disabled'],
+					attributeFilter: ['selected', 'label', 'value'],
 				});
 
 				select.addEventListener('change', sync);
 				select.addEventListener('themed-select-sync', sync as EventListener);
 				sync();
-				syncFloatingSelectMode(container);
+				syncFilterSelectMode(container);
 			}
 		};
 
-		document.addEventListener('astro:page-load', bindFloatingSelects);
-		window.addEventListener(DROPDOWN_MENU_MODE_EVENT, bindFloatingSelects);
-		bindFloatingSelects();
+		document.addEventListener('astro:page-load', bindFilterSelects);
+		window.addEventListener(DROPDOWN_MENU_MODE_EVENT, bindFilterSelects);
+		bindFilterSelects();
 	});
 </script>

@@ -1,0 +1,39 @@
+---
+interface Props {
+	id: string;
+	label: string;
+	rows?: number;
+	wrapperClassName?: string;
+	textareaClassName?: string;
+	labelClassName?: string;
+	[name: string]: unknown;
+}
+
+const {
+	id,
+	label,
+	rows = 4,
+	wrapperClassName = '',
+	textareaClassName = '',
+	labelClassName = '',
+	...textareaProps
+} = Astro.props as Props;
+
+const baseTextareaClass =
+	'peer w-full rounded-xl border border-border/60 bg-surface-raised/50 px-4 pb-3 pt-7 text-base text-text transition-all duration-200 focus:border-primary/60 focus:bg-surface-raised focus:outline-none focus:ring-4 focus:ring-primary/10';
+const baseLabelClass =
+	'pointer-events-none absolute left-4 top-2 text-xs font-semibold text-text-muted transition-all peer-placeholder-shown:top-6 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-focus:top-2 peer-focus:text-xs peer-focus:font-semibold';
+---
+
+<div class:list={['relative', wrapperClassName]}>
+	<textarea
+		id={id}
+		rows={rows}
+		placeholder=' '
+		class:list={[baseTextareaClass, textareaClassName]}
+		{...textareaProps}
+	></textarea>
+	<label for={id} class:list={[baseLabelClass, labelClassName]}>
+		{label}
+	</label>
+</div>

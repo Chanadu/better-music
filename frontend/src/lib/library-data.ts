@@ -54,6 +54,7 @@ export type CreateAlbumInput = {
 	spotify_id?: string;
 	listened: boolean;
 	rating?: number;
+	comment?: string | null;
 	listened_at?: string;
 };
 
@@ -65,6 +66,7 @@ export type UpdateAlbumInput = {
 	spotify_id?: string;
 	listened: boolean;
 	rating?: number;
+	comment?: string | null;
 	listened_at?: string;
 };
 
@@ -91,6 +93,7 @@ type AlbumPayload = {
 	spotify_id?: string;
 	listened: boolean;
 	rating?: number;
+	comment?: string;
 	listened_at?: string;
 };
 
@@ -317,6 +320,7 @@ const sanitizeAlbumPayload = (input: CreateAlbumInput | UpdateAlbumInput): Album
 	if ('cover_url' in input && input.cover_url?.trim()) payload.cover_url = input.cover_url.trim();
 	if ('spotify_id' in input && input.spotify_id?.trim()) payload.spotify_id = input.spotify_id.trim();
 	if ('year' in input && typeof input.year === 'number' && Number.isFinite(input.year)) payload.year = input.year;
+	if ('comment' in input && typeof input.comment === 'string') payload.comment = input.comment.trim();
 
 	if (payload.listened) {
 		const rating = Number(input.rating);
@@ -351,6 +355,7 @@ const createLocalAlbum = (id: number, payload: AlbumPayload): LibraryAlbum =>
 		spotify_id: payload.spotify_id ?? null,
 		listened: payload.listened,
 		rating: payload.listened ? (payload.rating ?? null) : null,
+		comment: Object.prototype.hasOwnProperty.call(payload, 'comment') ? (payload.comment ?? null) : null,
 		listened_at: payload.listened ? (payload.listened_at ?? null) : null,
 		created_at: new Date().toISOString(),
 		local_only: true,
@@ -376,6 +381,8 @@ const applyAlbumUpdate = (album: LibraryAlbum, payload: AlbumPayload): LibraryAl
 		spotify_id: payload.spotify_id ?? album.spotify_id ?? null,
 		listened: payload.listened,
 		rating: payload.listened ? (payload.rating ?? album.rating ?? null) : null,
+		comment:
+			Object.prototype.hasOwnProperty.call(payload, 'comment') ? (payload.comment ?? null) : (album.comment ?? null),
 		listened_at: payload.listened ? (payload.listened_at ?? album.listened_at ?? null) : null,
 		sync_state: 'pending',
 	});
@@ -393,11 +400,17 @@ const buildAlbumUpdateBody = (payload: AlbumPayload): Record<string, unknown> =>
 		body.rating = payload.rating;
 		if (payload.listened_at) body.listened_at = payload.listened_at;
 	}
+	if (Object.prototype.hasOwnProperty.call(payload, 'comment')) body.comment = payload.comment ?? '';
 	return body;
 };
 
 const needsAlbumDetailsUpdate = (payload: AlbumPayload): boolean =>
-	Boolean(payload.listened || payload.cover_url || typeof payload.year === 'number');
+	Boolean(
+		payload.listened ||
+			payload.cover_url ||
+			typeof payload.year === 'number' ||
+			Object.prototype.hasOwnProperty.call(payload, 'comment'),
+	);
 
 const registerServiceWorkerSync = async (): Promise<void> => {
 	if (!isBrowser() || !('serviceWorker' in navigator)) return;
@@ -676,6 +689,10 @@ const processAlbumCreateMutation = async (
 			spotify_id: mutation.payload.spotify_id ?? localAlbum?.spotify_id ?? null,
 			listened: mutation.payload.listened,
 			rating: mutation.payload.listened ? (mutation.payload.rating ?? localAlbum?.rating ?? null) : null,
+			comment:
+				Object.prototype.hasOwnProperty.call(mutation.payload, 'comment') ?
+					(mutation.payload.comment ?? null)
+				:	(localAlbum?.comment ?? null),
 			listened_at:
 				mutation.payload.listened ? (mutation.payload.listened_at ?? localAlbum?.listened_at ?? null) : null,
 			local_only: false,
@@ -990,6 +1007,7 @@ export const updateAlbumRecord = async (id: number, input: UpdateAlbumInput): Pr
 					...(nextAlbum.spotify_id ? { spotify_id: nextAlbum.spotify_id } : {}),
 					listened: nextAlbum.listened,
 					...(nextAlbum.listened && nextAlbum.rating != null ? { rating: nextAlbum.rating } : {}),
+					...(Object.prototype.hasOwnProperty.call(payload, 'comment') ? { comment: nextAlbum.comment ?? '' } : {}),
 					...(nextAlbum.listened && nextAlbum.listened_at ? { listened_at: nextAlbum.listened_at } : {}),
 				},
 			});

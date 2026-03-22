@@ -1,12 +1,19 @@
 ---
 import BaseDialog from '../ui/BaseDialog.astro';
 import CoverPreviewField from '../ui/CoverPreviewField.astro';
+import DialogTabSwitcher from '../ui/DialogTabSwitcher.astro';
+import FilterSelect from '../ui/FilterSelect.astro';
 import FloatingDateField from '../ui/FloatingDateField.astro';
 import FloatingInput from '../ui/FloatingInput.astro';
 import FloatingSelect from '../ui/FloatingSelect.astro';
+import FloatingTextarea from '../ui/FloatingTextarea.astro';
 import InteractiveListToolkit from '../ui/InteractiveListToolkit.astro';
 import SearchField from '../ui/SearchField.astro';
+import SpotifyRefreshButton from '../ui/SpotifyRefreshButton.astro';
+import SpotifySearchPanel from '../ui/SpotifySearchPanel.astro';
 import SortControls from '../ui/SortControls.astro';
+import SyncStatusBanner from '../ui/SyncStatusBanner.astro';
+import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 interface Props {
 	view?: 'unlistened' | 'listened';
 }
@@ -15,16 +22,31 @@ const { view = 'unlistened' } = Astro.props as Props;
 ---
 
 <section data-album-collection-root='true' data-view={view}>
-	<div class='mb-4 flex items-center gap-2 sm:gap-3 md:gap-4'>
+	<div class='mb-3'>
 		<SearchField
 			inputId='albums-search'
 			label='Search albums'
 			placeholder='Search albums, artists, years, or notes'
-			wrapperClassName='min-w-0 flex-1'
+			wrapperClassName='min-w-0'
 			data-albums-search='true'
 		/>
-		<SortControls controlId='albums-sort-by' />
 	</div>
+	<div class='mb-4 flex items-center gap-2 sm:mx-auto sm:w-fit sm:max-w-full sm:justify-center sm:gap-3'>
+		<FilterSelect
+			selectId='albums-artist-filter'
+			label='Filter by artist'
+			wrapperClassName='min-w-0 flex-1 sm:w-[14rem] sm:flex-none'
+			data-albums-artist-filter='true'
+		>
+			<option value='all'>All artists</option>
+		</FilterSelect>
+		<SortControls
+			controlId='albums-sort-by'
+			containerClass='grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 sm:w-auto sm:max-w-full sm:flex-none sm:shrink-0 sm:grid-cols-[auto_auto_auto] sm:gap-3'
+		/>
+	</div>
+
+	<SyncStatusBanner bannerId='albums-sync-banner' textId='albums-sync-banner-text' className='mb-4' />
 
 	<div id='albums-list' data-view={view} class='space-y-3'></div>
 </section>
@@ -43,29 +65,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 		</div>
 
 		<input id='edit-album-id' type='hidden' />
-		<div class='border-border/60 bg-surface-raised/55 flex gap-1 rounded-[1.2rem] border p-1.5'>
-			<button
-				type='button'
-				id='edit-album-tab-manual'
-				class='bg-surface text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200'
-			>
-				Manual
-			</button>
-			<button
-				type='button'
-				id='edit-album-tab-spotify'
-				class='text-text-muted hover:text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold transition-all duration-200'
-			>
-				<span class='inline-flex items-center justify-center gap-1.5'>
-					<svg viewBox='0 0 24 24' class='h-3.5 w-3.5 fill-[#1DB954]' aria-hidden='true'
-						><path
-							d='M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z'
-						></path></svg
-					>
-					Spotify
-				</span>
-			</button>
-		</div>
+		<DialogTabSwitcher manualButtonId='edit-album-tab-manual' spotifyButtonId='edit-album-tab-spotify' />
 		<div id='edit-album-manual-panel' class='space-y-4'>
 			<FloatingInput id='edit-album-title' label='Title' required />
 			<FloatingSelect id='edit-album-artist-id' label='Artist' required />
@@ -78,18 +78,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 				imageAlt='Album cover preview'
 			/>
 			<FloatingInput id='edit-album-year' label='Year' type='number' min='0' />
-			<div class='border-border/60 bg-surface-raised/30 space-y-2 rounded-xl border p-3'>
-				<p class='text-text-muted text-xs font-semibold tracking-wide uppercase'>Sync from Spotify</p>
-				<button
-					type='button'
-					id='edit-album-spotify-refresh-btn'
-					class='border-border/60 bg-surface-raised/50 text-text hover:bg-surface-raised w-full cursor-pointer rounded-xl border px-4 py-3 text-sm font-semibold transition-all duration-200 focus:ring-4 focus:ring-[#1DB954]/10'
-					>Refresh from Spotify ID</button
-				>
-				<p class='text-text-muted text-xs'>
-					Uses this album's saved Spotify ID to refresh title, cover art, year, and artist match.
-				</p>
-			</div>
+			<SpotifyRefreshButton buttonId='edit-album-spotify-refresh-btn' />
 			<label for='edit-album-listened' class='flex items-center gap-2 text-sm font-semibold'
 				><input
 					id='edit-album-listened'
@@ -123,57 +112,96 @@ const { view = 'unlistened' } = Astro.props as Props;
 			</div>
 			<FloatingDateField id='edit-album-listened-at' label='Listened At (optional)' />
 		</div>
-		<div id='edit-album-spotify-panel' class='hidden space-y-3'>
-			<p
-				id='edit-album-spotify-offline-warning'
-				class='border-border/60 bg-surface-raised/70 text-text hidden rounded-xl border px-3 py-2 text-sm'
-			>
-				Spotify search is unavailable offline. Switch back to Manual to keep editing without reconnecting.
-			</p>
-			<div class='relative'>
-				<FloatingInput
-					id='edit-album-spotify-search'
-					label='Search Spotify Albums'
-					type='text'
-					autocomplete='off'
-					inputClassName='focus:border-[#1DB954]/60 focus:ring-[#1DB954]/10'
-				/>
-				<div id='edit-album-spotify-spinner' class='absolute top-1/2 right-3 hidden -translate-y-1/2'>
-					<svg class='text-text-muted h-4 w-4 animate-spin' viewBox='0 0 24 24' fill='none'
-						><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'
-						></circle><path
-							class='opacity-75'
-							fill='currentColor'
-							d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'></path></svg
-					>
-				</div>
-			</div>
-			<ul
-				id='edit-album-spotify-results'
-				class='border-border/60 bg-surface hidden overflow-hidden rounded-xl border shadow-lg'
-			>
-			</ul>
-			<p class='text-text-muted text-center text-xs'>
-				Select a Spotify album to replace the saved metadata for this entry.
-			</p>
-		</div>
+		<SpotifySearchPanel
+			panelId='edit-album-spotify-panel'
+			searchInputId='edit-album-spotify-search'
+			spinnerId='edit-album-spotify-spinner'
+			resultsId='edit-album-spotify-results'
+			warningId='edit-album-spotify-offline-warning'
+			searchLabel='Search Spotify Albums'
+			hint='Select a Spotify album to replace the saved metadata for this entry.'
+			offlineMessage='Spotify search is unavailable offline. Switch back to Manual to keep editing without reconnecting.'
+			className='hidden'
+		/>
 		<p id='edit-album-status' class='text-text-muted text-sm'></p>
-		<div class='flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:pt-0'>
+		<div class='flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-center sm:pt-0'>
 			<button
 				type='submit'
 				id='edit-album-submit'
-				class='bg-primary text-primary-fg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/30 focus:ring-primary/20 w-full cursor-pointer rounded-xl px-4 py-3 text-base font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md sm:w-auto sm:py-2 sm:text-sm'
+				class:list={[BUTTON_PRIMARY_CLASS, 'w-full sm:w-auto']}
 				>Save Album</button
 			>
 		</div>
 	</form>
 </BaseDialog>
 
+<BaseDialog
+	id='quick-listened-modal'
+	className='border-border bg-surface text-text m-auto w-[min(92vw,32rem)] rounded-2xl border p-0 shadow-2xl backdrop:bg-black/45'
+	contentClassName='p-5 sm:p-6'
+	mobilePlacement='center'
+>
+	<form id='quick-listened-form' class='space-y-4'>
+		<div class='space-y-1'>
+			<p class='text-text-muted text-[11px] font-semibold uppercase tracking-[0.24em]'>Quick Update</p>
+			<h3 class='text-xl font-semibold tracking-tight text-text'>Mark as Listened</h3>
+			<p id='quick-listened-context' class='text-sm text-text-muted'></p>
+		</div>
+
+		<input id='quick-listened-album-id' type='hidden' />
+
+		<div>
+			<label for='quick-listened-rating' class='block text-sm font-semibold'>Rating</label>
+			<div class='mt-2 space-y-3'>
+				<div class='flex items-center gap-2 sm:gap-3'>
+					<input
+						id='quick-listened-rating-slider'
+						type='range'
+						min='0'
+						max='10'
+						step='0.1'
+						value='5'
+						class='bg-border/50 accent-primary h-3 w-full cursor-pointer appearance-none rounded-lg'
+					/>
+					<div class='relative w-20 shrink-0'>
+						<FloatingInput
+							id='quick-listened-rating'
+							label='Rating'
+							type='number'
+							min='0'
+							max='10'
+							step='0.1'
+							inputmode='decimal'
+							inputClassName='h-11 px-2 pb-1 pt-4 text-sm'
+							labelClassName='left-2 top-1 text-[10px] peer-placeholder-shown:text-xs peer-focus:top-1 peer-focus:text-[10px]'
+						/>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<FloatingTextarea id='quick-listened-comment' label='Comment (optional)' rows={4} />
+
+		<p id='quick-listened-status' class='text-text-muted text-sm'></p>
+
+		<div class='flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-center sm:pt-0'>
+			<button
+				type='submit'
+				id='quick-listened-submit'
+				class:list={[BUTTON_PRIMARY_CLASS, 'w-full sm:w-auto']}
+			>
+				Save Listening
+			</button>
+		</div>
+	</form>
+</BaseDialog>
+
 <script>
 	import Sortable from 'sortablejs';
+	import { BUTTON_COMPACT_ICON_SECONDARY_CLASS } from '../../lib/button-styles';
 	import { syncCoverPreview } from '../../lib/cover-preview';
+	import { closeDialogSafely, openDialogSafely, toggleDialogTabs } from '../../lib/dialog';
 	import { formatDateTime, getCurrentDateLocal, toDateLocal } from '../../lib/date';
-	import { toggleCreateTabs } from '../../lib/dialog';
 	import { createEmptyState } from '../../lib/empty-state';
 	import { bindOnce } from '../../lib/events';
 	import {
@@ -184,9 +212,18 @@ const { view = 'unlistened' } = Astro.props as Props;
 		type UpdateAlbumInput,
 	} from '../../lib/library-cache';
 	import { hidePageLoadingSkeleton, showPageLoadingSkeleton } from '../../lib/page-skeletons';
-	import { getAlbumBySpotifyID, searchAlbums } from '../../lib/spotify';
+	import { getAlbumBySpotifyID, searchAlbums, type SpotifyAlbum } from '../../lib/spotify';
+	import {
+		bindSpotifySearch,
+		getSpotifySearchElements,
+		isNavigatorOnline,
+		resetSpotifySearch,
+		syncSpotifySearchAvailability,
+	} from '../../lib/spotify-search';
 	import { initializeSortControls, type SortDirection } from '../../lib/sort';
-	import { applyRatingTone } from '../../lib/ui';
+	import { ICON_PATHS, applyRatingTone, createAlbumPill } from '../../lib/ui';
+
+	type EntitySyncState = 'synced' | 'pending';
 
 	type Album = {
 		id: number;
@@ -200,19 +237,15 @@ const { view = 'unlistened' } = Astro.props as Props;
 		comment?: string | null;
 		listened_at?: string | null;
 		created_at: string;
+		local_only?: boolean;
+		sync_state?: EntitySyncState;
 	};
 
 	type Artist = {
 		id: number;
 		name: string;
-	};
-
-	type SpotifyAlbumLookup = {
-		id: string;
-		name: string;
-		artists: Array<{ name: string }>;
-		images: Array<{ url: string }>;
-		release_date: string;
+		local_only?: boolean;
+		sync_state?: EntitySyncState;
 	};
 
 	type SortableEndEvent = {
@@ -222,7 +255,6 @@ const { view = 'unlistened' } = Astro.props as Props;
 
 	type AlbumSortKey = 'artist' | 'title' | 'year' | 'rating' | 'createdAt' | 'listenedAt';
 	type AlbumView = 'unlistened' | 'listened';
-
 	type StatusType = 'neutral' | 'error' | 'success';
 
 	type InteractiveCardOptions = {
@@ -261,11 +293,22 @@ const { view = 'unlistened' } = Astro.props as Props;
 	const getListRoot = () => document.getElementById('albums-list') as HTMLDivElement | null;
 	const getSearchInput = () =>
 		getComponentRoot()?.querySelector('[data-albums-search="true"]') as HTMLInputElement | null;
+	const getArtistFilterInput = () =>
+		getComponentRoot()?.querySelector('[data-albums-artist-filter="true"]') as HTMLSelectElement | null;
+	const getSyncBanner = () => document.getElementById('albums-sync-banner') as HTMLDivElement | null;
+	const getSyncBannerText = () => document.getElementById('albums-sync-banner-text') as HTMLParagraphElement | null;
+	const getEditAlbumSpotifyElements = () =>
+		getSpotifySearchElements({
+			inputId: 'edit-album-spotify-search',
+			spinnerId: 'edit-album-spotify-spinner',
+			resultsId: 'edit-album-spotify-results',
+			warningId: 'edit-album-spotify-offline-warning',
+		});
 	const getView = (): 'unlistened' | 'listened' => {
 		const mode = getListRoot()?.dataset.view;
 		return mode === 'listened' ? 'listened' : 'unlistened';
 	};
-	const isOnline = () => (typeof navigator === 'undefined' ? true : navigator.onLine);
+	const isOnline = isNavigatorOnline;
 	let editAlbumDialog: HTMLDialogElement | null = null;
 	let editAlbumForm: HTMLFormElement | null = null;
 	let editAlbumIDInput: HTMLInputElement | null = null;
@@ -273,24 +316,42 @@ const { view = 'unlistened' } = Astro.props as Props;
 	let editAlbumArtistInput: HTMLSelectElement | null = null;
 	let editAlbumCoverInput: HTMLInputElement | null = null;
 	let editAlbumYearInput: HTMLInputElement | null = null;
-	let editAlbumSpotifySearchInput: HTMLInputElement | null = null;
 	let editAlbumListenedInput: HTMLInputElement | null = null;
 	let editAlbumRatingSliderInput: HTMLInputElement | null = null;
 	let editAlbumRatingInput: HTMLInputElement | null = null;
 	let editAlbumListenedAtInput: HTMLInputElement | null = null;
 	let editAlbumStatus: HTMLParagraphElement | null = null;
 	let editAlbumSubmit: HTMLButtonElement | null = null;
+	let quickListenedDialog: HTMLDialogElement | null = null;
+	let quickListenedForm: HTMLFormElement | null = null;
+	let quickListenedAlbumIDInput: HTMLInputElement | null = null;
+	let quickListenedContext: HTMLParagraphElement | null = null;
+	let quickListenedRatingSliderInput: HTMLInputElement | null = null;
+	let quickListenedRatingInput: HTMLInputElement | null = null;
+	let quickListenedCommentInput: HTMLTextAreaElement | null = null;
+	let quickListenedStatus: HTMLParagraphElement | null = null;
+	let quickListenedSubmit: HTMLButtonElement | null = null;
+	let currentQuickListenedAlbum: Album | null = null;
 	let listenedSortable: any = null;
 	let currentEditAlbumSpotifyID: string | null = null;
 	let currentSortBy: AlbumSortKey = 'artist';
 	let currentSortDirection: SortDirection = 'asc';
 	let currentSearchQuery = '';
+	let currentArtistFilter = 'all';
 	let initializedSortView: AlbumView | null = null;
 	let toolkitRetryCount = 0;
-	let editAlbumSpotifySearchDebounce: ReturnType<typeof setTimeout>;
+	let lastLoadedAlbums: Album[] = [];
+	let lastLoadedArtists: Artist[] = [];
 	const MAX_TOOLKIT_RETRIES = 18;
 
 	const getNormalizedSearchQuery = () => currentSearchQuery.trim().toLocaleLowerCase();
+	const hasPendingSync = (entity: { local_only?: boolean; sync_state?: EntitySyncState | null }) =>
+		Boolean(entity.local_only) || entity.sync_state === 'pending';
+	const hasActiveAlbumFilters = () =>
+		Boolean(getNormalizedSearchQuery()) || currentArtistFilter !== 'all';
+	const syncThemedFilterSelect = (select: HTMLSelectElement | null) => {
+		select?.dispatchEvent(new Event('themed-select-sync'));
+	};
 
 	const getDefaultSortState = (view: AlbumView): { sortBy: AlbumSortKey; sortDirection: SortDirection } => {
 		return view === 'listened' ?
@@ -306,13 +367,26 @@ const { view = 'unlistened' } = Astro.props as Props;
 		editAlbumArtistInput = document.getElementById('edit-album-artist-id') as HTMLSelectElement | null;
 		editAlbumCoverInput = document.getElementById('edit-album-cover-url') as HTMLInputElement | null;
 		editAlbumYearInput = document.getElementById('edit-album-year') as HTMLInputElement | null;
-		editAlbumSpotifySearchInput = document.getElementById('edit-album-spotify-search') as HTMLInputElement | null;
 		editAlbumListenedInput = document.getElementById('edit-album-listened') as HTMLInputElement | null;
 		editAlbumRatingSliderInput = document.getElementById('edit-album-rating-slider') as HTMLInputElement | null;
 		editAlbumRatingInput = document.getElementById('edit-album-rating') as HTMLInputElement | null;
 		editAlbumListenedAtInput = document.getElementById('edit-album-listened-at') as HTMLInputElement | null;
 		editAlbumStatus = document.getElementById('edit-album-status') as HTMLParagraphElement | null;
 		editAlbumSubmit = document.getElementById('edit-album-submit') as HTMLButtonElement | null;
+	};
+
+	const refreshQuickListenedRefs = () => {
+		quickListenedDialog = document.getElementById('quick-listened-modal') as HTMLDialogElement | null;
+		quickListenedForm = document.getElementById('quick-listened-form') as HTMLFormElement | null;
+		quickListenedAlbumIDInput = document.getElementById('quick-listened-album-id') as HTMLInputElement | null;
+		quickListenedContext = document.getElementById('quick-listened-context') as HTMLParagraphElement | null;
+		quickListenedRatingSliderInput = document.getElementById(
+			'quick-listened-rating-slider',
+		) as HTMLInputElement | null;
+		quickListenedRatingInput = document.getElementById('quick-listened-rating') as HTMLInputElement | null;
+		quickListenedCommentInput = document.getElementById('quick-listened-comment') as HTMLTextAreaElement | null;
+		quickListenedStatus = document.getElementById('quick-listened-status') as HTMLParagraphElement | null;
+		quickListenedSubmit = document.getElementById('quick-listened-submit') as HTMLButtonElement | null;
 	};
 
 	const setEditAlbumCover = (url: string | null | undefined) => {
@@ -325,44 +399,21 @@ const { view = 'unlistened' } = Astro.props as Props;
 	};
 
 	const switchEditAlbumTab = (tab: 'manual' | 'spotify') => {
-		toggleCreateTabs(tab, {
+		toggleDialogTabs(tab, {
 			manualPanel: document.getElementById('edit-album-manual-panel'),
 			spotifyPanel: document.getElementById('edit-album-spotify-panel'),
 			manualButton: document.getElementById('edit-album-tab-manual'),
 			spotifyButton: document.getElementById('edit-album-tab-spotify'),
-			searchInput: document.getElementById('edit-album-spotify-search'),
+			searchInput: getEditAlbumSpotifyElements().input,
 		});
 	};
 
-	const hideEditAlbumSpotifyResults = () => {
-		const results = document.getElementById('edit-album-spotify-results');
-		results?.classList.add('hidden');
-	};
-
 	const resetEditAlbumSpotifySearch = () => {
-		if (editAlbumSpotifySearchInput) editAlbumSpotifySearchInput.value = '';
-		const spinner = document.getElementById('edit-album-spotify-spinner');
-		spinner?.classList.add('hidden');
-		hideEditAlbumSpotifyResults();
+		resetSpotifySearch(getEditAlbumSpotifyElements());
 	};
 
 	const syncEditAlbumSpotifyAvailability = () => {
-		const offline = !isOnline();
-		const warning = document.getElementById('edit-album-spotify-offline-warning');
-		const spinner = document.getElementById('edit-album-spotify-spinner');
-
-		if (editAlbumSpotifySearchInput) {
-			editAlbumSpotifySearchInput.disabled = offline;
-			editAlbumSpotifySearchInput.placeholder = offline ? 'Spotify search requires a connection' : ' ';
-			if (offline) editAlbumSpotifySearchInput.value = '';
-		}
-
-		warning?.classList.toggle('hidden', !offline);
-
-		if (offline) {
-			spinner?.classList.add('hidden');
-			hideEditAlbumSpotifyResults();
-		}
+		syncSpotifySearchAvailability(getEditAlbumSpotifyElements(), { isOnline });
 	};
 
 	const clampRating = (value: number) => Math.min(10, Math.max(0, value));
@@ -401,6 +452,72 @@ const { view = 'unlistened' } = Astro.props as Props;
 		if (!a) return 1;
 		if (!b) return -1;
 		return new Date(a).getTime() - new Date(b).getTime();
+	};
+
+	const syncAlbumBanner = (albums = lastLoadedAlbums, artists = lastLoadedArtists) => {
+		const banner = getSyncBanner();
+		const text = getSyncBannerText();
+		if (!banner || !text) return;
+
+		const pendingCount =
+			albums.filter((album) => hasPendingSync(album)).length +
+			artists.filter((artist) => hasPendingSync(artist)).length;
+
+		if (pendingCount === 0) {
+			banner.classList.add('hidden');
+			text.textContent = '';
+			return;
+		}
+
+		banner.classList.remove('hidden');
+		text.textContent =
+			isOnline() ?
+				`${pendingCount} change${pendingCount === 1 ? '' : 's'} pending sync. The app will keep retrying automatically.`
+			:	`${pendingCount} change${pendingCount === 1 ? '' : 's'} saved offline. They will sync when you reconnect.`;
+	};
+
+	const syncAlbumArtistFilterOptions = (artists: Artist[]) => {
+		const filterInput = getArtistFilterInput();
+		if (!filterInput) return;
+
+		const previousValue = currentArtistFilter;
+		filterInput.innerHTML = '';
+
+		const allOption = document.createElement('option');
+		allOption.value = 'all';
+		allOption.textContent = 'All artists';
+		filterInput.appendChild(allOption);
+
+		for (const artist of artists) {
+			const option = document.createElement('option');
+			option.value = String(artist.id);
+			option.textContent = artist.name;
+			filterInput.appendChild(option);
+		}
+
+		const nextValue =
+			previousValue === 'all' || artists.some((artist) => String(artist.id) === previousValue) ? previousValue : 'all';
+		currentArtistFilter = nextValue;
+		filterInput.value = nextValue;
+		syncThemedFilterSelect(filterInput);
+	};
+
+	const resetAlbumFilters = () => {
+		currentSearchQuery = '';
+		currentArtistFilter = 'all';
+
+		const searchInput = getSearchInput();
+		if (searchInput) searchInput.value = '';
+		const artistFilterInput = getArtistFilterInput();
+		if (artistFilterInput) {
+			artistFilterInput.value = 'all';
+			syncThemedFilterSelect(artistFilterInput);
+		}
+	};
+
+	const matchesAlbumFilters = (album: Album) => {
+		if (currentArtistFilter !== 'all' && String(album.artist_id) !== currentArtistFilter) return false;
+		return true;
 	};
 
 	const sortAlbums = (albums: Album[], artistNameMap: Map<number, string>): Album[] => {
@@ -511,10 +628,11 @@ const { view = 'unlistened' } = Astro.props as Props;
 		listRoot.replaceChildren(
 			createEmptyState({
 				title: `No matches in ${modeLabel}`,
-				description: `Nothing matched "${currentSearchQuery}". Try a different search or clear it to see everything again.`,
-				buttonLabel: 'Clear Search',
+				description:
+					'Nothing matched the current search and filters. Adjust them or reset to see your full library again.',
+				buttonLabel: 'Reset Filters',
 				onClick: () => {
-					clearAlbumSearch();
+					resetAlbumFilters();
 					void loadAlbums();
 				},
 			}),
@@ -535,6 +653,10 @@ const { view = 'unlistened' } = Astro.props as Props;
 		getToolkit().setStatusText(editAlbumStatus, message, type);
 	};
 
+	const setQuickListenedStatus = (message: string, type: 'neutral' | 'error' | 'success' = 'neutral') => {
+		getToolkit().setStatusText(quickListenedStatus, message, type);
+	};
+
 	const autoSelectEditArtistFromSpotifyNames = (spotifyArtistNames: string[]): boolean => {
 		if (!editAlbumArtistInput || spotifyArtistNames.length === 0) return false;
 
@@ -543,6 +665,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 			if (!option.value) continue;
 			if (targets.has(normalizeArtistName(option.textContent ?? ''))) {
 				editAlbumArtistInput.value = option.value;
+				editAlbumArtistInput.dispatchEvent(new Event('themed-select-sync'));
 				return true;
 			}
 		}
@@ -550,7 +673,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 		return false;
 	};
 
-	const applySpotifyAlbumToEditForm = (album: SpotifyAlbumLookup, options: { switchToManual?: boolean } = {}) => {
+	const applySpotifyAlbumToEditForm = (album: SpotifyAlbum, options: { switchToManual?: boolean } = {}) => {
 		if (!editAlbumTitleInput || !editAlbumYearInput) return;
 
 		const cover = album.images[0]?.url ?? '';
@@ -582,6 +705,25 @@ const { view = 'unlistened' } = Astro.props as Props;
 			`Spotify metadata applied. No local artist matched ${spotifyArtists[0]}, so choose one manually before saving.`,
 			'neutral',
 		);
+	};
+
+	const renderEditAlbumResult = (album: SpotifyAlbum) => {
+		const img = album.images[0];
+		const year = album.release_date ? album.release_date.slice(0, 4) : '';
+		const artistNames = album.artists.map((artist) => artist.name).join(', ');
+		const item = document.createElement('li');
+		item.className =
+			'border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm transition-colors hover:bg-surface-raised last:border-0';
+		item.innerHTML = `
+			${img ? `<img src="${img.url}" alt="" class="h-11 w-11 shrink-0 rounded-lg border border-border/40 object-cover" />` : '<div class="bg-surface-raised flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/40 text-xs text-text-muted">?</div>'}
+			<div class="min-w-0 flex-1">
+				<p class="truncate font-medium text-text">${album.name}</p>
+				<p class="truncate text-xs text-text-muted">${artistNames}${year ? ` · ${year}` : ''}</p>
+			</div>
+			<span class="text-secondary ml-auto shrink-0 text-xs font-medium">Select →</span>
+		`;
+		item.addEventListener('click', () => applySpotifyAlbumToEditForm(album));
+		return item;
 	};
 
 	const showDialogSafely = (dialog: HTMLDialogElement | null) => {
@@ -620,6 +762,23 @@ const { view = 'unlistened' } = Astro.props as Props;
 			if (listened && !editAlbumListenedAtInput.value) editAlbumListenedAtInput.value = getCurrentDateLocal();
 			if (!listened) editAlbumListenedAtInput.value = '';
 		}
+	};
+
+	const syncQuickListenedRatingControls = (source: 'slider' | 'manual') => {
+		if (!quickListenedRatingSliderInput || !quickListenedRatingInput) return;
+
+		if (source === 'slider') {
+			const value = clampRating(Number(quickListenedRatingSliderInput.value));
+			if (!Number.isFinite(value)) return;
+			quickListenedRatingInput.value = value.toFixed(1);
+			return;
+		}
+
+		const parsed = Number(quickListenedRatingInput.value);
+		if (!Number.isFinite(parsed)) return;
+		const value = clampRating(parsed);
+		quickListenedRatingSliderInput.value = value.toFixed(1);
+		quickListenedRatingInput.value = value.toFixed(1);
 	};
 
 	const populateArtistSelect = (selectedID: number) => {
@@ -668,6 +827,29 @@ const { view = 'unlistened' } = Astro.props as Props;
 		showDialogSafely(editAlbumDialog);
 	};
 
+	const openQuickListenedDialog = (album: Album, artistName: string) => {
+		refreshQuickListenedRefs();
+		if (
+			!quickListenedDialog ||
+			!quickListenedAlbumIDInput ||
+			!quickListenedContext ||
+			!quickListenedRatingSliderInput ||
+			!quickListenedRatingInput ||
+			!quickListenedCommentInput
+		)
+			return;
+
+		currentQuickListenedAlbum = album;
+		quickListenedAlbumIDInput.value = String(album.id);
+		quickListenedContext.textContent = `${artistName} • ${album.title}`;
+		const rating = album.rating == null ? 5 : clampRating(Number(album.rating));
+		quickListenedRatingSliderInput.value = rating.toFixed(1);
+		quickListenedRatingInput.value = rating.toFixed(1);
+		quickListenedCommentInput.value = album.comment ?? '';
+		setQuickListenedStatus('');
+		openDialogSafely(quickListenedDialog);
+	};
+
 	const renderAlbumCard = (album: Album, artistName: string) => {
 		const mode = getView();
 		const isListenedView = mode === 'listened';
@@ -680,6 +862,21 @@ const { view = 'unlistened' } = Astro.props as Props;
 		});
 		const { wrapper, left, right, setBody } = card;
 		wrapper.dataset.albumId = String(album.id);
+
+		if (!isListenedView) {
+			const listenedButton = document.createElement('button');
+			listenedButton.type = 'button';
+			listenedButton.className = `${BUTTON_COMPACT_ICON_SECONDARY_CLASS} h-8 w-8 rounded-lg sm:h-9 sm:w-9 sm:rounded-xl`;
+			listenedButton.setAttribute('aria-label', `Mark ${album.title} as listened`);
+			listenedButton.title = 'Mark as listened';
+			listenedButton.innerHTML = `<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON_PATHS.listened}"></path></svg>`;
+			listenedButton.addEventListener('click', (event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				openQuickListenedDialog(album, artistName);
+			});
+			left.appendChild(listenedButton);
+		}
 
 		if (album.cover_url) {
 			const coverWrap = document.createElement('div');
@@ -703,6 +900,16 @@ const { view = 'unlistened' } = Astro.props as Props;
 		meta.className = 'mt-0.5 truncate text-sm text-text-muted';
 		meta.textContent = album.year == null ? artistName : `${artistName} • ${album.year}`;
 		headerContent.appendChild(meta);
+
+		if (hasPendingSync(album)) {
+			const syncPill = createAlbumPill(
+				isOnline() ? 'Pending Sync' : 'Saved Offline',
+				ICON_PATHS.syncPending,
+				'primary',
+			);
+			syncPill.classList.add('mt-2');
+			headerContent.appendChild(syncPill);
+		}
 
 		left.appendChild(headerContent);
 
@@ -831,66 +1038,11 @@ const { view = 'unlistened' } = Astro.props as Props;
 	};
 
 	const bindEditAlbumSpotifySearch = () => {
-		if (!editAlbumSpotifySearchInput || editAlbumSpotifySearchInput.dataset.bound === 'true') return;
-		editAlbumSpotifySearchInput.dataset.bound = 'true';
-		editAlbumSpotifySearchInput.addEventListener('input', () => {
-			if (!editAlbumSpotifySearchInput) return;
-			clearTimeout(editAlbumSpotifySearchDebounce);
-			const query = editAlbumSpotifySearchInput.value.trim();
-
-			if (!isOnline()) {
-				syncEditAlbumSpotifyAvailability();
-				return;
-			}
-
-			if (!query) {
-				hideEditAlbumSpotifyResults();
-				return;
-			}
-
-			editAlbumSpotifySearchDebounce = setTimeout(async () => {
-				const results = document.getElementById('edit-album-spotify-results') as HTMLUListElement | null;
-				const spinner = document.getElementById('edit-album-spotify-spinner') as HTMLDivElement | null;
-				if (!results || !spinner) return;
-
-				spinner.classList.remove('hidden');
-				try {
-					const albums = await searchAlbums(query);
-					results.innerHTML = '';
-					if (!albums.length) {
-						results.innerHTML =
-							'<li class="px-4 py-3 text-center text-sm italic text-text-muted">No results found on Spotify</li>';
-					} else {
-						for (const album of albums) {
-							const img = album.images[0];
-							const year = album.release_date ? album.release_date.slice(0, 4) : '';
-							const artistNames = album.artists.map((artist) => artist.name).join(', ');
-							const li = document.createElement('li');
-							li.className =
-								'border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm transition-colors hover:bg-surface-raised last:border-0';
-							li.innerHTML = `
-								${img ? `<img src="${img.url}" alt="" class="h-11 w-11 shrink-0 rounded-lg border border-border/40 object-cover" />` : '<div class="bg-surface-raised flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/40 text-xs text-text-muted">?</div>'}
-								<div class="min-w-0 flex-1">
-									<p class="truncate font-medium text-text">${album.name}</p>
-									<p class="truncate text-xs text-text-muted">${artistNames}${year ? ` · ${year}` : ''}</p>
-								</div>
-								<span class="text-secondary ml-auto shrink-0 text-xs font-medium">Select →</span>
-							`;
-							li.addEventListener('click', () => {
-								applySpotifyAlbumToEditForm(album);
-							});
-							results.appendChild(li);
-						}
-					}
-					results.classList.remove('hidden');
-				} catch (error) {
-					const message = error instanceof Error ? error.message : 'Search failed. Try again.';
-					results.innerHTML = `<li class="px-4 py-3 text-center text-sm font-medium text-[var(--error)]">${message}</li>`;
-					results.classList.remove('hidden');
-				} finally {
-					spinner.classList.add('hidden');
-				}
-			}, 350);
+		bindSpotifySearch({
+			elements: getEditAlbumSpotifyElements(),
+			search: searchAlbums,
+			renderResult: renderEditAlbumResult,
+			isOnline,
 		});
 	};
 
@@ -910,6 +1062,21 @@ const { view = 'unlistened' } = Astro.props as Props;
 		});
 	};
 
+	const bindFilterHandlers = () => {
+		const artistFilterInput = getArtistFilterInput();
+		if (artistFilterInput) {
+			artistFilterInput.value = currentArtistFilter;
+			syncThemedFilterSelect(artistFilterInput);
+		}
+		if (artistFilterInput && artistFilterInput.dataset.bound !== 'true') {
+			artistFilterInput.dataset.bound = 'true';
+			artistFilterInput.addEventListener('change', () => {
+				currentArtistFilter = artistFilterInput.value;
+				void loadAlbums();
+			});
+		}
+	};
+
 	const loadAlbums = async () => {
 		const listRoot = getListRoot();
 		if (!listRoot) return;
@@ -921,7 +1088,11 @@ const { view = 'unlistened' } = Astro.props as Props;
 			const { albums, artists } = await loadLibraryData();
 			const albumData = albums as Album[];
 			const artistData = artists as Artist[];
+			lastLoadedAlbums = albumData;
+			lastLoadedArtists = artistData;
 			artistsCache = [...artistData].sort((a, b) => a.name.localeCompare(b.name));
+			syncAlbumArtistFilterOptions(artistsCache);
+			syncAlbumBanner();
 			const mode = getView();
 			syncAlbumSortControls();
 			const filteredAlbums = albumData.filter((album) => album.listened === (mode === 'listened'));
@@ -934,7 +1105,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 			const artistNameMap = new Map<number, string>();
 			for (const artist of artistData) artistNameMap.set(artist.id, artist.name);
 			const visibleAlbums = filteredAlbums.filter((album) =>
-				matchesAlbumSearch(album, artistNameMap.get(album.artist_id) ?? ''),
+				matchesAlbumFilters(album) && matchesAlbumSearch(album, artistNameMap.get(album.artist_id) ?? ''),
 			);
 			if (!visibleAlbums.length) {
 				clearListenedState();
@@ -942,7 +1113,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 				return;
 			}
 
-			if (mode === 'listened' && !getNormalizedSearchQuery()) {
+			if (mode === 'listened' && !hasActiveAlbumFilters()) {
 				setupListenedReorder(visibleAlbums);
 			} else {
 				clearListenedState();
@@ -971,7 +1142,9 @@ const { view = 'unlistened' } = Astro.props as Props;
 
 		toolkitRetryCount = 0;
 		bindSearchHandlers();
+		bindFilterHandlers();
 		bindEditHandlers();
+		bindQuickListenedHandlers();
 		syncAlbumSortControls();
 		void loadAlbums();
 	};
@@ -1001,7 +1174,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 		refreshSpotifyButton?.addEventListener('click', async () => {
 			if (!editAlbumTitleInput || !editAlbumCoverInput || !editAlbumYearInput) return;
 			if (!currentEditAlbumSpotifyID) {
-				setEditStatus('No Spotify ID is saved for this album, so it cannot be refreshed.', 'error');
+				setEditStatus('This album does not have a saved Spotify match to refresh.', 'error');
 				return;
 			}
 
@@ -1016,7 +1189,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 				setEditStatus('Failed to refresh from Spotify.', 'error');
 			} finally {
 				refreshSpotifyButton.disabled = false;
-				refreshSpotifyButton.textContent = 'Refresh from Spotify ID';
+				refreshSpotifyButton.textContent = 'Refresh from Spotify';
 			}
 		});
 
@@ -1075,6 +1248,72 @@ const { view = 'unlistened' } = Astro.props as Props;
 		});
 	};
 
+	const bindQuickListenedHandlers = () => {
+		refreshQuickListenedRefs();
+		if (!quickListenedForm || quickListenedForm.dataset.bound === 'true') return;
+		quickListenedForm.dataset.bound = 'true';
+
+		quickListenedDialog?.addEventListener('click', (event) => {
+			if (quickListenedDialog && event.target === quickListenedDialog) closeDialogSafely(quickListenedDialog);
+		});
+		quickListenedRatingSliderInput?.addEventListener('input', () => syncQuickListenedRatingControls('slider'));
+		quickListenedRatingInput?.addEventListener('input', () => syncQuickListenedRatingControls('manual'));
+		quickListenedRatingInput?.addEventListener('change', () => syncQuickListenedRatingControls('manual'));
+
+		quickListenedForm.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			if (
+				!currentQuickListenedAlbum ||
+				!quickListenedRatingInput ||
+				!quickListenedCommentInput ||
+				!quickListenedSubmit
+			)
+				return;
+
+			const parsed = Number(quickListenedRatingInput.value.trim());
+			if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10) {
+				setQuickListenedStatus('Enter a rating between 0 and 10.', 'error');
+				return;
+			}
+
+			quickListenedSubmit.disabled = true;
+			quickListenedSubmit.textContent = 'Saving...';
+			setQuickListenedStatus('Saving listening...');
+
+			try {
+				const result = await updateAlbumRecord(currentQuickListenedAlbum.id, {
+					artist_id: currentQuickListenedAlbum.artist_id,
+					title: currentQuickListenedAlbum.title,
+					listened: true,
+					rating: Math.round(parsed * 10) / 10,
+					comment: quickListenedCommentInput.value.trim(),
+					listened_at: new Date().toISOString(),
+					...(currentQuickListenedAlbum.cover_url ?
+						{ cover_url: currentQuickListenedAlbum.cover_url }
+					:	{}),
+					...(currentQuickListenedAlbum.year != null ? { year: currentQuickListenedAlbum.year } : {}),
+					...(currentQuickListenedAlbum.spotify_id ?
+						{ spotify_id: currentQuickListenedAlbum.spotify_id }
+					:	{}),
+				});
+				setQuickListenedStatus(
+					result.syncStatus === 'synced' ?
+						'Album marked as listened.'
+					:	'Album saved offline. It will sync when you reconnect.',
+					'success',
+				);
+				quickListenedSubmit.disabled = false;
+				quickListenedSubmit.textContent = 'Save Listening';
+				setTimeout(() => closeDialogSafely(quickListenedDialog), 250);
+				return;
+			} catch {
+				setQuickListenedStatus('Failed to mark album as listened.', 'error');
+				quickListenedSubmit.disabled = false;
+				quickListenedSubmit.textContent = 'Save Listening';
+			}
+		});
+	};
+
 	bindOnce('__albumCollectionBound', () => {
 		window.addEventListener('library-data-changed', () => {
 			void loadAlbums();
@@ -1086,6 +1325,12 @@ const { view = 'unlistened' } = Astro.props as Props;
 		window.addEventListener('online', syncEditAlbumSpotifyAvailability);
 		window.addEventListener('offline', syncEditAlbumSpotifyAvailability);
 		document.addEventListener('astro:page-load', syncEditAlbumSpotifyAvailability);
+	});
+
+	bindOnce('__albumSyncBannerBound', () => {
+		window.addEventListener('online', () => syncAlbumBanner());
+		window.addEventListener('offline', () => syncAlbumBanner());
+		document.addEventListener('astro:page-load', () => syncAlbumBanner());
 	});
 
 	refreshAlbumsView();

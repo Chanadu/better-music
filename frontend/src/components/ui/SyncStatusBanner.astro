@@ -1,0 +1,21 @@
+---
+interface Props {
+	bannerId: string;
+	textId: string;
+	className?: string;
+}
+
+const { bannerId, textId, className = '' } = Astro.props as Props;
+---
+
+<div
+	id={bannerId}
+	class:list={[
+		'hidden rounded-2xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-text shadow-sm',
+		className,
+	]}
+	role='status'
+	aria-live='polite'
+>
+	<p id={textId}></p>
+</div>

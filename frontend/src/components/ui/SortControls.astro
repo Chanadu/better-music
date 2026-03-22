@@ -1,4 +1,9 @@
 ---
+import {
+	BUTTON_COMPACT_ICON_SECONDARY_CLASS,
+	BUTTON_COMPACT_SECONDARY_CLASS,
+} from '../../lib/button-styles';
+
 interface Props {
 	controlId: string;
 	label?: string;
@@ -14,26 +19,73 @@ const {
 const triggerId = `${controlId}-trigger`;
 const valueId = `${controlId}-value`;
 const menuId = `${controlId}-menu`;
+const nativeSelectId = `${controlId}-native`;
+const nativeValueId = `${controlId}-native-value`;
 const directionId = controlId.replace(/-by$/, '-direction');
+const nativeSelectOverlayClass =
+	'peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none rounded-xl opacity-0 focus:outline-none disabled:cursor-not-allowed';
 ---
 
-<div class={containerClass}>
+<div class={containerClass} data-sort-controls-root='true'>
 	<label
 		for={triggerId}
 		class='text-text-muted hidden w-8 shrink-0 text-[11px] font-semibold tracking-[0.16em] uppercase sm:block sm:w-11 sm:text-xs sm:tracking-[0.22em]'
 	>
 		{label}
 	</label>
-	<div class='relative w-fit max-w-[7.75rem] min-w-0 sm:max-w-[11rem] md:max-w-[13rem]' data-themed-dropdown-root>
+	<div
+		class='relative hidden min-w-0 w-full max-w-none sm:w-fit sm:max-w-[11rem] md:max-w-[13rem]'
+		data-sort-native-wrapper='true'
+	>
+		<select id={nativeSelectId} class={nativeSelectOverlayClass} data-sort-native-select='true'></select>
+		<div
+			class:list={[
+				BUTTON_COMPACT_SECONDARY_CLASS,
+				'pointer-events-none relative w-full gap-0 pr-10 text-left peer-focus:ring-2 peer-focus:ring-primary/10 peer-disabled:opacity-50 sm:pr-11',
+			]}
+		>
+			<span id={nativeValueId} data-sort-native-value='true' class='min-w-0 flex-1 truncate text-left sm:max-w-[7rem] md:max-w-[9rem]'>Select</span>
+			<svg
+				viewBox='0 0 24 24'
+				class='text-text-muted pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 shrink-0 sm:right-4'
+				aria-hidden='true'
+			>
+				<path
+					d='M6 9l6 6 6-6'
+					fill='none'
+					stroke='currentColor'
+					stroke-width='2'
+					stroke-linecap='round'
+					stroke-linejoin='round'
+				></path>
+			</svg>
+		</div>
+	</div>
+	<div
+		class='relative min-w-0 w-full max-w-none sm:w-fit sm:max-w-[11rem] md:max-w-[13rem]'
+		data-themed-dropdown-root
+		data-sort-custom-dropdown='true'
+	>
 		<button
 			id={triggerId}
 			type='button'
 			aria-haspopup='listbox'
 			aria-expanded='false'
-			class='border-border/70 bg-surface/92 text-text hover:border-primary/30 hover:bg-surface-raised focus:ring-primary/10 inline-flex h-10 w-auto max-w-full min-w-0 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm shadow-sm transition-all duration-200 focus:ring-2 sm:h-11 sm:rounded-2xl sm:px-4'
+			data-sort-custom-trigger='true'
+			class:list={[BUTTON_COMPACT_SECONDARY_CLASS, 'relative w-full gap-0 pr-10 text-left sm:pr-11']}
 		>
-			<span id={valueId} class='max-w-[4.6rem] truncate text-left sm:max-w-[7rem] md:max-w-[9rem]'>Select</span>
-			<svg viewBox='0 0 24 24' class='text-text-muted h-4 w-4' aria-hidden='true'
+			<span
+				id={valueId}
+				data-sort-custom-value='true'
+				class='min-w-0 flex-1 truncate text-left sm:max-w-[7rem] md:max-w-[9rem]'
+			>
+				Select
+			</span>
+			<svg
+				viewBox='0 0 24 24'
+				class='text-text-muted pointer-events-none absolute inset-y-0 right-3 my-auto h-4 w-4 shrink-0 sm:right-4'
+				aria-hidden='true'
+			>
 				><path
 					d='M6 9l6 6 6-6'
 					fill='none'
@@ -46,6 +98,7 @@ const directionId = controlId.replace(/-by$/, '-direction');
 		<div
 			id={menuId}
 			role='listbox'
+			data-sort-custom-menu='true'
 			class='border-border/70 bg-surface absolute top-[calc(100%+0.45rem)] left-0 z-30 hidden max-h-64 w-full overflow-y-auto rounded-2xl border p-2 shadow-[var(--shell-shadow)]'
 		>
 		</div>
@@ -55,10 +108,41 @@ const directionId = controlId.replace(/-by$/, '-direction');
 		type='button'
 		aria-label='Sort direction'
 		title='Ascending'
-		class='border-border/70 bg-surface/92 text-text hover:border-primary/30 hover:bg-surface-raised focus:ring-primary/10 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all duration-200 focus:ring-2 sm:h-11 sm:w-11 sm:rounded-2xl'
+		class={BUTTON_COMPACT_ICON_SECONDARY_CLASS}
 	>
 		<svg viewBox='0 0 24 24' class='h-4 w-4' aria-hidden='true'
 			><path d='M12 7l-4 6h8z' fill='currentColor'></path></svg
 		>
 	</button>
 </div>
+
+<script>
+	import { DROPDOWN_MENU_MODE_EVENT, getDropdownMenuMode } from '../../lib/dropdown-mode';
+	import { bindOnce } from '../../lib/events';
+
+	bindOnce('__sortControlsModeBound', () => {
+		const syncSortControlsMode = () => {
+			for (const root of document.querySelectorAll('[data-sort-controls-root="true"]')) {
+				const container = root as HTMLDivElement;
+				const nativeWrapper = container.querySelector(
+					'[data-sort-native-wrapper="true"]',
+				) as HTMLDivElement | null;
+				const customDropdown = container.querySelector(
+					'[data-sort-custom-dropdown="true"]',
+				) as HTMLDivElement | null;
+				const customMenu = container.querySelector(
+					'[data-sort-custom-menu="true"]',
+				) as HTMLDivElement | null;
+				const useSystemMenus = getDropdownMenuMode() === 'system';
+
+				nativeWrapper?.classList.toggle('hidden', !useSystemMenus);
+				customDropdown?.classList.toggle('hidden', useSystemMenus);
+				if (useSystemMenus) customMenu?.classList.add('hidden');
+			}
+		};
+
+		document.addEventListener('astro:page-load', syncSortControlsMode);
+		window.addEventListener(DROPDOWN_MENU_MODE_EVENT, syncSortControlsMode);
+		syncSortControlsMode();
+	});
+</script>

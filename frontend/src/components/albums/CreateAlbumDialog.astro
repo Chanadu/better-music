@@ -2,9 +2,12 @@
 import ModalHeader from '../ui/ModalHeader.astro';
 import BaseDialog from '../ui/BaseDialog.astro';
 import CoverPreviewField from '../ui/CoverPreviewField.astro';
+import DialogTabSwitcher from '../ui/DialogTabSwitcher.astro';
 import FloatingDateField from '../ui/FloatingDateField.astro';
 import FloatingInput from '../ui/FloatingInput.astro';
 import FloatingSelect from '../ui/FloatingSelect.astro';
+import SpotifySearchPanel from '../ui/SpotifySearchPanel.astro';
+import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 ---
 
 <BaseDialog
@@ -15,30 +18,12 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 >
 	<ModalHeader title='Create Album' />
 
-	<!-- Tab switcher -->
-	<div class='border-border/60 bg-surface-raised/55 mt-4 flex gap-1 rounded-[1.2rem] border p-1.5'>
-		<button
-			type='button'
-			id='album-tab-manual'
-			class='text-text-muted hover:text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold transition-all duration-200'
-		>
-			Manual
-		</button>
-		<button
-			type='button'
-			id='album-tab-spotify'
-			class='bg-surface text-text flex-1 rounded-[0.95rem] px-3 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200'
-		>
-			<span class='inline-flex items-center justify-center gap-1.5'>
-				<svg viewBox='0 0 24 24' class='h-3.5 w-3.5 fill-[#1DB954]' aria-hidden='true'
-					><path
-						d='M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z'
-					></path></svg
-				>
-				Spotify
-			</span>
-		</button>
-	</div>
+	<DialogTabSwitcher
+		manualButtonId='album-tab-manual'
+		spotifyButtonId='album-tab-spotify'
+		activeTab='spotify'
+		className='mt-4'
+	/>
 
 	<!-- Manual Tab -->
 	<form id='album-form' class='mt-4 hidden space-y-4'>
@@ -121,57 +106,43 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 		<button
 			type='submit'
 			id='album-create-btn'
-			class='bg-primary text-primary-fg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/30 focus:ring-primary/20 mx-auto mt-6 block w-full cursor-pointer rounded-xl px-4 py-3 text-base font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto'
+			class:list={[BUTTON_PRIMARY_CLASS, 'mx-auto mt-6 w-full sm:w-auto']}
 		>
 			Create Album
 		</button>
 	</form>
 
-	<!-- Spotify Tab -->
-	<div id='album-spotify-tab' class='mt-4'>
-		<p
-			id='album-spotify-offline-warning'
-			class='border-border/60 bg-surface-raised/70 text-text mb-3 hidden rounded-xl border px-3 py-2 text-sm'
-		>
-			Spotify search is unavailable offline. Switch to Manual to create an album without reconnecting.
-		</p>
-		<div class='relative'>
-			<FloatingInput
-				id='album-spotify-search'
-				label='Search Spotify Albums'
-				type='text'
-				autocomplete='off'
-				inputClassName='focus:border-[#1DB954]/60 focus:ring-[#1DB954]/10'
-			/>
-			<div id='album-spotify-spinner' class='absolute top-1/2 right-3 hidden -translate-y-1/2'>
-				<svg class='text-text-muted h-4 w-4 animate-spin' viewBox='0 0 24 24' fill='none'
-					><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'
-					></circle><path
-						class='opacity-75'
-						fill='currentColor'
-						d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'></path></svg
-				>
-			</div>
-		</div>
-		<ul
-			id='album-spotify-results'
-			class='border-border/60 bg-surface mt-2 hidden overflow-hidden rounded-xl border shadow-lg'
-		>
-		</ul>
-		<p class='text-text-muted mt-3 text-center text-xs'>Select an album to auto-fill the form</p>
-	</div>
+	<SpotifySearchPanel
+		panelId='album-spotify-tab'
+		searchInputId='album-spotify-search'
+		spinnerId='album-spotify-spinner'
+		resultsId='album-spotify-results'
+		warningId='album-spotify-offline-warning'
+		searchLabel='Search Spotify Albums'
+		hint='Select an album to auto-fill the form'
+		offlineMessage='Spotify search is unavailable offline. Switch to Manual to create an album without reconnecting.'
+		className='mt-4'
+	/>
 </BaseDialog>
 
 <script>
 	import { syncCoverPreview } from '../../lib/cover-preview';
 	import { getCurrentDateLocal } from '../../lib/date';
-	import { closeDialogSafely, openDialogSafely, toggleCreateTabs } from '../../lib/dialog';
+	import { closeDialogSafely, openDialogSafely, toggleDialogTabs } from '../../lib/dialog';
 	import { bindOnce } from '../../lib/events';
 	import { createAlbumRecord, loadLibraryData } from '../../lib/library-cache';
-	import { searchAlbums } from '../../lib/spotify';
+	import { searchAlbums, type SpotifyAlbum } from '../../lib/spotify';
+	import {
+		bindSpotifySearch,
+		getSpotifySearchElements,
+		isNavigatorOnline,
+		resetSpotifySearch,
+		syncSpotifySearchAvailability,
+	} from '../../lib/spotify-search';
 	import { setInlineStatus } from '../../lib/status';
 
 	const getAlbumModal = () => document.getElementById('album-modal') as HTMLDialogElement | null;
+	const getAlbumForm = () => document.getElementById('album-form') as HTMLFormElement | null;
 	const getAlbumFormStatus = () => document.getElementById('album-form-status') as HTMLParagraphElement | null;
 	const getAlbumArtistSelect = () => document.getElementById('album-artist-id') as HTMLSelectElement | null;
 	const getAlbumCreateBtn = () => document.getElementById('album-create-btn') as HTMLButtonElement | null;
@@ -183,11 +154,14 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 	const getAlbumCoverInput = () => document.getElementById('album-cover-url') as HTMLInputElement | null;
 	const getAlbumCoverPreview = () => document.getElementById('album-cover-preview') as HTMLImageElement | null;
 	const getAlbumCoverEmptyState = () => document.getElementById('album-cover-empty') as HTMLParagraphElement | null;
-	const getAlbumSpotifySearchInput = () => document.getElementById('album-spotify-search') as HTMLInputElement | null;
-	const getAlbumSpotifySpinner = () => document.getElementById('album-spotify-spinner') as HTMLDivElement | null;
-	const getAlbumSpotifyOfflineWarning = () =>
-		document.getElementById('album-spotify-offline-warning') as HTMLParagraphElement | null;
-	const isOnline = () => (typeof navigator === 'undefined' ? true : navigator.onLine);
+	const getAlbumSpotifyElements = () =>
+		getSpotifySearchElements({
+			inputId: 'album-spotify-search',
+			spinnerId: 'album-spotify-spinner',
+			resultsId: 'album-spotify-results',
+			warningId: 'album-spotify-offline-warning',
+		});
+	const isOnline = isNavigatorOnline;
 
 	const openModal = () => {
 		openDialogSafely(getAlbumModal());
@@ -198,19 +172,13 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 	};
 
 	const switchAlbumTab = (tab: 'manual' | 'spotify') => {
-		toggleCreateTabs(tab, {
-			manualPanel: document.getElementById('album-form'),
+		toggleDialogTabs(tab, {
+			manualPanel: getAlbumForm(),
 			spotifyPanel: document.getElementById('album-spotify-tab'),
 			manualButton: document.getElementById('album-tab-manual'),
 			spotifyButton: document.getElementById('album-tab-spotify'),
-			searchInput: document.getElementById('album-spotify-search'),
+			searchInput: getAlbumSpotifyElements().input,
 		});
-	};
-
-	// --- Spotify search ---
-	const hideAlbumResults = () => {
-		const albumSpotifyResults = document.getElementById('album-spotify-results');
-		albumSpotifyResults?.classList.add('hidden');
 	};
 
 	const setAlbumCover = (url: string | null | undefined) => {
@@ -218,151 +186,14 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 	};
 
 	const syncAlbumSpotifyAvailability = () => {
-		const offline = !isOnline();
-		const searchInput = getAlbumSpotifySearchInput();
-		const spinner = getAlbumSpotifySpinner();
-		const warning = getAlbumSpotifyOfflineWarning();
-
-		if (searchInput) {
-			searchInput.disabled = offline;
-			searchInput.placeholder = offline ? 'Spotify search requires a connection' : ' ';
-			if (offline) searchInput.value = '';
-		}
-
-		if (warning) {
-			warning.classList.toggle('hidden', !offline);
-		}
-
-		if (offline) {
-			spinner?.classList.add('hidden');
-			hideAlbumResults();
-		}
+		syncSpotifySearchAvailability(getAlbumSpotifyElements(), { isOnline });
 	};
 
-	let albumSearchDebounce: ReturnType<typeof setTimeout>;
+	const resetAlbumSpotifySearch = () => {
+		resetSpotifySearch(getAlbumSpotifyElements());
+	};
+
 	let selectedSpotifyAlbumID: string | null = null;
-
-	// --- Main Delegated Listeners ---
-	bindOnce('__albumModalInputBound', () => {
-		document.addEventListener('input', (event) => {
-			const target = event.target as HTMLInputElement | null;
-			if (!target || target.id !== 'album-spotify-search') return;
-
-			clearTimeout(albumSearchDebounce);
-			const q = target.value.trim();
-			if (!isOnline()) {
-				syncAlbumSpotifyAvailability();
-				return;
-			}
-			if (!q) {
-				console.log('[Album Search] Query cleared');
-				hideAlbumResults();
-				return;
-			}
-
-			console.log(`[Album Search] Query: "${q}"`);
-			albumSearchDebounce = setTimeout(async () => {
-				const albumSpotifyResults = document.getElementById('album-spotify-results') as HTMLUListElement | null;
-				const albumSpotifySpinner = document.getElementById('album-spotify-spinner') as HTMLDivElement | null;
-				if (!albumSpotifyResults || !albumSpotifySpinner) {
-					console.warn('[Album Search] Could not find results/spinner elements in DOM');
-					return;
-				}
-
-				albumSpotifySpinner.classList.remove('hidden');
-				try {
-					console.log(`[Album Search] Fetching for: "${q}"...`);
-					const albums = await searchAlbums(q);
-					console.log(`[Album Search] Found ${albums.length} results`);
-					albumSpotifyResults.innerHTML = '';
-					if (!albums.length) {
-						albumSpotifyResults.innerHTML =
-							'<li class="px-4 py-3 text-sm text-text-muted text-center italic">No results found on Spotify</li>';
-					} else {
-						for (const album of albums) {
-							const img = album.images[0];
-							const year = album.release_date ? album.release_date.substring(0, 4) : '';
-							const artistNames = album.artists.map((a: { name: string }) => a.name).join(', ');
-							const li = document.createElement('li');
-							li.className =
-								'flex cursor-pointer items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-surface-raised border-b border-border/30 last:border-0';
-							li.innerHTML = `
-								${img ? `<img src="${img.url}" alt="" class="h-11 w-11 rounded-lg object-cover shrink-0 border border-border/40" />` : '<div class="h-11 w-11 rounded-lg bg-surface-raised shrink-0 border border-border/40 flex items-center justify-center text-text-muted text-xs">?</div>'}
-								<div class="min-w-0 flex-1">
-									<p class="truncate font-medium text-text">${album.name}</p>
-									<p class="truncate text-xs text-text-muted">${artistNames}${year ? ` · ${year}` : ''}</p>
-								</div>
-								<span class="ml-auto shrink-0 text-xs text-secondary font-medium">Select →</span>
-							`;
-							li.addEventListener('click', () => {
-								console.log(`[Album Search] Selected: ${album.name}`);
-								const titleInput = document.getElementById('album-title') as HTMLInputElement | null;
-								const yearInput = document.getElementById('album-year') as HTMLInputElement | null;
-								const albumFormStatus = getAlbumFormStatus();
-								selectedSpotifyAlbumID = album.id;
-								if (titleInput) titleInput.value = album.name;
-								setAlbumCover(img?.url ?? '');
-								if (yearInput && year) yearInput.value = year;
-
-								const spotifyArtists = album.artists.map((artist: { name: string }) => artist.name);
-								const matched = autoSelectArtistFromSpotifyNames(spotifyArtists);
-								if (albumFormStatus && spotifyArtists.length > 0) {
-									if (matched) {
-										setInlineStatus(
-											albumFormStatus,
-											`Auto-selected artist: ${spotifyArtists[0]}.`,
-											'success',
-											{ boxed: true },
-										);
-									} else {
-										setInlineStatus(
-											albumFormStatus,
-											`No local artist matched ${spotifyArtists[0]}. Please select one manually.`,
-											'neutral',
-											{ boxed: true },
-										);
-									}
-								}
-
-								// Clear search after selection
-								const sInput = document.getElementById(
-									'album-spotify-search',
-								) as HTMLInputElement | null;
-								if (sInput) sInput.value = '';
-								hideAlbumResults();
-								switchAlbumTab('manual');
-							});
-							albumSpotifyResults.appendChild(li);
-						}
-					}
-					albumSpotifyResults.classList.remove('hidden');
-				} catch (err) {
-					console.error('[Album Search] Error:', err);
-					const msg = err instanceof Error ? err.message : 'Search failed. Try again.';
-					albumSpotifyResults.innerHTML = `<li class="px-4 py-3 text-sm text-[var(--error)] text-center font-medium">${msg}</li>`;
-					albumSpotifyResults.classList.remove('hidden');
-				} finally {
-					albumSpotifySpinner.classList.add('hidden');
-				}
-			}, 350);
-		});
-	});
-
-	bindOnce('__albumModalTabClickBound', () => {
-		document.addEventListener('click', (event) => {
-			const target = event.target as HTMLElement | null;
-			const tabBtn = target?.closest('#album-tab-manual, #album-tab-spotify');
-			if (!tabBtn) return;
-
-			if (tabBtn.id === 'album-tab-manual') {
-				switchAlbumTab('manual');
-			} else {
-				switchAlbumTab('spotify');
-			}
-		});
-	});
-	// --- End Delegated Listeners ---
-	// --- End Spotify ---
 
 	const loadArtists = async () => {
 		const albumArtistSelect = getAlbumArtistSelect();
@@ -416,6 +247,7 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 			if (!option.value) continue;
 			if (targets.has(normalizeArtistName(option.textContent ?? ''))) {
 				albumArtistSelect.value = option.value;
+				albumArtistSelect.dispatchEvent(new Event('themed-select-sync'));
 				return true;
 			}
 		}
@@ -473,77 +305,122 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 		manual.value = value.toFixed(1);
 	};
 
-	bindOnce('__openAlbumModalBound', () => {
-		window.addEventListener('open-album-modal', async () => {
-			await new Promise<void>((resolve) => {
-				requestAnimationFrame(() => {
-					openModal();
-					resolve();
+	const applySpotifyAlbum = (album: SpotifyAlbum) => {
+		const titleInput = document.getElementById('album-title') as HTMLInputElement | null;
+		const yearInput = document.getElementById('album-year') as HTMLInputElement | null;
+		const albumFormStatus = getAlbumFormStatus();
+		const cover = album.images[0]?.url ?? '';
+		const year = album.release_date ? album.release_date.substring(0, 4) : '';
+		const spotifyArtists = album.artists.map((artist) => artist.name);
+		const matched = autoSelectArtistFromSpotifyNames(spotifyArtists);
+
+		selectedSpotifyAlbumID = album.id;
+		if (titleInput) titleInput.value = album.name;
+		setAlbumCover(cover);
+		if (yearInput) yearInput.value = year;
+
+		if (albumFormStatus && spotifyArtists.length > 0) {
+			if (matched) {
+				setInlineStatus(albumFormStatus, `Auto-selected artist: ${spotifyArtists[0]}.`, 'success', {
+					boxed: true,
 				});
+			} else {
+				setInlineStatus(
+					albumFormStatus,
+					`No local artist matched ${spotifyArtists[0]}. Please select one manually.`,
+					'neutral',
+					{ boxed: true },
+				);
+			}
+		}
+
+		resetAlbumSpotifySearch();
+		switchAlbumTab('manual');
+	};
+
+	const renderAlbumResult = (album: SpotifyAlbum) => {
+		const img = album.images[0];
+		const year = album.release_date ? album.release_date.substring(0, 4) : '';
+		const artistNames = album.artists.map((artist) => artist.name).join(', ');
+		const item = document.createElement('li');
+		item.className =
+			'border-border/30 flex cursor-pointer items-center gap-3 border-b px-4 py-3 text-sm transition-colors hover:bg-surface-raised last:border-0';
+		item.innerHTML = `
+			${img ? `<img src="${img.url}" alt="" class="h-11 w-11 shrink-0 rounded-lg border border-border/40 object-cover" />` : '<div class="bg-surface-raised flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/40 text-xs text-text-muted">?</div>'}
+			<div class="min-w-0 flex-1">
+				<p class="truncate font-medium text-text">${album.name}</p>
+				<p class="truncate text-xs text-text-muted">${artistNames}${year ? ` · ${year}` : ''}</p>
+			</div>
+			<span class="text-secondary ml-auto shrink-0 text-xs font-medium">Select →</span>
+		`;
+		item.addEventListener('click', () => applySpotifyAlbum(album));
+		return item;
+	};
+
+	const bindAlbumSpotifySearch = () => {
+		bindSpotifySearch({
+			elements: getAlbumSpotifyElements(),
+			search: searchAlbums,
+			renderResult: renderAlbumResult,
+			isOnline,
+		});
+	};
+
+	const bindAlbumTabButtons = () => {
+		const manualButton = document.getElementById('album-tab-manual') as HTMLButtonElement | null;
+		const spotifyButton = document.getElementById('album-tab-spotify') as HTMLButtonElement | null;
+
+		if (manualButton && manualButton.dataset.bound !== 'true') {
+			manualButton.dataset.bound = 'true';
+			manualButton.addEventListener('click', () => switchAlbumTab('manual'));
+		}
+
+		if (spotifyButton && spotifyButton.dataset.bound !== 'true') {
+			spotifyButton.dataset.bound = 'true';
+			spotifyButton.addEventListener('click', () => {
+				syncAlbumSpotifyAvailability();
+				switchAlbumTab('spotify');
 			});
-			selectedSpotifyAlbumID = null;
-			setAlbumCover('');
-			switchAlbumTab('spotify');
-			await loadArtists();
+		}
+	};
+
+	const bindAlbumModalDismiss = () => {
+		const modal = getAlbumModal();
+		if (!modal || modal.dataset.dismissBound === 'true') return;
+		modal.dataset.dismissBound = 'true';
+		modal.addEventListener('click', (event) => {
+			if (event.target === modal) closeModal();
 		});
-	});
+	};
 
-	bindOnce('__albumModalArtistCreatedBound', () => {
-		window.addEventListener('library-data-changed', async () => {
-			if (getAlbumModal()?.open) {
-				await loadArtists();
-			}
-		});
-	});
+	const bindAlbumListenedControls = () => {
+		const listenedInput = getAlbumListenedInput();
+		const ratingSlider = getAlbumRatingSliderInput();
+		const ratingInput = getAlbumRatingInput();
 
-	bindOnce('__albumSpotifyAvailabilityBound', () => {
-		window.addEventListener('online', syncAlbumSpotifyAvailability);
-		window.addEventListener('offline', syncAlbumSpotifyAvailability);
-		document.addEventListener('astro:page-load', syncAlbumSpotifyAvailability);
-	});
+		if (listenedInput && listenedInput.dataset.bound !== 'true') {
+			listenedInput.dataset.bound = 'true';
+			listenedInput.addEventListener('change', syncListenedFields);
+		}
 
-	bindOnce('__albumModalClickBound', () => {
-		document.addEventListener('click', (event) => {
-			const target = event.target as Element | null;
-			if (target?.id === 'album-modal') closeModal();
-		});
-	});
+		if (ratingSlider && ratingSlider.dataset.bound !== 'true') {
+			ratingSlider.dataset.bound = 'true';
+			ratingSlider.addEventListener('input', () => syncRatingControls('slider'));
+		}
 
-	bindOnce('__albumModalChangeBound', () => {
-		document.addEventListener('change', (event) => {
-			const target = event.target as HTMLInputElement | null;
-			if (!target) return;
-			if (target.id === 'album-listened') {
-				syncListenedFields();
-				return;
-			}
-			if (target.id === 'album-rating') {
-				syncRatingControls('manual');
-			}
-		});
-	});
+		if (ratingInput && ratingInput.dataset.bound !== 'true') {
+			ratingInput.dataset.bound = 'true';
+			ratingInput.addEventListener('input', () => syncRatingControls('manual'));
+			ratingInput.addEventListener('change', () => syncRatingControls('manual'));
+		}
+	};
 
-	bindOnce('__albumModalRatingInputBound', () => {
-		document.addEventListener('input', (event) => {
-			const target = event.target as HTMLInputElement | null;
-			if (!target) return;
-			if (target.id === 'album-rating-slider') {
-				syncRatingControls('slider');
-				return;
-			}
-			if (target.id === 'album-rating') {
-				syncRatingControls('manual');
-			}
-		});
-	});
+	const bindAlbumFormSubmit = () => {
+		const form = getAlbumForm();
+		if (!form || form.dataset.bound === 'true') return;
+		form.dataset.bound = 'true';
 
-	syncListenedFields();
-	syncAlbumSpotifyAvailability();
-
-	bindOnce('__albumModalSubmitBound', () => {
-		document.addEventListener('submit', async (event) => {
-			const target = event.target as HTMLFormElement | null;
-			if (!target || target.id !== 'album-form') return;
+		form.addEventListener('submit', async (event) => {
 			event.preventDefault();
 
 			const albumTitleInput = document.getElementById('album-title') as HTMLInputElement | null;
@@ -609,9 +486,10 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 					'success',
 					{ boxed: true },
 				);
-				target.reset();
+				form.reset();
 				selectedSpotifyAlbumID = null;
 				setAlbumCover('');
+				resetAlbumSpotifySearch();
 				syncListenedFields();
 				setTimeout(() => closeModal(), 400);
 			} catch (error) {
@@ -629,5 +507,51 @@ import FloatingSelect from '../ui/FloatingSelect.astro';
 				}
 			}
 		});
+	};
+
+	const initializeAlbumModal = () => {
+		bindAlbumModalDismiss();
+		bindAlbumTabButtons();
+		bindAlbumSpotifySearch();
+		bindAlbumListenedControls();
+		bindAlbumFormSubmit();
+		syncListenedFields();
+		syncAlbumSpotifyAvailability();
+	};
+
+	bindOnce('__openAlbumModalBound', () => {
+		window.addEventListener('open-album-modal', async () => {
+			await new Promise<void>((resolve) => {
+				requestAnimationFrame(() => {
+					initializeAlbumModal();
+					getAlbumForm()?.reset();
+					openModal();
+					resolve();
+				});
+			});
+			selectedSpotifyAlbumID = null;
+			setAlbumCover('');
+			resetAlbumSpotifySearch();
+			setInlineStatus(getAlbumFormStatus(), '', 'neutral', { boxed: true });
+			syncListenedFields();
+			switchAlbumTab('spotify');
+			await loadArtists();
+		});
 	});
+
+	bindOnce('__albumModalArtistCreatedBound', () => {
+		window.addEventListener('library-data-changed', async () => {
+			if (getAlbumModal()?.open) {
+				await loadArtists();
+			}
+		});
+	});
+
+	bindOnce('__albumSpotifyAvailabilityBound', () => {
+		window.addEventListener('online', syncAlbumSpotifyAvailability);
+		window.addEventListener('offline', syncAlbumSpotifyAvailability);
+		document.addEventListener('astro:page-load', initializeAlbumModal);
+	});
+
+	initializeAlbumModal();
 </script>

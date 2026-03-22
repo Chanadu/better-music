@@ -1,0 +1,86 @@
+---
+import { BUTTON_ICON_SECONDARY_CLASS } from '../../lib/button-styles';
+---
+
+<button
+	id='dropdown-mode-toggle'
+	class={BUTTON_ICON_SECONDARY_CLASS}
+	aria-label='Using custom dropdown menus. Switch to system dropdown menus.'
+	title='Using custom dropdown menus'
+	type='button'
+>
+	<svg
+		id='dropdown-mode-custom-icon'
+		viewBox='0 0 24 24'
+		class='h-5 w-5'
+		fill='none'
+		stroke='currentColor'
+		stroke-width='1.8'
+		aria-hidden='true'
+	>
+		<path d='M4 7h11'></path>
+		<path d='M4 12h16'></path>
+		<path d='M4 17h13'></path>
+		<path d='M18 4v4'></path>
+		<path d='M16 6h4'></path>
+	</svg>
+	<svg
+		id='dropdown-mode-system-icon'
+		viewBox='0 0 24 24'
+		class='hidden h-5 w-5'
+		fill='none'
+		stroke='currentColor'
+		stroke-width='1.8'
+		aria-hidden='true'
+	>
+		<rect x='4' y='6' width='16' height='12' rx='2'></rect>
+		<path d='M10 11l2 2 2-2'></path>
+	</svg>
+</button>
+
+<script>
+	import {
+		DROPDOWN_MENU_MODE_EVENT,
+		applyDropdownMenuMode,
+		getDropdownMenuMode,
+		toggleDropdownMenuMode,
+	} from '../../lib/dropdown-mode';
+
+	const syncDropdownModeToggle = (): void => {
+		const toggle = document.getElementById('dropdown-mode-toggle') as HTMLButtonElement | null;
+		const customIcon = document.getElementById('dropdown-mode-custom-icon') as SVGSVGElement | null;
+		const systemIcon = document.getElementById('dropdown-mode-system-icon') as SVGSVGElement | null;
+		const mode = applyDropdownMenuMode(getDropdownMenuMode());
+		const isSystem = mode === 'system';
+		const label =
+			isSystem ?
+				'Using system dropdown menus. Switch to custom dropdown menus.'
+			:	'Using custom dropdown menus. Switch to system dropdown menus.';
+
+		customIcon?.classList.toggle('hidden', isSystem);
+		systemIcon?.classList.toggle('hidden', !isSystem);
+		toggle?.setAttribute('aria-label', label);
+		toggle?.setAttribute('aria-pressed', isSystem ? 'true' : 'false');
+		toggle?.setAttribute('title', isSystem ? 'Using system dropdown menus' : 'Using custom dropdown menus');
+	};
+
+	const bindDropdownModeToggle = (): void => {
+		const toggle = document.getElementById('dropdown-mode-toggle') as HTMLButtonElement | null;
+		if (!toggle || toggle.dataset.bound === 'true') {
+			syncDropdownModeToggle();
+			return;
+		}
+
+		toggle.dataset.bound = 'true';
+		toggle.addEventListener('click', () => {
+			toggleDropdownMenuMode();
+			syncDropdownModeToggle();
+		});
+
+		window.addEventListener(DROPDOWN_MENU_MODE_EVENT, syncDropdownModeToggle);
+		syncDropdownModeToggle();
+	};
+
+	bindDropdownModeToggle();
+	document.addEventListener('astro:page-load', bindDropdownModeToggle);
+</script>

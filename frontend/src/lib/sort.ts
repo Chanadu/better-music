@@ -54,6 +54,37 @@ export const initializeSortControls = <TValue extends string>({
 		setSortBy(fallbackValue);
 	}
 
+	const nativeSelect = document.getElementById(
+		`${controlPrefix}-by-native`,
+	) as HTMLSelectElement | null;
+	const nativeValueNode = document.getElementById(
+		`${controlPrefix}-by-native-value`,
+	) as HTMLSpanElement | null;
+	const syncNativeValueNode = () => {
+		if (!nativeSelect || !nativeValueNode) return;
+		const selectedOption = nativeSelect.selectedOptions[0];
+		nativeValueNode.textContent = selectedOption?.textContent ?? options[0]?.label ?? 'Select';
+	};
+	if (nativeSelect) {
+		nativeSelect.innerHTML = '';
+		for (const option of options) {
+			const nativeOption = document.createElement('option');
+			nativeOption.value = option.value;
+			nativeOption.textContent = option.label;
+			nativeSelect.appendChild(nativeOption);
+		}
+		nativeSelect.value = getSortBy();
+		syncNativeValueNode();
+		if (nativeSelect.dataset.bound !== 'true') {
+			nativeSelect.dataset.bound = 'true';
+			nativeSelect.addEventListener('change', () => {
+				setSortBy(nativeSelect.value as TValue);
+				syncNativeValueNode();
+				onChange();
+			});
+		}
+	}
+
 	const sortDropdown = createThemedDropdown({
 		triggerId: `${controlPrefix}-by-trigger`,
 		valueId: `${controlPrefix}-by-value`,
@@ -63,9 +94,8 @@ export const initializeSortControls = <TValue extends string>({
 			onChange();
 		},
 	});
-	if (!sortDropdown) return;
-
-	sortDropdown.setOptions(options, getSortBy());
+	sortDropdown?.setOptions(options, getSortBy());
+	syncNativeValueNode();
 	syncSortDirectionButton(directionButton, getSortDirection());
 
 	if (directionButton.dataset.bound !== 'true') {

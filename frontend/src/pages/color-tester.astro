@@ -3,6 +3,7 @@ import ColorSection from '../components/dev/ColorSection.astro';
 import ColorSwatch from '../components/dev/ColorSwatch.astro';
 import ComponentPreviews from '../components/dev/ComponentPreviews.astro';
 import ThemeToggleButton from '../components/ui/ThemeToggleButton.astro';
+import { BUTTON_SECONDARY_CLASS } from '../lib/button-styles';
 import Layout from '../layouts/Layout.astro';
 ---
 
@@ -17,7 +18,7 @@ import Layout from '../layouts/Layout.astro';
 				<div class="flex items-center gap-3">
 					<a
 						href="/"
-						class="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-raised"
+						class={BUTTON_SECONDARY_CLASS}
 					>
 						Back Home
 					</a>

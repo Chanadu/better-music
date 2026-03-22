@@ -1,0 +1,23 @@
+---
+import { BUTTON_SECONDARY_CLASS } from '../../lib/button-styles';
+
+interface Props {
+	buttonId: string;
+	label?: string;
+	className?: string;
+}
+
+const {
+	buttonId,
+	label = 'Refresh from Spotify',
+	className = '',
+} = Astro.props as Props;
+---
+
+<button
+	type='button'
+	id={buttonId}
+	class:list={[BUTTON_SECONDARY_CLASS, 'w-full', className]}
+>
+	{label}
+</button>

@@ -1,0 +1,71 @@
+---
+import FloatingInput from './FloatingInput.astro';
+
+interface Props {
+	panelId: string;
+	searchInputId: string;
+	spinnerId: string;
+	resultsId: string;
+	warningId: string;
+	searchLabel: string;
+	hint: string;
+	offlineMessage: string;
+	className?: string;
+}
+
+const {
+	panelId,
+	searchInputId,
+	spinnerId,
+	resultsId,
+	warningId,
+	searchLabel,
+	hint,
+	offlineMessage,
+	className = '',
+} = Astro.props as Props;
+---
+
+<div id={panelId} class:list={['space-y-3', className]}>
+	<p
+		id={warningId}
+		class='hidden rounded-2xl border border-[#1DB954]/18 bg-linear-to-r from-[#1DB954]/12 via-surface-raised/95 to-surface px-4 py-3 text-sm shadow-sm'
+	>
+		<span class='flex items-start gap-3'>
+			<span
+				class='bg-[#1DB954]/12 text-[#1DB954] inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#1DB954]/15'
+				aria-hidden='true'
+			>
+				<svg viewBox='0 0 24 24' class='h-4.5 w-4.5' fill='none' stroke='currentColor' stroke-width='1.9'>
+					<path d='M5 9a11 11 0 0 1 14 0'></path>
+					<path d='M8.5 12.5a6 6 0 0 1 7 0'></path>
+					<path d='M12 17h.01'></path>
+					<path d='M3 3l18 18'></path>
+				</svg>
+			</span>
+			<span class='min-w-0'>
+				<span class='block font-semibold text-text'>Offline</span>
+				<span class='text-text-muted mt-0.5 block leading-5'>{offlineMessage}</span>
+			</span>
+		</span>
+	</p>
+	<div class='relative'>
+		<FloatingInput
+			id={searchInputId}
+			label={searchLabel}
+			type='text'
+			autocomplete='off'
+			inputClassName='focus:border-[#1DB954]/60 focus:ring-[#1DB954]/10'
+		/>
+		<div id={spinnerId} class='absolute top-1/2 right-3 hidden -translate-y-1/2'>
+			<svg class='text-text-muted h-4 w-4 animate-spin' viewBox='0 0 24 24' fill='none'
+				><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'></circle><path
+					class='opacity-75'
+					fill='currentColor'
+					d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z'></path></svg
+			>
+		</div>
+	</div>
+	<ul id={resultsId} class='border-border/60 bg-surface hidden overflow-hidden rounded-xl border shadow-lg'></ul>
+	<p class='text-text-muted text-center text-xs'>{hint}</p>
+</div>

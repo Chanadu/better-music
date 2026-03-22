@@ -1,5 +1,6 @@
 ---
 import AuthInputField from './AuthInputField.astro';
+import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 ---
 
 <form class='w-full space-y-5'>
@@ -35,7 +36,7 @@ import AuthInputField from './AuthInputField.astro';
 
 	<button
 		type='submit'
-		class='bg-primary text-primary-fg shadow-primary/20 hover:bg-primary-hover hover:shadow-primary/30 focus:ring-primary/20 w-full cursor-pointer rounded-xl px-4 py-3 text-base font-semibold shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md'
+		class:list={[BUTTON_PRIMARY_CLASS, 'w-full']}
 	>
 		Create Account
 	</button>

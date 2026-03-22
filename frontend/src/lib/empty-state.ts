@@ -1,3 +1,5 @@
+import { BUTTON_PRIMARY_CLASS } from './button-styles';
+
 type EmptyStateOptions = {
 	title: string;
 	description: string;
@@ -27,8 +29,7 @@ export const createEmptyState = ({
 
 	const button = document.createElement('button');
 	button.type = 'button';
-	button.className =
-		'ui-pressable mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-fg shadow-md shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-lg hover:shadow-primary/30 focus:ring-4 focus:ring-primary/20';
+	button.className = `${BUTTON_PRIMARY_CLASS} mt-5`;
 	button.textContent = buttonLabel;
 	button.addEventListener('click', onClick);
 	wrapper.appendChild(button);

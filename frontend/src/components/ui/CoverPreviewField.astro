@@ -25,10 +25,11 @@ const {
 <div class:list={['space-y-2', wrapperClassName]}>
 	<input id={inputId} name={name} type="hidden" />
 	<p class="text-xs font-semibold uppercase tracking-[0.2em] text-text-muted">{label}</p>
-	<div class="overflow-hidden rounded-[1.4rem] border border-border/65 bg-surface-raised/45 p-3">
-		<div class="flex min-h-32 items-center justify-center rounded-[1.1rem] border border-dashed border-border/65 bg-surface/85 p-3">
-			<img id={imageId} src="" alt={imageAlt} class="hidden h-28 w-28 rounded-xl object-cover shadow-sm sm:h-32 sm:w-32" />
-			<p id={emptyId} class="text-center text-sm text-text-muted">{emptyLabel}</p>
-		</div>
-	</div>
+	<img
+		id={imageId}
+		src=""
+		alt={imageAlt}
+		class="mx-auto hidden h-40 w-40 rounded-2xl object-cover shadow-sm sm:h-44 sm:w-44"
+	/>
+	<p id={emptyId} class="mx-auto max-w-xs text-center text-sm text-text-muted">{emptyLabel}</p>
 </div>

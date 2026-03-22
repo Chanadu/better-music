@@ -20,7 +20,7 @@ type TabConfig = {
 	searchInput?: HTMLElement | null;
 };
 
-export const toggleCreateTabs = (activeTab: 'manual' | 'spotify', config: TabConfig) => {
+export const toggleDialogTabs = (activeTab: 'manual' | 'spotify', config: TabConfig) => {
 	const { manualPanel, spotifyPanel, manualButton, spotifyButton, searchInput } = config;
 	const isManual = activeTab === 'manual';
 	const activeClass = ['bg-surface', 'text-text', 'shadow-sm'];
@@ -43,3 +43,5 @@ export const toggleCreateTabs = (activeTab: 'manual' | 'spotify', config: TabCon
 	manualButton?.classList.add(...inactiveClass);
 	searchInput?.focus();
 };
+
+export const toggleCreateTabs = toggleDialogTabs;
