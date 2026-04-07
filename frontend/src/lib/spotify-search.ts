@@ -55,8 +55,8 @@ export const syncSpotifySearchAvailability = (
 
 	if (elements.input) {
 		elements.input.disabled = offline;
-		elements.input.placeholder =
-			offline ? (options.offlinePlaceholder ?? 'Spotify search requires a connection') : ' ';
+		elements.input.placeholder = ' ';
+		elements.input.title = offline ? (options.offlinePlaceholder ?? 'Spotify search requires a connection') : '';
 		if (offline) elements.input.value = '';
 	}
 

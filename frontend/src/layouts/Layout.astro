@@ -99,9 +99,16 @@ import { pwaInfo } from 'virtual:pwa-info';
 				}
 			};
 
+			const normalizeRoutePath = (route: string): string => {
+				if (!route || route === '/' || route === '/index.html') return '/';
+				const cleanRoute = route.split('#')[0].split('?')[0] || route;
+				if (cleanRoute === '/login' || cleanRoute === '/login/') return '/';
+				return cleanRoute.endsWith('/') ? cleanRoute : `${cleanRoute}/`;
+			};
+
 			const preloadRoutes = (): void => {
-				const routes = ['/', '/albums', '/listened', '/artists', '/login', '/register', '/offline'];
-				const currentPath = window.location.pathname;
+				const routes = ['/', '/albums/', '/listened/', '/artists/', '/register/', '/offline/'];
+				const currentPath = normalizeRoutePath(window.location.pathname);
 				const preloadState = (window.__preloadedRoutes ??= {});
 
 				for (const route of routes) {
@@ -132,9 +139,9 @@ import { pwaInfo } from 'virtual:pwa-info';
 
 			const prefetchRoute = (route: string): void => {
 				if (!route || route.startsWith('http') || route.startsWith('mailto:') || route.startsWith('tel:')) return;
-				const cleanRoute = route.split('#')[0].split('?')[0] || route;
+				const cleanRoute = normalizeRoutePath(route);
 				const preloadState = (window.__preloadedRoutes ??= {});
-				if (cleanRoute === window.location.pathname || preloadState[cleanRoute]) return;
+				if (cleanRoute === normalizeRoutePath(window.location.pathname) || preloadState[cleanRoute]) return;
 				preloadState[cleanRoute] = true;
 				void fetch(cleanRoute, {
 					method: 'GET',

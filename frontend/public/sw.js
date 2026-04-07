@@ -1,11 +1,18 @@
 const SHELL_CACHE = 'better-music-shell-v3';
 const PAGE_CACHE = 'better-music-pages-v3';
 const IMAGE_CACHE = 'better-music-images-v3';
-const OFFLINE_FALLBACK_PATH = '/offline';
-const APP_ROUTES = ['/', '/albums', '/listened', '/artists', '/register', OFFLINE_FALLBACK_PATH];
+const OFFLINE_FALLBACK_PATH = '/offline/';
+const APP_ROUTES = ['/', '/albums/', '/listened/', '/artists/', '/register/', OFFLINE_FALLBACK_PATH];
 const STATIC_ASSETS = ['/manifest.webmanifest', '/favicon.ico', '/favicon.svg'];
 const SYNC_REQUEST_TAG = 'better-music-library-sync';
 const SYNC_MESSAGE_TYPE = 'better-music-sync-request';
+
+const normalizeAppPath = (pathname) => {
+	if (!pathname || pathname === '/' || pathname === '/index.html') return '/';
+	if (pathname === '/login' || pathname === '/login/') return '/';
+	if (pathname.endsWith('/index.html')) return pathname.slice(0, -'index.html'.length);
+	return pathname.endsWith('/') ? pathname : `${pathname}/`;
+};
 
 self.addEventListener('install', (event) => {
 	event.waitUntil(
@@ -43,7 +50,7 @@ const isAppPageRequest = (request) => {
 
 const getOfflineFallback = async (request) => {
 	const url = new URL(request.url);
-	const fallbackPath = url.pathname === '/login' ? '/' : url.pathname;
+	const fallbackPath = normalizeAppPath(url.pathname);
 
 	return (
 		(await caches.match(fallbackPath)) ||
@@ -75,11 +82,16 @@ self.addEventListener('fetch', (event) => {
 	if (isAppPageRequest(request)) {
 		event.respondWith(
 			(async () => {
+				const canonicalPath = normalizeAppPath(url.pathname);
+				const canonicalURL = new URL(canonicalPath, self.location.origin);
 				try {
-					const response = await fetch(request);
+					const response = await fetch(canonicalURL, {
+						headers: request.headers,
+						credentials: 'same-origin',
+					});
 					if (response.ok) {
 						const cache = await caches.open(PAGE_CACHE);
-						cache.put(request, response.clone());
+						cache.put(canonicalPath, response.clone());
 					}
 					return response;
 				} catch {

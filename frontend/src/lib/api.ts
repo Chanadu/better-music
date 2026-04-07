@@ -23,6 +23,8 @@ const redirectToLogin = (): void => {
 	window.location.replace(LOGIN_PATH);
 };
 
+const isNavigatorOnline = (): boolean => (typeof navigator === 'undefined' ? true : navigator.onLine);
+
 const decodeBase64Url = (value: string): string => {
 	const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
 	const padding = normalized.length % 4;
@@ -108,6 +110,10 @@ export const restoreAuthSession = async (): Promise<boolean> => {
 		return false;
 	}
 
+	if (!isNavigatorOnline()) {
+		return false;
+	}
+
 	const refreshedToken = await refreshAccessToken();
 	return Boolean(refreshedToken && isAccessTokenValid(refreshedToken));
 };
@@ -185,7 +191,7 @@ export const refreshAccessToken = async (): Promise<string | null> => {
 	}
 
 	const refreshToken = getRefreshToken();
-	if (!refreshToken) {
+	if (!refreshToken || !isNavigatorOnline()) {
 		return null;
 	}
 
