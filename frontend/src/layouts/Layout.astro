@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { ClientRouter } from 'astro:transitions';
+import { pwaInfo } from 'virtual:pwa-info';
 ---
 
 <!doctype html>
@@ -12,6 +13,7 @@ import { ClientRouter } from 'astro:transitions';
 		<meta id='theme-color-meta' name='theme-color' content='#edf3fb' />
 		<!-- <link rel='icon' type='image/svg+xml' href='/favicon.svg' /> -->
 		<!-- <link rel='icon' href='/favicon.ico' /> -->
+		{pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
 		<meta name='generator' content={Astro.generator} />
 		<title>Better-Music</title>
 		<style is:inline>
@@ -74,6 +76,7 @@ import { ClientRouter } from 'astro:transitions';
 				document.addEventListener('astro:page-load', syncSavedTheme);
 			})();
 		</script>
+		<script src='/src/pwa.ts'></script>
 	</head>
 	<body class='m-0 min-h-screen w-full overscroll-y-none'>
 		<slot />
