@@ -27,14 +27,21 @@ const currentRouteByPage = {
 	artists: '/artists',
 } as const;
 
+const headerCountTypeByPage = {
+	unlistened: 'queuedAlbums',
+	listened: 'doneAlbums',
+	artists: 'artists',
+} as const;
+
 const currentRoute = currentRouteByPage[current];
+const headerCountType = headerCountTypeByPage[current];
 ---
 
 <Layout>
 	<AuthGuard />
 	<div data-page-preview-root='true' class='page-swipe-preview-root' aria-hidden='true'></div>
 	<div data-app-shell='true' data-current-route={currentRoute} class='page-swipe-shell relative z-20'>
-		<AppHeader title={title} />
+		<AppHeader title={title} countType={headerCountType} />
 		<div class='relative' data-page-stage='true'>
 			<main class={mainClassName}>
 				<div class={`mx-auto ${maxWidthClass} ${containerClassName}`}>

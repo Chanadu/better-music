@@ -1,11 +1,15 @@
 ---
 import HeaderSettingsMenu from './HeaderSettingsMenu.astro';
+import type { HeaderCountType } from '../../lib/library-stats';
 
 interface Props {
 	title: string;
+	countType?: HeaderCountType;
 }
 
-const { title } = Astro.props;
+const { title, countType } = Astro.props as Props;
+const HEADER_COUNT_CHIP_CLASS =
+	'inline-flex h-11 min-w-[3.35rem] shrink-0 items-center justify-center rounded-2xl border border-border/70 bg-surface/92 px-4 text-sm font-semibold text-text shadow-sm';
 ---
 
 <header
@@ -36,12 +40,81 @@ const { title } = Astro.props;
 				<p class='text-text-muted hidden text-[11px] font-semibold tracking-[0.22em] uppercase sm:block'>
 					Better Music
 				</p>
-				<h1 class='text-text truncate text-xl font-extrabold tracking-tight sm:text-[1.65rem]'>{title}</h1>
+				<h1 class='text-text mt-0.5 min-w-0 truncate text-xl font-extrabold tracking-tight sm:text-[1.65rem]'>
+					{title}
+				</h1>
 			</div>
 		</div>
 
 		<div class='flex items-center gap-2 sm:gap-3'>
+			{
+				countType && (
+					<div
+						class={HEADER_COUNT_CHIP_CLASS}
+						data-app-header-count-root='true'
+						data-app-header-count-type={countType}
+					>
+						<span
+							class='tabular-nums'
+							data-app-header-count-value='true'
+						>
+							--
+						</span>
+					</div>
+				)
+			}
 			<HeaderSettingsMenu />
 		</div>
 	</div>
 </header>
+
+<script>
+	import { loadLibraryData } from '../../lib/library-cache';
+	import { bindOnce } from '../../lib/events';
+	import {
+		LIBRARY_DATA_CHANGED_EVENT,
+		getHeaderCountMeta,
+		getLibraryStats,
+		type HeaderCountType,
+	} from '../../lib/library-stats';
+
+	const formatCount = (value: number) => value.toLocaleString();
+
+	const getHeaderCountRoot = () =>
+		document.querySelector('[data-app-header-count-root="true"]') as HTMLDivElement | null;
+	const getHeaderCountValue = () =>
+		document.querySelector('[data-app-header-count-value="true"]') as HTMLSpanElement | null;
+
+	const getHeaderCountType = (): HeaderCountType | null => {
+		const type = getHeaderCountRoot()?.dataset.appHeaderCountType;
+		return type === 'artists' || type === 'queuedAlbums' || type === 'doneAlbums' ? type : null;
+	};
+
+	const syncHeaderCount = async () => {
+		const root = getHeaderCountRoot();
+		const type = getHeaderCountType();
+		const value = getHeaderCountValue();
+		if (!root || !type || !value) return;
+
+		try {
+			const stats = getLibraryStats(await loadLibraryData());
+			const countMeta = getHeaderCountMeta(type, stats);
+			const formattedCount = formatCount(countMeta.value);
+			value.textContent = formattedCount;
+			root.setAttribute('aria-label', `${formattedCount} ${countMeta.label}`);
+			root.title = `${formattedCount} ${countMeta.label}`;
+		} catch {
+			// Keep the fallback copy when library data is not available yet.
+		}
+	};
+
+	bindOnce('__appHeaderCountBound', () => {
+		document.addEventListener('astro:page-load', () => {
+			void syncHeaderCount();
+		});
+		window.addEventListener(LIBRARY_DATA_CHANGED_EVENT, () => {
+			void syncHeaderCount();
+		});
+		void syncHeaderCount();
+	});
+</script>

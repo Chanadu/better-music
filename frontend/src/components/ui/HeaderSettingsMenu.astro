@@ -131,6 +131,63 @@ import { BUTTON_ICON_SECONDARY_CLASS } from '../../lib/button-styles';
 
 		<div class='mx-2 my-1 h-px bg-border/45'></div>
 
+		<div class='px-3 py-2' role='none'>
+			<p class='text-text-muted mb-2 text-[11px] font-semibold tracking-[0.18em] uppercase'>Library</p>
+			<div class='space-y-2'>
+				<div class='border-border/50 bg-surface-raised/52 flex items-center justify-between gap-3 rounded-xl border px-3 py-2'>
+					<span class='flex min-w-0 items-center gap-2 text-sm font-medium text-text'>
+						<span class='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-surface/90 text-text-muted'>
+							<svg
+								viewBox='0 0 24 24'
+								class='h-4 w-4'
+								fill='none'
+								stroke='currentColor'
+								stroke-width='1.8'
+								aria-hidden='true'
+							>
+								<circle cx='12' cy='8' r='3'></circle>
+								<path d='M6 19a6 6 0 0 1 12 0'></path>
+							</svg>
+						</span>
+						<span class='truncate'>Total Artists</span>
+					</span>
+					<span
+						class='text-text-muted shrink-0 text-sm font-semibold tabular-nums'
+						data-settings-total-artists-value='true'
+					>
+						--
+					</span>
+				</div>
+				<div class='border-border/50 bg-surface-raised/52 flex items-center justify-between gap-3 rounded-xl border px-3 py-2'>
+					<span class='flex min-w-0 items-center gap-2 text-sm font-medium text-text'>
+						<span class='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-surface/90 text-text-muted'>
+							<svg
+								viewBox='0 0 24 24'
+								class='h-4 w-4'
+								fill='none'
+								stroke='currentColor'
+								stroke-width='1.8'
+								aria-hidden='true'
+							>
+								<rect x='4' y='5' width='16' height='14' rx='2'></rect>
+								<path d='M8 9h8'></path>
+								<path d='M8 13h5'></path>
+							</svg>
+						</span>
+						<span class='truncate'>Total Albums</span>
+					</span>
+					<span
+						class='text-text-muted shrink-0 text-sm font-semibold tabular-nums'
+						data-settings-total-albums-value='true'
+					>
+						--
+					</span>
+				</div>
+			</div>
+		</div>
+
+		<div class='mx-2 my-1 h-px bg-border/45'></div>
+
 		<button
 			type='button'
 			class='ui-subtle-pressable group flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-left text-sm font-medium text-text transition-all duration-150 hover:border-border/55 hover:bg-surface-raised/78 focus:outline-none focus:ring-2 focus:ring-primary/10'
@@ -161,6 +218,7 @@ import { BUTTON_ICON_SECONDARY_CLASS } from '../../lib/button-styles';
 
 <script>
 	import { LOGIN_PATH, logout } from '../../lib/api';
+	import { loadLibraryData } from '../../lib/library-cache';
 	import {
 		DROPDOWN_MENU_MODE_EVENT,
 		applyDropdownMenuMode,
@@ -168,6 +226,7 @@ import { BUTTON_ICON_SECONDARY_CLASS } from '../../lib/button-styles';
 		toggleDropdownMenuMode,
 	} from '../../lib/dropdown-mode';
 	import { bindOnce } from '../../lib/events';
+	import { LIBRARY_DATA_CHANGED_EVENT, getLibraryStats } from '../../lib/library-stats';
 
 	type ThemeWindow = Window & {
 		toggleTheme?: () => void;
@@ -179,6 +238,10 @@ import { BUTTON_ICON_SECONDARY_CLASS } from '../../lib/button-styles';
 		document.querySelector('[data-settings-trigger="true"]') as HTMLButtonElement | null;
 	const getSettingsMenu = () =>
 		document.querySelector('[data-settings-menu="true"]') as HTMLDivElement | null;
+	const getSettingsArtistCount = () =>
+		document.querySelector('[data-settings-total-artists-value="true"]') as HTMLSpanElement | null;
+	const getSettingsAlbumCount = () =>
+		document.querySelector('[data-settings-total-albums-value="true"]') as HTMLSpanElement | null;
 
 	const setSettingsMenuOpen = (isOpen: boolean) => {
 		const trigger = getSettingsTrigger();
@@ -229,9 +292,24 @@ import { BUTTON_ICON_SECONDARY_CLASS } from '../../lib/button-styles';
 		}
 	};
 
+	const syncLibraryInfo = async () => {
+		const artistCount = getSettingsArtistCount();
+		const albumCount = getSettingsAlbumCount();
+		if (!artistCount || !albumCount) return;
+
+		try {
+			const stats = getLibraryStats(await loadLibraryData());
+			artistCount.textContent = stats.totalArtists.toLocaleString();
+			albumCount.textContent = stats.totalAlbums.toLocaleString();
+		} catch {
+			// Keep the placeholder values when library data is not available yet.
+		}
+	};
+
 	const syncSettingsMenu = () => {
 		syncThemeSetting();
 		syncDropdownSetting();
+		void syncLibraryInfo();
 		setSettingsMenuOpen(false);
 	};
 
@@ -243,7 +321,9 @@ import { BUTTON_ICON_SECONDARY_CLASS } from '../../lib/button-styles';
 			if (target.closest('[data-settings-trigger="true"]')) {
 				event.preventDefault();
 				const menu = getSettingsMenu();
-				setSettingsMenuOpen(Boolean(menu?.classList.contains('hidden')));
+				const isOpening = Boolean(menu?.classList.contains('hidden'));
+				setSettingsMenuOpen(isOpening);
+				if (isOpening) void syncLibraryInfo();
 				return;
 			}
 
@@ -279,6 +359,9 @@ import { BUTTON_ICON_SECONDARY_CLASS } from '../../lib/button-styles';
 
 		document.addEventListener('astro:page-load', syncSettingsMenu);
 		window.addEventListener(DROPDOWN_MENU_MODE_EVENT, syncDropdownSetting);
+		window.addEventListener(LIBRARY_DATA_CHANGED_EVENT, () => {
+			void syncLibraryInfo();
+		});
 		syncSettingsMenu();
 	});
 </script>
