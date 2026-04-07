@@ -106,6 +106,7 @@ It combines an Astro frontend, a Go backend, PostgreSQL persistence, JWT auth, S
 ├── backend/   Go API, auth, models, migrations, Swagger docs
 ├── frontend/  Astro app, PWA, offline cache logic, UI
 ├── deploy/    Caddy config, systemd service, deploy script
+├── LICENSE    MIT license
 └── README.md
 ```
 
@@ -236,6 +237,8 @@ Protected resource endpoints:
 - `POST /api/albums`
 - `PUT /api/albums/{id}`
 - `DELETE /api/albums/{id}`
+- `GET /api/spotify/search/artists`
+- `GET /api/spotify/search/albums`
 
 ## Deployment
 
@@ -244,6 +247,14 @@ The `deploy/` directory contains a simple Raspberry Pi-style deployment setup:
 - `deploy/Caddyfile` serves the built frontend and reverse proxies `/api/*` and `/swagger/*` to the backend
 - `deploy/better-music-backend.service` defines a systemd unit for the Go server
 - `deploy/deploy.sh` fetches the latest `main`, rebuilds backend and frontend, and reloads services
+
+Self-hosted setup:
+
+- The app is intended to run on a Raspberry Pi as a small self-hosted music tracker
+- Caddy sits in front of the app and serves the static frontend while proxying API traffic to the Go backend
+- The public instance is exposed through Tailscale
+- The included deploy script provides a simple pull-and-restart workflow for updating the live instance
+- A current Tailscale-hosted instance is available at `https://web-pi.tail559d08.ts.net`
 
 Current deployment shape:
 
@@ -273,4 +284,6 @@ This repository already includes:
 
 ## License
 
-No license file is currently included in this repository.
+This project is licensed under the MIT License.
+
+See [LICENSE](./LICENSE) for the full text.
