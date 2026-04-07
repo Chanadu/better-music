@@ -1,7 +1,6 @@
 :8081 {
     root * /home/pi/better-music/frontend/dist
     encode gzip zstd
-    file_server
 
     handle /api/* {
         reverse_proxy 127.0.0.1:8080
@@ -11,5 +10,5 @@
         reverse_proxy 127.0.0.1:8080
     }
 
-    try_files {path} /index.html
+	file_server
 }
