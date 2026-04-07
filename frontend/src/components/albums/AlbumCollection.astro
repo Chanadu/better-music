@@ -22,12 +22,18 @@ const { view = 'unlistened' } = Astro.props as Props;
 ---
 
 <section data-album-collection-root='true' data-view={view}>
-	<div class='mb-3'>
+	<div class='mb-3 flex items-center gap-2'>
+		<SpotifyRefreshButton
+			buttonId='albums-database-refresh-btn'
+			label='Refresh from database'
+			iconOnly={true}
+			className='hidden'
+		/>
 		<SearchField
 			inputId='albums-search'
 			label='Search albums'
 			placeholder='Search albums, artists, years, or notes'
-			wrapperClassName='min-w-0'
+			wrapperClassName='min-w-0 flex-1'
 			data-albums-search='true'
 		/>
 	</div>
@@ -78,7 +84,6 @@ const { view = 'unlistened' } = Astro.props as Props;
 				imageAlt='Album cover preview'
 			/>
 			<FloatingInput id='edit-album-year' label='Year' type='number' min='0' />
-			<SpotifyRefreshButton buttonId='edit-album-spotify-refresh-btn' />
 			<label for='edit-album-listened' class='flex items-center gap-2 text-sm font-semibold'
 				><input
 					id='edit-album-listened'
@@ -212,7 +217,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 		type UpdateAlbumInput,
 	} from '../../lib/library-cache';
 	import { hidePageLoadingSkeleton, showPageLoadingSkeleton } from '../../lib/page-skeletons';
-	import { getAlbumBySpotifyID, searchAlbums, type SpotifyAlbum } from '../../lib/spotify';
+	import { searchAlbums, type SpotifyAlbum } from '../../lib/spotify';
 	import {
 		bindSpotifySearch,
 		getSpotifySearchElements,
@@ -297,6 +302,8 @@ const { view = 'unlistened' } = Astro.props as Props;
 		getComponentRoot()?.querySelector('[data-albums-artist-filter="true"]') as HTMLSelectElement | null;
 	const getSyncBanner = () => document.getElementById('albums-sync-banner') as HTMLDivElement | null;
 	const getSyncBannerText = () => document.getElementById('albums-sync-banner-text') as HTMLParagraphElement | null;
+	const getDatabaseRefreshButton = () =>
+		document.getElementById('albums-database-refresh-btn') as HTMLButtonElement | null;
 	const getEditAlbumSpotifyElements = () =>
 		getSpotifySearchElements({
 			inputId: 'edit-album-spotify-search',
@@ -474,6 +481,21 @@ const { view = 'unlistened' } = Astro.props as Props;
 			isOnline() ?
 				`${pendingCount} change${pendingCount === 1 ? '' : 's'} pending sync. The app will keep retrying automatically.`
 			:	`${pendingCount} change${pendingCount === 1 ? '' : 's'} saved offline. They will sync when you reconnect.`;
+	};
+
+	const syncDatabaseRefreshVisibility = () => {
+		getDatabaseRefreshButton()?.classList.toggle('hidden', !isOnline());
+	};
+
+	const setDatabaseRefreshState = (loading: boolean) => {
+		const button = getDatabaseRefreshButton();
+		if (!button) return;
+		const label = loading ? 'Refreshing from database' : 'Refresh from database';
+		button.disabled = loading;
+		button.dataset.loading = loading ? 'true' : 'false';
+		button.setAttribute('aria-label', label);
+		button.title = label;
+		button.setAttribute('aria-busy', loading ? 'true' : 'false');
 	};
 
 	const syncAlbumArtistFilterOptions = (artists: Artist[]) => {
@@ -1077,15 +1099,16 @@ const { view = 'unlistened' } = Astro.props as Props;
 		}
 	};
 
-	const loadAlbums = async () => {
+	const loadAlbums = async (force = false): Promise<boolean> => {
 		const listRoot = getListRoot();
-		if (!listRoot) return;
+		if (!listRoot) return false;
 		const route = getView() === 'listened' ? '/listened' : '/albums';
 		const shouldShowSkeleton = !hasCachedLibraryData();
+		const preserveExistingContent = force && hasCachedLibraryData();
 		if (shouldShowSkeleton) showPageLoadingSkeleton(route);
-		listRoot.innerHTML = '';
+		if (!preserveExistingContent) listRoot.innerHTML = '';
 		try {
-			const { albums, artists } = await loadLibraryData();
+			const { albums, artists } = await loadLibraryData(force);
 			const albumData = albums as Album[];
 			const artistData = artists as Artist[];
 			lastLoadedAlbums = albumData;
@@ -1100,7 +1123,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 			if (!filteredAlbums.length) {
 				clearListenedState();
 				renderEmptyAlbumsState(mode);
-				return;
+				return true;
 			}
 			const artistNameMap = new Map<number, string>();
 			for (const artist of artistData) artistNameMap.set(artist.id, artist.name);
@@ -1110,7 +1133,7 @@ const { view = 'unlistened' } = Astro.props as Props;
 			if (!visibleAlbums.length) {
 				clearListenedState();
 				renderAlbumSearchEmptyState(mode);
-				return;
+				return true;
 			}
 
 			if (mode === 'listened' && !hasActiveAlbumFilters()) {
@@ -1124,11 +1147,28 @@ const { view = 'unlistened' } = Astro.props as Props;
 				const artistName = artistNameMap.get(album.artist_id) ?? `Artist #${album.artist_id}`;
 				listRoot.appendChild(renderAlbumCard(album, artistName));
 			}
+			return true;
 		} catch {
-			setMessage('An unexpected error occurred while loading albums.', true);
+			if (!preserveExistingContent) setMessage('An unexpected error occurred while loading albums.', true);
+			return false;
 		} finally {
 			if (shouldShowSkeleton) hidePageLoadingSkeleton(route);
 		}
+	};
+
+	const bindDatabaseRefreshButton = () => {
+		const button = getDatabaseRefreshButton();
+		if (!button || button.dataset.bound === 'true') return;
+		button.dataset.bound = 'true';
+		button.addEventListener('click', async () => {
+			if (!isOnline()) return;
+			setDatabaseRefreshState(true);
+			const refreshed = await loadAlbums(true);
+			setDatabaseRefreshState(false);
+			if (!refreshed) {
+				window.alert('Failed to refresh albums from the database.');
+			}
+		});
 	};
 
 	const refreshAlbumsView = () => {
@@ -1141,6 +1181,8 @@ const { view = 'unlistened' } = Astro.props as Props;
 		}
 
 		toolkitRetryCount = 0;
+		bindDatabaseRefreshButton();
+		syncDatabaseRefreshVisibility();
 		bindSearchHandlers();
 		bindFilterHandlers();
 		bindEditHandlers();
@@ -1167,31 +1209,6 @@ const { view = 'unlistened' } = Astro.props as Props;
 		editAlbumRatingSliderInput?.addEventListener('input', () => syncEditRatingControls('slider'));
 		editAlbumRatingInput?.addEventListener('input', () => syncEditRatingControls('manual'));
 		editAlbumRatingInput?.addEventListener('change', () => syncEditRatingControls('manual'));
-
-		const refreshSpotifyButton = document.getElementById(
-			'edit-album-spotify-refresh-btn',
-		) as HTMLButtonElement | null;
-		refreshSpotifyButton?.addEventListener('click', async () => {
-			if (!editAlbumTitleInput || !editAlbumCoverInput || !editAlbumYearInput) return;
-			if (!currentEditAlbumSpotifyID) {
-				setEditStatus('This album does not have a saved Spotify match to refresh.', 'error');
-				return;
-			}
-
-			refreshSpotifyButton.disabled = true;
-			refreshSpotifyButton.textContent = 'Refreshing...';
-			setEditStatus('Refreshing from Spotify...');
-
-			try {
-				const album = await getAlbumBySpotifyID(currentEditAlbumSpotifyID);
-				applySpotifyAlbumToEditForm(album, { switchToManual: false });
-			} catch {
-				setEditStatus('Failed to refresh from Spotify.', 'error');
-			} finally {
-				refreshSpotifyButton.disabled = false;
-				refreshSpotifyButton.textContent = 'Refresh from Spotify';
-			}
-		});
 
 		editAlbumForm.addEventListener('submit', async (event) => {
 			event.preventDefault();
@@ -1331,6 +1348,12 @@ const { view = 'unlistened' } = Astro.props as Props;
 		window.addEventListener('online', () => syncAlbumBanner());
 		window.addEventListener('offline', () => syncAlbumBanner());
 		document.addEventListener('astro:page-load', () => syncAlbumBanner());
+	});
+
+	bindOnce('__albumDatabaseRefreshBound', () => {
+		window.addEventListener('online', syncDatabaseRefreshVisibility);
+		window.addEventListener('offline', syncDatabaseRefreshVisibility);
+		document.addEventListener('astro:page-load', syncDatabaseRefreshVisibility);
 	});
 
 	refreshAlbumsView();

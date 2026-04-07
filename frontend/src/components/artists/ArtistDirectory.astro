@@ -14,12 +14,18 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 ---
 
 <section data-artist-directory-root='true'>
-	<div class='mb-3'>
+	<div class='mb-3 flex items-center gap-2'>
+		<SpotifyRefreshButton
+			buttonId='artists-database-refresh-btn'
+			label='Refresh from database'
+			iconOnly={true}
+			className='hidden'
+		/>
 		<SearchField
 			inputId='artists-search'
 			label='Search artists'
 			placeholder='Search artists or album titles'
-			wrapperClassName='min-w-0'
+			wrapperClassName='min-w-0 flex-1'
 			data-artists-search='true'
 		/>
 	</div>
@@ -69,7 +75,6 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 				emptyLabel='No cover image available'
 				imageAlt='Artist cover preview'
 			/>
-			<SpotifyRefreshButton buttonId='edit-artist-spotify-refresh-btn' />
 		</div>
 		<SpotifySearchPanel
 			panelId='edit-artist-spotify-panel'
@@ -107,7 +112,7 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 		updateArtistRecord,
 	} from '../../lib/library-cache';
 	import { hidePageLoadingSkeleton, showPageLoadingSkeleton } from '../../lib/page-skeletons';
-	import { getArtistBySpotifyID, searchArtists, type SpotifyArtist } from '../../lib/spotify';
+	import { searchArtists, type SpotifyArtist } from '../../lib/spotify';
 	import {
 		bindSpotifySearch,
 		getSpotifySearchElements,
@@ -188,6 +193,8 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 		getComponentRoot()?.querySelector('[data-artists-albums-filter="true"]') as HTMLSelectElement | null;
 	const getSyncBanner = () => document.getElementById('artists-sync-banner') as HTMLDivElement | null;
 	const getSyncBannerText = () => document.getElementById('artists-sync-banner-text') as HTMLParagraphElement | null;
+	const getDatabaseRefreshButton = () =>
+		document.getElementById('artists-database-refresh-btn') as HTMLButtonElement | null;
 	const getEditArtistSpotifyElements = () =>
 		getSpotifySearchElements({
 			inputId: 'edit-artist-spotify-search',
@@ -256,6 +263,21 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 
 	const syncEditArtistSpotifyAvailability = () => {
 		syncSpotifySearchAvailability(getEditArtistSpotifyElements(), { isOnline });
+	};
+
+	const syncDatabaseRefreshVisibility = () => {
+		getDatabaseRefreshButton()?.classList.toggle('hidden', !isOnline());
+	};
+
+	const setDatabaseRefreshState = (loading: boolean) => {
+		const button = getDatabaseRefreshButton();
+		if (!button) return;
+		const label = loading ? 'Refreshing from database' : 'Refresh from database';
+		button.disabled = loading;
+		button.dataset.loading = loading ? 'true' : 'false';
+		button.setAttribute('aria-label', label);
+		button.title = label;
+		button.setAttribute('aria-busy', loading ? 'true' : 'false');
 	};
 
 	const hasPendingArtistGroup = (artist: Artist, albums: Album[]) =>
@@ -473,31 +495,6 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 		});
 		bindEditArtistSpotifySearch();
 
-		const refreshSpotifyButton = document.getElementById(
-			'edit-artist-spotify-refresh-btn',
-		) as HTMLButtonElement | null;
-		refreshSpotifyButton?.addEventListener('click', async () => {
-			if (!editArtistNameInput || !editArtistCoverURLInput) return;
-			if (!currentEditArtistSpotifyID) {
-				setEditStatus('This artist does not have a saved Spotify match to refresh.', 'error');
-				return;
-			}
-
-			refreshSpotifyButton.disabled = true;
-			refreshSpotifyButton.textContent = 'Refreshing...';
-			setEditStatus('Refreshing from Spotify...');
-
-			try {
-				const artist = await getArtistBySpotifyID(currentEditArtistSpotifyID);
-				applySpotifyArtistToEditForm(artist, { switchToManual: false });
-			} catch {
-				setEditStatus('Failed to refresh from Spotify.', 'error');
-			} finally {
-				refreshSpotifyButton.disabled = false;
-				refreshSpotifyButton.textContent = 'Refresh from Spotify';
-			}
-		});
-
 		editArtistForm.addEventListener('submit', async (event) => {
 			event.preventDefault();
 			if (!editArtistIDInput || !editArtistNameInput || !editArtistCoverURLInput || !editArtistSubmit) return;
@@ -686,16 +683,17 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 		}
 	};
 
-	const loadArtists = async () => {
+	const loadArtists = async (force = false): Promise<boolean> => {
 		const listRoot = getListRoot();
-		if (!listRoot) return;
+		if (!listRoot) return false;
 		const route = '/artists';
 		const shouldShowSkeleton = !hasCachedLibraryData();
+		const preserveExistingContent = force && hasCachedLibraryData();
 		if (shouldShowSkeleton) showPageLoadingSkeleton(route);
 		syncArtistSortControls();
-		listRoot.innerHTML = '';
+		if (!preserveExistingContent) listRoot.innerHTML = '';
 		try {
-			const { artists, albums } = await loadLibraryData();
+			const { artists, albums } = await loadLibraryData(force);
 			const artistData = artists as Artist[];
 			const albumData = albums as Album[];
 			lastLoadedArtists = artistData;
@@ -718,7 +716,7 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 			);
 			if (!visibleArtists.length) {
 				renderArtistSearchEmptyState();
-				return;
+				return true;
 			}
 			const sortedArtists = [...visibleArtists].sort((a, b) => {
 				let base = 0;
@@ -738,11 +736,28 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 			});
 			for (const artist of sortedArtists)
 				listRoot.appendChild(renderArtistCard(artist, grouped.get(artist.id) ?? []));
+			return true;
 		} catch {
-			setMessage('An unexpected error occurred while loading artists.', true);
+			if (!preserveExistingContent) setMessage('An unexpected error occurred while loading artists.', true);
+			return false;
 		} finally {
 			if (shouldShowSkeleton) hidePageLoadingSkeleton(route);
 		}
+	};
+
+	const bindDatabaseRefreshButton = () => {
+		const button = getDatabaseRefreshButton();
+		if (!button || button.dataset.bound === 'true') return;
+		button.dataset.bound = 'true';
+		button.addEventListener('click', async () => {
+			if (!isOnline()) return;
+			setDatabaseRefreshState(true);
+			const refreshed = await loadArtists(true);
+			setDatabaseRefreshState(false);
+			if (!refreshed) {
+				window.alert('Failed to refresh artists from the database.');
+			}
+		});
 	};
 
 	const refreshArtistsView = () => {
@@ -755,6 +770,8 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 		}
 
 		toolkitRetryCount = 0;
+		bindDatabaseRefreshButton();
+		syncDatabaseRefreshVisibility();
 		bindSearchHandlers();
 		bindFilterHandlers();
 		bindEditHandlers();
@@ -780,6 +797,12 @@ import { BUTTON_PRIMARY_CLASS } from '../../lib/button-styles';
 		window.addEventListener('online', () => syncArtistBanner());
 		window.addEventListener('offline', () => syncArtistBanner());
 		document.addEventListener('astro:page-load', () => syncArtistBanner());
+	});
+
+	bindOnce('__artistDatabaseRefreshBound', () => {
+		window.addEventListener('online', syncDatabaseRefreshVisibility);
+		window.addEventListener('offline', syncDatabaseRefreshVisibility);
+		document.addEventListener('astro:page-load', syncDatabaseRefreshVisibility);
 	});
 
 	refreshArtistsView();
