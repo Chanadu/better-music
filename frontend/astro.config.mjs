@@ -16,7 +16,7 @@ export default defineConfig({
 			tailwindcss(),
 			VitePWA({
 				registerType: 'autoUpdate',
-				injectRegister: 'auto',
+				injectRegister: 'script',
 				includeAssets: ['favicon.ico', 'favicon.svg'],
 				manifest: {
 					name: 'Better-Music',

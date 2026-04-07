@@ -76,7 +76,7 @@ import { pwaInfo } from 'virtual:pwa-info';
 				document.addEventListener('astro:page-load', syncSavedTheme);
 			})();
 		</script>
-		<script src='/src/pwa.ts'></script>
+		<script src='/registerSW.js' defer></script>
 	</head>
 	<body class='m-0 min-h-screen w-full overscroll-y-none'>
 		<slot />
