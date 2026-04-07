@@ -66,7 +66,7 @@ func ArtistExistsByName(database *sql.DB, userID int, name string) (bool, error)
 		`SELECT EXISTS (
 			SELECT 1
 			FROM artists
-			WHERE user_id = $1 AND name = $2
+			WHERE user_id = $1 AND LOWER(name) = LOWER($2)
 		)
 		`,
 		userID, name,

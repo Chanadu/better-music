@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Chanadu/better-music/models"
 )
@@ -105,6 +106,8 @@ func (h *Handler) CreateArtist(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
 		return
 	}
+
+	body.Name = strings.TrimSpace(body.Name)
 
 	if body.Name == "" {
 		writeJSON(w, http.StatusBadRequest, apiError("name is required"))

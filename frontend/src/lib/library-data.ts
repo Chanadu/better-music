@@ -294,6 +294,47 @@ const findLastIndex = <T>(items: T[], predicate: (item: T) => boolean): number =
 	return -1;
 };
 
+const normalizeArtistName = (value: string): string => value.trim().toLocaleLowerCase();
+const normalizeAlbumTitle = (value: string): string => value.trim().toLocaleLowerCase();
+
+const hasArtistNameConflict = (
+	artists: LibraryArtist[],
+	name: string,
+	options: { excludeId?: number } = {},
+): boolean => {
+	const normalized = normalizeArtistName(name);
+	return artists.some((artist) => {
+		if (options.excludeId != null && artist.id === options.excludeId) return false;
+		return normalizeArtistName(artist.name) === normalized;
+	});
+};
+
+const hasAlbumTitleConflict = (
+	albums: LibraryAlbum[],
+	artistId: number,
+	title: string,
+	options: { excludeId?: number } = {},
+): boolean => {
+	const normalized = normalizeAlbumTitle(title);
+	return albums.some((album) => {
+		if (options.excludeId != null && album.id === options.excludeId) return false;
+		if (album.artist_id !== artistId) return false;
+		return normalizeAlbumTitle(album.title) === normalized;
+	});
+};
+
+const createAlbumUpdatePayload = (album: LibraryAlbum): UpdateAlbumInput => ({
+	artist_id: album.artist_id,
+	title: album.title,
+	listened: album.listened,
+	...(album.cover_url ? { cover_url: album.cover_url } : {}),
+	...(typeof album.year === 'number' ? { year: album.year } : {}),
+	...(album.spotify_id ? { spotify_id: album.spotify_id } : {}),
+	...(album.listened && album.rating != null ? { rating: Number(album.rating) } : {}),
+	...(album.comment != null ? { comment: album.comment } : {}),
+	...(album.listened && album.listened_at ? { listened_at: album.listened_at } : {}),
+});
+
 const sanitizeArtistPayload = (input: CreateArtistInput | UpdateArtistInput): ArtistPayload => {
 	const name = input.name.trim();
 	if (!name) throw new Error('Artist name is required.');
@@ -559,7 +600,40 @@ const processArtistCreateMutation = async (
 	);
 
 	if (!response.ok) {
-		throw new Error(await getErrorMessage(response, 'Failed to sync artist.'));
+		const message = await getErrorMessage(response, 'Failed to sync artist.');
+
+		if (
+			response.status === 409 &&
+			normalizeArtistName(message) === normalizeArtistName('artist with this name already exists')
+		) {
+			const artistsResponse = await apiFetch('/api/artists', { method: 'GET' }, { auth: true });
+			if (artistsResponse.ok) {
+				const remoteArtists = (await artistsResponse.json()) as LibraryArtist[];
+				const existingArtist = remoteArtists
+					.map((artist) => normalizeArtist(artist))
+					.find((artist) => normalizeArtistName(artist.name) === normalizeArtistName(mutation.payload.name));
+
+				if (existingArtist) {
+					await withStateLock(() => {
+						const snapshot = readStoredLibraryData() ?? { albums: [], artists: [] };
+						const queue = readQueuedMutations().filter((item) => item.id !== mutation.id);
+
+						snapshot.artists = snapshot.artists.filter((artist) => artist.id !== mutation.localId);
+						snapshot.albums = snapshot.albums.map((album) =>
+							album.artist_id === mutation.localId ?
+								normalizeAlbum({ ...album, artist_id: existingArtist.id })
+							:	album,
+						);
+
+						writeStoredLibraryData(snapshot);
+						writeQueuedMutations(updateQueueForArtistChange(queue, mutation.localId, existingArtist.id));
+					});
+					return;
+				}
+			}
+		}
+
+		throw new Error(message);
 	}
 
 	const createdArtist = normalizeArtist(
@@ -653,7 +727,74 @@ const processAlbumCreateMutation = async (
 	);
 
 	if (!createResponse.ok) {
-		throw new Error(await getErrorMessage(createResponse, 'Failed to sync album.'));
+		const message = await getErrorMessage(createResponse, 'Failed to sync album.');
+
+		if (
+			createResponse.status === 409 &&
+			normalizeAlbumTitle(message) === normalizeAlbumTitle('album with this name and artist already exists')
+		) {
+			const albumsResponse = await apiFetch('/api/albums', { method: 'GET' }, { auth: true });
+			if (albumsResponse.ok) {
+				const remoteAlbums = (await albumsResponse.json()) as LibraryAlbum[];
+				const existingAlbum = remoteAlbums
+					.map((album) => normalizeAlbum(album))
+					.find(
+						(album) =>
+							album.artist_id === mutation.payload.artist_id &&
+							normalizeAlbumTitle(album.title) === normalizeAlbumTitle(mutation.payload.title),
+					);
+
+				if (existingAlbum) {
+					await withStateLock(() => {
+						const snapshot = readStoredLibraryData() ?? { albums: [], artists: [] };
+						const currentAlbum = snapshot.albums.find((album) => album.id === mutation.localId);
+						const queue = readQueuedMutations().filter((item) => item.id !== mutation.id);
+						const remappedQueue = updateQueueForAlbumChange(queue, mutation.localId, existingAlbum.id);
+						const hasPendingUpdate = remappedQueue.some(
+							(item) => item.type === 'album-update' && item.albumId === existingAlbum.id,
+						);
+						const hasPendingDelete = remappedQueue.some(
+							(item) => item.type === 'album-delete' && item.albumId === existingAlbum.id,
+						);
+						const nextQueue =
+							currentAlbum && !hasPendingUpdate && !hasPendingDelete ?
+								[
+									...remappedQueue,
+									{
+										id: createQueueID(),
+										type: 'album-update' as const,
+										albumId: existingAlbum.id,
+										payload: createAlbumUpdatePayload(currentAlbum),
+									},
+								]
+							:	remappedQueue;
+						const nextAlbum =
+							currentAlbum ?
+								normalizeAlbum({
+									...existingAlbum,
+									...currentAlbum,
+									id: existingAlbum.id,
+									created_at: existingAlbum.created_at,
+									local_only: false,
+									sync_state:
+										hasPendingUpdate || hasPendingDelete || nextQueue.length !== remappedQueue.length ?
+											'pending'
+										:	'synced',
+								})
+							:	existingAlbum;
+
+						snapshot.albums = snapshot.albums.map((album) =>
+							album.id === mutation.localId ? nextAlbum : album,
+						);
+						writeStoredLibraryData(snapshot);
+						writeQueuedMutations(nextQueue);
+					});
+					return;
+				}
+			}
+		}
+
+		throw new Error(message);
 	}
 
 	const createdAlbum = (await createResponse.json()) as LibraryAlbum;
@@ -849,6 +990,9 @@ export const createArtistRecord = async (input: CreateArtistInput): Promise<Muta
 	const payload = sanitizeArtistPayload(input);
 	const artist = await withStateLock(() => {
 		const snapshot = readStoredLibraryData() ?? { albums: [], artists: [] };
+		if (hasArtistNameConflict(snapshot.artists, payload.name)) {
+			throw new Error('Artist with this name already exists.');
+		}
 		const queue = readQueuedMutations();
 		const localID = nextTempId(snapshot);
 		const nextArtist = createLocalArtist(localID, payload);
@@ -960,6 +1104,9 @@ export const createAlbumRecord = async (input: CreateAlbumInput): Promise<Mutati
 	const payload = sanitizeAlbumPayload(input);
 	const album = await withStateLock(() => {
 		const snapshot = readStoredLibraryData() ?? { albums: [], artists: [] };
+		if (hasAlbumTitleConflict(snapshot.albums, payload.artist_id, payload.title)) {
+			throw new Error('Album with this name and artist already exists.');
+		}
 		const queue = readQueuedMutations();
 		const localID = nextTempId(snapshot);
 		const nextAlbum = createLocalAlbum(localID, payload);

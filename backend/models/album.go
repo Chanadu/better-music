@@ -68,7 +68,7 @@ func AlbumExistsByName(database *sql.DB, userID int, artistID int, title string)
 		`SELECT EXISTS (
 			SELECT 1
 			FROM albums
-			WHERE user_id = $1 AND artist_id = $2 AND title = $3
+			WHERE user_id = $1 AND artist_id = $2 AND LOWER(title) = LOWER($3)
 		)
 		`,
 		userID, artistID, title,

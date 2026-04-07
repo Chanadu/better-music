@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Chanadu/better-music/models"
 )
@@ -163,6 +164,8 @@ func (h *Handler) CreateAlbum(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
 		return
 	}
+
+	body.Title = strings.TrimSpace(body.Title)
 
 	if body.Title == "" {
 		writeJSON(w, http.StatusBadRequest, apiError("title is required"))
