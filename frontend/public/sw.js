@@ -1,5 +1,5 @@
 const SHELL_CACHE = 'better-music-shell-v3';
-const PAGE_CACHE = 'better-music-pages-v3';
+const PAGE_CACHE = 'better-music-pages-v4';
 const IMAGE_CACHE = 'better-music-images-v3';
 const OFFLINE_FALLBACK_PATH = '/offline/';
 const APP_ROUTES = ['/', '/albums/', '/listened/', '/artists/', '/register/', OFFLINE_FALLBACK_PATH];
@@ -60,6 +60,21 @@ const getOfflineFallback = async (request) => {
 	);
 };
 
+const fetchAndCacheAppPage = async (request, canonicalPath) => {
+	const canonicalURL = new URL(canonicalPath, self.location.origin);
+	const response = await fetch(canonicalURL, {
+		headers: request.headers,
+		credentials: 'same-origin',
+	});
+
+	if (response.ok) {
+		const cache = await caches.open(PAGE_CACHE);
+		cache.put(canonicalPath, response.clone());
+	}
+
+	return response;
+};
+
 const notifyClientsToSync = async () => {
 	const clients = await self.clients.matchAll({
 		type: 'window',
@@ -83,17 +98,16 @@ self.addEventListener('fetch', (event) => {
 		event.respondWith(
 			(async () => {
 				const canonicalPath = normalizeAppPath(url.pathname);
-				const canonicalURL = new URL(canonicalPath, self.location.origin);
+				const cache = await caches.open(PAGE_CACHE);
+				const cached = await cache.match(canonicalPath);
+
+				if (cached) {
+					event.waitUntil(fetchAndCacheAppPage(request, canonicalPath).catch(() => undefined));
+					return cached;
+				}
+
 				try {
-					const response = await fetch(canonicalURL, {
-						headers: request.headers,
-						credentials: 'same-origin',
-					});
-					if (response.ok) {
-						const cache = await caches.open(PAGE_CACHE);
-						cache.put(canonicalPath, response.clone());
-					}
-					return response;
+					return await fetchAndCacheAppPage(request, canonicalPath);
 				} catch {
 					return getOfflineFallback(request);
 				}

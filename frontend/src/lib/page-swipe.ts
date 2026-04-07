@@ -76,16 +76,17 @@ const clearShellOffset = (shell: HTMLElement) => {
 
 const prefetchRoute = (route: AppRoute | null) => {
 	if (!route) return;
+	const canonicalRoute = `${route}/`;
 	const preloadState = ((window as WindowWithPreloadState).__preloadedRoutes ??= {});
-	if (preloadState[route]) return;
-	preloadState[route] = true;
+	if (preloadState[canonicalRoute]) return;
+	preloadState[canonicalRoute] = true;
 
-	void fetch(route, {
+	void fetch(canonicalRoute, {
 		method: 'GET',
 		credentials: 'same-origin',
 		headers: { 'x-preload': '1' },
 	}).catch(() => {
-		preloadState[route] = false;
+		preloadState[canonicalRoute] = false;
 	});
 };
 
