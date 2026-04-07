@@ -14,6 +14,7 @@ type Config struct {
 	Logs       LogConfig
 	DB         PostgresConfig
 	Server     ServerConfig
+	Spotify    SpotifyConfig
 	JWTSecret  string
 	AccessTTL  time.Duration
 	RefreshTTL time.Duration
@@ -36,6 +37,22 @@ type PostgresConfig struct {
 type ServerConfig struct {
 	Host string
 	Port string
+}
+
+type SpotifyConfig struct {
+	ClientID     string
+	ClientSecret string
+}
+
+func getEnvWithFallback(keys ...string) string {
+	for _, key := range keys {
+		value := strings.TrimSpace(os.Getenv(key))
+		if value != "" {
+			return value
+		}
+	}
+
+	return ""
 }
 
 func LoadConfig() (Config, error) {
@@ -83,6 +100,9 @@ func LoadConfig() (Config, error) {
 		logFilePath = os.Getenv("LOG_DIR") + "/" + time.Now().Format("2006-01-02_15:04:05")
 	}
 
+	spotifyClientID := getEnvWithFallback("SPOTIFY_CLIENT_ID")
+	spotifyClientSecret := getEnvWithFallback("SPOTIFY_CLIENT_SECRET")
+
 	config := Config{
 		Logs: LogConfig{
 			Enabled: logEnabled,
@@ -99,6 +119,10 @@ func LoadConfig() (Config, error) {
 		Server: ServerConfig{
 			Host: os.Getenv("SERVER_HOST"),
 			Port: os.Getenv("SERVER_PORT"),
+		},
+		Spotify: SpotifyConfig{
+			ClientID:     spotifyClientID,
+			ClientSecret: spotifyClientSecret,
 		},
 		JWTSecret:  os.Getenv("JWT_SECRET"),
 		AccessTTL:  accessTTL,

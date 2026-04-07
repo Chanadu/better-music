@@ -74,6 +74,9 @@ func main() {
 	protectedMux.HandleFunc("PUT /api/albums/{id}", h.UpdateAlbum)
 	protectedMux.HandleFunc("DELETE /api/albums/{id}", h.DeleteAlbum)
 
+	protectedMux.HandleFunc("GET /api/spotify/search/artists", h.SearchSpotifyArtists)
+	protectedMux.HandleFunc("GET /api/spotify/search/albums", h.SearchSpotifyAlbums)
+
 	mux.Handle("/api/", middleware.Auth(protectedMux, cfg.JWTSecret))
 
 	serverAddr := cfg.Server.Host + ":" + cfg.Server.Port

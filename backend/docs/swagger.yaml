@@ -30,6 +30,60 @@ definitions:
         example: The Beatles
         type: string
     type: object
+  handlers.SpotifyAlbumArtist:
+    properties:
+      id:
+        example: 4Z8W4fKeB5YxbusRsdQVPb
+        type: string
+      name:
+        example: Radiohead
+        type: string
+    type: object
+  handlers.SpotifyAlbumSearchResult:
+    properties:
+      artists:
+        items:
+          $ref: '#/definitions/handlers.SpotifyAlbumArtist'
+        type: array
+      id:
+        example: 6ZG5lRT77aJ3btmArcykra
+        type: string
+      images:
+        items:
+          $ref: '#/definitions/handlers.SpotifyImage'
+        type: array
+      name:
+        example: OK Computer
+        type: string
+      release_date:
+        example: "1997-05-21"
+        type: string
+    type: object
+  handlers.SpotifyArtistSearchResult:
+    properties:
+      id:
+        example: 4Z8W4fKeB5YxbusRsdQVPb
+        type: string
+      images:
+        items:
+          $ref: '#/definitions/handlers.SpotifyImage'
+        type: array
+      name:
+        example: Radiohead
+        type: string
+    type: object
+  handlers.SpotifyImage:
+    properties:
+      height:
+        example: 640
+        type: integer
+      url:
+        example: https://i.scdn.co/image/ab67616d00001e02
+        type: string
+      width:
+        example: 640
+        type: integer
+    type: object
   handlers.TokenResponse:
     properties:
       token:
@@ -691,6 +745,108 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /api/spotify/search/albums:
+    get:
+      description: Search Spotify for albums and return trimmed results for the authenticated user
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Max results (1-10)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handlers.SpotifyAlbumSearchResult'
+            type: array
+        "400":
+          description: Missing or invalid query parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Spotify request failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Spotify is not configured
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Search Spotify albums
+      tags:
+      - spotify
+  /api/spotify/search/artists:
+    get:
+      description: Search Spotify for artists and return trimmed results for the authenticated user
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: Max results (1-10)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handlers.SpotifyArtistSearchResult'
+            type: array
+        "400":
+          description: Missing or invalid query parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "502":
+          description: Spotify request failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Spotify is not configured
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - Bearer: []
+      summary: Search Spotify artists
+      tags:
+      - spotify
 schemes:
 - http
 securityDefinitions:

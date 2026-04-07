@@ -901,6 +901,164 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/spotify/search/albums": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Search Spotify for albums and return trimmed results for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "spotify"
+                ],
+                "summary": "Search Spotify albums",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max results (1-10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.SpotifyAlbumSearchResult"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing or invalid query parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Spotify request failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Spotify is not configured",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/spotify/search/artists": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Search Spotify for artists and return trimmed results for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "spotify"
+                ],
+                "summary": "Search Spotify artists",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max results (1-10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.SpotifyArtistSearchResult"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Missing or invalid query parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Spotify request failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Spotify is not configured",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -945,6 +1103,84 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "The Beatles"
+                }
+            }
+        },
+        "handlers.SpotifyAlbumArtist": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "4Z8W4fKeB5YxbusRsdQVPb"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Radiohead"
+                }
+            }
+        },
+        "handlers.SpotifyAlbumSearchResult": {
+            "type": "object",
+            "properties": {
+                "artists": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.SpotifyAlbumArtist"
+                    }
+                },
+                "id": {
+                    "type": "string",
+                    "example": "6ZG5lRT77aJ3btmArcykra"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.SpotifyImage"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "example": "OK Computer"
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "1997-05-21"
+                }
+            }
+        },
+        "handlers.SpotifyArtistSearchResult": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "4Z8W4fKeB5YxbusRsdQVPb"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.SpotifyImage"
+                    }
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Radiohead"
+                }
+            }
+        },
+        "handlers.SpotifyImage": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "integer",
+                    "example": 640
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://i.scdn.co/image/ab67616d00001e02"
+                },
+                "width": {
+                    "type": "integer",
+                    "example": 640
                 }
             }
         },
