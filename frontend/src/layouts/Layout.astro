@@ -1,28 +1,19 @@
 ---
 import '../styles/global.css';
-
-interface Props {
-	title?: string;
-	description?: string;
-}
-
-const { title = 'Better Music', description = 'A better way to organize, rate, and rediscover your music library.' } =
-	Astro.props;
 ---
 
 <!doctype html>
-<html lang='en' data-theme='silk'>
+<html lang='en'>
 	<head>
-		<meta charset='UTF-8' />
-		<meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover' />
-		<meta name='description' content={description} />
-		<meta name='theme-color' content='#f7f5f2' />
-		<meta name='generator' content={Astro.generator} />
+		<meta charset='utf-8' />
+		<meta name='viewport' content='width=device-width' />
 		<link rel='icon' type='image/svg+xml' href='/favicon.svg' />
 		<link rel='icon' href='/favicon.ico' />
-		<title>{title}</title>
+		<meta name='generator' content={Astro.generator} />
+		<title>DaisyUI Starter</title>
 	</head>
-	<body class='min-h-screen bg-base-200 text-base-content antialiased'>
+
+	<body>
 		<slot />
 	</body>
 </html>
