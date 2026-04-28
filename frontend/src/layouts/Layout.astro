@@ -1,5 +1,8 @@
 ---
+import BottomNav from '../components/BottomNav.astro';
 import '../styles/global.css';
+
+const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 ---
 
 <!doctype html>
@@ -10,10 +13,12 @@ import '../styles/global.css';
 		<link rel='icon' type='image/svg+xml' href='/favicon.svg' />
 		<link rel='icon' href='/favicon.ico' />
 		<meta name='generator' content={Astro.generator} />
-		<title>DaisyUI Starter</title>
+		<title>Better Music</title>
 	</head>
 
-	<body>
+	<body class='min-h-screen pb-20'>
 		<slot />
+
+		<BottomNav currentPath={pathname} />
 	</body>
 </html>
