@@ -19,7 +19,7 @@
 	"plugins": ["prettier-plugin-astro", "prettier-plugin-tailwindcss"],
 	"overrides": [
 		{
-			"files": ["*.astro", ".js", ".ts", ".mjs"],
+			"files": ["*.astro"],
 			"options": {
 				"parser": "astro"
 			}
