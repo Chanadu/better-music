@@ -1,0 +1,15 @@
+---
+import LogoutButton from './LogoutButton.astro';
+import SearchBar from './SearchBar.astro';
+
+interface Props {
+	searchPlaceholder: string;
+}
+
+const { searchPlaceholder } = Astro.props;
+---
+
+<header class='navbar flex gap-4'>
+	<SearchBar placeholder={searchPlaceholder} />
+	<LogoutButton />
+</header>

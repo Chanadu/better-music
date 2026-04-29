@@ -34,7 +34,7 @@ const navItems = [
 ];
 ---
 
-<nav class='dock dock-md border-base-300 bg-base-100 border-t'>
+<nav class='dock dock-lg'>
 	{
 		navItems.map((item) => {
 			const isActive = currentPath === item.href;
@@ -42,7 +42,7 @@ const navItems = [
 			return (
 				<a
 					href={item.href}
-					class:list={[isActive && 'dock-active']}
+					class:list={[isActive && 'dock-active text-primary']}
 					aria-current={isActive ? 'page' : undefined}
 				>
 					<svg

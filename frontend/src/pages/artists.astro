@@ -1,13 +1,8 @@
 ---
-import SearchBar from '../components/SearchBar.astro';
+import TopNav from '../components/TopNav.astro';
 import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>
-	<main class='p-6'>
-		<h1 class='text-3xl font-bold'>Artists</h1>
-		<div class='mt-6'>
-			<SearchBar placeholder='Search artists' />
-		</div>
-	</main>
+	<TopNav searchPlaceholder='Search artists' />
 </Layout>
