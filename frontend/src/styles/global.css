@@ -35,8 +35,12 @@
 	--radius-selector: 0.5rem;
 	--radius-field: 0.5rem;
 	--radius-box: 0.5rem;
-}
 
-.dock .dock-active {
-	color: var(--color-primary);
+	--size-selector: 0.28125rem;
+	--size-field: 0.25rem;
+
+	--border: 2px;
+
+	--depth: 1;
+	--noise: 0;
 }

@@ -1,0 +1,46 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<BaseLayout>
+	<div class='hero min-h-screen'>
+		<div class='hero-content w-full max-w-lg flex-col lg:flex-row-reverse'>
+			<div class='text-center lg:text-left'>
+				<h1 class='text-2xl font-bold'>{title}</h1>
+			</div>
+			<div class='card bg-base-200 w-full'>
+				<div class='card-body'>
+					<slot />
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const authFieldsets = document.querySelectorAll('.fieldset');
+
+		authFieldsets.forEach((fieldset) => {
+			const requiredInputs: HTMLInputElement[] = Array.from(fieldset.querySelectorAll('input[required]'));
+			const submitButton: HTMLButtonElement = fieldset.querySelector('button') as HTMLButtonElement;
+
+			const updateButtonState = () => {
+				const isDisabled = !requiredInputs.every((input) => input.checkValidity());
+
+				submitButton.disabled = isDisabled;
+				submitButton.classList.toggle('btn-disabled', isDisabled);
+			};
+
+			requiredInputs.forEach((input) => {
+				input.addEventListener('input', updateButtonState);
+			});
+
+			updateButtonState();
+		});
+	</script>
+</BaseLayout>

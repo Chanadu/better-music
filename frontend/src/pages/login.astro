@@ -1,0 +1,19 @@
+---
+import AuthLayout from '../layouts/AuthLayout.astro';
+import EmailInput from '../components/auth/EmailInput.astro';
+import PasswordInput from '../components/auth/PasswordInput.astro';
+---
+
+<AuthLayout title='Login'>
+	<fieldset class='fieldset flex flex-col gap-4'>
+		<label class='label'>Email</label>
+		<EmailInput />
+		<label class='label'>Password</label>
+		<PasswordInput />
+		<button class='btn btn-primary btn-disabled mx-auto mt-4 w-min' disabled>Login</button>
+	</fieldset>
+	<p class='text-base-content/70 mt-2 text-center text-sm'>
+		Need an account?
+		<a href='/create-account' class='link link-primary'>Create account</a>
+	</p>
+</AuthLayout>
