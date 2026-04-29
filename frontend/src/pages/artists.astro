@@ -1,8 +1,42 @@
 ---
-import TopNav from '../components/TopNav.astro';
+import ArtistListItem from '../components/artists/ArtistListItem.astro';
+import TopNav from '../components/nav/TopNav.astro';
 import Layout from '../layouts/Layout.astro';
+
+const artists = [
+	{
+		name: 'ArtistName',
+		imageUrl: 'https://img.daisyui.com/images/profile/demo/1@94.webp',
+		albumCount: 12,
+		averageRating: 8.4,
+	},
+	{
+		name: 'ArtistName',
+		albumCount: 1,
+		averageRating: 9,
+	},
+	{
+		name: 'ArtistName',
+		imageUrl: 'https://img.daisyui.com/images/profile/demo/1@94.webp',
+		albumCount: 7,
+		averageRating: 7.6,
+	},
+];
 ---
 
 <Layout>
 	<TopNav searchPlaceholder='Search artists' />
+
+	<ul class='list bg-base-200 rounded-box mt-2 shadow-md'>
+		{
+			artists.map((artist) => (
+				<ArtistListItem
+					name={artist.name}
+					imageUrl={artist.imageUrl}
+					albumCount={artist.albumCount}
+					averageRating={artist.averageRating}
+				/>
+			))
+		}
+	</ul>
 </Layout>

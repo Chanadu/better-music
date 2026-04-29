@@ -10,6 +10,14 @@ import PasswordInput from '../components/auth/PasswordInput.astro';
 		<EmailInput />
 		<label class='label'>Password</label>
 		<PasswordInput autocomplete='new-password' placeholder='password' />
+		<label class='label'>Confirm password</label>
+		<PasswordInput
+			name='confirmPassword'
+			autocomplete='new-password'
+			placeholder='password'
+			match='password'
+			hint='Passwords must match'
+		/>
 		<button class='btn btn-primary btn-disabled mx-auto mt-4' disabled>Create account</button>
 	</fieldset>
 	<p class='text-base-content/70 mt-2 text-center text-sm'>

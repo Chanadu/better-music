@@ -12,7 +12,7 @@ const { title } = Astro.props;
 	<div class='hero min-h-screen'>
 		<div class='hero-content w-full max-w-lg flex-col lg:flex-row-reverse'>
 			<div class='text-center lg:text-left'>
-				<h1 class='text-2xl font-bold'>{title}</h1>
+				<h1 class='text-2xl font-semibold'>{title}</h1>
 			</div>
 			<div class='card bg-base-200 w-full'>
 				<div class='card-body'>
@@ -30,6 +30,17 @@ const { title } = Astro.props;
 			const submitButton: HTMLButtonElement = fieldset.querySelector('button') as HTMLButtonElement;
 
 			const updateButtonState = () => {
+				requiredInputs.forEach((input) => {
+					const matchTarget = input.dataset.match;
+
+					if (!matchTarget) return;
+
+					const targetInput: HTMLInputElement | null = fieldset.querySelector(`input[name="${matchTarget}"]`);
+					const matchesTarget = targetInput && input.value === targetInput.value;
+
+					input.setCustomValidity(matchesTarget ? '' : 'Passwords must match');
+				});
+
 				const isDisabled = !requiredInputs.every((input) => input.checkValidity());
 
 				submitButton.disabled = isDisabled;
