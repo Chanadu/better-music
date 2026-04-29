@@ -1,0 +1,15 @@
+---
+interface Props {
+	name: string;
+	imageUrl: string;
+	artistName?: string;
+}
+
+const { name, imageUrl, artistName = 'artistName' } = Astro.props;
+---
+
+<div class='min-w-0'>
+	<img class='rounded-box aspect-square w-full object-cover' src={imageUrl} alt={`${name} cover`} />
+	<div class='mt-2 text-xs font-semibold text-wrap wrap-break-word'>{name}</div>
+	<div class='text-base-content/60 text-xs font-semibold text-wrap wrap-break-word'>{artistName}</div>
+</div>

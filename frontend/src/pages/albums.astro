@@ -1,4 +1,5 @@
 ---
+import AlbumGrid from '../components/albums/AlbumGrid.astro';
 import TopNav from '../components/nav/TopNav.astro';
 import Layout from '../layouts/Layout.astro';
 
@@ -71,64 +72,21 @@ const albums = [
 		name: 'Album Name',
 		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
 	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
 ];
 ---
 
 <Layout>
 	<TopNav searchPlaceholder='Search albums' />
 
-	<ul class='list bg-base-200 rounded-box mt-2 shadow-md'>
+	<ul class='list rounded-box mt-2 shadow-md'>
 		<li class='list-item'>
-			<div class='grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6'>
-				{
-					albums.map((album) => (
-						<div class='min-w-0'>
-							<img
-								class='rounded-box aspect-square w-full object-cover'
-								src={album.imageUrl}
-								alt={`${album.name} cover`}
-							/>
-							<div class='mt-2 text-xs font-semibold text-wrap wrap-break-word'>
-								good kid, m.a.a.d city (deluxe)
-							</div>
-							<div class='text-base-content/60 text-xs font-semibold text-wrap wrap-break-word'>
-								artistName
-							</div>
-						</div>
-					))
-				}
-			</div>
+			<AlbumGrid rating={10} albums={albums} />
 		</li>
-		<div class='divider divider-neutral'></div>
-		<li class='list-item'>asd</li>
-		<div class='divider divider-neutral'></div>
+		<li class='list-item'>
+			<AlbumGrid rating={9} albums={albums} />
+		</li>
+		<li class='list-item'>
+			<AlbumGrid rating={8} albums={albums} />
+		</li>
 	</ul>
 </Layout>

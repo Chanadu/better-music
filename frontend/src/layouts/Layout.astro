@@ -6,7 +6,7 @@ const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 ---
 
 <BaseLayout>
-	<main class='p-6'>
+	<main class='p-6 pb-[calc(6rem+env(safe-area-inset-bottom))]'>
 		<slot />
 	</main>
 
