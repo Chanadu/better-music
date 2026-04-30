@@ -9,28 +9,28 @@
 	prefersdark: true;
 	color-scheme: dark;
 
-	--color-base-100: #020c1f;
-	--color-base-200: #06132b;
-	--color-base-300: #0b1b38;
-	--color-base-content: #d2e2fc;
+	--color-base-100: #283142;
+	--color-base-200: #1f293a;
+	--color-base-300: #172234;
+	--color-base-content: #d5e2fe;
 
-	--color-primary: #79aaf5;
-	--color-primary-content: #020c1f;
-	--color-secondary: #74324e;
-	--color-secondary-content: #d2e2fc;
-	--color-accent: #ce9346;
-	--color-accent-content: #020c1f;
+	--color-primary: #9bc0ff;
+	--color-primary-content: #172234;
+	--color-secondary: #193f8f;
+	--color-secondary-content: #d5e2fe;
+	--color-accent: #a81942;
+	--color-accent-content: #d5e2fe;
 
-	--color-neutral: #111f36;
-	--color-neutral-content: #d2e2fc;
-	--color-info: #79aaf5;
-	--color-info-content: #020c1f;
+	--color-neutral: #172234;
+	--color-neutral-content: #d5e2fe;
+	--color-info: #9bc0ff;
+	--color-info-content: #172234;
 	--color-success: #66d19e;
-	--color-success-content: #020c1f;
-	--color-warning: #ce9346;
-	--color-warning-content: #020c1f;
+	--color-success-content: #172234;
+	--color-warning: #ffa194;
+	--color-warning-content: #172234;
 	--color-error: #f87272;
-	--color-error-content: #020c1f;
+	--color-error-content: #172234;
 
 	--radius-selector: 0.5rem;
 	--radius-field: 0.5rem;

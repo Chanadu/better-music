@@ -1,7 +1,15 @@
 ---
 import ArtistListItem from '../components/artists/ArtistListItem.astro';
+import Filter from '../components/filter.astro';
 import TopNav from '../components/nav/TopNav.astro';
+import SearchBar from '../components/nav/SearchBar.astro';
 import Layout from '../layouts/Layout.astro';
+
+const sortOptions = [
+	{ label: 'Rating', value: 'rating' },
+	{ label: 'Name', value: 'name' },
+	{ label: 'Added', value: 'added' },
+];
 
 const artists = [
 	{
@@ -25,9 +33,13 @@ const artists = [
 ---
 
 <Layout>
-	<TopNav searchPlaceholder='Search artists' />
+	<TopNav title='Artists' />
+	<div class='row flex gap-2'>
+		<SearchBar placeholder='search artists' />
+		<Filter sortOptions={sortOptions} selectedSort='rating' />
+	</div>
 
-	<ul class='list bg-base-200 rounded-box mt-2 shadow-md'>
+	<ul class='list bg-base-200 rounded-box mt-4 shadow-md'>
 		{
 			artists.map((artist) => (
 				<ArtistListItem

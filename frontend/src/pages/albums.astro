@@ -1,7 +1,15 @@
 ---
 import AlbumGrid from '../components/albums/AlbumGrid.astro';
+import Filter from '../components/filter.astro';
 import TopNav from '../components/nav/TopNav.astro';
+import SearchBar from '../components/nav/SearchBar.astro';
 import Layout from '../layouts/Layout.astro';
+
+const sortOptions = [
+	{ label: 'Rating', value: 'rating' },
+	{ label: 'Artist', value: 'artist' },
+	{ label: 'Year', value: 'year' },
+];
 
 const albums = [
 	{
@@ -76,9 +84,11 @@ const albums = [
 ---
 
 <Layout>
-	<TopNav searchPlaceholder='Search albums' />
+	<TopNav title='Ablums' />
 
-	<ul class='list rounded-box mt-2 shadow-md'>
+	<SearchBar placeholder='search albums' />
+
+	<ul class='list rounded-box shadow-md'>
 		<li class='list-item'>
 			<AlbumGrid rating={10} albums={albums} />
 		</li>
