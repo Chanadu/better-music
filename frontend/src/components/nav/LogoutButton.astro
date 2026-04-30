@@ -1,4 +1,4 @@
-<button type='button' class='btn btn-square btn-ghost' aria-label='Log out'>
+<button type='button' class='btn btn-square btn-ghost' aria-label='Log out' data-logout-button>
 	<svg
 		xmlns='http://www.w3.org/2000/svg'
 		viewBox='0 0 24 24'
@@ -15,3 +15,31 @@
 		<path d='M21 12H9'></path>
 	</svg>
 </button>
+
+<script>
+	import { clearTokens, getRefreshToken } from '../../scripts/auth';
+
+	const logoutButton = document.querySelector<HTMLButtonElement>('[data-logout-button]');
+
+	logoutButton?.addEventListener('click', async () => {
+		const refreshToken = getRefreshToken();
+
+		logoutButton.disabled = true;
+		logoutButton.classList.add('btn-disabled');
+
+		try {
+			if (refreshToken) {
+				await fetch('/api/auth/logout', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ refresh_token: refreshToken }),
+				});
+			}
+		} finally {
+			clearTokens();
+			window.location.assign('/login');
+		}
+	});
+</script>

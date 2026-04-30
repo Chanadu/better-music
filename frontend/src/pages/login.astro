@@ -5,13 +5,19 @@ import PasswordInput from '../components/auth/PasswordInput.astro';
 ---
 
 <AuthLayout title='Login'>
-	<fieldset class='fieldset flex flex-col gap-4'>
-		<label class='label'>Email</label>
-		<EmailInput />
-		<label class='label'>Password</label>
-		<PasswordInput />
-		<button class='btn btn-primary btn-disabled mx-auto mt-4 w-min' disabled>Login</button>
-	</fieldset>
+	<form data-auth-form data-auth-endpoint='/api/auth/login' data-success-path='/'>
+		<fieldset class='fieldset flex flex-col gap-4'>
+			<label class='label'>Email</label>
+			<EmailInput />
+			<label class='label'>Password</label>
+			<PasswordInput />
+			<button type='submit' class='btn btn-primary btn-disabled mx-auto mt-4 w-min' disabled>Login</button>
+			<p class='text-error hidden text-center text-sm' data-auth-error></p>
+			<div class='text-primary hidden justify-center' aria-live='polite' data-auth-loading>
+				<span class='loading loading-spinner loading-md' aria-label='Logging in'></span>
+			</div>
+		</fieldset>
+	</form>
 	<p class='text-base-content/70 mt-2 text-center text-sm'>
 		Need an account?
 		<a href='/create-account' class='link link-primary'>Create account</a>

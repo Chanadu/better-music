@@ -23,11 +23,38 @@ const { title } = Astro.props;
 	</div>
 
 	<script>
-		const authFieldsets = document.querySelectorAll('.fieldset');
+		import { saveTokens, type TokenResponse } from '../scripts/auth';
 
-		authFieldsets.forEach((fieldset) => {
+		const authForms = document.querySelectorAll<HTMLFormElement>('form[data-auth-form]');
+
+		const showFormError = (form: HTMLFormElement, message: string) => {
+			const errorElement = form.querySelector<HTMLElement>('[data-auth-error]');
+
+			if (!errorElement) return;
+
+			errorElement.textContent = message;
+			errorElement.classList.remove('hidden');
+		};
+
+		const clearFormError = (form: HTMLFormElement) => {
+			const errorElement = form.querySelector<HTMLElement>('[data-auth-error]');
+
+			if (!errorElement) return;
+
+			errorElement.textContent = '';
+			errorElement.classList.add('hidden');
+		};
+
+		authForms.forEach((form) => {
+			const fieldset = form.querySelector<HTMLFieldSetElement>('.fieldset');
+
+			if (!fieldset) return;
+
 			const requiredInputs: HTMLInputElement[] = Array.from(fieldset.querySelectorAll('input[required]'));
-			const submitButton: HTMLButtonElement = fieldset.querySelector('button') as HTMLButtonElement;
+			const submitButton = fieldset.querySelector<HTMLButtonElement>('button[type="submit"]');
+			const loadingIndicator = fieldset.querySelector<HTMLElement>('[data-auth-loading]');
+
+			if (!submitButton) return;
 
 			const updateButtonState = () => {
 				requiredInputs.forEach((input) => {
@@ -49,6 +76,60 @@ const { title } = Astro.props;
 
 			requiredInputs.forEach((input) => {
 				input.addEventListener('input', updateButtonState);
+			});
+
+			form.addEventListener('submit', async (event) => {
+				event.preventDefault();
+
+				if (!form.checkValidity()) {
+					form.reportValidity();
+					return;
+				}
+
+				const endpoint = form.dataset.authEndpoint;
+
+				if (!endpoint) return;
+
+				const formData = new FormData(form);
+				const email = String(formData.get('email') ?? '');
+				const password = String(formData.get('password') ?? '');
+
+				clearFormError(form);
+				submitButton.disabled = true;
+				submitButton.classList.add('btn-disabled');
+				loadingIndicator?.classList.remove('hidden');
+				loadingIndicator?.classList.add('flex');
+
+				try {
+					const response = await fetch(endpoint, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ email, password }),
+					});
+
+					const responseBody = await response.json().catch(() => null);
+
+					if (!response.ok) {
+						const message =
+							responseBody && typeof responseBody.error === 'string' ?
+								responseBody.error
+							:	'Authentication failed. Please try again.';
+
+						showFormError(form, message);
+						return;
+					}
+
+					saveTokens(responseBody as TokenResponse);
+					window.location.assign(form.dataset.successPath ?? '/');
+				} catch {
+					showFormError(form, 'Could not reach the server. Please try again.');
+				} finally {
+					loadingIndicator?.classList.add('hidden');
+					loadingIndicator?.classList.remove('flex');
+					updateButtonState();
+				}
 			});
 
 			updateButtonState();
