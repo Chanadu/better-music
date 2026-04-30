@@ -1,8 +1,54 @@
 ---
+import AlbumListItem from '../components/listen/AlbumListItem.astro';
+import Filter from '../components/filter.astro';
 import TopNav from '../components/nav/TopNav.astro';
+import SearchBar from '../components/nav/SearchBar.astro';
 import Layout from '../layouts/Layout.astro';
+
+const sortOptions = [
+	{ label: 'Artist', value: 'artist' },
+	{ label: 'Added', value: 'added' },
+	{ label: 'Year', value: 'year' },
+];
+
+const albums = [
+	{
+		name: 'Album Name',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp',
+		artistName: 'ArtistName',
+		year: 2024,
+	},
+	{
+		name: 'Album Name',
+		artistName: 'ArtistName',
+		year: 2023,
+	},
+	{
+		name: 'Album Name',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
+		artistName: 'ArtistName',
+		year: 2022,
+	},
+];
 ---
 
 <Layout>
-	<TopNav searchPlaceholder='Search music' />
+	<TopNav title='Listen' />
+	<div class='row flex gap-2'>
+		<SearchBar placeholder='search albums' />
+		<Filter sortOptions={sortOptions} selectedSort='rating' />
+	</div>
+
+	<ul class='list bg-base-200 rounded-box mt-4 shadow-md'>
+		{
+			albums.map((album) => (
+				<AlbumListItem
+					name={album.name}
+					imageUrl={album.imageUrl}
+					artistName={album.artistName}
+					year={album.year}
+				/>
+			))
+		}
+	</ul>
 </Layout>

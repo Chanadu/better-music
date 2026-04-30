@@ -1,0 +1,143 @@
+---
+import AlbumGridItem from '../components/albums/AlbumGridItem.astro';
+import TopNav from '../components/nav/TopNav.astro';
+import SearchBar from '../components/nav/SearchBar.astro';
+import Layout from '../layouts/Layout.astro';
+
+const albums = [
+	{
+		name: 'Midnight Signals',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp',
+		artistName: 'North Arcade',
+	},
+	{
+		name: 'Blue Room',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
+		artistName: 'June Park',
+	},
+	{
+		name: 'After Hours Bloom',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp',
+		artistName: 'Velvet Coast',
+	},
+	{
+		name: 'Static Weather',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp',
+		artistName: 'The Low Suns',
+	},
+	{
+		name: 'Golden Hour Tape',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1550258987-190a2d41a8ba.webp',
+		artistName: 'Mika Sol',
+	},
+	{
+		name: 'Soft Machines',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
+		artistName: 'Paper Cities',
+	},
+	{
+		name: 'Neon Fields',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
+		artistName: 'Kite Theory',
+	},
+	{
+		name: 'Rooms For Echoes',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
+		artistName: 'Anika Vale',
+	},
+	{
+		name: 'Silver Lining Club',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
+		artistName: 'Westbound',
+	},
+	{
+		name: 'Late Train Home',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
+		artistName: 'Hollow Avenue',
+	},
+	{
+		name: 'Glass Garden',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
+		artistName: 'Mara Lake',
+	},
+	{
+		name: 'Open Windows',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
+		artistName: 'Signal Path',
+	},
+	{
+		name: 'Distant Lights',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp',
+		artistName: 'Caldera',
+	},
+	{
+		name: 'Small Fires',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp',
+		artistName: 'Rhea Stone',
+	},
+	{
+		name: 'Basement Hymns',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp',
+		artistName: 'Lunar Motel',
+	},
+	{
+		name: 'Daylight Static',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1550258987-190a2d41a8ba.webp',
+		artistName: 'The Finch Line',
+	},
+	{
+		name: 'Between Stations',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
+		artistName: 'Nora Field',
+	},
+	{
+		name: 'Warm Circuit',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp',
+		artistName: 'Mono Valley',
+	},
+	{
+		name: 'Shoreline Notes',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
+		artistName: 'Ivy Harbor',
+	},
+	{
+		name: 'Night Maps',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp',
+		artistName: 'East Meridian',
+	},
+	{
+		name: 'Second Sun',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp',
+		artistName: 'Bright Channel',
+	},
+	{
+		name: 'Slow Motion Parade',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1550258987-190a2d41a8ba.webp',
+		artistName: 'Cedar State',
+	},
+	{
+		name: 'Clearwater',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
+		artistName: 'Lena Fox',
+	},
+	{
+		name: 'New Fiction',
+		imageUrl: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp',
+		artistName: 'Archive Room',
+	},
+];
+---
+
+<Layout>
+	<TopNav title='Listen' />
+
+	<SearchBar placeholder='search albums' />
+
+	<div class='mt-4 grid grid-cols-3 gap-3 px-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6'>
+		{
+			albums.map((album) => (
+				<AlbumGridItem name={album.name} imageUrl={album.imageUrl} artistName={album.artistName} />
+			))
+		}
+	</div>
+</Layout>
