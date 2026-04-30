@@ -9,19 +9,11 @@ interface Album {
 
 interface Props {
 	albums: Album[];
-	rating: number;
 }
 
-const { rating, albums } = Astro.props;
+const { albums } = Astro.props;
 ---
 
-<div class='pt-0 pb-2'>
-	<span class='divider divider-center divider-primary text-xl'>{rating}/10 • {albums.length} albums</span>
-	<div class='grid grid-cols-3 gap-3 px-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6'>
-		{
-			albums.map((album) => (
-				<AlbumGridItem name={album.name} imageUrl={album.imageUrl} artistName={album.artistName} />
-			))
-		}
-	</div>
+<div class='grid grid-cols-3 gap-3 px-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6'>
+	{albums.map((album) => <AlbumGridItem name={album.name} imageUrl={album.imageUrl} artistName={album.artistName} />)}
 </div>

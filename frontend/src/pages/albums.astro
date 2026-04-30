@@ -81,22 +81,27 @@ const albums = [
 		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
 	},
 ];
+
+const ratingGroups = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 ---
 
 <Layout>
-	<TopNav title='Ablums' />
+	<TopNav title='Albums' />
 
 	<SearchBar placeholder='search albums' />
 
 	<ul class='list rounded-box shadow-md'>
-		<li class='list-item'>
-			<AlbumGrid rating={10} albums={albums} />
-		</li>
-		<li class='list-item'>
-			<AlbumGrid rating={9} albums={albums} />
-		</li>
-		<li class='list-item'>
-			<AlbumGrid rating={8} albums={albums} />
-		</li>
+		{
+			ratingGroups.map((rating) => (
+				<li class='list-item'>
+					<div class='pt-0 pb-2'>
+						<span class='divider divider-center divider-primary text-xl'>
+							{rating}/10 • {albums.length} albums
+						</span>
+						<AlbumGrid albums={albums} />
+					</div>
+				</li>
+			))
+		}
 	</ul>
 </Layout>
