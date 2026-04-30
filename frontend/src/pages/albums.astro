@@ -87,10 +87,10 @@ const ratingGroups = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 
 <Layout>
 	<TopNav title='Albums' />
-
-	<SearchBar placeholder='search albums' />
-
-	<ul class='list rounded-box shadow-md'>
+	<div class="navbar">
+		<SearchBar placeholder='search albums' />
+	</div>
+	<ul class='list rounded-box shadow-md -mt-2'>
 		{
 			ratingGroups.map((rating) => (
 				<li class='list-item'>

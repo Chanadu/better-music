@@ -12,3 +12,18 @@ const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 	<BottomNav currentPath={pathname} />
 </BaseLayout>
+
+<script>
+	import { getValidAccessToken } from '../scripts/auth';
+	import { fetchDatabaseData } from '../scripts/database';
+
+	const accessToken = await getValidAccessToken();
+
+	if (!accessToken) {
+		window.location.assign('/login');
+	} else {
+		fetchDatabaseData().catch((error) => {
+			console.error('Failed to load database data', error);
+		});
+	}
+</script>

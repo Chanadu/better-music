@@ -1,6 +1,6 @@
 ---
 import ArtistListItem from '../components/artists/ArtistListItem.astro';
-import Filter from '../components/filter.astro';
+import Filter from '../components/artists/Filter.astro';
 import TopNav from '../components/nav/TopNav.astro';
 import SearchBar from '../components/nav/SearchBar.astro';
 import Layout from '../layouts/Layout.astro';
@@ -10,45 +10,176 @@ const sortOptions = [
 	{ label: 'Name', value: 'name' },
 	{ label: 'Added', value: 'added' },
 ];
-
-const artists = [
-	{
-		name: 'ArtistName',
-		imageUrl: 'https://img.daisyui.com/images/profile/demo/1@94.webp',
-		albumCount: 12,
-		averageRating: 8.4,
-	},
-	{
-		name: 'ArtistName',
-		albumCount: 1,
-		averageRating: 9,
-	},
-	{
-		name: 'ArtistName',
-		imageUrl: 'https://img.daisyui.com/images/profile/demo/1@94.webp',
-		albumCount: 7,
-		averageRating: 7.6,
-	},
-];
 ---
 
 <Layout>
 	<TopNav title='Artists' />
-	<div class='row flex gap-2'>
+	<div class='navbar flex gap-2'>
 		<SearchBar placeholder='search artists' />
-		<Filter sortOptions={sortOptions} selectedSort='rating' />
+
+			<Filter sortOptions={sortOptions} selectedSort='rating' />
 	</div>
 
-	<ul class='list bg-base-200 rounded-box mt-4 shadow-md'>
-		{
-			artists.map((artist) => (
-				<ArtistListItem
-					name={artist.name}
-					imageUrl={artist.imageUrl}
-					albumCount={artist.albumCount}
-					averageRating={artist.averageRating}
-				/>
-			))
-		}
+	<div class="divider mb-0 mt-2" />
+
+	<ul class='list bg-base-200 rounded-box mt-4 shadow-md ' data-artist-list>
+		<li class='list-row text-base-content/60' data-artist-status>Loading artists...</li>
 	</ul>
+	<ArtistListItem />
 </Layout>
+
+<script>
+	import { onDatabaseData, type Album, type Artist, type DatabaseData } from '../scripts/database';
+
+	type ArtistListItem = {
+		artist: Artist;
+		albumCount: number;
+		averageRating: number | null;
+	};
+
+	const artistList = document.querySelector<HTMLUListElement>('[data-artist-list]');
+	const artistListItemTemplate = document.querySelector<HTMLTemplateElement>('[data-artist-list-item-template]');
+	const searchInput = document.querySelector<HTMLInputElement>('input[type="search"]');
+	const sortSelect = document.querySelector<HTMLSelectElement>('select[name="sort"]');
+	const reverseSortButton = document.querySelector<HTMLButtonElement>('[data-reverse-sort]');
+	const reverseSortIcon = document.querySelector<HTMLElement>('[data-reverse-sort-icon]');
+
+	let latestData: DatabaseData | null = null;
+	let isSortReversed = false;
+
+	const getArtistStats = (artist: Artist, albums: Album[]) => {
+		const artistAlbums = albums.filter((album) => album.artist_id === artist.id);
+		const ratedAlbums = artistAlbums.filter((album) => typeof album.rating === 'number');
+		const ratingTotal = ratedAlbums.reduce((total, album) => total + (album.rating ?? 0), 0);
+
+		return {
+			albumCount: artistAlbums.length,
+			averageRating: ratedAlbums.length ? ratingTotal / ratedAlbums.length : null,
+		};
+	};
+
+	const getArtistItems = ({ artists, albums }: DatabaseData) =>
+		artists.map((artist) => ({
+			artist,
+			...getArtistStats(artist, albums),
+		}));
+
+	const sortArtists = (items: ArtistListItem[]) => {
+		const selectedSort = sortSelect?.value ?? 'rating';
+		const sortDirection = isSortReversed ? -1 : 1;
+
+		return [...items].sort((first, second) => {
+			if (selectedSort === 'name') {
+				return sortDirection * first.artist.name.localeCompare(second.artist.name);
+			}
+
+			if (selectedSort === 'added') {
+				return (
+					sortDirection *
+					(new Date(second.artist.created_at).getTime() - new Date(first.artist.created_at).getTime())
+				);
+			}
+
+			return sortDirection * ((second.averageRating ?? -1) - (first.averageRating ?? -1));
+		});
+	};
+
+	const createArtistRow = ({ artist, albumCount, averageRating }: ArtistListItem) => {
+		const row = artistListItemTemplate?.content.firstElementChild?.cloneNode(true) as HTMLLIElement | undefined;
+
+		if (!row) {
+			const emptyRow = document.createElement('li');
+			emptyRow.className = 'list-row text-base-content/60';
+			emptyRow.textContent = 'Artist row template is missing.';
+			return emptyRow;
+		}
+
+		const addedDate = new Intl.DateTimeFormat(undefined, {
+			month: '2-digit',
+			day: '2-digit',
+			year: '2-digit',
+		}).format(new Date(artist.created_at));
+
+		const image = row.querySelector<HTMLImageElement>('[data-artist-image]');
+		const fallback = row.querySelector<HTMLElement>('[data-artist-fallback]');
+		const name = row.querySelector<HTMLElement>('[data-artist-name]');
+		const meta = row.querySelector<HTMLElement>('[data-artist-meta]');
+
+		if (artist.cover_url) {
+			if (image) {
+				image.src = artist.cover_url;
+				image.alt = `${artist.name} artist image`;
+				image.hidden = false;
+			}
+
+			if (fallback) {
+				fallback.hidden = true;
+				fallback.textContent = '';
+			}
+		} else {
+			if (image) {
+				image.hidden = true;
+				image.removeAttribute('src');
+				image.alt = '';
+			}
+
+			if (fallback) {
+				fallback.hidden = false;
+				fallback.textContent = artist.name.trim().charAt(0).toUpperCase() || '?';
+			}
+		}
+
+		const metaParts = [`${albumCount} ${albumCount === 1 ? 'Album' : 'Albums'}`];
+
+		if (averageRating !== null) {
+			metaParts.push(`Avg ${averageRating.toFixed(1)}`);
+		}
+
+		metaParts.push(`Added ${addedDate}`);
+
+		if (name) {
+			name.textContent = artist.name;
+		}
+
+		if (meta) {
+			meta.textContent = metaParts.join(' • ');
+		}
+
+		return row;
+	};
+
+	const renderArtists = () => {
+		if (!artistList || !latestData) return;
+
+		const query = searchInput?.value.trim().toLowerCase() ?? '';
+		const artistItems = sortArtists(getArtistItems(latestData)).filter(({ artist }) =>
+			artist.name.toLowerCase().includes(query),
+		);
+
+		artistList.replaceChildren();
+
+		if (artistItems.length === 0) {
+			const emptyRow = document.createElement('li');
+			emptyRow.className = 'list-row text-base-content/60';
+			emptyRow.textContent = query ? 'No artists match your search.' : 'No artists yet.';
+			artistList.append(emptyRow);
+			return;
+		}
+
+		artistList.append(...artistItems.map(createArtistRow));
+	};
+
+	onDatabaseData((data) => {
+		latestData = data;
+		renderArtists();
+	});
+
+	searchInput?.addEventListener('input', renderArtists);
+	sortSelect?.addEventListener('change', renderArtists);
+
+	reverseSortButton?.addEventListener('click', () => {
+		isSortReversed = !isSortReversed;
+		console.log('isSortReversed', isSortReversed);
+		renderArtists();
+	});
+</script>

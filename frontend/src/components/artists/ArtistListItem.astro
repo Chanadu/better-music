@@ -1,33 +1,17 @@
----
-interface Props {
-	name: string;
-	imageUrl?: string;
-	albumCount: number;
-	averageRating: number;
-}
-
-const { name, imageUrl, albumCount, averageRating } = Astro.props;
-
-const albumLabel = albumCount === 1 ? 'Album' : 'Albums';
-const formattedAverageRating = averageRating.toFixed(1);
-const fallbackInitial = name.trim().charAt(0).toUpperCase() || '?';
----
-
-<li class='list-row'>
-	<div>
-		{
-			imageUrl ?
-				<img class='rounded-box size-10 shrink-0 object-cover' src={imageUrl} alt={`${name} artist image`} />
-			:	<div class='rounded-box bg-base-300 flex size-10 shrink-0 items-center justify-center text-sm font-semibold'>
-					{fallbackInitial}
-				</div>
-		}
-	</div>
-	<div>
-		<div>{name}</div>
-		<div class='text-base-content/60 text-xs font-semibold uppercase'>
-			{albumCount}
-			{albumLabel} • Avg {formattedAverageRating}
+<template data-artist-list-item-template>
+	<li class='list-row'>
+		<div>
+			<img data-artist-image class='rounded-box size-10 shrink-0 object-cover' src='' alt='' />
+			<div
+				data-artist-fallback
+				class='rounded-box bg-base-300 flex size-10 shrink-0 items-center justify-center text-sm font-semibold'
+				hidden
+			>
+			</div>
 		</div>
-	</div>
-</li>
+		<div>
+			<div data-artist-name></div>
+			<div data-artist-meta class='text-base-content/60 text-xs font-semibold uppercase'></div>
+		</div>
+	</li>
+</template>

@@ -131,7 +131,11 @@ const albums = [
 <Layout>
 	<TopNav title='Listen' />
 
-	<SearchBar placeholder='search albums' />
+	<div class="navbar">
+		<SearchBar placeholder='search albums' />
+	</div>
+
+	<div class="divider mb-0 mt-2" />
 
 	<div class='mt-4'>
 		<AlbumGrid albums={albums} />
