@@ -3,6 +3,7 @@ import AlbumGrid from '../components/albums/AlbumGrid.astro';
 import TopNav from '../components/nav/TopNav.astro';
 import SearchBar from '../components/nav/SearchBar.astro';
 import Layout from '../layouts/Layout.astro';
+import AddButton from '../components/AddButton.astro';
 
 const albums = [
 	{
@@ -140,4 +141,5 @@ const albums = [
 	<div class='mt-4'>
 		<AlbumGrid albums={albums} />
 	</div>
+	<AddButton />
 </Layout>

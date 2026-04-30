@@ -1,0 +1,19 @@
+---
+import BaseModal from './BaseModal.astro';
+---
+
+<BaseModal title='Create Artist'>
+	<div role='tablist' class='tabs tabs-border flex'>
+		<input type='radio' name='modal_tabs' role='tab' class='tab w-full flex-1' aria-label='Manual' checked />
+
+		<div role='tabpanel' class='tab-content m-2 mb-0'>
+			<fieldset class='fieldset'>
+				<legend class='fieldset-legend'>Artist Name</legend>
+				<input type='text' class='input w-full' placeholder='e.g. J. Cole' />
+			</fieldset>
+		</div>
+
+		<input type='radio' name='modal_tabs' role='tab' class='tab w-full flex-1' aria-label='Spotify' />
+		<div role='tabpanel' class='tab-content'></div>
+	</div>
+</BaseModal>

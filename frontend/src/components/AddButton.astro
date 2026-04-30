@@ -1,0 +1,12 @@
+<div class='fab pb-[calc(4.5rem+env(safe-area-inset-bottom))]'>
+	<button class='btn btn-lg btn-circle btn-accent' data-fab>+</button>
+</div>
+
+<script>
+	const fab = document.querySelector<HTMLButtonElement>('[data-fab]');
+	const modal = document.querySelector<HTMLDialogElement>('[data-create-modal]');
+
+	fab?.addEventListener('click', () => {
+		modal?.showModal();
+	});
+</script>

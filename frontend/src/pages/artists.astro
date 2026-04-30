@@ -3,6 +3,8 @@ import ArtistListItem from '../components/artists/ArtistListItem.astro';
 import Filter from '../components/artists/Filter.astro';
 import TopNav from '../components/nav/TopNav.astro';
 import SearchBar from '../components/nav/SearchBar.astro';
+import AddButton from '../components/AddButton.astro';
+import CreateArtistModal from '../components/create/CreateArtistModal.astro';
 import Layout from '../layouts/Layout.astro';
 
 const sortOptions = [
@@ -15,17 +17,19 @@ const sortOptions = [
 <Layout>
 	<TopNav title='Artists' />
 	<div class='navbar flex gap-2'>
-		<SearchBar placeholder='search artists' />
+		<SearchBar placeholder='Search artists' />
 
-			<Filter sortOptions={sortOptions} selectedSort='rating' />
+		<Filter sortOptions={sortOptions} selectedSort='rating' />
 	</div>
 
-	<div class="divider mb-0 mt-2" />
+	<div class='divider mt-2 mb-0'></div>
 
-	<ul class='list bg-base-200 rounded-box mt-4 shadow-md ' data-artist-list>
+	<ul class='list bg-base-200 rounded-box mt-4 shadow-md' data-artist-list>
 		<li class='list-row text-base-content/60' data-artist-status>Loading artists...</li>
 	</ul>
 	<ArtistListItem />
+	<CreateArtistModal />
+	<AddButton />
 </Layout>
 
 <script>
@@ -42,7 +46,6 @@ const sortOptions = [
 	const searchInput = document.querySelector<HTMLInputElement>('input[type="search"]');
 	const sortSelect = document.querySelector<HTMLSelectElement>('select[name="sort"]');
 	const reverseSortButton = document.querySelector<HTMLButtonElement>('[data-reverse-sort]');
-	const reverseSortIcon = document.querySelector<HTMLElement>('[data-reverse-sort-icon]');
 
 	let latestData: DatabaseData | null = null;
 	let isSortReversed = false;
@@ -179,7 +182,6 @@ const sortOptions = [
 
 	reverseSortButton?.addEventListener('click', () => {
 		isSortReversed = !isSortReversed;
-		console.log('isSortReversed', isSortReversed);
 		renderArtists();
 	});
 </script>

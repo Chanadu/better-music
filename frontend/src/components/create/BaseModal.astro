@@ -1,0 +1,24 @@
+---
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<dialog class='modal' data-create-modal>
+	<div class='modal-box'>
+		<div class='modal-action'>
+			<form method='dialog'>
+				<button class='btn btn-sm btn-circle btn-ghost absolute top-2 right-2'>✕</button>
+			</form>
+		</div>
+
+		<h2 class='-mt-4 mb-2 text-center text-xl'>{title}</h2>
+		<slot />
+	</div>
+
+	<form method='dialog' class='modal-backdrop'>
+		<button>close</button>
+	</form>
+</dialog>

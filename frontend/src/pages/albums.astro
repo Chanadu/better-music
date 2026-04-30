@@ -4,6 +4,7 @@ import Filter from '../components/filter.astro';
 import TopNav from '../components/nav/TopNav.astro';
 import SearchBar from '../components/nav/SearchBar.astro';
 import Layout from '../layouts/Layout.astro';
+import AddButton from '../components/AddButton.astro';
 
 const sortOptions = [
 	{ label: 'Rating', value: 'rating' },
@@ -87,10 +88,10 @@ const ratingGroups = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 
 <Layout>
 	<TopNav title='Albums' />
-	<div class="navbar">
-		<SearchBar placeholder='search albums' />
+	<div class='navbar'>
+		<SearchBar placeholder='Search albums' />
 	</div>
-	<ul class='list rounded-box shadow-md -mt-2'>
+	<ul class='list rounded-box -mt-2 shadow-md'>
 		{
 			ratingGroups.map((rating) => (
 				<li class='list-item'>
@@ -104,4 +105,5 @@ const ratingGroups = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 			))
 		}
 	</ul>
+	<AddButton />
 </Layout>
