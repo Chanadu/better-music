@@ -5,11 +5,14 @@ import PasswordInput from './PasswordInput.astro';
 
 <form data-auth-form data-auth-action='login' data-success-path='/'>
 	<fieldset class='fieldset flex flex-col gap-4'>
-		<label class='label'>Email</label>
-		<EmailInput />
-
-		<label class='label'>Password</label>
-		<PasswordInput />
+		<div class='flex flex-col gap-2'>
+			<label class='label'>Email</label>
+			<EmailInput />
+		</div>
+		<div class='flex flex-col gap-2'>
+			<label class='label'>Password</label>
+			<PasswordInput />
+		</div>
 
 		<p class='text-error hidden text-center text-sm' data-auth-error></p>
 		<button type='submit' class='btn btn-primary btn-disabled mx-auto mt-4 w-min' disabled>Login</button>

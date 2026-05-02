@@ -5,25 +5,31 @@ import PasswordInput from './PasswordInput.astro';
 
 <form data-auth-form data-auth-action='register' data-success-path='/'>
 	<fieldset class='fieldset flex flex-col gap-4'>
-		<label class='label'>Email</label>
-		<EmailInput />
+		<div class='flex flex-col gap-2'>
+			<label class='label'>Email</label>
+			<EmailInput />
+		</div>
 
-		<label class='label'>Password</label>
-		<PasswordInput autocomplete='new-password' />
+		<div class='flex flex-col gap-2'>
+			<label class='label'>Password</label>
+			<PasswordInput autocomplete='new-password' />
+		</div>
 
-		<label class='label'>Confirm password</label>
-		<PasswordInput
-			name='confirmPassword'
-			autocomplete='new-password'
-			placeholder='password'
-			match='password'
-			hint='Passwords must match'
-		/>
+		<div class='flex flex-col gap-2'>
+			<label class='label'>Confirm password</label>
+			<PasswordInput
+				name='confirmPassword'
+				autocomplete='new-password'
+				placeholder='password'
+				match='password'
+				hint='Passwords must match'
+			/>
+		</div>
 
 		<p class='text-error hidden text-sm' data-auth-error></p>
-		<button type='submit' class='btn btn-primary btn-disabled mx-auto mt-4 w-min' disabled>Create account</button>
+		<button type='submit' class='btn btn-primary btn-disabled mx-auto mt-4 w-min' disabled>Create</button>
 		<div class='text-primary hidden justify-center' aria-live='polite' data-auth-loading>
-			<span class='loading loading-spinner loading-md' aria-label='Creating account'></span>
+			<span class='loading loading-spinner loading-md' aria-label='Creating'></span>
 		</div>
 	</fieldset>
 </form>
