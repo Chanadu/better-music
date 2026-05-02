@@ -1,26 +1,8 @@
-import { authenticatedFetch, clearTokens } from './auth';
+import { albumsApi, ApiError, artistsApi } from './api';
+import { clearTokens } from './auth';
+import type { Album, Artist } from './api-types';
 
-export type Artist = {
-	id: number;
-	name: string;
-	cover_url?: string;
-	spotify_id?: string;
-	created_at: string;
-};
-
-export type Album = {
-	id: number;
-	artist_id: number;
-	title: string;
-	cover_url?: string;
-	year?: number;
-	spotify_id?: string;
-	listened: boolean;
-	rating?: number;
-	comment?: string;
-	listened_at?: string;
-	created_at: string;
-};
+export type { Album, Artist } from './api-types';
 
 export type DatabaseData = {
 	artists: Artist[];
@@ -36,22 +18,6 @@ const databaseCacheKey = 'betterMusicDatabaseData';
 
 let databaseData: DatabaseData | null = null;
 let databaseDataPromise: Promise<DatabaseData> | null = null;
-
-const readJson = async <T>(path: string): Promise<T> => {
-	const response = await authenticatedFetch(path);
-
-	if (response.status === 401) {
-		clearTokens();
-		window.location.assign('/login');
-		throw new Error('Not authenticated');
-	}
-
-	if (!response.ok) {
-		throw new Error(`Database request failed: ${response.status}`);
-	}
-
-	return (await response.json()) as T;
-};
 
 const saveCachedDatabaseData = (data: DatabaseData) => {
 	sessionStorage.setItem(databaseCacheKey, JSON.stringify(data));
@@ -103,7 +69,7 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 
 	if (!force && databaseDataPromise) return databaseDataPromise;
 
-	databaseDataPromise = Promise.all([readJson<Artist[]>('/api/artists'), readJson<Album[]>('/api/albums')])
+	databaseDataPromise = Promise.all([artistsApi.list(), albumsApi.list()])
 		.then(([artists, albums]) => {
 			databaseData = {
 				artists,
@@ -117,6 +83,11 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 			return databaseData;
 		})
 		.catch((error) => {
+			if (error instanceof ApiError && error.status === 401) {
+				clearTokens();
+				window.location.assign('/login');
+			}
+
 			emitDatabaseError(error);
 			throw error;
 		})

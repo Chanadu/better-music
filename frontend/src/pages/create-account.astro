@@ -1,31 +1,10 @@
 ---
 import AuthLayout from '../layouts/AuthLayout.astro';
-import EmailInput from '../components/auth/EmailInput.astro';
-import PasswordInput from '../components/auth/PasswordInput.astro';
+import RegisterForm from '../components/auth/RegisterForm.astro';
 ---
 
 <AuthLayout title='Create Account'>
-	<form data-auth-form data-auth-endpoint='/api/auth/register' data-success-path='/'>
-		<fieldset class='fieldset flex flex-col gap-4'>
-			<label class='label'>Email</label>
-			<EmailInput />
-			<label class='label'>Password</label>
-			<PasswordInput autocomplete='new-password' placeholder='password' />
-			<label class='label'>Confirm password</label>
-			<PasswordInput
-				name='confirmPassword'
-				autocomplete='new-password'
-				placeholder='password'
-				match='password'
-				hint='Passwords must match'
-			/>
-			<p class='text-error hidden text-sm' data-auth-error></p>
-			<button type='submit' class='btn btn-primary btn-disabled mx-auto mt-4' disabled>Create account</button>
-			<div class='text-primary hidden justify-center' aria-live='polite' data-auth-loading>
-				<span class='loading loading-spinner loading-md' aria-label='Creating account'></span>
-			</div>
-		</fieldset>
-	</form>
+	<RegisterForm />
 	<p class='text-base-content/70 mt-2 text-center text-sm'>
 		Already have an account?
 		<a href='/login' class='link link-primary'>Log in</a>

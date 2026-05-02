@@ -1,9 +1,6 @@
-export type TokenResponse = {
-	access_token: string;
-	refresh_token: string;
-	token_type: string;
-	expires_in: number;
-};
+import type { TokenResponse } from './api-types';
+
+export type { TokenResponse } from './api-types';
 
 const accessTokenKey = 'betterMusicAccessToken';
 const refreshTokenKey = 'betterMusicRefreshToken';
