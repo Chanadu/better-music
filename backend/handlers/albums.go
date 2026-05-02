@@ -90,7 +90,7 @@ func (h *Handler) checkAlbumExistsByID(w http.ResponseWriter, userID int, artist
 // @Produce json
 // @Security Bearer
 // @Param id path int true "Album ID"
-// @Param request body ArtistIDRequest true "Artist ID"
+// @Param artist_id query int true "Artist ID"
 // @Success 200 {object} models.Album
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 401 {object} map[string]string "Unauthorized"
@@ -100,24 +100,29 @@ func (h *Handler) checkAlbumExistsByID(w http.ResponseWriter, userID int, artist
 func (h *Handler) GetAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
 
-	var body ArtistIDRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
-		return
-	}
-
 	userID, ok := getUserID(w, r)
 	if !ok {
 		return
 	}
 
-	if body.ArtistID <= 0 {
+	artistID, err := strconv.Atoi(r.URL.Query().Get("artist_id"))
+	if err != nil {
+		var body ArtistIDRequest
+
+		if decodeErr := json.NewDecoder(r.Body).Decode(&body); decodeErr != nil {
+			writeJSON(w, http.StatusBadRequest, apiError("invalid artist ID"))
+			return
+		}
+
+		artistID = body.ArtistID
+	}
+
+	if artistID <= 0 {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid artist ID"))
 		return
 	}
 
-	exists, err := models.ArtistExistsByID(h.Database, userID, body.ArtistID)
+	exists, err := models.ArtistExistsByID(h.Database, userID, artistID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
 		return
@@ -128,12 +133,12 @@ func (h *Handler) GetAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	albumID, ok := h.checkAlbumExistsByID(w, userID, body.ArtistID, r.PathValue("id"))
+	albumID, ok := h.checkAlbumExistsByID(w, userID, artistID, r.PathValue("id"))
 	if !ok {
 		return
 	}
 
-	album, err := models.GetAlbumByID(h.Database, userID, body.ArtistID, albumID)
+	album, err := models.GetAlbumByID(h.Database, userID, artistID, albumID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to get album: "+err.Error()))
 		return

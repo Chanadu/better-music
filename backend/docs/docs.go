@@ -161,13 +161,11 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "integer",
                         "description": "Artist ID",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ArtistIDRequest"
-                        }
+                        "name": "artist_id",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -782,7 +780,7 @@ const docTemplate = `{
         },
         "/api/auth/login": {
             "post": {
-                "description": "Authenticate user with email and password to receive a JWT token",
+                "description": "Authenticate user with email and password to receive access and refresh tokens",
                 "consumes": [
                     "application/json"
                 ],
@@ -841,9 +839,125 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/logout": {
+            "post": {
+                "description": "Revoke a refresh token so it can no longer be used to mint new access tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Logout user",
+                "parameters": [
+                    {
+                        "description": "Refresh token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/refresh": {
+            "post": {
+                "description": "Exchange a valid refresh token for a new access token and refresh token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh auth tokens",
+                "parameters": [
+                    {
+                        "description": "Refresh token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON or missing token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid or expired refresh token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/register": {
             "post": {
-                "description": "Create a new user account and receive a JWT token",
+                "description": "Create a new user account and receive access and refresh tokens",
                 "consumes": [
                     "application/json"
                 ],
@@ -1091,6 +1205,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "spotify_id": {
+                    "type": "string",
+                    "example": "4oDw9mW4Sro2zN1RHzlvOr"
+                },
                 "title": {
                     "type": "string",
                     "example": "Abbey Road"
@@ -1100,9 +1218,26 @@ const docTemplate = `{
         "handlers.CreateArtistRequest": {
             "type": "object",
             "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/artist.jpg"
+                },
                 "name": {
                     "type": "string",
                     "example": "The Beatles"
+                },
+                "spotify_id": {
+                    "type": "string",
+                    "example": "6ml0jHmy7SNFWckrZblO5B"
+                }
+            }
+        },
+        "handlers.RefreshTokenRequest": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "type": "string",
+                    "example": "your-refresh-token"
                 }
             }
         },
@@ -1187,9 +1322,21 @@ const docTemplate = `{
         "handlers.TokenResponse": {
             "type": "object",
             "properties": {
-                "token": {
+                "access_token": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "expires_in": {
+                    "type": "integer",
+                    "example": 900
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "example": "M2vK0r5mMWhM6Lqg0k4cCso1WW1wmX7uCUNB3vV9Q-U"
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
                 }
             }
         },
@@ -1217,8 +1364,8 @@ const docTemplate = `{
                     "example": "2024-01-15"
                 },
                 "rating": {
-                    "type": "integer",
-                    "example": 5
+                    "type": "number",
+                    "example": 8.5
                 },
                 "spotify_id": {
                     "type": "string",
@@ -1237,6 +1384,10 @@ const docTemplate = `{
         "handlers.UpdateArtistRequest": {
             "type": "object",
             "properties": {
+                "cover_url": {
+                    "type": "string",
+                    "example": "https://example.com/artist.jpg"
+                },
                 "name": {
                     "type": "string",
                     "example": "The Beatles"
@@ -1272,7 +1423,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rating": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "spotify_id": {
                     "type": "string"
@@ -1288,6 +1439,9 @@ const docTemplate = `{
         "models.Artist": {
             "type": "object",
             "properties": {
+                "cover_url": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },

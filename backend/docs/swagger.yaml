@@ -20,14 +20,29 @@ definitions:
       artist_id:
         example: 1
         type: integer
+      spotify_id:
+        example: 4oDw9mW4Sro2zN1RHzlvOr
+        type: string
       title:
         example: Abbey Road
         type: string
     type: object
   handlers.CreateArtistRequest:
     properties:
+      cover_url:
+        example: https://example.com/artist.jpg
+        type: string
       name:
         example: The Beatles
+        type: string
+      spotify_id:
+        example: 6ml0jHmy7SNFWckrZblO5B
+        type: string
+    type: object
+  handlers.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        example: your-refresh-token
         type: string
     type: object
   handlers.SpotifyAlbumArtist:
@@ -86,8 +101,17 @@ definitions:
     type: object
   handlers.TokenResponse:
     properties:
-      token:
+      access_token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        example: 900
+        type: integer
+      refresh_token:
+        example: M2vK0r5mMWhM6Lqg0k4cCso1WW1wmX7uCUNB3vV9Q-U
+        type: string
+      token_type:
+        example: Bearer
         type: string
     type: object
   handlers.UpdateAlbumRequest:
@@ -108,8 +132,8 @@ definitions:
         example: "2024-01-15"
         type: string
       rating:
-        example: 5
-        type: integer
+        example: 8.5
+        type: number
       spotify_id:
         example: 4oDw9mW4Sro2zN1RHzlvOr
         type: string
@@ -122,6 +146,9 @@ definitions:
     type: object
   handlers.UpdateArtistRequest:
     properties:
+      cover_url:
+        example: https://example.com/artist.jpg
+        type: string
       name:
         example: The Beatles
         type: string
@@ -146,7 +173,7 @@ definitions:
       listened_at:
         type: string
       rating:
-        type: integer
+        type: number
       spotify_id:
         type: string
       title:
@@ -156,6 +183,8 @@ definitions:
     type: object
   models.Artist:
     properties:
+      cover_url:
+        type: string
       created_at:
         type: string
       id:
@@ -314,11 +343,10 @@ paths:
         required: true
         type: integer
       - description: Artist ID
-        in: body
-        name: request
+        in: query
+        name: artist_id
         required: true
-        schema:
-          $ref: '#/definitions/handlers.ArtistIDRequest'
+        type: integer
       produces:
       - application/json
       responses:
@@ -669,7 +697,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticate user with email and password to receive a JWT token
+      description: Authenticate user with email and password to receive access and
+        refresh tokens
       parameters:
       - description: User credentials
         in: body
@@ -705,11 +734,89 @@ paths:
       summary: Login user
       tags:
       - auth
+  /api/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revoke a refresh token so it can no longer be used to mint new
+        access tokens
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid JSON or missing token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Logout user
+      tags:
+      - auth
+  /api/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Exchange a valid refresh token for a new access token and refresh
+        token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.TokenResponse'
+        "400":
+          description: Invalid JSON or missing token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh auth tokens
+      tags:
+      - auth
   /api/auth/register:
     post:
       consumes:
       - application/json
-      description: Create a new user account and receive a JWT token
+      description: Create a new user account and receive access and refresh tokens
       parameters:
       - description: User credentials
         in: body
@@ -747,7 +854,8 @@ paths:
       - auth
   /api/spotify/search/albums:
     get:
-      description: Search Spotify for albums and return trimmed results for the authenticated user
+      description: Search Spotify for albums and return trimmed results for the authenticated
+        user
       parameters:
       - description: Search query
         in: query
@@ -798,7 +906,8 @@ paths:
       - spotify
   /api/spotify/search/artists:
     get:
-      description: Search Spotify for artists and return trimmed results for the authenticated user
+      description: Search Spotify for artists and return trimmed results for the authenticated
+        user
       parameters:
       - description: Search query
         in: query
