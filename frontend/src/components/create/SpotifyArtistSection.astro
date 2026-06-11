@@ -1,25 +1,140 @@
 ---
 import SearchBar from '../nav/SearchBar.astro';
-import SpotifyArtistPlaceholder from './SpotifyArtistPlaceholder.astro';
-
-const placeholderArtists = [
-	'J. Cole',
-	'Kendrick Lamar',
-	'SZA',
-	'Tyler, The Creator',
-	'Doechii',
-	'Frank Ocean',
-	'Little Simz',
-	'Childish Gambino',
-];
+import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 ---
 
-<div role='tabpanel' class='tab-content px-2 pt-3'>
+<div role='tabpanel' class='tab-content px-2 pt-3' data-spotify-artist-section>
 	<fieldset class='fieldset'>
 		<SearchBar placeholder='Search artists' />
 	</fieldset>
 
-	<ul class='list bg-base-200 rounded-box mt-4 shadow-md'>
-		{placeholderArtists.slice(0, 5).map((artist) => <SpotifyArtistPlaceholder name={artist} value={artist} />)}
+	<ul class='list bg-base-200 rounded-box mt-4 shadow-md' data-spotify-artist-results>
+		{Array.from({ length: 5 }, () => <SpotifyArtistResultItem />)}
 	</ul>
 </div>
+
+<script>
+	import { spotifyApi } from '../../scripts/api';
+	import type { SpotifyArtistSearchResult } from '../../scripts/api-types';
+
+	const section = document.querySelector<HTMLElement>('[data-spotify-artist-section]');
+	const searchInput = section?.querySelector<HTMLInputElement>('input[type="search"]');
+	const resultsList = section?.querySelector<HTMLUListElement>('[data-spotify-artist-results]');
+	let searchTimeout: number | undefined;
+	let latestRequest = 0;
+	const resultRows = Array.from(
+		resultsList?.querySelectorAll<HTMLLIElement>('[data-spotify-artist-result-item]') ?? [],
+	);
+
+	const getArtistImage = (artist: SpotifyArtistSearchResult) => artist.images[0]?.url;
+
+	type ArtistRowData = {
+		id: string;
+		name: string;
+		imageUrl?: string;
+		disabled?: boolean;
+	};
+
+	const updateArtistRow = (item: HTMLLIElement, { id, name, imageUrl, disabled = false }: ArtistRowData) => {
+		const label = item.querySelector<HTMLLabelElement>('label');
+		const input = item.querySelector<HTMLInputElement>('[data-spotify-artist-input]');
+		const image = item.querySelector<HTMLImageElement>('[data-spotify-artist-image]');
+		const fallback = item.querySelector<HTMLElement>('[data-spotify-artist-fallback]');
+		const artistName = item.querySelector<HTMLElement>('[data-spotify-artist-name]');
+
+		if (input) {
+			input.value = id;
+			input.disabled = disabled;
+			input.checked = false;
+		}
+
+		if (label) {
+			label.classList.toggle('cursor-pointer', !disabled);
+			label.classList.toggle('cursor-default', disabled);
+		}
+
+		if (image && fallback) {
+			if (imageUrl) {
+				image.src = imageUrl;
+				image.alt = `${name} artist image`;
+				image.hidden = false;
+				fallback.hidden = true;
+			} else {
+				image.hidden = true;
+				fallback.hidden = false;
+			}
+		}
+
+		if (artistName) {
+			artistName.textContent = name;
+			artistName.classList.toggle('text-base-content/35', disabled);
+		}
+	};
+
+	const renderPlaceholderArtists = (message: string) => {
+		resultRows.forEach((row, index) => {
+			updateArtistRow(row, {
+				id: `placeholder-${index}`,
+				name: message,
+				disabled: true,
+			});
+		});
+	};
+
+	const renderArtists = (artists: SpotifyArtistSearchResult[]) => {
+		resultRows.forEach((row, index) => {
+			const artist = artists[index];
+
+			if (!artist) {
+				updateArtistRow(row, {
+					id: `empty-${index}`,
+					name: '',
+					disabled: true,
+				});
+				return;
+			}
+
+			updateArtistRow(row, {
+				id: artist.id,
+				name: artist.name,
+				imageUrl: getArtistImage(artist),
+			});
+		});
+	};
+
+	const searchArtists = async () => {
+		const query = searchInput?.value.trim() ?? '';
+		const requestId = ++latestRequest;
+
+		if (!resultsList) return;
+
+		if (query.length === 0) {
+			renderPlaceholderArtists('Start searching...');
+			return;
+		}
+
+		renderPlaceholderArtists('Searching Spotify...');
+
+		try {
+			const artists = await spotifyApi.searchArtists(query, 5);
+			if (requestId !== latestRequest) return;
+
+			if (artists.length === 0) {
+				renderPlaceholderArtists('No artists found.');
+				return;
+			}
+
+			renderArtists(artists);
+		} catch {
+			if (requestId !== latestRequest) return;
+			renderPlaceholderArtists('Spotify search failed.');
+		}
+	};
+
+	searchInput?.addEventListener('input', () => {
+		window.clearTimeout(searchTimeout);
+		searchTimeout = window.setTimeout(searchArtists, 250);
+	});
+
+	renderPlaceholderArtists('Start searching...');
+</script>
