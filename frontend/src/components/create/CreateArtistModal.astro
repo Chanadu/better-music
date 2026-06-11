@@ -16,4 +16,11 @@ import BaseModal from './BaseModal.astro';
 		<input type='radio' name='modal_tabs' role='tab' class='tab w-full flex-1' aria-label='Spotify' />
 		<div role='tabpanel' class='tab-content'></div>
 	</div>
+
+	<div class='modal-action mx-2 flex gap-4'>
+		<form method='dialog' class='flex-1'>
+			<button class='btn btn-soft btn-secondary w-full'>Cancel</button>
+		</form>
+		<button class='btn btn-primary flex-1'>Save Artist</button>
+	</div>
 </BaseModal>
