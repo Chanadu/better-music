@@ -35,17 +35,25 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 		disabled?: boolean;
 	};
 
+	let selectedArtist: ArtistRowData | undefined;
+
 	const updateArtistRow = (item: HTMLLIElement, { id, name, imageUrl, disabled = false }: ArtistRowData) => {
 		const label = item.querySelector<HTMLLabelElement>('label');
 		const input = item.querySelector<HTMLInputElement>('[data-spotify-artist-input]');
 		const image = item.querySelector<HTMLImageElement>('[data-spotify-artist-image]');
 		const fallback = item.querySelector<HTMLElement>('[data-spotify-artist-fallback]');
 		const artistName = item.querySelector<HTMLElement>('[data-spotify-artist-name]');
+		const isSelectedArtist = selectedArtist?.id === id && !disabled;
+
+		item.dataset.spotifyArtistId = id;
+		item.dataset.spotifyArtistName = name;
+		item.dataset.spotifyArtistImageUrl = imageUrl ?? '';
+		item.dataset.spotifyArtistDisabled = String(disabled);
 
 		if (input) {
 			input.value = id;
 			input.disabled = disabled;
-			input.checked = false;
+			input.checked = isSelectedArtist;
 		}
 
 		if (label) {
@@ -71,6 +79,19 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 		}
 	};
 
+	const renderSelectedArtist = (index = resultRows.length - 1) => {
+		const selectedArtistInResults = resultRows.some(
+			(row) => row.dataset.spotifyArtistId === selectedArtist?.id && row.dataset.spotifyArtistDisabled !== 'true',
+		);
+
+		if (!selectedArtist || selectedArtistInResults) return;
+
+		const targetRow = resultRows[index];
+		if (!targetRow) return;
+
+		updateArtistRow(targetRow, selectedArtist);
+	};
+
 	const renderPlaceholderArtists = (message: string) => {
 		resultRows.forEach((row, index) => {
 			updateArtistRow(row, {
@@ -79,11 +100,17 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 				disabled: true,
 			});
 		});
+
+		renderSelectedArtist(0);
 	};
 
 	const renderArtists = (artists: SpotifyArtistSearchResult[]) => {
+		const selectedArtistInResults =
+			selectedArtist !== undefined && artists.some((artist) => artist.id === selectedArtist?.id);
+		const visibleArtists = selectedArtistInResults || !selectedArtist ? artists : artists.slice(0, 4);
+
 		resultRows.forEach((row, index) => {
-			const artist = artists[index];
+			const artist = visibleArtists[index];
 
 			if (!artist) {
 				updateArtistRow(row, {
@@ -100,6 +127,8 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 				imageUrl: getArtistImage(artist),
 			});
 		});
+
+		renderSelectedArtist();
 	};
 
 	const searchArtists = async () => {
@@ -134,6 +163,20 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 	searchInput?.addEventListener('input', () => {
 		window.clearTimeout(searchTimeout);
 		searchTimeout = window.setTimeout(searchArtists, 250);
+	});
+
+	resultsList?.addEventListener('change', (event) => {
+		const input = event.target;
+		if (!(input instanceof HTMLInputElement) || input.name !== 'spotify_artist') return;
+
+		const row = input.closest<HTMLLIElement>('[data-spotify-artist-result-item]');
+		if (!row || row.dataset.spotifyArtistDisabled === 'true') return;
+
+		selectedArtist = {
+			id: row.dataset.spotifyArtistId ?? input.value,
+			name: row.dataset.spotifyArtistName ?? '',
+			imageUrl: row.dataset.spotifyArtistImageUrl || undefined,
+		};
 	});
 
 	renderPlaceholderArtists('Start searching...');
