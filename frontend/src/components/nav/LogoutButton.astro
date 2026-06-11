@@ -17,24 +17,15 @@
 </button>
 
 <script>
-	import { authApi } from '../../scripts/api';
-	import { clearTokens, getRefreshToken } from '../../scripts/auth';
+	import { logout } from '../../scripts/auth';
 
 	const logoutButton = document.querySelector<HTMLButtonElement>('[data-logout-button]');
 
 	logoutButton?.addEventListener('click', async () => {
-		const refreshToken = getRefreshToken();
-
 		logoutButton.disabled = true;
 		logoutButton.classList.add('btn-disabled');
 
-		try {
-			if (refreshToken) {
-				await authApi.logout({ refresh_token: refreshToken });
-			}
-		} finally {
-			clearTokens();
-			window.location.assign('/login');
-		}
+		await logout();
+		window.location.assign('/login');
 	});
 </script>

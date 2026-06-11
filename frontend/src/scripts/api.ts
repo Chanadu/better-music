@@ -86,6 +86,11 @@ export const authApi = {
 			method: 'POST',
 			body,
 		}),
+	refresh: (body: RefreshTokenRequest) =>
+		publicApiJson<TokenResponse>('/api/auth/refresh', {
+			method: 'POST',
+			body,
+		}),
 	logout: (body: RefreshTokenRequest) =>
 		publicApiJson<MessageResponse>('/api/auth/logout', {
 			method: 'POST',

@@ -1,5 +1,5 @@
 import { albumsApi, ApiError, artistsApi } from './api';
-import { clearTokens } from './auth';
+import { redirectToLogin } from './auth';
 import type { Album, Artist } from './api-types';
 
 export type { Album, Artist } from './api-types';
@@ -84,8 +84,7 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 		})
 		.catch((error) => {
 			if (error instanceof ApiError && error.status === 401) {
-				clearTokens();
-				window.location.assign('/login');
+				redirectToLogin();
 			}
 
 			emitDatabaseError(error);

@@ -1,5 +1,5 @@
 import { authApi, ApiError } from './api';
-import { saveTokens, type TokenResponse } from './auth';
+import { saveTokens } from './auth';
 
 const setError = (form: HTMLFormElement, message: string) => {
 	const errorElement = form.querySelector<HTMLElement>('[data-auth-error]');
@@ -35,9 +35,7 @@ const submitAuthForm = async (form: HTMLFormElement) => {
 	const action = form.dataset.authAction;
 
 	const body = { email, password };
-	const tokens: TokenResponse = action === 'register' ? await authApi.register(body) : await authApi.login(body);
-
-	saveTokens(tokens);
+	saveTokens(action === 'register' ? await authApi.register(body) : await authApi.login(body));
 	window.location.assign(form.dataset.successPath ?? '/');
 };
 
