@@ -1,23 +1,19 @@
 ---
 import BaseModal from './BaseModal.astro';
+import ManualArtistSection from './ManualArtistSection.astro';
+import SpotifyArtistSection from './SpotifyArtistSection.astro';
 ---
 
 <BaseModal title='Create Artist'>
 	<div role='tablist' class='tabs tabs-border flex'>
 		<input type='radio' name='modal_tabs' role='tab' class='tab w-full flex-1' aria-label='Manual' checked />
-
-		<div role='tabpanel' class='tab-content m-2 mb-0'>
-			<fieldset class='fieldset'>
-				<legend class='fieldset-legend'>Artist Name</legend>
-				<input type='text' class='input w-full' placeholder='e.g. J. Cole' />
-			</fieldset>
-		</div>
+		<ManualArtistSection />
 
 		<input type='radio' name='modal_tabs' role='tab' class='tab w-full flex-1' aria-label='Spotify' />
-		<div role='tabpanel' class='tab-content'></div>
+		<SpotifyArtistSection />
 	</div>
 
-	<div class='modal-action mx-2 flex gap-4'>
+	<div class='modal-action mt-6 flex gap-4 px-2'>
 		<form method='dialog' class='flex-1'>
 			<button class='btn btn-soft btn-secondary w-full'>Cancel</button>
 		</form>

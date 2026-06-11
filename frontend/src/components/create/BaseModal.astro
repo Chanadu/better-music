@@ -8,13 +8,13 @@ const { title } = Astro.props;
 
 <dialog class='modal' data-create-modal open>
 	<div class='modal-box'>
-		<div class='modal-action'>
+		<div>
 			<form method='dialog'>
 				<button class='btn btn-sm btn-circle btn-ghost absolute top-2 right-2'>✕</button>
 			</form>
 		</div>
 
-		<h2 class='-mt-4 mb-2 text-center text-xl'>{title}</h2>
+		<h2 class='mb-5 text-center text-xl font-semibold'>{title}</h2>
 		<slot />
 	</div>
 

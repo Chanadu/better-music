@@ -1,0 +1,25 @@
+---
+import SearchBar from '../nav/SearchBar.astro';
+import SpotifyArtistPlaceholder from './SpotifyArtistPlaceholder.astro';
+
+const placeholderArtists = [
+	'J. Cole',
+	'Kendrick Lamar',
+	'SZA',
+	'Tyler, The Creator',
+	'Doechii',
+	'Frank Ocean',
+	'Little Simz',
+	'Childish Gambino',
+];
+---
+
+<div role='tabpanel' class='tab-content px-2 pt-3'>
+	<fieldset class='fieldset'>
+		<SearchBar placeholder='Search artists' />
+	</fieldset>
+
+	<ul class='list bg-base-200 rounded-box mt-4 shadow-md'>
+		{placeholderArtists.slice(0, 5).map((artist) => <SpotifyArtistPlaceholder name={artist} value={artist} />)}
+	</ul>
+</div>
