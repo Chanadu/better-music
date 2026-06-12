@@ -37,23 +37,29 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 
 	let selectedArtist: ArtistRowData | undefined;
 
-	const updateArtistRow = (item: HTMLLIElement, { id, name, imageUrl, disabled = false }: ArtistRowData) => {
-		const label = item.querySelector<HTMLLabelElement>('label');
-		const input = item.querySelector<HTMLInputElement>('[data-spotify-artist-input]');
-		const image = item.querySelector<HTMLImageElement>('[data-spotify-artist-image]');
-		const fallback = item.querySelector<HTMLElement>('[data-spotify-artist-fallback]');
-		const artistName = item.querySelector<HTMLElement>('[data-spotify-artist-name]');
+	const updateArtistRow = (row: HTMLLIElement, { id, name, imageUrl, disabled = false }: ArtistRowData) => {
+		const label = row.querySelector<HTMLLabelElement>('label');
+		const input = row.querySelector<HTMLInputElement>('[data-spotify-artist-input]');
+		const image = row.querySelector<HTMLImageElement>('[data-spotify-artist-image]');
+		const fallback = row.querySelector<HTMLElement>('[data-spotify-artist-fallback]');
+		const artistName = row.querySelector<HTMLElement>('[data-spotify-artist-name]');
 		const isSelectedArtist = selectedArtist?.id === id && !disabled;
 
-		item.dataset.spotifyArtistId = id;
-		item.dataset.spotifyArtistName = name;
-		item.dataset.spotifyArtistImageUrl = imageUrl ?? '';
-		item.dataset.spotifyArtistDisabled = String(disabled);
+		row.dataset.spotifyArtistId = id;
+		row.dataset.spotifyArtistName = name;
+		row.dataset.spotifyArtistImageUrl = imageUrl ?? '';
 
 		if (input) {
 			input.value = id;
 			input.disabled = disabled;
 			input.checked = isSelectedArtist;
+			input.onclick = () => {
+				if (selectedArtist?.id !== id) return;
+
+				selectedArtist = undefined;
+				input.checked = false;
+				input.dispatchEvent(new Event('change', { bubbles: true }));
+			};
 		}
 
 		if (label) {
@@ -79,17 +85,12 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 		}
 	};
 
-	const renderSelectedArtist = (index = resultRows.length - 1) => {
-		const selectedArtistInResults = resultRows.some(
-			(row) => row.dataset.spotifyArtistId === selectedArtist?.id && row.dataset.spotifyArtistDisabled !== 'true',
-		);
+	const keepSelectedArtistVisible = (index: number) => {
+		if (!selectedArtist) return;
+		if (resultRows.some((row) => row.dataset.spotifyArtistId === selectedArtist?.id)) return;
 
-		if (!selectedArtist || selectedArtistInResults) return;
-
-		const targetRow = resultRows[index];
-		if (!targetRow) return;
-
-		updateArtistRow(targetRow, selectedArtist);
+		const row = resultRows[index];
+		if (row) updateArtistRow(row, selectedArtist);
 	};
 
 	const renderPlaceholderArtists = (message: string) => {
@@ -101,13 +102,14 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 			});
 		});
 
-		renderSelectedArtist(0);
+		keepSelectedArtistVisible(0);
 	};
 
 	const renderArtists = (artists: SpotifyArtistSearchResult[]) => {
-		const selectedArtistInResults =
-			selectedArtist !== undefined && artists.some((artist) => artist.id === selectedArtist?.id);
-		const visibleArtists = selectedArtistInResults || !selectedArtist ? artists : artists.slice(0, 4);
+		const visibleArtists =
+			selectedArtist && !artists.some((artist) => artist.id === selectedArtist?.id) ?
+				artists.slice(0, 4)
+			:	artists;
 
 		resultRows.forEach((row, index) => {
 			const artist = visibleArtists[index];
@@ -128,7 +130,7 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 			});
 		});
 
-		renderSelectedArtist();
+		keepSelectedArtistVisible(resultRows.length - 1);
 	};
 
 	const searchArtists = async () => {
@@ -169,8 +171,13 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 		const input = event.target;
 		if (!(input instanceof HTMLInputElement) || input.name !== 'spotify_artist') return;
 
+		if (!input.checked) {
+			selectedArtist = undefined;
+			return;
+		}
+
 		const row = input.closest<HTMLLIElement>('[data-spotify-artist-result-item]');
-		if (!row || row.dataset.spotifyArtistDisabled === 'true') return;
+		if (!row || input.disabled) return;
 
 		selectedArtist = {
 			id: row.dataset.spotifyArtistId ?? input.value,

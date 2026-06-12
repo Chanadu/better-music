@@ -6,10 +6,25 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 
 <BaseModal title='Create Artist'>
 	<div role='tablist' class='tabs tabs-border flex'>
-		<input type='radio' name='modal_tabs' role='tab' class='tab w-full flex-1' aria-label='Manual' checked />
+		<input
+			data-manual-artist-tab
+			type='radio'
+			name='modal_tabs'
+			role='tab'
+			class='tab w-full flex-1'
+			aria-label='Manual'
+			checked
+		/>
 		<ManualArtistSection />
 
-		<input type='radio' name='modal_tabs' role='tab' class='tab w-full flex-1' aria-label='Spotify' />
+		<input
+			data-spotify-artist-tab
+			type='radio'
+			name='modal_tabs'
+			role='tab'
+			class='tab w-full flex-1'
+			aria-label='Spotify'
+		/>
 		<SpotifyArtistSection />
 	</div>
 
@@ -17,6 +32,36 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 		<form method='dialog' class='flex-1'>
 			<button class='btn btn-soft btn-secondary w-full'>Cancel</button>
 		</form>
-		<button class='btn btn-primary flex-1'>Save Artist</button>
+		<button class='btn btn-primary flex-1' data-save-artist-button disabled>Save Artist</button>
 	</div>
 </BaseModal>
+
+<script>
+	const saveArtistButton = document.querySelector<HTMLButtonElement>('[data-save-artist-button]');
+	const manualArtistNameInput = document.querySelector<HTMLInputElement>('[data-manual-artist-name-input]');
+	const manualArtistTab = document.querySelector<HTMLInputElement>('[data-manual-artist-tab]');
+	const spotifyArtistTab = document.querySelector<HTMLInputElement>('[data-spotify-artist-tab]');
+
+	const updateSaveArtistButton = () => {
+		const hasManualName = (manualArtistNameInput?.value.trim().length ?? 0) > 0;
+		const hasSpotifyArtist = document.querySelector<HTMLInputElement>(
+			'input[name="spotify_artist"]:checked:not(:disabled)',
+		);
+
+		if (saveArtistButton) {
+			saveArtistButton.disabled = manualArtistTab?.checked ? !hasManualName : !hasSpotifyArtist;
+		}
+	};
+
+	manualArtistNameInput?.addEventListener('input', updateSaveArtistButton);
+	manualArtistTab?.addEventListener('change', updateSaveArtistButton);
+	spotifyArtistTab?.addEventListener('change', updateSaveArtistButton);
+	document.addEventListener('change', (event) => {
+		const input = event.target;
+		if (input instanceof HTMLInputElement && input.name === 'spotify_artist') {
+			updateSaveArtistButton();
+		}
+	});
+
+	updateSaveArtistButton();
+</script>
