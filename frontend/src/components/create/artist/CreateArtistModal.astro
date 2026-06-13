@@ -1,5 +1,6 @@
 ---
 import BaseModal from '../BaseModal.astro';
+import ErrorAlert from '../../ErrorAlert.astro';
 import ManualArtistSection from './ManualArtistSection.astro';
 import SpotifyArtistSection from './SpotifyArtistSection.astro';
 ---
@@ -28,6 +29,8 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 		<SpotifyArtistSection />
 	</div>
 
+	<ErrorAlert />
+
 	<div class='modal-action mt-6 flex gap-4 px-2'>
 		<form method='dialog' class='flex-1'>
 			<button class='btn btn-soft btn-secondary w-full'>Cancel</button>
@@ -45,7 +48,29 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 	const manualArtistNameInput = document.querySelector<HTMLInputElement>('[data-manual-artist-name-input]');
 	const manualArtistTab = document.querySelector<HTMLInputElement>('[data-manual-artist-tab]');
 	const spotifyArtistTab = document.querySelector<HTMLInputElement>('[data-spotify-artist-tab]');
+	const errorAlert = document.querySelector<HTMLElement>('[data-error-alert]');
+	const errorAlertMessage = document.querySelector<HTMLElement>('[data-error-alert-message]');
 	let isSavingArtist = false;
+
+	const showError = (message: string) => {
+		if (errorAlertMessage) {
+			errorAlertMessage.textContent = message;
+		}
+
+		errorAlert?.classList.remove('hidden');
+	};
+
+	const hideError = () => {
+		errorAlert?.classList.add('hidden');
+	};
+
+	const formatErrorMessage = (error: unknown) => {
+		const message = error instanceof Error ? error.message : 'Failed to save artist';
+		const normalizedMessage = message.trim().replace(/\s+/g, ' ');
+		if (!normalizedMessage) return 'Failed to save artist';
+
+		return normalizedMessage.charAt(0).toUpperCase() + normalizedMessage.slice(1);
+	};
 
 	const updateSaveArtistButton = () => {
 		const hasManualName = (manualArtistNameInput?.value.trim().length ?? 0) > 0;
@@ -94,6 +119,7 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 		if (!artist?.name) return;
 
 		isSavingArtist = true;
+		hideError();
 		saveArtistButton.textContent = 'Saving...';
 		updateSaveArtistButton();
 
@@ -104,6 +130,7 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 			resetCreateArtistModal();
 		} catch (error) {
 			console.error('Failed to save artist', error);
+			showError(formatErrorMessage(error));
 		} finally {
 			isSavingArtist = false;
 			saveArtistButton.textContent = 'Save Artist';

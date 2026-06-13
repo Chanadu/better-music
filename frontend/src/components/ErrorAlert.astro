@@ -1,0 +1,11 @@
+---
+interface Props {
+	message?: string;
+}
+
+const { message = '' } = Astro.props;
+---
+
+<div class='alert alert-error alert-soft mt-4 hidden justify-center text-center' role='alert' data-error-alert>
+	<span data-error-alert-message>{message}</span>
+</div>
