@@ -105,6 +105,8 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 		}
 
 		document.querySelector<HTMLInputElement>('input[name="spotify_artist"]:checked')?.click();
+		document.dispatchEvent(new CustomEvent('create-artist-modal-reset'));
+		hideError();
 		updateSaveArtistButton();
 	};
 

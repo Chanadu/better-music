@@ -186,5 +186,15 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 		};
 	});
 
+	document.addEventListener('create-artist-modal-reset', () => {
+		selectedArtist = undefined;
+
+		if (searchInput) {
+			searchInput.value = '';
+		}
+
+		renderPlaceholderArtists('Start searching...');
+	});
+
 	renderPlaceholderArtists('Start searching...');
 </script>
