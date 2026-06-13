@@ -1,5 +1,5 @@
 ---
-import BaseModal from './BaseModal.astro';
+import BaseModal from '../BaseModal.astro';
 import ManualArtistSection from './ManualArtistSection.astro';
 import SpotifyArtistSection from './SpotifyArtistSection.astro';
 ---
@@ -37,8 +37,8 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 </BaseModal>
 
 <script>
-	import { artistsApi } from '../../scripts/api';
-	import { refreshDatabaseData } from '../../scripts/database';
+	import { artistsApi } from '../../../scripts/api';
+	import { refreshDatabaseData } from '../../../scripts/database';
 
 	const createModal = document.querySelector<HTMLDialogElement>('[data-create-modal]');
 	const saveArtistButton = document.querySelector<HTMLButtonElement>('[data-save-artist-button]');
