@@ -7,7 +7,23 @@
 	<fieldset class='fieldset mt-6'>
 		<legend class='fieldset-legend'>Preview</legend>
 		<div class='flex justify-center'>
-			<div class='rounded-box bg-base-300 size-44 sm:size-56'></div>
+			<div class='rounded-box bg-base-300 flex size-44 items-center justify-center text-5xl font-semibold sm:size-56 sm:text-6xl'>
+				<span data-manual-artist-preview-initial></span>
+			</div>
 		</div>
 	</fieldset>
 </div>
+
+<script>
+	const manualArtistNameInput = document.querySelector<HTMLInputElement>('[data-manual-artist-name-input]');
+	const manualArtistPreviewInitial = document.querySelector<HTMLElement>('[data-manual-artist-preview-initial]');
+
+	const updateManualArtistPreview = () => {
+		if (!manualArtistPreviewInitial) return;
+
+		manualArtistPreviewInitial.textContent = manualArtistNameInput?.value.trim().charAt(0).toUpperCase() ?? '';
+	};
+
+	manualArtistNameInput?.addEventListener('input', updateManualArtistPreview);
+	updateManualArtistPreview();
+</script>
