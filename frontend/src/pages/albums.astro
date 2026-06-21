@@ -5,6 +5,7 @@ import TopNav from '../components/nav/TopNav.astro';
 import SearchBar from '../components/nav/SearchBar.astro';
 import Layout from '../layouts/Layout.astro';
 import AddButton from '../components/AddButton.astro';
+import CreateAlbumModal from '../components/create/album/CreateAlbumModal.astro';
 
 const sortOptions = [
 	{ label: 'Rating', value: 'rating' },
@@ -105,5 +106,6 @@ const ratingGroups = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 			))
 		}
 	</ul>
+	<CreateAlbumModal />
 	<AddButton />
 </Layout>

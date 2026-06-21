@@ -1,0 +1,18 @@
+---
+import SearchBar from '../../nav/SearchBar.astro';
+---
+
+<div role='tabpanel' class='tab-content px-2 pt-3'>
+	<fieldset class='fieldset'>
+		<SearchBar placeholder='Search albums' />
+	</fieldset>
+
+	<ul class='list bg-base-200 rounded-box mt-4 shadow-md'>
+		{Array.from({ length: 5 }, () => (
+			<li class='list-row text-base-content/35 items-center'>
+				<div class='rounded-box bg-base-300 peer-checked:bg-primary-content/20 size-10 shrink-0'></div>
+				<div>Start searching...</div>
+			</li>
+		))}
+	</ul>
+</div>

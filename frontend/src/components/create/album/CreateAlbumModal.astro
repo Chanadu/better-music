@@ -1,0 +1,154 @@
+---
+import ErrorAlert from '../../ErrorAlert.astro';
+import BaseModal from '../BaseModal.astro';
+import ManualAlbumSection from './ManualAlbumSection.astro';
+import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
+---
+
+<BaseModal title='Create Album'>
+	<div role='tablist' class='tabs tabs-border flex'>
+		<input
+			data-manual-album-tab
+			type='radio'
+			name='album_modal_tabs'
+			role='tab'
+			class='tab w-full flex-1'
+			aria-label='Manual'
+			checked
+		/>
+		<ManualAlbumSection />
+
+		<input
+			data-spotify-album-tab
+			type='radio'
+			name='album_modal_tabs'
+			role='tab'
+			class='tab w-full flex-1'
+			aria-label='Spotify'
+		/>
+		<SpotifyAlbumSection />
+	</div>
+
+	<ErrorAlert />
+
+	<div class='modal-action mt-6 flex gap-4 px-2'>
+		<form method='dialog' class='flex-1'>
+			<button class='btn btn-soft btn-secondary w-full'>Cancel</button>
+		</form>
+		<button type='button' class='btn btn-primary flex-1' data-save-album-button disabled>Save Album</button>
+	</div>
+</BaseModal>
+
+<script>
+	import { albumsApi } from '../../../scripts/api';
+	import { fetchDatabaseData, refreshDatabaseData } from '../../../scripts/database';
+	import type { Artist } from '../../../scripts/api-types';
+
+	const createModal = document.querySelector<HTMLDialogElement>('[data-create-modal]');
+	const saveAlbumButton = document.querySelector<HTMLButtonElement>('[data-save-album-button]');
+	const albumTitleInput = document.querySelector<HTMLInputElement>('[data-manual-album-title-input]');
+	const albumArtistSelect = document.querySelector<HTMLSelectElement>('[data-manual-album-artist-select]');
+	const manualAlbumTab = document.querySelector<HTMLInputElement>('[data-manual-album-tab]');
+	const errorAlert = document.querySelector<HTMLElement>('[data-error-alert]');
+	const errorAlertMessage = document.querySelector<HTMLElement>('[data-error-alert-message]');
+	let isSavingAlbum = false;
+
+	const showError = (message: string) => {
+		if (errorAlertMessage) {
+			errorAlertMessage.textContent = message;
+		}
+
+		errorAlert?.classList.remove('hidden');
+	};
+
+	const hideError = () => {
+		errorAlert?.classList.add('hidden');
+	};
+
+	const formatErrorMessage = (error: unknown) => {
+		const message = error instanceof Error ? error.message : 'Failed to save album';
+		const normalizedMessage = message.trim().replace(/\s+/g, ' ');
+		if (!normalizedMessage) return 'Failed to save album';
+
+		return normalizedMessage.charAt(0).toUpperCase() + normalizedMessage.slice(1);
+	};
+
+	const updateSaveAlbumButton = () => {
+		const hasTitle = (albumTitleInput?.value.trim().length ?? 0) > 0;
+		const hasArtist = (albumArtistSelect?.value.length ?? 0) > 0;
+
+		if (saveAlbumButton) {
+			saveAlbumButton.disabled = isSavingAlbum || !manualAlbumTab?.checked || !hasTitle || !hasArtist;
+		}
+	};
+
+	const renderArtists = (artists: Artist[]) => {
+		if (!albumArtistSelect) return;
+
+		const options = artists.map((artist) => {
+			const option = document.createElement('option');
+			option.value = String(artist.id);
+			option.textContent = artist.name;
+			return option;
+		});
+
+		albumArtistSelect.replaceChildren(new Option('Select artist', ''), ...options);
+		updateSaveAlbumButton();
+	};
+
+	const resetCreateAlbumModal = () => {
+		if (albumTitleInput) {
+			albumTitleInput.value = '';
+		}
+
+		if (albumArtistSelect) {
+			albumArtistSelect.value = '';
+		}
+
+		hideError();
+		updateSaveAlbumButton();
+	};
+
+	saveAlbumButton?.addEventListener('click', async () => {
+		const title = albumTitleInput?.value.trim() ?? '';
+		const artistId = Number(albumArtistSelect?.value ?? 0);
+
+		if (!title || !artistId) return;
+
+		isSavingAlbum = true;
+		hideError();
+		saveAlbumButton.textContent = 'Saving...';
+		updateSaveAlbumButton();
+
+		try {
+			await albumsApi.create({
+				artist_id: artistId,
+				title,
+			});
+			await refreshDatabaseData();
+			createModal?.close();
+			resetCreateAlbumModal();
+		} catch (error) {
+			console.error('Failed to save album', error);
+			showError(formatErrorMessage(error));
+		} finally {
+			isSavingAlbum = false;
+			saveAlbumButton.textContent = 'Save Album';
+			updateSaveAlbumButton();
+		}
+	});
+
+	albumTitleInput?.addEventListener('input', updateSaveAlbumButton);
+	albumArtistSelect?.addEventListener('change', updateSaveAlbumButton);
+	document.querySelector<HTMLInputElement>('[data-manual-album-tab]')?.addEventListener('change', updateSaveAlbumButton);
+	document.querySelector<HTMLInputElement>('[data-spotify-album-tab]')?.addEventListener('change', updateSaveAlbumButton);
+
+	fetchDatabaseData()
+		.then(({ artists }) => renderArtists(artists))
+		.catch((error) => {
+			console.error('Failed to load artists', error);
+			showError(formatErrorMessage(error));
+		});
+
+	updateSaveAlbumButton();
+</script>
