@@ -12,7 +12,7 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 			type='radio'
 			name='modal_tabs'
 			role='tab'
-			class='tab w-full flex-1'
+			class='tab flex-1'
 			aria-label='Manual'
 			checked
 		/>
@@ -23,7 +23,7 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 			type='radio'
 			name='modal_tabs'
 			role='tab'
-			class='tab w-full flex-1'
+			class='tab flex-1'
 			aria-label='Spotify'
 		/>
 		<SpotifyArtistSection />
@@ -42,35 +42,15 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 <script>
 	import { artistsApi } from '../../../scripts/api';
 	import { refreshDatabaseData } from '../../../scripts/database';
+	import { createErrorAlert } from '../../../scripts/error-alert';
 
 	const createModal = document.querySelector<HTMLDialogElement>('[data-create-modal]');
 	const saveArtistButton = document.querySelector<HTMLButtonElement>('[data-save-artist-button]');
 	const manualArtistNameInput = document.querySelector<HTMLInputElement>('[data-manual-artist-name-input]');
 	const manualArtistTab = document.querySelector<HTMLInputElement>('[data-manual-artist-tab]');
 	const spotifyArtistTab = document.querySelector<HTMLInputElement>('[data-spotify-artist-tab]');
-	const errorAlert = document.querySelector<HTMLElement>('[data-error-alert]');
-	const errorAlertMessage = document.querySelector<HTMLElement>('[data-error-alert-message]');
+	const errorAlert = createErrorAlert();
 	let isSavingArtist = false;
-
-	const showError = (message: string) => {
-		if (errorAlertMessage) {
-			errorAlertMessage.textContent = message;
-		}
-
-		errorAlert?.classList.remove('hidden');
-	};
-
-	const hideError = () => {
-		errorAlert?.classList.add('hidden');
-	};
-
-	const formatErrorMessage = (error: unknown) => {
-		const message = error instanceof Error ? error.message : 'Failed to save artist';
-		const normalizedMessage = message.trim().replace(/\s+/g, ' ');
-		if (!normalizedMessage) return 'Failed to save artist';
-
-		return normalizedMessage.charAt(0).toUpperCase() + normalizedMessage.slice(1);
-	};
 
 	const updateSaveArtistButton = () => {
 		const hasManualName = (manualArtistNameInput?.value.trim().length ?? 0) > 0;
@@ -106,7 +86,7 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 
 		document.querySelector<HTMLInputElement>('input[name="spotify_artist"]:checked')?.click();
 		document.dispatchEvent(new CustomEvent('create-artist-modal-reset'));
-		hideError();
+		errorAlert.hide();
 		updateSaveArtistButton();
 	};
 
@@ -121,7 +101,7 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 		if (!artist?.name) return;
 
 		isSavingArtist = true;
-		hideError();
+		errorAlert.hide();
 		saveArtistButton.textContent = 'Saving...';
 		updateSaveArtistButton();
 
@@ -132,7 +112,7 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 			resetCreateArtistModal();
 		} catch (error) {
 			console.error('Failed to save artist', error);
-			showError(formatErrorMessage(error));
+			errorAlert.showError(error, 'Failed to save artist');
 		} finally {
 			isSavingArtist = false;
 			saveArtistButton.textContent = 'Save Artist';
