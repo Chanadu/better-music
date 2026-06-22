@@ -1,12 +1,22 @@
-<div class='fab pb-[calc(4.5rem+env(safe-area-inset-bottom))]'>
+<div class='fab pb-[calc(4.5rem+env(safe-area-inset-bottom))]' data-fab-container>
 	<button class='btn btn-lg btn-circle btn-accent' data-fab>+</button>
 </div>
 
 <script>
+	const fabContainer = document.querySelector<HTMLElement>('[data-fab-container]');
 	const fab = document.querySelector<HTMLButtonElement>('[data-fab]');
 	const modal = document.querySelector<HTMLDialogElement>('[data-create-modal]');
 
+	const updateFabVisibility = () => {
+		const isModalOpen = modal?.open || modal?.classList.contains('modal-open');
+		fabContainer?.classList.toggle('hidden', Boolean(isModalOpen));
+	};
+
 	fab?.addEventListener('click', () => {
 		modal?.showModal();
+		updateFabVisibility();
 	});
+
+	modal?.addEventListener('close', updateFabVisibility);
+	updateFabVisibility();
 </script>

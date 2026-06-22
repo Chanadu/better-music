@@ -1,0 +1,15 @@
+---
+interface Props {
+	label: string;
+	class?: string;
+}
+
+const { label, class: className = '' } = Astro.props;
+---
+
+<div class:list={['relative w-full pt-3', className]}>
+	<span class='bg-base-100 text-base-content/70 absolute top-1 left-3 z-10 px-1 text-xs leading-4 font-medium'>
+		{label}
+	</span>
+	<slot />
+</div>
