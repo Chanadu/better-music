@@ -17,9 +17,11 @@ const sortOptions = [
 <Layout>
 	<TopNav title='Artists' />
 	<div class='navbar flex gap-2'>
-		<SearchBar placeholder='Search artists' />
+		<SearchBar placeholder='artist name...' />
 
-		<Filter sortOptions={sortOptions} selectedSort='rating' />
+		<div class='pt-3'>
+			<Filter sortOptions={sortOptions} selectedSort='rating' />
+		</div>
 	</div>
 
 	<div class='divider mt-2 mb-0'></div>
