@@ -12,7 +12,7 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 			type='radio'
 			name='album_modal_tabs'
 			role='tab'
-			class='tab w-full flex-1'
+			class='tab flex-1'
 			aria-label='Manual'
 			checked
 		/>
@@ -23,7 +23,7 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 			type='radio'
 			name='album_modal_tabs'
 			role='tab'
-			class='tab w-full flex-1'
+			class='tab flex-1'
 			aria-label='Spotify'
 		/>
 		<SpotifyAlbumSection />
@@ -42,113 +42,203 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 <script>
 	import { albumsApi } from '../../../scripts/api';
 	import { fetchDatabaseData, refreshDatabaseData } from '../../../scripts/database';
+	import { createErrorAlert } from '../../../scripts/error-alert';
 	import type { Artist } from '../../../scripts/api-types';
 
 	const createModal = document.querySelector<HTMLDialogElement>('[data-create-modal]');
 	const saveAlbumButton = document.querySelector<HTMLButtonElement>('[data-save-album-button]');
-	const albumTitleInput = document.querySelector<HTMLInputElement>('[data-manual-album-title-input]');
-	const albumArtistSelect = document.querySelector<HTMLSelectElement>('[data-manual-album-artist-select]');
 	const manualAlbumTab = document.querySelector<HTMLInputElement>('[data-manual-album-tab]');
-	const errorAlert = document.querySelector<HTMLElement>('[data-error-alert]');
-	const errorAlertMessage = document.querySelector<HTMLElement>('[data-error-alert-message]');
+	const spotifyAlbumTab = document.querySelector<HTMLInputElement>('[data-spotify-album-tab]');
+	const listenedFields = document.querySelector<HTMLElement>('[data-manual-album-listened-fields]');
+	const ratingMarkers = document.querySelectorAll<HTMLElement>('[data-rating-marker]');
+	const ratingValues = document.querySelectorAll<HTMLElement>('[data-rating-value]');
+	const albumPreviewInitial = document.querySelector<HTMLElement>('[data-manual-album-preview-initial]');
+	const errorAlert = createErrorAlert();
 	let isSavingAlbum = false;
 
-	const showError = (message: string) => {
-		if (errorAlertMessage) {
-			errorAlertMessage.textContent = message;
-		}
-
-		errorAlert?.classList.remove('hidden');
-	};
-
-	const hideError = () => {
-		errorAlert?.classList.add('hidden');
-	};
-
-	const formatErrorMessage = (error: unknown) => {
-		const message = error instanceof Error ? error.message : 'Failed to save album';
-		const normalizedMessage = message.trim().replace(/\s+/g, ' ');
-		if (!normalizedMessage) return 'Failed to save album';
-
-		return normalizedMessage.charAt(0).toUpperCase() + normalizedMessage.slice(1);
+	const fields = {
+		title: document.querySelector<HTMLInputElement>('[data-manual-album-title-input]'),
+		artist: document.querySelector<HTMLSelectElement>('[data-manual-album-artist-select]'),
+		year: document.querySelector<HTMLInputElement>('[data-manual-album-year-input]'),
+		ratingSlider: document.querySelector<HTMLInputElement>('[data-manual-album-rating-slider]'),
+		listened: document.querySelector<HTMLInputElement>('[data-manual-album-listened-input]'),
+		listenedAt: document.querySelector<HTMLInputElement>('[data-manual-album-listened-at-input]'),
+		comment: document.querySelector<HTMLTextAreaElement>('[data-manual-album-comment-input]'),
 	};
 
 	const updateSaveAlbumButton = () => {
-		const hasTitle = (albumTitleInput?.value.trim().length ?? 0) > 0;
-		const hasArtist = (albumArtistSelect?.value.length ?? 0) > 0;
+		const hasTitle = (fields.title?.value.trim().length ?? 0) > 0;
+		const hasArtist = (fields.artist?.value.length ?? 0) > 0;
+		const hasValidYear = fields.year?.checkValidity() ?? true;
 
 		if (saveAlbumButton) {
-			saveAlbumButton.disabled = isSavingAlbum || !manualAlbumTab?.checked || !hasTitle || !hasArtist;
+			saveAlbumButton.disabled = isSavingAlbum || !manualAlbumTab?.checked || !hasTitle || !hasArtist || !hasValidYear;
 		}
 	};
 
-	const renderArtists = (artists: Artist[]) => {
-		if (!albumArtistSelect) return;
+	const setSavingAlbum = (isSaving: boolean) => {
+		isSavingAlbum = isSaving;
 
-		const options = artists.map((artist) => {
-			const option = document.createElement('option');
-			option.value = String(artist.id);
-			option.textContent = artist.name;
-			return option;
+		if (saveAlbumButton) {
+			saveAlbumButton.textContent = isSaving ? 'Saving...' : 'Save Album';
+		}
+
+		updateSaveAlbumButton();
+	};
+
+	const getTodayDateValue = () => {
+		const today = new Date();
+		const year = today.getFullYear();
+		const month = String(today.getMonth() + 1).padStart(2, '0');
+		const day = String(today.getDate()).padStart(2, '0');
+
+		return `${year}-${month}-${day}`;
+	};
+
+	const updateListenedFields = () => {
+		const isListened = fields.listened?.checked ?? false;
+
+		listenedFields?.classList.toggle('opacity-40', !isListened);
+		fields.ratingSlider && (fields.ratingSlider.disabled = !isListened);
+		fields.listenedAt && (fields.listenedAt.disabled = !isListened);
+
+		if (isListened && fields.listenedAt && !fields.listenedAt.value) {
+			fields.listenedAt.value = getTodayDateValue();
+		}
+	};
+
+	const updateRatingMeasure = () => {
+		const rating = fields.ratingSlider?.value ?? '5';
+
+		ratingMarkers.forEach((marker) => {
+			const isSelected = marker.dataset.ratingMarker === rating;
+			marker.textContent = isSelected ? '↓' : '|';
+			marker.classList.toggle('text-accent', isSelected);
 		});
 
-		albumArtistSelect.replaceChildren(new Option('Select artist', ''), ...options);
+		ratingValues.forEach((value) => {
+			value.classList.toggle('text-accent', value.dataset.ratingValue === rating);
+			value.classList.toggle('text-xl', value.dataset.ratingValue === rating);
+		});
+	};
+
+	const updateYearValidity = () => {
+		if (!fields.year) return;
+
+		fields.year.value = fields.year.value.replace(/\D/g, '');
+
+		const year = Number(fields.year.value);
+		const currentYear = new Date().getFullYear();
+		const hasYear = fields.year.value.length > 0;
+		const hasValidYear =
+			!hasYear || (/^\d{4}$/.test(fields.year.value) && year >= 1000 && year <= currentYear);
+
+		fields.year.classList.toggle('validator', hasYear);
+		fields.year.setCustomValidity(hasValidYear ? '' : `Enter a year between 1000 and ${currentYear}`);
+		updateSaveAlbumButton();
+	};
+
+	const updateAlbumPreview = () => {
+		if (!albumPreviewInitial) return;
+
+		albumPreviewInitial.textContent = fields.title?.value.trim().charAt(0).toUpperCase() ?? '';
+	};
+
+	const getAlbumMetadata = () => ({
+		year: fields.year?.value ? Number(fields.year.value) : undefined,
+		listened: fields.listened?.checked || undefined,
+		rating: fields.listened?.checked && fields.ratingSlider?.value ? Number(fields.ratingSlider.value) : undefined,
+		comment: fields.comment?.value.trim() || undefined,
+		listened_at: fields.listened?.checked ? fields.listenedAt?.value || undefined : undefined,
+	});
+
+	const renderArtists = (artists: Artist[]) => {
+		if (!fields.artist) return;
+
+		const options = artists.map((artist) => new Option(artist.name, String(artist.id)));
+		fields.artist.replaceChildren(new Option('Select artist', ''), ...options);
 		updateSaveAlbumButton();
 	};
 
 	const resetCreateAlbumModal = () => {
-		if (albumTitleInput) {
-			albumTitleInput.value = '';
+		[fields.title, fields.artist, fields.year, fields.listenedAt, fields.comment].forEach((input) => {
+			if (input) {
+				input.value = '';
+			}
+		});
+
+		if (fields.ratingSlider) {
+			fields.ratingSlider.value = '5';
 		}
 
-		if (albumArtistSelect) {
-			albumArtistSelect.value = '';
+		updateRatingMeasure();
+
+		if (fields.listened) {
+			fields.listened.checked = false;
 		}
 
-		hideError();
+		updateListenedFields();
+		updateAlbumPreview();
+		errorAlert.hide();
 		updateSaveAlbumButton();
 	};
 
 	saveAlbumButton?.addEventListener('click', async () => {
-		const title = albumTitleInput?.value.trim() ?? '';
-		const artistId = Number(albumArtistSelect?.value ?? 0);
+		const title = fields.title?.value.trim() ?? '';
+		const artistId = Number(fields.artist?.value ?? 0);
 
 		if (!title || !artistId) return;
 
-		isSavingAlbum = true;
-		hideError();
-		saveAlbumButton.textContent = 'Saving...';
-		updateSaveAlbumButton();
+		errorAlert.hide();
+		setSavingAlbum(true);
 
 		try {
-			await albumsApi.create({
+			const album = await albumsApi.create({
 				artist_id: artistId,
 				title,
 			});
+
+			const albumMetadata = getAlbumMetadata();
+
+			if (Object.values(albumMetadata).some((value) => value !== undefined)) {
+				await albumsApi.update(album.id, {
+					artist_id: artistId,
+					...albumMetadata,
+				});
+			}
+
 			await refreshDatabaseData();
 			createModal?.close();
 			resetCreateAlbumModal();
 		} catch (error) {
 			console.error('Failed to save album', error);
-			showError(formatErrorMessage(error));
+			errorAlert.showError(error, 'Failed to save album');
 		} finally {
-			isSavingAlbum = false;
-			saveAlbumButton.textContent = 'Save Album';
-			updateSaveAlbumButton();
+			setSavingAlbum(false);
 		}
 	});
 
-	albumTitleInput?.addEventListener('input', updateSaveAlbumButton);
-	albumArtistSelect?.addEventListener('change', updateSaveAlbumButton);
-	document.querySelector<HTMLInputElement>('[data-manual-album-tab]')?.addEventListener('change', updateSaveAlbumButton);
-	document.querySelector<HTMLInputElement>('[data-spotify-album-tab]')?.addEventListener('change', updateSaveAlbumButton);
+	fields.title?.addEventListener('input', () => {
+		updateAlbumPreview();
+		updateSaveAlbumButton();
+	});
+	fields.artist?.addEventListener('change', updateSaveAlbumButton);
+	fields.year?.addEventListener('input', updateYearValidity);
+	fields.ratingSlider?.addEventListener('input', updateRatingMeasure);
+	fields.listened?.addEventListener('change', updateListenedFields);
+	manualAlbumTab?.addEventListener('change', updateSaveAlbumButton);
+	spotifyAlbumTab?.addEventListener('change', updateSaveAlbumButton);
 
 	fetchDatabaseData()
 		.then(({ artists }) => renderArtists(artists))
 		.catch((error) => {
 			console.error('Failed to load artists', error);
-			showError(formatErrorMessage(error));
+			errorAlert.showError(error, 'Failed to load artists');
 		});
 
+	updateListenedFields();
+	updateRatingMeasure();
+	updateYearValidity();
+	updateAlbumPreview();
 	updateSaveAlbumButton();
 </script>

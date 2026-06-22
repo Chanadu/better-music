@@ -1,0 +1,86 @@
+---
+import FloatingInput from '../../FloatingInput.astro';
+---
+
+<div>
+	<label class='group divider mb-1 cursor-pointer'>
+		<span class='flex items-center gap-3'>
+			<span class='toggle has-checked:bg-primary has-checked:text-primary-content'>
+				<input data-manual-album-listened-input type='checkbox' />
+				<svg
+					aria-label='disabled'
+					xmlns='http://www.w3.org/2000/svg'
+					viewBox='0 0 24 24'
+					fill='none'
+					stroke='currentColor'
+					stroke-width='4'
+					stroke-linecap='round'
+					stroke-linejoin='round'
+				>
+					<path d='M18 6 6 18'></path>
+					<path d='m6 6 12 12'></path>
+				</svg>
+				<svg aria-label='enabled' class='text-primary' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
+					<g stroke-linejoin='round' stroke-linecap='round' stroke-width='4' fill='none' stroke='currentColor'>
+						<path d='M20 6 9 17l-5-5'></path>
+					</g>
+				</svg>
+			</span>
+			<span class='text-neutral-content group-has-checked:text-primary'>Listened</span>
+		</span>
+	</label>
+
+	<div class='flex flex-col gap-2 opacity-40' data-manual-album-listened-fields>
+		<fieldset class='fieldset'>
+			<legend class='fieldset-legend'>Rating</legend>
+			<div class='w-full'>
+				<input
+					data-manual-album-rating-slider
+					type='range'
+					min='1'
+					max='10'
+					step='1'
+					value='5'
+					class='range range-accent range-lg w-full'
+					disabled
+				/>
+				<div class='px-4'>
+					<div class='relative mt-1 h-4 text-center text-xs'>
+						<span class='absolute -translate-x-1/2' style='left: 0%' data-rating-marker='1'>|</span>
+						<span class='absolute -translate-x-1/2' style='left: 11.111%' data-rating-marker='2'>|</span>
+						<span class='absolute -translate-x-1/2' style='left: 22.222%' data-rating-marker='3'>|</span>
+						<span class='absolute -translate-x-1/2' style='left: 33.333%' data-rating-marker='4'>|</span>
+						<span class='text-accent absolute -translate-x-1/2' style='left: 44.444%' data-rating-marker='5'>
+							↓
+						</span>
+						<span class='absolute -translate-x-1/2' style='left: 55.556%' data-rating-marker='6'>|</span>
+						<span class='absolute -translate-x-1/2' style='left: 66.667%' data-rating-marker='7'>|</span>
+						<span class='absolute -translate-x-1/2' style='left: 77.778%' data-rating-marker='8'>|</span>
+						<span class='absolute -translate-x-1/2' style='left: 88.889%' data-rating-marker='9'>|</span>
+						<span class='absolute -translate-x-1/2' style='left: 100%' data-rating-marker='10'>|</span>
+					</div>
+				</div>
+				<div class='px-4'>
+					<div class='relative h-4 text-center text-xs'>
+						<span class='absolute -translate-x-1/2' style='left: 0%' data-rating-value='1'>1</span>
+						<span class='absolute -translate-x-1/2' style='left: 11.111%' data-rating-value='2'>2</span>
+						<span class='absolute -translate-x-1/2' style='left: 22.222%' data-rating-value='3'>3</span>
+						<span class='absolute -translate-x-1/2' style='left: 33.333%' data-rating-value='4'>4</span>
+						<span class='text-accent absolute -translate-x-1/2' style='left: 44.444%' data-rating-value='5'>
+							5
+						</span>
+						<span class='absolute -translate-x-1/2' style='left: 55.556%' data-rating-value='6'>6</span>
+						<span class='absolute -translate-x-1/2' style='left: 66.667%' data-rating-value='7'>7</span>
+						<span class='absolute -translate-x-1/2' style='left: 77.778%' data-rating-value='8'>8</span>
+						<span class='absolute -translate-x-1/2' style='left: 88.889%' data-rating-value='9'>9</span>
+						<span class='absolute -translate-x-1/2' style='left: 100%' data-rating-value='10'>10</span>
+					</div>
+				</div>
+			</div>
+		</fieldset>
+
+		<FloatingInput label='Listened At'>
+			<input data-manual-album-listened-at-input type='date' class='input w-full' disabled />
+		</FloatingInput>
+	</div>
+</div>
