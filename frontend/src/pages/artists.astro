@@ -46,7 +46,8 @@ const sortOptions = [
 	const artistList = document.querySelector<HTMLUListElement>('[data-artist-list]');
 	const artistListItemTemplate = document.querySelector<HTMLTemplateElement>('[data-artist-list-item-template]');
 	const searchInput = document.querySelector<HTMLInputElement>('input[type="search"]');
-	const sortSelect = document.querySelector<HTMLSelectElement>('select[name="sort"]');
+	const sortInputs = document.querySelectorAll<HTMLInputElement>('input[name="sort"]');
+	const sortDropdownLabel = document.querySelector<HTMLElement>('[data-sort-dropdown-label]');
 	const reverseSortButton = document.querySelector<HTMLButtonElement>('[data-reverse-sort]');
 
 	let latestData: DatabaseData | null = null;
@@ -70,7 +71,7 @@ const sortOptions = [
 		}));
 
 	const sortArtists = (items: ArtistListItem[]) => {
-		const selectedSort = sortSelect?.value ?? 'rating';
+		const selectedSort = document.querySelector<HTMLInputElement>('input[name="sort"]:checked')?.value ?? 'rating';
 		const sortDirection = isSortReversed ? -1 : 1;
 
 		return [...items].sort((first, second) => {
@@ -180,7 +181,16 @@ const sortOptions = [
 	});
 
 	searchInput?.addEventListener('input', renderArtists);
-	sortSelect?.addEventListener('change', renderArtists);
+	sortInputs.forEach((input) => {
+		input.addEventListener('change', () => {
+			if (sortDropdownLabel) {
+				sortDropdownLabel.textContent = input.dataset.sortLabel ?? input.value;
+			}
+
+			input.closest<HTMLDetailsElement>('details')?.removeAttribute('open');
+			renderArtists();
+		});
+	});
 
 	reverseSortButton?.addEventListener('click', () => {
 		isSortReversed = !isSortReversed;

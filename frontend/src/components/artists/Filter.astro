@@ -14,22 +14,40 @@ const { sortOptions, name = 'sort', selectedSort } = Astro.props;
 
 const longestOptionLength = Math.max(...sortOptions.map((option) => option.label.length));
 const selectWidth = `calc(${longestOptionLength}ch + 4rem)`;
+const selectedOption = sortOptions.find((option) => option.value === selectedSort) ?? sortOptions[0];
 ---
 
 <div class='join'>
-	<select
-		class='select select-bordered select-secondary join-item text-secondary'
-		name={name}
-		style={`width: ${selectWidth}; min-width: ${selectWidth};`}
-	>
-		{
-			sortOptions.map((option) => (
-				<option value={option.value} selected={selectedSort === option.value}>
-					{option.label}
-				</option>
-			))
-		}
-	</select>
+	<details class='dropdown'>
+		<summary
+			class='btn btn-outline btn-secondary join-item justify-between'
+			style={`width: ${selectWidth}; min-width: ${selectWidth};`}
+			data-sort-dropdown-label
+		>
+			{selectedOption.label}
+		</summary>
+		<ul
+			class='dropdown-content menu bg-base-100 border-secondary text-secondary rounded-box z-10 mt-2 w-full border border-2 shadow'
+		>
+			{
+				sortOptions.map((option) => (
+					<li>
+						<label>
+							<input
+								type='radio'
+								class='radio radio-secondary radio-xs'
+								name={name}
+								value={option.value}
+								data-sort-label={option.label}
+								checked={selectedOption.value === option.value}
+							/>
+							{option.label}
+						</label>
+					</li>
+				))
+			}
+		</ul>
+	</details>
 	<label class='join-item btn btn-square btn-outline btn-secondary swap swap-rotate shrink-0'>
 		<input type='checkbox' data-reverse-sort />
 
