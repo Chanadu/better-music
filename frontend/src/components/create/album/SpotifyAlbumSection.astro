@@ -20,11 +20,14 @@ import SpotifyAlbumResultItem from './SpotifyAlbumResultItem.astro';
 	const resultsList = section?.querySelector<HTMLUListElement>('[data-spotify-album-results]');
 	let searchTimeout: number | undefined;
 	let latestRequest = 0;
-	const resultRows = Array.from(resultsList?.querySelectorAll<HTMLLIElement>('[data-spotify-album-result-item]') ?? []);
+	const resultRows = Array.from(
+		resultsList?.querySelectorAll<HTMLLIElement>('[data-spotify-album-result-item]') ?? [],
+	);
 
 	const getAlbumImage = (album: SpotifyAlbumSearchResult) => album.images[0]?.url;
 	const getReleaseYear = (album: SpotifyAlbumSearchResult) => album.release_date.match(/^\d{4}/)?.[0] ?? '';
-	const getAlbumArtistNames = (album: SpotifyAlbumSearchResult) => album.artists.map((artist) => artist.name).join(', ');
+	const getAlbumArtistNames = (album: SpotifyAlbumSearchResult) =>
+		album.artists.map((artist) => artist.name).join(', ');
 
 	type AlbumRowData = {
 		id: string;
@@ -41,7 +44,16 @@ import SpotifyAlbumResultItem from './SpotifyAlbumResultItem.astro';
 
 	const updateAlbumRow = (
 		row: HTMLLIElement,
-		{ id, name, artistId = '', artistName = '', artistNames = '', imageUrl, releaseYear = '', disabled = false }: AlbumRowData,
+		{
+			id,
+			name,
+			artistId = '',
+			artistName = '',
+			artistNames = '',
+			imageUrl,
+			releaseYear = '',
+			disabled = false,
+		}: AlbumRowData,
 	) => {
 		const label = row.querySelector<HTMLLabelElement>('label');
 		const input = row.querySelector<HTMLInputElement>('[data-spotify-album-input]');

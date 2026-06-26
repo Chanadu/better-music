@@ -8,7 +8,6 @@ const storageKeys = {
 	accessTokenExpiresAt: 'betterMusicAccessTokenExpiresAt',
 };
 
-
 export const saveTokens = (tokens: TokenResponse) => {
 	const expiresAt = Date.now() + tokens.expires_in * 1000;
 

@@ -39,7 +39,9 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 	<form method='dialog' class='flex-1' slot='actions'>
 		<button class='btn btn-soft btn-secondary w-full'>Cancel</button>
 	</form>
-	<button type='button' class='btn btn-primary flex-1' data-save-album-button disabled slot='actions'>Save Album</button>
+	<button type='button' class='btn btn-primary flex-1' data-save-album-button disabled slot='actions'
+		>Save Album</button
+	>
 </BaseModal>
 
 <script>
@@ -186,7 +188,8 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 	const findOrCreateSpotifyAlbumArtist = async ({ name, spotify_id }: { name: string; spotify_id?: string }) => {
 		const existingArtist = latestArtists.find(
 			(artist) =>
-				(spotify_id && artist.spotify_id === spotify_id) || artist.name.trim().toLowerCase() === name.trim().toLowerCase(),
+				(spotify_id && artist.spotify_id === spotify_id) ||
+				artist.name.trim().toLowerCase() === name.trim().toLowerCase(),
 		);
 
 		if (existingArtist) return existingArtist;
@@ -246,7 +249,7 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 
 		try {
 			const artist = spotifyAlbum ? await findOrCreateSpotifyAlbumArtist(spotifyAlbum.artist) : undefined;
-			const artistId = spotifyAlbum ? artist?.id ?? 0 : manualArtistId;
+			const artistId = spotifyAlbum ? (artist?.id ?? 0) : manualArtistId;
 			const formMetadata = getAlbumMetadata();
 			const albumMetadata = {
 				...formMetadata,
