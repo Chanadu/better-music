@@ -15,7 +15,13 @@ const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 <script>
 	import { getValidAccessToken, redirectToLogin } from '../scripts/auth';
-	import { fetchDatabaseData } from '../scripts/database';
+	import { fetchDatabaseData, refreshStaleDatabaseData } from '../scripts/database';
+
+	const refreshStaleData = () => {
+		refreshStaleDatabaseData().catch((error) => {
+			console.error('Failed to refresh database data', error);
+		});
+	};
 
 	const accessToken = await getValidAccessToken();
 
@@ -25,5 +31,15 @@ const pathname = Astro.url.pathname.replace(/\/$/, '') || '/';
 		fetchDatabaseData().catch((error) => {
 			console.error('Failed to load database data', error);
 		});
+
+		refreshStaleData();
+
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState === 'visible') {
+				refreshStaleData();
+			}
+		});
+
+		window.addEventListener('focus', refreshStaleData);
 	}
 </script>

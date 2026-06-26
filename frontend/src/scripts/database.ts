@@ -15,9 +15,11 @@ export type DatabaseDataEvent = CustomEvent<DatabaseData>;
 const databaseDataEventName = 'better-music:database-data';
 const databaseErrorEventName = 'better-music:database-error';
 const databaseCacheKey = 'betterMusicDatabaseData';
+const defaultStaleAfterMs = 30_000;
 
 let databaseData: DatabaseData | null = null;
 let databaseDataPromise: Promise<DatabaseData> | null = null;
+let lastRefreshStartedAt = 0;
 
 const saveCachedDatabaseData = (data: DatabaseData) => {
 	sessionStorage.setItem(databaseCacheKey, JSON.stringify(data));
@@ -69,6 +71,8 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 
 	if (!force && databaseDataPromise) return databaseDataPromise;
 
+	lastRefreshStartedAt = Date.now();
+
 	databaseDataPromise = Promise.all([artistsApi.list(), albumsApi.list()])
 		.then(([artists, albums]) => {
 			databaseData = {
@@ -98,5 +102,18 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 };
 
 export const refreshDatabaseData = () => fetchDatabaseData({ force: true });
+
+export const refreshStaleDatabaseData = ({ staleAfterMs = defaultStaleAfterMs } = {}) => {
+	const cachedData = readCachedDatabaseData();
+	const now = Date.now();
+	const lastLoadedAt = cachedData?.loadedAt ?? 0;
+	const lastSyncAt = Math.max(lastLoadedAt, lastRefreshStartedAt);
+
+	if (databaseDataPromise || now - lastSyncAt < staleAfterMs) {
+		return Promise.resolve(cachedData);
+	}
+
+	return refreshDatabaseData();
+};
 
 export { databaseDataEventName, databaseErrorEventName };
