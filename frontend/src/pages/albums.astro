@@ -12,7 +12,7 @@ import Layout from '../layouts/Layout.astro';
 		<SearchBar placeholder='album name...' />
 	</div>
 
-	<ul class='list rounded-box -mt-2 shadow-md' data-album-list>
+	<ul class='list' data-album-list>
 		<li class='list-row text-base-content/60' data-album-status>Loading albums...</li>
 	</ul>
 
@@ -20,7 +20,8 @@ import Layout from '../layouts/Layout.astro';
 		<li class='list-item'>
 			<div class='pt-0 pb-2'>
 				<span class='divider divider-center divider-primary text-xl' data-album-rating-heading></span>
-				<div class='grid grid-cols-3 gap-3 px-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6' data-album-grid></div>
+				<div class='grid grid-cols-3 gap-3 px-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6' data-album-grid>
+				</div>
 			</div>
 		</li>
 	</template>
