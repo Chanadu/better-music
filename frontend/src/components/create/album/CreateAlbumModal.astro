@@ -1,6 +1,7 @@
 ---
 import ErrorAlert from '../../ErrorAlert.astro';
 import BaseModal from '../BaseModal.astro';
+import ListenedAlbumSection from './ListenedAlbumSection.astro';
 import ManualAlbumSection from './ManualAlbumSection.astro';
 import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 ---
@@ -29,14 +30,16 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 		<SpotifyAlbumSection />
 	</div>
 
+	<div class='px-2 pt-4'>
+		<ListenedAlbumSection />
+	</div>
+
 	<ErrorAlert />
 
-	<div class='modal-action mt-6 flex gap-4 px-2'>
-		<form method='dialog' class='flex-1'>
-			<button class='btn btn-soft btn-secondary w-full'>Cancel</button>
-		</form>
-		<button type='button' class='btn btn-primary flex-1' data-save-album-button disabled>Save Album</button>
-	</div>
+	<form method='dialog' class='flex-1' slot='actions'>
+		<button class='btn btn-soft btn-secondary w-full'>Cancel</button>
+	</form>
+	<button type='button' class='btn btn-primary flex-1' data-save-album-button disabled slot='actions'>Save Album</button>
 </BaseModal>
 
 <script>
@@ -72,7 +75,8 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 		const hasValidYear = fields.year?.checkValidity() ?? true;
 
 		if (saveAlbumButton) {
-			saveAlbumButton.disabled = isSavingAlbum || !manualAlbumTab?.checked || !hasTitle || !hasArtist || !hasValidYear;
+			saveAlbumButton.disabled =
+				isSavingAlbum || !manualAlbumTab?.checked || !hasTitle || !hasArtist || !hasValidYear;
 		}
 	};
 
@@ -130,8 +134,7 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 		const year = Number(fields.year.value);
 		const currentYear = new Date().getFullYear();
 		const hasYear = fields.year.value.length > 0;
-		const hasValidYear =
-			!hasYear || (/^\d{4}$/.test(fields.year.value) && year >= 1000 && year <= currentYear);
+		const hasValidYear = !hasYear || (/^\d{4}$/.test(fields.year.value) && year >= 1000 && year <= currentYear);
 
 		fields.year.classList.toggle('validator', hasYear);
 		fields.year.setCustomValidity(hasValidYear ? '' : `Enter a year between 1000 and ${currentYear}`);
@@ -171,12 +174,11 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 			fields.ratingSlider.value = '5';
 		}
 
-		updateRatingMeasure();
-
 		if (fields.listened) {
 			fields.listened.checked = false;
 		}
 
+		updateRatingMeasure();
 		updateListenedFields();
 		updateAlbumPreview();
 		errorAlert.hide();

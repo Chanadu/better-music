@@ -3,21 +3,18 @@ import FloatingInput from '../../FloatingInput.astro';
 ---
 
 <div role='tabpanel' class='tab-content px-2 pt-4'>
-	<div class='flex flex-col gap-2'>
+	<div class='flex flex-col gap-3'>
 		<FloatingInput label='Artist Name'>
 			<input data-manual-artist-name-input type='text' class='input w-full' placeholder='e.g. J. Cole' />
 		</FloatingInput>
 
-		<fieldset class='fieldset'>
-			<legend class='fieldset-legend'>Preview</legend>
-			<div class='flex justify-center'>
-				<div
-					class='rounded-box bg-base-300 flex size-44 items-center justify-center text-5xl font-semibold sm:size-56 sm:text-6xl'
-				>
-					<span data-manual-artist-preview-initial></span>
-				</div>
+		<div class='flex justify-center'>
+			<div
+				class='rounded-box bg-base-300 flex size-44 items-center justify-center text-5xl font-semibold sm:size-56 sm:text-6xl'
+			>
+				<span data-manual-artist-preview-initial></span>
 			</div>
-		</fieldset>
+		</div>
 	</div>
 </div>
 

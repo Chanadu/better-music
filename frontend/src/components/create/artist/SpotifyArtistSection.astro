@@ -4,9 +4,7 @@ import SpotifyArtistResultItem from './SpotifyArtistResultItem.astro';
 ---
 
 <div role='tabpanel' class='tab-content px-2 pt-4' data-spotify-artist-section>
-	<fieldset class='fieldset'>
-		<SearchBar placeholder='artist name...' />
-	</fieldset>
+	<SearchBar placeholder='artist name...' />
 
 	<ul class='list bg-base-200 rounded-box mt-4 shadow-md' data-spotify-artist-results>
 		{Array.from({ length: 5 }, () => <SpotifyArtistResultItem />)}

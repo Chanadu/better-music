@@ -17,21 +17,19 @@ const selectWidth = `calc(${longestOptionLength}ch + 4rem)`;
 ---
 
 <div class='join'>
-	<label class='form-control w-fit'>
-		<select
-			class='select select-bordered select-secondary join-item text-secondary'
-			name={name}
-			style={`width: ${selectWidth}; min-width: ${selectWidth};`}
-		>
-			{
-				sortOptions.map((option) => (
-					<option value={option.value} selected={selectedSort === option.value}>
-						{option.label}
-					</option>
-				))
-			}
-		</select>
-	</label>
+	<select
+		class='select select-bordered select-secondary join-item text-secondary'
+		name={name}
+		style={`width: ${selectWidth}; min-width: ${selectWidth};`}
+	>
+		{
+			sortOptions.map((option) => (
+				<option value={option.value} selected={selectedSort === option.value}>
+					{option.label}
+				</option>
+			))
+		}
+	</select>
 	<label class='join-item btn btn-square btn-outline btn-secondary swap swap-rotate shrink-0'>
 		<input type='checkbox' data-reverse-sort />
 

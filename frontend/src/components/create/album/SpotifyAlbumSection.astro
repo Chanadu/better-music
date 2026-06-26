@@ -3,13 +3,11 @@ import SearchBar from '../../nav/SearchBar.astro';
 ---
 
 <div role='tabpanel' class='tab-content px-2 pt-4'>
-	<fieldset class='fieldset'>
-		<SearchBar placeholder='album name...' />
-	</fieldset>
+	<SearchBar placeholder='album name...' />
 
 	<ul class='list bg-base-200 rounded-box mt-4 shadow-md'>
 		{
-			Array.from({ length: 5 }, () => (
+			Array.from({ length: 3 }, () => (
 				<li class='list-row text-base-content/35 items-center'>
 					<div class='rounded-box bg-base-300 size-10 shrink-0' />
 					<div>Start searching...</div>

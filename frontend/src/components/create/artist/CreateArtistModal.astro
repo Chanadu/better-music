@@ -31,12 +31,10 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 
 	<ErrorAlert />
 
-	<div class='modal-action mt-6 flex gap-4 px-2'>
-		<form method='dialog' class='flex-1'>
-			<button class='btn btn-soft btn-secondary w-full'>Cancel</button>
-		</form>
-		<button type='button' class='btn btn-primary flex-1' data-save-artist-button disabled>Save Artist</button>
-	</div>
+	<form method='dialog' class='flex-1' slot='actions'>
+		<button class='btn btn-soft btn-secondary w-full'>Cancel</button>
+	</form>
+	<button type='button' class='btn btn-primary flex-1' data-save-artist-button disabled slot='actions'>Save Artist</button>
 </BaseModal>
 
 <script>
