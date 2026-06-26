@@ -1,133 +1,9 @@
 ---
-import AlbumGrid from '../components/albums/AlbumGrid.astro';
-import TopNav from '../components/nav/TopNav.astro';
-import SearchBar from '../components/nav/SearchBar.astro';
-import Layout from '../layouts/Layout.astro';
 import AddButton from '../components/AddButton.astro';
 import CreateAlbumModal from '../components/create/album/CreateAlbumModal.astro';
-
-const albums = [
-	{
-		name: 'Midnight Signals',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp',
-		artistName: 'North Arcade',
-	},
-	{
-		name: 'Blue Room',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-		artistName: 'June Park',
-	},
-	{
-		name: 'After Hours Bloom',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp',
-		artistName: 'Velvet Coast',
-	},
-	{
-		name: 'Static Weather',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp',
-		artistName: 'The Low Suns',
-	},
-	{
-		name: 'Golden Hour Tape',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1550258987-190a2d41a8ba.webp',
-		artistName: 'Mika Sol',
-	},
-	{
-		name: 'Soft Machines',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
-		artistName: 'Paper Cities',
-	},
-	{
-		name: 'Neon Fields',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
-		artistName: 'Kite Theory',
-	},
-	{
-		name: 'Rooms For Echoes',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
-		artistName: 'Anika Vale',
-	},
-	{
-		name: 'Silver Lining Club',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-		artistName: 'Westbound',
-	},
-	{
-		name: 'Late Train Home',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-		artistName: 'Hollow Avenue',
-	},
-	{
-		name: 'Glass Garden',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-		artistName: 'Mara Lake',
-	},
-	{
-		name: 'Open Windows',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-		artistName: 'Signal Path',
-	},
-	{
-		name: 'Distant Lights',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp',
-		artistName: 'Caldera',
-	},
-	{
-		name: 'Small Fires',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp',
-		artistName: 'Rhea Stone',
-	},
-	{
-		name: 'Basement Hymns',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp',
-		artistName: 'Lunar Motel',
-	},
-	{
-		name: 'Daylight Static',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1550258987-190a2d41a8ba.webp',
-		artistName: 'The Finch Line',
-	},
-	{
-		name: 'Between Stations',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
-		artistName: 'Nora Field',
-	},
-	{
-		name: 'Warm Circuit',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp',
-		artistName: 'Mono Valley',
-	},
-	{
-		name: 'Shoreline Notes',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-		artistName: 'Ivy Harbor',
-	},
-	{
-		name: 'Night Maps',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp',
-		artistName: 'East Meridian',
-	},
-	{
-		name: 'Second Sun',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp',
-		artistName: 'Bright Channel',
-	},
-	{
-		name: 'Slow Motion Parade',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1550258987-190a2d41a8ba.webp',
-		artistName: 'Cedar State',
-	},
-	{
-		name: 'Clearwater',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
-		artistName: 'Lena Fox',
-	},
-	{
-		name: 'New Fiction',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp',
-		artistName: 'Archive Room',
-	},
-];
+import SearchBar from '../components/nav/SearchBar.astro';
+import TopNav from '../components/nav/TopNav.astro';
+import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>
@@ -139,9 +15,140 @@ const albums = [
 
 	<div class='divider mt-2 mb-0'></div>
 
-	<div class='mt-4'>
-		<AlbumGrid albums={albums} />
+	<div class='text-base-content/60 mt-4 px-2' data-unrated-album-status>Loading albums...</div>
+	<div class='mt-4 grid grid-cols-3 gap-3 px-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6' data-unrated-album-grid>
 	</div>
+
+	<template data-unrated-album-card-template>
+		<div class='min-w-0'>
+			<img class='rounded-box aspect-square w-full object-cover' data-album-cover hidden />
+			<div
+				class='rounded-box bg-base-300 flex aspect-square w-full items-center justify-center text-3xl font-semibold'
+				data-album-fallback
+			>
+			</div>
+			<div class='mt-2 text-xs font-semibold text-wrap wrap-break-word' data-album-title></div>
+			<div class='text-base-content/60 text-xs font-semibold text-wrap wrap-break-word' data-album-artist></div>
+		</div>
+	</template>
+
 	<CreateAlbumModal />
 	<AddButton />
 </Layout>
+
+<script>
+	import { onDatabaseData, type Album, type Artist, type DatabaseData } from '../scripts/database';
+
+	type UnratedAlbumItem = {
+		album: Album;
+		artist?: Artist;
+	};
+
+	const albumGrid = document.querySelector<HTMLElement>('[data-unrated-album-grid]');
+	const albumStatus = document.querySelector<HTMLElement>('[data-unrated-album-status]');
+	const albumCardTemplate = document.querySelector<HTMLTemplateElement>('[data-unrated-album-card-template]');
+	const searchInput = document.querySelector<HTMLInputElement>('input[type="search"]');
+	let latestData: DatabaseData | null = null;
+
+	const getArtistById = (artists: Artist[]) => {
+		const artistsById = new Map<number, Artist>();
+		artists.forEach((artist) => artistsById.set(artist.id, artist));
+		return artistsById;
+	};
+
+	const getUnratedAlbums = ({ albums, artists }: DatabaseData) => {
+		const artistsById = getArtistById(artists);
+
+		return albums
+			.filter((album) => typeof album.rating !== 'number')
+			.map((album) => ({
+				album,
+				artist: artistsById.get(album.artist_id),
+			}));
+	};
+
+	const createAlbumCard = ({ album, artist }: UnratedAlbumItem) => {
+		const card = albumCardTemplate?.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
+
+		if (!card) {
+			const missingCard = document.createElement('div');
+			missingCard.textContent = album.title;
+			return missingCard;
+		}
+
+		const image = card.querySelector<HTMLImageElement>('[data-album-cover]');
+		const fallback = card.querySelector<HTMLElement>('[data-album-fallback]');
+		const title = card.querySelector<HTMLElement>('[data-album-title]');
+		const artistName = card.querySelector<HTMLElement>('[data-album-artist]');
+
+		if (album.cover_url) {
+			if (image) {
+				image.src = album.cover_url;
+				image.alt = `${album.title} cover`;
+				image.hidden = false;
+			}
+
+			if (fallback) {
+				fallback.hidden = true;
+				fallback.textContent = '';
+			}
+		} else {
+			if (image) {
+				image.hidden = true;
+				image.removeAttribute('src');
+				image.alt = '';
+			}
+
+			if (fallback) {
+				fallback.hidden = false;
+				fallback.textContent = album.title.trim().charAt(0).toUpperCase() || '?';
+			}
+		}
+
+		if (title) {
+			title.textContent = album.title;
+		}
+
+		if (artistName) {
+			artistName.textContent = artist?.name ?? 'Unknown Artist';
+		}
+
+		return card;
+	};
+
+	const renderAlbums = () => {
+		if (!albumGrid || !latestData) return;
+
+		const query = searchInput?.value.trim().toLowerCase() ?? '';
+		const unratedAlbums = getUnratedAlbums(latestData)
+			.filter(({ album, artist }) => {
+				const title = album.title.toLowerCase();
+				const artistName = artist?.name.toLowerCase() ?? '';
+				return title.includes(query) || artistName.includes(query);
+			})
+			.sort((first, second) => first.album.title.localeCompare(second.album.title));
+
+		albumGrid.replaceChildren();
+
+		if (unratedAlbums.length === 0) {
+			if (albumStatus) {
+				albumStatus.textContent = query ? 'No unrated albums match your search.' : 'No unrated albums yet.';
+				albumStatus.hidden = false;
+			}
+			return;
+		}
+
+		if (albumStatus) {
+			albumStatus.hidden = true;
+		}
+
+		albumGrid.append(...unratedAlbums.map(createAlbumCard));
+	};
+
+	onDatabaseData((data) => {
+		latestData = data;
+		renderAlbums();
+	});
+
+	searchInput?.addEventListener('input', renderAlbums);
+</script>
