@@ -25,9 +25,13 @@ const sortOptions = [
 
 	<div class='divider mt-2 mb-0'></div>
 
-	<ul class='list bg-base-200 rounded-box mt-4 shadow-md' data-artist-list>
-		<li class='list-row text-base-content/60' data-artist-status>Loading artists...</li>
-	</ul>
+	<div data-artist-status>
+		<div class='text-base-content/60 mt-4 px-2'>Loading artists...</div>
+	</div>
+	<ul class='list bg-base-200 rounded-box mt-4 shadow-md' data-artist-list></ul>
+	<template data-artist-empty-template>
+		<div class='text-base-content/60 mt-4 px-2' data-artist-empty-message></div>
+	</template>
 	<template data-artist-list-item-template>
 		<li class='list-row'>
 			<div>
@@ -59,6 +63,8 @@ const sortOptions = [
 	};
 
 	const artistList = document.querySelector<HTMLUListElement>('[data-artist-list]');
+	const artistStatus = document.querySelector<HTMLElement>('[data-artist-status]');
+	const artistEmptyTemplate = document.querySelector<HTMLTemplateElement>('[data-artist-empty-template]');
 	const artistListItemTemplate = document.querySelector<HTMLTemplateElement>('[data-artist-list-item-template]');
 	const searchInput = document.querySelector<HTMLInputElement>('input[type="search"]');
 	const sortInputs = document.querySelectorAll<HTMLInputElement>('input[name="sort"]');
@@ -169,6 +175,24 @@ const sortOptions = [
 		return row;
 	};
 
+	const createEmptyState = (message: string) => {
+		const emptyState = artistEmptyTemplate?.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
+
+		if (!emptyState) {
+			const missingEmptyState = document.createElement('div');
+			missingEmptyState.className = 'text-base-content/60 mt-4 px-2';
+			missingEmptyState.textContent = message;
+			return missingEmptyState;
+		}
+
+		const emptyMessage = emptyState.querySelector<HTMLElement>('[data-artist-empty-message]');
+		if (emptyMessage) {
+			emptyMessage.textContent = message;
+		}
+
+		return emptyState;
+	};
+
 	const renderArtists = () => {
 		if (!artistList || !latestData) return;
 
@@ -178,14 +202,23 @@ const sortOptions = [
 		);
 
 		artistList.replaceChildren();
+		artistList.hidden = artistItems.length === 0;
 
 		if (artistItems.length === 0) {
-			const emptyRow = document.createElement('li');
-			emptyRow.className = 'list-row text-base-content/60';
-			emptyRow.textContent = query ? 'No artists match your search.' : 'No artists yet.';
-			artistList.append(emptyRow);
+			if (artistStatus) {
+				artistStatus.replaceChildren(
+					createEmptyState(query ? 'No artists match your search.' : 'No artists yet.'),
+				);
+				artistStatus.hidden = false;
+			}
 			return;
 		}
+
+		if (artistStatus) {
+			artistStatus.hidden = true;
+		}
+
+		artistList.hidden = false;
 
 		artistList.append(...artistItems.map(createArtistRow));
 	};
