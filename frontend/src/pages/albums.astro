@@ -1,90 +1,9 @@
 ---
-import AlbumGrid from '../components/albums/AlbumGrid.astro';
-import Filter from '../components/filter.astro';
-import TopNav from '../components/nav/TopNav.astro';
-import SearchBar from '../components/nav/SearchBar.astro';
-import Layout from '../layouts/Layout.astro';
 import AddButton from '../components/AddButton.astro';
 import CreateAlbumModal from '../components/create/album/CreateAlbumModal.astro';
-
-const sortOptions = [
-	{ label: 'Rating', value: 'rating' },
-	{ label: 'Artist', value: 'artist' },
-	{ label: 'Year', value: 'year' },
-];
-
-const albums = [
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1559703248-dcaaec9fab78.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1572635148818-ef6fd45eb394.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1550258987-190a2d41a8ba.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1563729784474-d77dbb933a9e.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-	{
-		name: 'Album Name',
-		imageUrl: 'https://img.daisyui.com/images/stock/photo-1560717789-0ac7c58ac90a.webp',
-	},
-];
-
-const ratingGroups = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+import SearchBar from '../components/nav/SearchBar.astro';
+import TopNav from '../components/nav/TopNav.astro';
+import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>
@@ -92,20 +11,181 @@ const ratingGroups = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 	<div class='navbar'>
 		<SearchBar placeholder='album name...' />
 	</div>
-	<ul class='list rounded-box -mt-2 shadow-md'>
-		{
-			ratingGroups.map((rating) => (
-				<li class='list-item'>
-					<div class='pt-0 pb-2'>
-						<span class='divider divider-center divider-primary text-xl'>
-							{rating}/10 • {albums.length} albums
-						</span>
-						<AlbumGrid albums={albums} />
-					</div>
-				</li>
-			))
-		}
+
+	<ul class='list rounded-box -mt-2 shadow-md' data-album-list>
+		<li class='list-row text-base-content/60' data-album-status>Loading albums...</li>
 	</ul>
+
+	<template data-album-rating-group-template>
+		<li class='list-item'>
+			<div class='pt-0 pb-2'>
+				<span class='divider divider-center divider-primary text-xl' data-album-rating-heading></span>
+				<div class='grid grid-cols-3 gap-3 px-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6' data-album-grid></div>
+			</div>
+		</li>
+	</template>
+
+	<template data-album-card-template>
+		<div class='min-w-0'>
+			<img class='rounded-box aspect-square w-full object-cover' data-album-cover hidden />
+			<div
+				class='rounded-box bg-base-300 flex aspect-square w-full items-center justify-center text-3xl font-semibold'
+				data-album-fallback
+			>
+			</div>
+			<div class='mt-2 text-xs font-semibold text-wrap wrap-break-word' data-album-title></div>
+			<div class='text-base-content/60 text-xs font-semibold text-wrap wrap-break-word' data-album-artist></div>
+		</div>
+	</template>
+
 	<CreateAlbumModal />
 	<AddButton />
 </Layout>
+
+<script>
+	import { onDatabaseData, type Album, type Artist, type DatabaseData } from '../scripts/database';
+
+	type RatedAlbumItem = {
+		album: Album;
+		artist?: Artist;
+	};
+
+	const albumList = document.querySelector<HTMLUListElement>('[data-album-list]');
+	const albumRatingGroupTemplate = document.querySelector<HTMLTemplateElement>('[data-album-rating-group-template]');
+	const albumCardTemplate = document.querySelector<HTMLTemplateElement>('[data-album-card-template]');
+	const searchInput = document.querySelector<HTMLInputElement>('input[type="search"]');
+	let latestData: DatabaseData | null = null;
+
+	const getArtistById = (artists: Artist[]) => {
+		const artistsById = new Map<number, Artist>();
+		artists.forEach((artist) => artistsById.set(artist.id, artist));
+		return artistsById;
+	};
+
+	const getRatedAlbums = ({ albums, artists }: DatabaseData) => {
+		const artistsById = getArtistById(artists);
+
+		return albums
+			.filter((album) => typeof album.rating === 'number')
+			.map((album) => ({
+				album,
+				artist: artistsById.get(album.artist_id),
+			}));
+	};
+
+	const createAlbumCard = ({ album, artist }: RatedAlbumItem) => {
+		const card = albumCardTemplate?.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
+
+		if (!card) {
+			const missingCard = document.createElement('div');
+			missingCard.textContent = album.title;
+			return missingCard;
+		}
+
+		const image = card.querySelector<HTMLImageElement>('[data-album-cover]');
+		const fallback = card.querySelector<HTMLElement>('[data-album-fallback]');
+		const title = card.querySelector<HTMLElement>('[data-album-title]');
+		const artistName = card.querySelector<HTMLElement>('[data-album-artist]');
+
+		if (album.cover_url) {
+			if (image) {
+				image.src = album.cover_url;
+				image.alt = `${album.title} cover`;
+				image.hidden = false;
+			}
+
+			if (fallback) {
+				fallback.hidden = true;
+				fallback.textContent = '';
+			}
+		} else {
+			if (image) {
+				image.hidden = true;
+				image.removeAttribute('src');
+				image.alt = '';
+			}
+
+			if (fallback) {
+				fallback.hidden = false;
+				fallback.textContent = album.title.trim().charAt(0).toUpperCase() || '?';
+			}
+		}
+
+		if (title) {
+			title.textContent = album.title;
+		}
+
+		if (artistName) {
+			artistName.textContent = artist?.name ?? 'Unknown Artist';
+		}
+
+		return card;
+	};
+
+	const createRatingGroup = (rating: number, albums: RatedAlbumItem[]) => {
+		const group = albumRatingGroupTemplate?.content.firstElementChild?.cloneNode(true) as HTMLLIElement | undefined;
+
+		if (!group) {
+			const missingGroup = document.createElement('li');
+			missingGroup.className = 'list-row text-base-content/60';
+			missingGroup.textContent = 'Album group template is missing.';
+			return missingGroup;
+		}
+
+		const heading = group.querySelector<HTMLElement>('[data-album-rating-heading]');
+		const grid = group.querySelector<HTMLElement>('[data-album-grid]');
+
+		if (heading) {
+			heading.textContent = `${rating}/10 • ${albums.length} ${albums.length === 1 ? 'album' : 'albums'}`;
+		}
+
+		grid?.append(...albums.map(createAlbumCard));
+		return group;
+	};
+
+	const renderAlbums = () => {
+		if (!albumList || !latestData) return;
+
+		const query = searchInput?.value.trim().toLowerCase() ?? '';
+		const ratedAlbums = getRatedAlbums(latestData).filter(({ album, artist }) => {
+			const title = album.title.toLowerCase();
+			const artistName = artist?.name.toLowerCase() ?? '';
+			return title.includes(query) || artistName.includes(query);
+		});
+
+		albumList.replaceChildren();
+
+		if (ratedAlbums.length === 0) {
+			const emptyRow = document.createElement('li');
+			emptyRow.className = 'list-row text-base-content/60';
+			emptyRow.textContent = query ? 'No rated albums match your search.' : 'No rated albums yet.';
+			albumList.append(emptyRow);
+			return;
+		}
+
+		const albumsByRating = new Map<number, RatedAlbumItem[]>();
+		ratedAlbums.forEach((item) => {
+			const rating = item.album.rating ?? 0;
+			albumsByRating.set(rating, [...(albumsByRating.get(rating) ?? []), item]);
+		});
+		const ratingGroups = [...albumsByRating.keys()].sort((first, second) => second - first);
+
+		albumList.append(
+			...ratingGroups.map((rating) =>
+				createRatingGroup(
+					rating,
+					[...(albumsByRating.get(rating) ?? [])].sort((first, second) =>
+						first.album.title.localeCompare(second.album.title),
+					),
+				),
+			),
+		);
+	};
+
+	onDatabaseData((data) => {
+		latestData = data;
+		renderAlbums();
+	});
+
+	searchInput?.addEventListener('input', renderAlbums);
+</script>
