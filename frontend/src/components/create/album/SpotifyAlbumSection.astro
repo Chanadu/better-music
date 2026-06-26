@@ -1,18 +1,219 @@
 ---
 import SearchBar from '../../nav/SearchBar.astro';
+import SpotifyAlbumResultItem from './SpotifyAlbumResultItem.astro';
 ---
 
-<div role='tabpanel' class='tab-content px-2 pt-4'>
+<div role='tabpanel' class='tab-content px-2 pt-4' data-spotify-album-section>
 	<SearchBar placeholder='album name...' />
 
-	<ul class='list bg-base-200 rounded-box mt-4 shadow-md'>
-		{
-			Array.from({ length: 3 }, () => (
-				<li class='list-row text-base-content/35 items-center'>
-					<div class='rounded-box bg-base-300 size-10 shrink-0' />
-					<div>Start searching...</div>
-				</li>
-			))
-		}
+	<ul class='list bg-base-200 rounded-box mt-4 shadow-md' data-spotify-album-results>
+		{Array.from({ length: 3 }, () => <SpotifyAlbumResultItem />)}
 	</ul>
 </div>
+
+<script>
+	import { spotifyApi } from '../../../scripts/api';
+	import type { SpotifyAlbumSearchResult } from '../../../scripts/api-types';
+
+	const section = document.querySelector<HTMLElement>('[data-spotify-album-section]');
+	const searchInput = section?.querySelector<HTMLInputElement>('input[type="search"]');
+	const resultsList = section?.querySelector<HTMLUListElement>('[data-spotify-album-results]');
+	let searchTimeout: number | undefined;
+	let latestRequest = 0;
+	const resultRows = Array.from(resultsList?.querySelectorAll<HTMLLIElement>('[data-spotify-album-result-item]') ?? []);
+
+	const getAlbumImage = (album: SpotifyAlbumSearchResult) => album.images[0]?.url;
+	const getReleaseYear = (album: SpotifyAlbumSearchResult) => album.release_date.match(/^\d{4}/)?.[0] ?? '';
+	const getAlbumArtistNames = (album: SpotifyAlbumSearchResult) => album.artists.map((artist) => artist.name).join(', ');
+
+	type AlbumRowData = {
+		id: string;
+		name: string;
+		artistId?: string;
+		artistName?: string;
+		artistNames?: string;
+		imageUrl?: string;
+		releaseYear?: string;
+		disabled?: boolean;
+	};
+
+	let selectedAlbum: AlbumRowData | undefined;
+
+	const updateAlbumRow = (
+		row: HTMLLIElement,
+		{ id, name, artistId = '', artistName = '', artistNames = '', imageUrl, releaseYear = '', disabled = false }: AlbumRowData,
+	) => {
+		const label = row.querySelector<HTMLLabelElement>('label');
+		const input = row.querySelector<HTMLInputElement>('[data-spotify-album-input]');
+		const image = row.querySelector<HTMLImageElement>('[data-spotify-album-image]');
+		const fallback = row.querySelector<HTMLElement>('[data-spotify-album-fallback]');
+		const albumName = row.querySelector<HTMLElement>('[data-spotify-album-name]');
+		const albumMeta = row.querySelector<HTMLElement>('[data-spotify-album-meta]');
+		const isSelectedAlbum = selectedAlbum?.id === id && !disabled;
+
+		row.dataset.spotifyAlbumId = id;
+		row.dataset.spotifyAlbumName = name;
+		row.dataset.spotifyAlbumArtistId = artistId;
+		row.dataset.spotifyAlbumArtistName = artistName;
+		row.dataset.spotifyAlbumImageUrl = imageUrl ?? '';
+		row.dataset.spotifyAlbumReleaseYear = releaseYear;
+
+		if (input) {
+			input.value = id;
+			input.disabled = disabled;
+			input.checked = isSelectedAlbum;
+			input.onclick = () => {
+				if (selectedAlbum?.id !== id) return;
+
+				selectedAlbum = undefined;
+				input.checked = false;
+				input.dispatchEvent(new Event('change', { bubbles: true }));
+			};
+		}
+
+		if (label) {
+			label.classList.toggle('cursor-pointer', !disabled);
+			label.classList.toggle('cursor-default', disabled);
+		}
+
+		if (image && fallback) {
+			if (imageUrl) {
+				image.src = imageUrl;
+				image.alt = `${name} album cover`;
+				image.hidden = false;
+				fallback.hidden = true;
+			} else {
+				image.hidden = true;
+				fallback.hidden = false;
+			}
+		}
+
+		if (albumName) {
+			albumName.textContent = name;
+			albumName.classList.toggle('text-base-content/35', disabled);
+		}
+
+		if (albumMeta) {
+			albumMeta.textContent = [artistNames, releaseYear].filter(Boolean).join(' • ');
+			albumMeta.classList.toggle('text-base-content/35', disabled);
+		}
+	};
+
+	const keepSelectedAlbumVisible = (index: number) => {
+		if (!selectedAlbum) return;
+		if (resultRows.some((row) => row.dataset.spotifyAlbumId === selectedAlbum?.id)) return;
+
+		const row = resultRows[index];
+		if (row) updateAlbumRow(row, selectedAlbum);
+	};
+
+	const renderPlaceholderAlbums = (message: string) => {
+		resultRows.forEach((row, index) => {
+			updateAlbumRow(row, {
+				id: `placeholder-${index}`,
+				name: message,
+				disabled: true,
+			});
+		});
+
+		keepSelectedAlbumVisible(0);
+	};
+
+	const renderAlbums = (albums: SpotifyAlbumSearchResult[]) => {
+		const visibleAlbums =
+			selectedAlbum && !albums.some((album) => album.id === selectedAlbum?.id) ? albums.slice(0, 2) : albums;
+
+		resultRows.forEach((row, index) => {
+			const album = visibleAlbums[index];
+
+			if (!album) {
+				updateAlbumRow(row, {
+					id: `empty-${index}`,
+					name: '',
+					disabled: true,
+				});
+				return;
+			}
+
+			updateAlbumRow(row, {
+				id: album.id,
+				name: album.name,
+				artistId: album.artists[0]?.id,
+				artistName: album.artists[0]?.name,
+				artistNames: getAlbumArtistNames(album),
+				imageUrl: getAlbumImage(album),
+				releaseYear: getReleaseYear(album),
+			});
+		});
+
+		keepSelectedAlbumVisible(resultRows.length - 1);
+	};
+
+	const searchAlbums = async () => {
+		const query = searchInput?.value.trim() ?? '';
+		const requestId = ++latestRequest;
+
+		if (!resultsList) return;
+
+		if (query.length === 0) {
+			renderPlaceholderAlbums('Start searching...');
+			return;
+		}
+
+		renderPlaceholderAlbums('Searching Spotify...');
+
+		try {
+			const albums = await spotifyApi.searchAlbums(query, 3);
+			if (requestId !== latestRequest) return;
+
+			if (albums.length === 0) {
+				renderPlaceholderAlbums('No albums found.');
+				return;
+			}
+
+			renderAlbums(albums);
+		} catch {
+			if (requestId !== latestRequest) return;
+			renderPlaceholderAlbums('Spotify search failed.');
+		}
+	};
+
+	searchInput?.addEventListener('input', () => {
+		window.clearTimeout(searchTimeout);
+		searchTimeout = window.setTimeout(searchAlbums, 250);
+	});
+
+	resultsList?.addEventListener('change', (event) => {
+		const input = event.target;
+		if (!(input instanceof HTMLInputElement) || input.name !== 'spotify_album') return;
+
+		if (!input.checked) {
+			selectedAlbum = undefined;
+			return;
+		}
+
+		const row = input.closest<HTMLLIElement>('[data-spotify-album-result-item]');
+		if (!row || input.disabled) return;
+
+		selectedAlbum = {
+			id: row.dataset.spotifyAlbumId ?? input.value,
+			name: row.dataset.spotifyAlbumName ?? '',
+			artistId: row.dataset.spotifyAlbumArtistId,
+			artistName: row.dataset.spotifyAlbumArtistName,
+			imageUrl: row.dataset.spotifyAlbumImageUrl || undefined,
+			releaseYear: row.dataset.spotifyAlbumReleaseYear,
+		};
+	});
+
+	document.addEventListener('create-album-modal-reset', () => {
+		selectedAlbum = undefined;
+
+		if (searchInput) {
+			searchInput.value = '';
+		}
+
+		renderPlaceholderAlbums('Start searching...');
+	});
+
+	renderPlaceholderAlbums('Start searching...');
+</script>

@@ -43,7 +43,7 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 </BaseModal>
 
 <script>
-	import { albumsApi } from '../../../scripts/api';
+	import { albumsApi, artistsApi } from '../../../scripts/api';
 	import { fetchDatabaseData, refreshDatabaseData } from '../../../scripts/database';
 	import { createErrorAlert } from '../../../scripts/error-alert';
 	import type { Artist } from '../../../scripts/api-types';
@@ -58,6 +58,7 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 	const albumPreviewInitial = document.querySelector<HTMLElement>('[data-manual-album-preview-initial]');
 	const errorAlert = createErrorAlert();
 	let isSavingAlbum = false;
+	let latestArtists: Artist[] = [];
 
 	const fields = {
 		title: document.querySelector<HTMLInputElement>('[data-manual-album-title-input]'),
@@ -73,10 +74,14 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 		const hasTitle = (fields.title?.value.trim().length ?? 0) > 0;
 		const hasArtist = (fields.artist?.value.length ?? 0) > 0;
 		const hasValidYear = fields.year?.checkValidity() ?? true;
+		const hasSpotifyAlbum = document.querySelector<HTMLInputElement>(
+			'input[name="spotify_album"]:checked:not(:disabled)',
+		);
 
 		if (saveAlbumButton) {
 			saveAlbumButton.disabled =
-				isSavingAlbum || !manualAlbumTab?.checked || !hasTitle || !hasArtist || !hasValidYear;
+				isSavingAlbum ||
+				(manualAlbumTab?.checked ? !hasTitle || !hasArtist || !hasValidYear : !hasSpotifyAlbum);
 		}
 	};
 
@@ -155,7 +160,49 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 		listened_at: fields.listened?.checked ? fields.listenedAt?.value || undefined : undefined,
 	});
 
+	const getSelectedSpotifyAlbum = () => {
+		const selectedSpotifyInput = document.querySelector<HTMLInputElement>(
+			'input[name="spotify_album"]:checked:not(:disabled)',
+		);
+		const selectedSpotifyRow = selectedSpotifyInput?.closest<HTMLElement>('[data-spotify-album-result-item]');
+
+		if (!selectedSpotifyInput || !selectedSpotifyRow) return undefined;
+
+		return {
+			title: selectedSpotifyRow.dataset.spotifyAlbumName ?? '',
+			cover_url: selectedSpotifyRow.dataset.spotifyAlbumImageUrl || undefined,
+			spotify_id: selectedSpotifyRow.dataset.spotifyAlbumId ?? selectedSpotifyInput.value,
+			year:
+				selectedSpotifyRow.dataset.spotifyAlbumReleaseYear ?
+					Number(selectedSpotifyRow.dataset.spotifyAlbumReleaseYear)
+				:	undefined,
+			artist: {
+				name: selectedSpotifyRow.dataset.spotifyAlbumArtistName ?? '',
+				spotify_id: selectedSpotifyRow.dataset.spotifyAlbumArtistId || undefined,
+			},
+		};
+	};
+
+	const findOrCreateSpotifyAlbumArtist = async ({ name, spotify_id }: { name: string; spotify_id?: string }) => {
+		const existingArtist = latestArtists.find(
+			(artist) =>
+				(spotify_id && artist.spotify_id === spotify_id) || artist.name.trim().toLowerCase() === name.trim().toLowerCase(),
+		);
+
+		if (existingArtist) return existingArtist;
+
+		const createdArtist = await artistsApi.create({
+			name,
+			spotify_id,
+		});
+
+		latestArtists = [...latestArtists, createdArtist];
+		return createdArtist;
+	};
+
 	const renderArtists = (artists: Artist[]) => {
+		latestArtists = artists;
+
 		if (!fields.artist) return;
 
 		const options = artists.map((artist) => new Option(artist.name, String(artist.id)));
@@ -178,6 +225,8 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 			fields.listened.checked = false;
 		}
 
+		document.querySelector<HTMLInputElement>('input[name="spotify_album"]:checked')?.click();
+		document.dispatchEvent(new CustomEvent('create-album-modal-reset'));
 		updateRatingMeasure();
 		updateListenedFields();
 		updateAlbumPreview();
@@ -186,21 +235,32 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 	};
 
 	saveAlbumButton?.addEventListener('click', async () => {
-		const title = fields.title?.value.trim() ?? '';
-		const artistId = Number(fields.artist?.value ?? 0);
+		const spotifyAlbum = spotifyAlbumTab?.checked ? getSelectedSpotifyAlbum() : undefined;
+		const title = spotifyAlbum?.title ?? fields.title?.value.trim() ?? '';
+		const manualArtistId = Number(fields.artist?.value ?? 0);
 
-		if (!title || !artistId) return;
+		if (!title || (!spotifyAlbum && !manualArtistId)) return;
 
 		errorAlert.hide();
 		setSavingAlbum(true);
 
 		try {
+			const artist = spotifyAlbum ? await findOrCreateSpotifyAlbumArtist(spotifyAlbum.artist) : undefined;
+			const artistId = spotifyAlbum ? artist?.id ?? 0 : manualArtistId;
+			const formMetadata = getAlbumMetadata();
+			const albumMetadata = {
+				...formMetadata,
+				cover_url: spotifyAlbum?.cover_url,
+				year: spotifyAlbum?.year ?? formMetadata.year,
+			};
+
+			if (!artistId) return;
+
 			const album = await albumsApi.create({
 				artist_id: artistId,
 				title,
+				spotify_id: spotifyAlbum?.spotify_id,
 			});
-
-			const albumMetadata = getAlbumMetadata();
 
 			if (Object.values(albumMetadata).some((value) => value !== undefined)) {
 				await albumsApi.update(album.id, {
@@ -230,6 +290,12 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 	fields.listened?.addEventListener('change', updateListenedFields);
 	manualAlbumTab?.addEventListener('change', updateSaveAlbumButton);
 	spotifyAlbumTab?.addEventListener('change', updateSaveAlbumButton);
+	document.addEventListener('change', (event) => {
+		const input = event.target;
+		if (input instanceof HTMLInputElement && input.name === 'spotify_album') {
+			updateSaveAlbumButton();
+		}
+	});
 
 	fetchDatabaseData()
 		.then(({ artists }) => renderArtists(artists))
