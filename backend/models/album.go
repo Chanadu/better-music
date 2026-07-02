@@ -137,7 +137,7 @@ func GetAlbumByID(database *sql.DB, userID int, artistID int, albumID int) (*Alb
 	return &album, nil
 }
 
-func UpdateAlbum(database *sql.DB, userID int, artistID int, albumID int, title *string, coverURL *string, year *int, spotifyID *string, listened *bool, rating *float64, comment *string, listenedAt *string) error {
+func UpdateAlbum(database *sql.DB, userID int, artistID int, albumID int, title *string, coverURL *string, year *int, spotifyID *string, listened *bool, rating *int, comment *string, listenedAt *string) error {
 	result, err := database.Exec(
 		`UPDATE albums
 		SET title = COALESCE($4, title),

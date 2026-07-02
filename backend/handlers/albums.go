@@ -19,15 +19,15 @@ type CreateAlbumRequest struct {
 
 // UpdateAlbumRequest represents the request body for updating an album
 type UpdateAlbumRequest struct {
-	ArtistID   int      `json:"artist_id" example:"1"`
-	Title      *string  `json:"title,omitempty" example:"Abbey Road"`
-	CoverURL   *string  `json:"cover_url,omitempty" example:"https://example.com/cover.jpg"`
-	Year       *int     `json:"year,omitempty" example:"1969"`
-	SpotifyID  *string  `json:"spotify_id,omitempty" example:"4oDw9mW4Sro2zN1RHzlvOr"`
-	Listened   *bool    `json:"listened,omitempty" example:"true"`
-	Rating     *float64 `json:"rating,omitempty" example:"8.5"`
-	Comment    *string  `json:"comment,omitempty" example:"Classic album"`
-	ListenedAt *string  `json:"listened_at,omitempty" example:"2024-01-15"`
+	ArtistID   int     `json:"artist_id" example:"1"`
+	Title      *string `json:"title,omitempty" example:"Abbey Road"`
+	CoverURL   *string `json:"cover_url,omitempty" example:"https://example.com/cover.jpg"`
+	Year       *int    `json:"year,omitempty" example:"1969"`
+	SpotifyID  *string `json:"spotify_id,omitempty" example:"4oDw9mW4Sro2zN1RHzlvOr"`
+	Listened   *bool   `json:"listened,omitempty" example:"true"`
+	Rating     *int    `json:"rating,omitempty" example:"8"`
+	Comment    *string `json:"comment,omitempty" example:"Classic album"`
+	ListenedAt *string `json:"listened_at,omitempty" example:"2024-01-15"`
 }
 
 // ArtistIDRequest represents a request body with just an artist ID
@@ -247,6 +247,13 @@ func (h *Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 	if body.Title == nil && body.CoverURL == nil && body.Year == nil && body.SpotifyID == nil && body.Listened == nil && body.Rating == nil && body.Comment == nil && body.ListenedAt == nil {
 		writeJSON(w, http.StatusBadRequest, apiError("at least one field must be provided"))
 		return
+	}
+
+	if body.Rating != nil {
+		if *body.Rating < 1 || *body.Rating > 10 {
+			writeJSON(w, http.StatusBadRequest, apiError("rating must be between 1 and 10"))
+			return
+		}
 	}
 
 	userID, ok := getUserID(w, r)
