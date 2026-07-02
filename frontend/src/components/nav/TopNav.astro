@@ -2,15 +2,31 @@
 import LogoutButton from './LogoutButton.astro';
 
 interface Props {
-	title: string;
+	title?: string;
+	breadcrumbs?: string[];
 }
 
-const { title } = Astro.props;
+const { title, breadcrumbs = title ? [title] : [] } = Astro.props;
 ---
 
 <header class='navbar'>
 	<div class='navbar-start'>
-		<h1 class='text-2xl font-bold'>{title}</h1>
+		<nav class='breadcrumbs text-base-content px-1 text-2xl font-bold' aria-label='Breadcrumb'>
+			<ul>
+				{
+					breadcrumbs.map((breadcrumb, index) => (
+						<li>
+							<span
+								aria-current={index === breadcrumbs.length - 1 ? 'page' : undefined}
+								data-breadcrumb-current={index === breadcrumbs.length - 1 ? 'true' : undefined}
+							>
+								{breadcrumb}
+							</span>
+						</li>
+					))
+				}
+			</ul>
+		</nav>
 	</div>
 	<div class='navbar-end'>
 		<LogoutButton />

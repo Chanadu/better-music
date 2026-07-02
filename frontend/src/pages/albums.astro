@@ -7,7 +7,8 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>
-	<TopNav title='Albums' />
+	<TopNav breadcrumbs={['Albums']} />
+
 	<div class='navbar'>
 		<SearchBar placeholder='album name...' />
 	</div>
