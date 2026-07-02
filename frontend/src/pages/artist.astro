@@ -1,0 +1,73 @@
+---
+import TopNav from '../components/nav/TopNav.astro';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+	<TopNav breadcrumbs={['Artists', 'Artist']} />
+
+	<div class='divider mt-2 mb-0'></div>
+
+	<section class='mt-6 px-2'>
+		<p class='text-base-content/60' data-artist-status>Loading artist...</p>
+		<h2 class='text-3xl font-bold wrap-break-word' data-artist-name hidden></h2>
+	</section>
+</Layout>
+
+<script>
+	import { ApiError, artistsApi } from '../scripts/api';
+
+	const searchParams = new URLSearchParams(window.location.search);
+	const artistIdParam = searchParams.get('id');
+	const artistId = Number(artistIdParam);
+	const artistStatus = document.querySelector<HTMLElement>('[data-artist-status]');
+	const artistName = document.querySelector<HTMLElement>('[data-artist-name]');
+	const artistBreadcrumb = document.querySelector<HTMLElement>('[data-breadcrumb-current="true"]');
+
+	const showStatus = (message: string) => {
+		if (artistStatus) {
+			artistStatus.textContent = message;
+			artistStatus.hidden = false;
+		}
+
+		if (artistName) {
+			artistName.hidden = true;
+		}
+
+		if (artistBreadcrumb) {
+			artistBreadcrumb.textContent = 'Artist';
+		}
+	};
+
+	const showArtist = (name: string) => {
+		if (artistName) {
+			artistName.textContent = name;
+			artistName.hidden = false;
+		}
+
+		if (artistStatus) {
+			artistStatus.hidden = true;
+		}
+
+		if (artistBreadcrumb) {
+			artistBreadcrumb.textContent = name;
+		}
+	};
+
+	if (!artistIdParam || !Number.isInteger(artistId) || artistId < 1) {
+		showStatus('Artist not found.');
+	} else {
+		artistsApi
+			.get(artistId)
+			.then((artist) => showArtist(artist.name))
+			.catch((error) => {
+				if (error instanceof ApiError && error.status === 404) {
+					showStatus('Artist not found.');
+					return;
+				}
+
+				console.error('Failed to load artist', error);
+				showStatus('Could not load artist.');
+			});
+	}
+</script>

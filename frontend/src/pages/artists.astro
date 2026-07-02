@@ -1,7 +1,7 @@
 ---
 import Filter from '../components/artists/Filter.astro';
-import TopNav from '../components/nav/TopNav.astro';
 import SearchBar from '../components/nav/SearchBar.astro';
+import TopNav from '../components/nav/TopNav.astro';
 import AddButton from '../components/AddButton.astro';
 import CreateArtistModal from '../components/create/artist/CreateArtistModal.astro';
 import Layout from '../layouts/Layout.astro';
@@ -14,7 +14,8 @@ const sortOptions = [
 ---
 
 <Layout>
-	<TopNav title='Artists' />
+	<TopNav breadcrumbs={['Artists']} />
+
 	<div class='navbar flex gap-2'>
 		<SearchBar placeholder='artist name...' />
 
@@ -33,20 +34,22 @@ const sortOptions = [
 		<div class='text-base-content/60 mt-4 px-2' data-artist-empty-message></div>
 	</template>
 	<template data-artist-list-item-template>
-		<li class='list-row'>
-			<div>
-				<img data-artist-image class='rounded-box size-10 shrink-0 object-cover' src='' alt='' />
-				<div
-					data-artist-fallback
-					class='rounded-box bg-base-300 flex size-10 shrink-0 items-center justify-center text-sm font-semibold'
-					hidden
-				>
+		<li class='p-0'>
+			<a data-artist-link class='list-row hover:bg-base-300 rounded-box transition-colors'>
+				<div>
+					<img data-artist-image class='rounded-box size-10 shrink-0 object-cover' src='' alt='' />
+					<div
+						data-artist-fallback
+						class='rounded-box bg-base-300 flex size-10 shrink-0 items-center justify-center text-sm font-semibold'
+						hidden
+					>
+					</div>
 				</div>
-			</div>
-			<div>
-				<div data-artist-name></div>
-				<div data-artist-meta class='text-base-content/60 text-xs font-semibold uppercase'></div>
-			</div>
+				<div>
+					<div data-artist-name></div>
+					<div data-artist-meta class='text-base-content/60 text-xs font-semibold uppercase'></div>
+				</div>
+			</a>
 		</li>
 	</template>
 	<CreateArtistModal />
@@ -129,6 +132,7 @@ const sortOptions = [
 
 		const image = row.querySelector<HTMLImageElement>('[data-artist-image]');
 		const fallback = row.querySelector<HTMLElement>('[data-artist-fallback]');
+		const link = row.querySelector<HTMLAnchorElement>('[data-artist-link]');
 		const name = row.querySelector<HTMLElement>('[data-artist-name]');
 		const meta = row.querySelector<HTMLElement>('[data-artist-meta]');
 
@@ -166,6 +170,11 @@ const sortOptions = [
 
 		if (name) {
 			name.textContent = artist.name;
+		}
+
+		if (link) {
+			link.href = `/artist?id=${artist.id}`;
+			link.setAttribute('aria-label', `Open ${artist.name}`);
 		}
 
 		if (meta) {
