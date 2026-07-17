@@ -287,3 +287,10 @@ This repository already includes:
 This project is licensed under the MIT License.
 
 See [LICENSE](./LICENSE) for the full text.
+
+## TODO
+
+- [ ] add selecting the artist for album spotify creation
+- [ ] add daisy ui loading to spotify search
+- [ ] add text to the 1-10 ratings in albums
+- [ ] skeletons

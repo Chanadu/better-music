@@ -15,14 +15,8 @@ import Layout from '../layouts/Layout.astro';
 
 	<div class='divider mt-2 mb-0' data-album-empty-divider></div>
 
-	<div data-album-status>
-		<div class='text-base-content/60 mt-4 px-2'>Loading albums...</div>
-	</div>
-	<ul class='list mt-4' data-album-list></ul>
-
-	<template data-album-empty-template>
-		<div class='text-base-content/60 mt-4 px-2' data-album-empty-message></div>
-	</template>
+	<div class='text-base-content/60 mt-4 px-2' data-album-status>Loading albums...</div>
+	<ul class='list' data-album-list></ul>
 
 	<template data-album-rating-group-template>
 		<li class='list-item'>
@@ -64,7 +58,6 @@ import Layout from '../layouts/Layout.astro';
 	const albumStatus = document.querySelector<HTMLElement>('[data-album-status]');
 	const albumRatingGroupTemplate = document.querySelector<HTMLTemplateElement>('[data-album-rating-group-template]');
 	const albumCardTemplate = document.querySelector<HTMLTemplateElement>('[data-album-card-template]');
-	const albumEmptyTemplate = document.querySelector<HTMLTemplateElement>('[data-album-empty-template]');
 	const searchInput = document.querySelector<HTMLInputElement>('input[type="search"]');
 	let latestData: DatabaseData | null = null;
 
@@ -155,24 +148,6 @@ import Layout from '../layouts/Layout.astro';
 		return group;
 	};
 
-	const createEmptyState = (message: string) => {
-		const emptyState = albumEmptyTemplate?.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
-
-		if (!emptyState) {
-			const missingEmptyState = document.createElement('div');
-			missingEmptyState.className = 'text-base-content/60 mt-4 px-2';
-			missingEmptyState.textContent = message;
-			return missingEmptyState;
-		}
-
-		const emptyMessage = emptyState.querySelector<HTMLElement>('[data-album-empty-message]');
-		if (emptyMessage) {
-			emptyMessage.textContent = message;
-		}
-
-		return emptyState;
-	};
-
 	const renderAlbums = () => {
 		if (!albumList || !latestData) return;
 
@@ -192,9 +167,7 @@ import Layout from '../layouts/Layout.astro';
 			}
 
 			if (albumStatus) {
-				albumStatus.replaceChildren(
-					createEmptyState(query ? 'No rated albums match your search.' : 'No rated albums yet.'),
-				);
+				albumStatus.textContent = query ? 'No rated albums match your search.' : 'No rated albums yet.';
 				albumStatus.hidden = false;
 			}
 			return;

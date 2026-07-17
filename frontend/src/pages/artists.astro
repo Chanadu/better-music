@@ -26,13 +26,9 @@ const sortOptions = [
 
 	<div class='divider mt-2 mb-0'></div>
 
-	<div data-artist-status>
-		<div class='text-base-content/60 mt-4 px-2'>Loading artists...</div>
-	</div>
+	<div class='text-base-content/60 mt-4 px-2' data-artist-status>Loading artists...</div>
 	<ul class='list bg-base-200 rounded-box mt-4 shadow-md' data-artist-list></ul>
-	<template data-artist-empty-template>
-		<div class='text-base-content/60 mt-4 px-2' data-artist-empty-message></div>
-	</template>
+
 	<template data-artist-list-item-template>
 		<li class='p-0'>
 			<a data-artist-link class='list-row hover:bg-base-300 rounded-box transition-colors'>
@@ -67,7 +63,6 @@ const sortOptions = [
 
 	const artistList = document.querySelector<HTMLUListElement>('[data-artist-list]');
 	const artistStatus = document.querySelector<HTMLElement>('[data-artist-status]');
-	const artistEmptyTemplate = document.querySelector<HTMLTemplateElement>('[data-artist-empty-template]');
 	const artistListItemTemplate = document.querySelector<HTMLTemplateElement>('[data-artist-list-item-template]');
 	const searchInput = document.querySelector<HTMLInputElement>('input[type="search"]');
 	const sortInputs = document.querySelectorAll<HTMLInputElement>('input[name="sort"]');
@@ -184,24 +179,6 @@ const sortOptions = [
 		return row;
 	};
 
-	const createEmptyState = (message: string) => {
-		const emptyState = artistEmptyTemplate?.content.firstElementChild?.cloneNode(true) as HTMLElement | undefined;
-
-		if (!emptyState) {
-			const missingEmptyState = document.createElement('div');
-			missingEmptyState.className = 'text-base-content/60 mt-4 px-2';
-			missingEmptyState.textContent = message;
-			return missingEmptyState;
-		}
-
-		const emptyMessage = emptyState.querySelector<HTMLElement>('[data-artist-empty-message]');
-		if (emptyMessage) {
-			emptyMessage.textContent = message;
-		}
-
-		return emptyState;
-	};
-
 	const renderArtists = () => {
 		if (!artistList || !latestData) return;
 
@@ -215,9 +192,7 @@ const sortOptions = [
 
 		if (artistItems.length === 0) {
 			if (artistStatus) {
-				artistStatus.replaceChildren(
-					createEmptyState(query ? 'No artists match your search.' : 'No artists yet.'),
-				);
+				artistStatus.textContent = query ? 'No artists match your search.' : 'No artists yet.';
 				artistStatus.hidden = false;
 			}
 			return;
