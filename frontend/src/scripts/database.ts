@@ -21,6 +21,22 @@ let databaseData: DatabaseData | null = null;
 let databaseDataPromise: Promise<DatabaseData> | null = null;
 let lastRefreshStartedAt = 0;
 
+const normalizeDatabaseData = (data: unknown): DatabaseData | null => {
+	if (!data || typeof data !== 'object') return null;
+
+	const candidate = data as Partial<DatabaseData>;
+	const artists = candidate.artists ?? [];
+	const albums = candidate.albums ?? [];
+
+	if (!Array.isArray(artists) || !Array.isArray(albums)) return null;
+
+	return {
+		artists,
+		albums,
+		loadedAt: typeof candidate.loadedAt === 'number' ? candidate.loadedAt : 0,
+	};
+};
+
 const saveCachedDatabaseData = (data: DatabaseData) => {
 	sessionStorage.setItem(databaseCacheKey, JSON.stringify(data));
 };
@@ -32,7 +48,10 @@ const readCachedDatabaseData = () => {
 	if (!cachedData) return null;
 
 	try {
-		databaseData = JSON.parse(cachedData) as DatabaseData;
+		databaseData = normalizeDatabaseData(JSON.parse(cachedData));
+		if (!databaseData) {
+			sessionStorage.removeItem(databaseCacheKey);
+		}
 		return databaseData;
 	} catch {
 		sessionStorage.removeItem(databaseCacheKey);
@@ -75,11 +94,17 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 
 	databaseDataPromise = Promise.all([artistsApi.list(), albumsApi.list()])
 		.then(([artists, albums]) => {
-			databaseData = {
+			const nextDatabaseData = normalizeDatabaseData({
 				artists,
 				albums,
 				loadedAt: Date.now(),
-			};
+			});
+
+			if (!nextDatabaseData) {
+				throw new TypeError('Database API returned invalid collection data');
+			}
+
+			databaseData = nextDatabaseData;
 
 			saveCachedDatabaseData(databaseData);
 			emitDatabaseData(databaseData);
