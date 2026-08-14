@@ -53,11 +53,7 @@
 
 	<div class="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 		{#each filteredAlbums as album}
-			<AlbumCard
-				{album}
-				subtitle={`${album.year ?? 'Year unknown'}${album.listened ? ' · Listened' : ''}`}
-				showRating
-			/>
+			<AlbumCard {album} subtitle={`${album.year ?? 'Year unknown'}`} showRating />
 		{/each}
 
 		<AddAlbumCard subtitle="New release" onclick={onadd} />
