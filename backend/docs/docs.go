@@ -43,19 +43,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -98,37 +92,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Album already exists",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -178,37 +160,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Album or artist not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -252,46 +222,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request or no fields provided",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Album or artist not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -335,46 +290,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Album or artist not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -408,19 +348,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -463,37 +397,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Artist already exists",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -533,28 +455,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Artist not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -598,46 +511,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request or no fields provided",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Artist not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -669,46 +567,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Artist has albums",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Artist not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -751,28 +634,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Artist not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -812,28 +686,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid JSON",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Invalid credentials",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -867,28 +732,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid JSON or missing token",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -928,28 +784,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid JSON or missing token",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Invalid or expired refresh token",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -989,28 +836,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid JSON or missing fields",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Email already in use",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -1059,37 +897,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Missing or invalid query parameters",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "502": {
                         "description": "Spotify request failed",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "503": {
                         "description": "Spotify is not configured",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -1138,37 +964,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Missing or invalid query parameters",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "502": {
                         "description": "Spotify request failed",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
                     "503": {
                         "description": "Spotify is not configured",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     }
                 }
@@ -1176,8 +990,22 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.ApiErrorResponse": {
+            "type": "object",
+            "required": [
+                "error"
+            ],
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.ArtistIDRequest": {
             "type": "object",
+            "required": [
+                "artist_id"
+            ],
             "properties": {
                 "artist_id": {
                     "type": "integer",
@@ -1187,6 +1015,10 @@ const docTemplate = `{
         },
         "handlers.AuthRequest": {
             "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
             "properties": {
                 "email": {
                     "type": "string",
@@ -1200,6 +1032,10 @@ const docTemplate = `{
         },
         "handlers.CreateAlbumRequest": {
             "type": "object",
+            "required": [
+                "artist_id",
+                "title"
+            ],
             "properties": {
                 "artist_id": {
                     "type": "integer",
@@ -1217,6 +1053,9 @@ const docTemplate = `{
         },
         "handlers.CreateArtistRequest": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "cover_url": {
                     "type": "string",
@@ -1232,8 +1071,22 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.MessageResponse": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.RefreshTokenRequest": {
             "type": "object",
+            "required": [
+                "refresh_token"
+            ],
             "properties": {
                 "refresh_token": {
                     "type": "string",
@@ -1243,6 +1096,10 @@ const docTemplate = `{
         },
         "handlers.SpotifyAlbumArtist": {
             "type": "object",
+            "required": [
+                "id",
+                "name"
+            ],
             "properties": {
                 "id": {
                     "type": "string",
@@ -1256,6 +1113,13 @@ const docTemplate = `{
         },
         "handlers.SpotifyAlbumSearchResult": {
             "type": "object",
+            "required": [
+                "artists",
+                "id",
+                "images",
+                "name",
+                "release_date"
+            ],
             "properties": {
                 "artists": {
                     "type": "array",
@@ -1285,6 +1149,11 @@ const docTemplate = `{
         },
         "handlers.SpotifyArtistSearchResult": {
             "type": "object",
+            "required": [
+                "id",
+                "images",
+                "name"
+            ],
             "properties": {
                 "id": {
                     "type": "string",
@@ -1304,6 +1173,11 @@ const docTemplate = `{
         },
         "handlers.SpotifyImage": {
             "type": "object",
+            "required": [
+                "height",
+                "url",
+                "width"
+            ],
             "properties": {
                 "height": {
                     "type": "integer",
@@ -1321,6 +1195,12 @@ const docTemplate = `{
         },
         "handlers.TokenResponse": {
             "type": "object",
+            "required": [
+                "access_token",
+                "expires_in",
+                "refresh_token",
+                "token_type"
+            ],
             "properties": {
                 "access_token": {
                     "type": "string",
@@ -1342,6 +1222,9 @@ const docTemplate = `{
         },
         "handlers.UpdateAlbumRequest": {
             "type": "object",
+            "required": [
+                "artist_id"
+            ],
             "properties": {
                 "artist_id": {
                     "type": "integer",
@@ -1364,8 +1247,8 @@ const docTemplate = `{
                     "example": "2024-01-15"
                 },
                 "rating": {
-                    "type": "number",
-                    "example": 8.5
+                    "type": "integer",
+                    "example": 8
                 },
                 "spotify_id": {
                     "type": "string",
@@ -1400,6 +1283,13 @@ const docTemplate = `{
         },
         "models.Album": {
             "type": "object",
+            "required": [
+                "artist_id",
+                "created_at",
+                "id",
+                "listened",
+                "title"
+            ],
             "properties": {
                 "artist_id": {
                     "type": "integer"
@@ -1423,7 +1313,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rating": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "spotify_id": {
                     "type": "string"
@@ -1438,6 +1328,11 @@ const docTemplate = `{
         },
         "models.Artist": {
             "type": "object",
+            "required": [
+                "created_at",
+                "id",
+                "name"
+            ],
             "properties": {
                 "cover_url": {
                     "type": "string"

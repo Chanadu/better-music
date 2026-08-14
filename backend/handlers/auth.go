@@ -19,19 +19,19 @@ import (
 
 // AuthRequest represents the request body for auth endpoints
 type AuthRequest struct {
-	Email    string `json:"email" example:"user@example.com"`
-	Password string `json:"password" example:"password123"`
+	Email    string `json:"email" example:"user@example.com" validate:"required"`
+	Password string `json:"password" example:"password123" validate:"required"`
 }
 
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token" example:"your-refresh-token"`
+	RefreshToken string `json:"refresh_token" example:"your-refresh-token" validate:"required"`
 }
 
 type TokenResponse struct {
-	AccessToken  string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
-	RefreshToken string `json:"refresh_token" example:"M2vK0r5mMWhM6Lqg0k4cCso1WW1wmX7uCUNB3vV9Q-U"`
-	TokenType    string `json:"token_type" example:"Bearer"`
-	ExpiresIn    int64  `json:"expires_in" example:"900"`
+	AccessToken  string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." validate:"required"`
+	RefreshToken string `json:"refresh_token" example:"M2vK0r5mMWhM6Lqg0k4cCso1WW1wmX7uCUNB3vV9Q-U" validate:"required"`
+	TokenType    string `json:"token_type" example:"Bearer" validate:"required"`
+	ExpiresIn    int64  `json:"expires_in" example:"900" validate:"required"`
 }
 
 func (h *Handler) generateJWT(userID int) (string, error) {
@@ -108,9 +108,9 @@ func (h *Handler) issueTokens(userID int) (*TokenResponse, error) {
 // @Produce json
 // @Param request body AuthRequest true "User credentials"
 // @Success 201 {object} TokenResponse
-// @Failure 400 {object} map[string]string "Invalid JSON or missing fields"
-// @Failure 409 {object} map[string]string "Email already in use"
-// @Failure 500 {object} map[string]string "Server error"
+// @Failure 400 {object} ApiErrorResponse "Invalid JSON or missing fields"
+// @Failure 409 {object} ApiErrorResponse "Email already in use"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/auth/register [post]
 func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/auth/register", "method", r.Method, "path", r.URL.Path)
@@ -155,9 +155,9 @@ func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param request body AuthRequest true "User credentials"
 // @Success 200 {object} TokenResponse
-// @Failure 400 {object} map[string]string "Invalid JSON"
-// @Failure 401 {object} map[string]string "Invalid credentials"
-// @Failure 500 {object} map[string]string "Server error"
+// @Failure 400 {object} ApiErrorResponse "Invalid JSON"
+// @Failure 401 {object} ApiErrorResponse "Invalid credentials"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/auth/login [post]
 func (h *Handler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/auth/login", "method", r.Method, "path", r.URL.Path)
@@ -196,9 +196,9 @@ func (h *Handler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param request body RefreshTokenRequest true "Refresh token"
 // @Success 200 {object} TokenResponse
-// @Failure 400 {object} map[string]string "Invalid JSON or missing token"
-// @Failure 401 {object} map[string]string "Invalid or expired refresh token"
-// @Failure 500 {object} map[string]string "Server error"
+// @Failure 400 {object} ApiErrorResponse "Invalid JSON or missing token"
+// @Failure 401 {object} ApiErrorResponse "Invalid or expired refresh token"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/auth/refresh [post]
 func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/auth/refresh", "method", r.Method, "path", r.URL.Path)
@@ -254,9 +254,9 @@ func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param request body RefreshTokenRequest true "Refresh token"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string "Invalid JSON or missing token"
-// @Failure 500 {object} map[string]string "Server error"
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ApiErrorResponse "Invalid JSON or missing token"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/auth/logout [post]
 func (h *Handler) AuthLogout(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/auth/logout", "method", r.Method, "path", r.URL.Path)
@@ -275,7 +275,7 @@ func (h *Handler) AuthLogout(w http.ResponseWriter, r *http.Request) {
 	storedToken, err := models.GetRefreshTokenByHash(h.Database, hashRefreshToken(body.RefreshToken))
 	if err != nil {
 		if err == sql.ErrNoRows {
-			writeJSON(w, http.StatusOK, map[string]string{"message": "logged out"})
+			writeJSON(w, http.StatusOK, apiMessage("logged out"))
 			return
 		}
 
@@ -291,5 +291,5 @@ func (h *Handler) AuthLogout(w http.ResponseWriter, r *http.Request) {
 
 	h.cleanupOldRefreshTokens()
 
-	writeJSON(w, http.StatusOK, map[string]string{"message": "logged out"})
+	writeJSON(w, http.StatusOK, apiMessage("logged out"))
 }

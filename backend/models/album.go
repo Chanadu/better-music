@@ -5,17 +5,17 @@ import (
 )
 
 type Album struct {
-	ID         int      `json:"id"`
-	ArtistID   int      `json:"artist_id"`
-	Title      string   `json:"title"`
-	CoverUrl   *string  `json:"cover_url,omitempty"`
-	Year       *int     `json:"year,omitempty"`
-	SpotifyID  *string  `json:"spotify_id,omitempty"`
-	Listened   bool     `json:"listened"`
-	Rating     *float64 `json:"rating,omitempty"`
-	Comment    *string  `json:"comment,omitempty"`
-	ListenedAt *string  `json:"listened_at,omitempty"`
-	CreatedAt  string   `json:"created_at"`
+	ID         int     `json:"id" validate:"required"`
+	ArtistID   int     `json:"artist_id" validate:"required"`
+	Title      string  `json:"title" validate:"required"`
+	CoverUrl   *string `json:"cover_url,omitempty"`
+	Year       *int    `json:"year,omitempty"`
+	SpotifyID  *string `json:"spotify_id,omitempty"`
+	Listened   bool    `json:"listened" validate:"required"`
+	Rating     *int    `json:"rating,omitempty"`
+	Comment    *string `json:"comment,omitempty"`
+	ListenedAt *string `json:"listened_at,omitempty"`
+	CreatedAt  string  `json:"created_at" validate:"required"`
 }
 
 func GetAlbumsByUser(database *sql.DB, userID int) ([]Album, error) {

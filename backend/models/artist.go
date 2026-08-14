@@ -5,11 +5,11 @@ import (
 )
 
 type Artist struct {
-	ID        int     `json:"id"`
-	Name      string  `json:"name"`
+	ID        int     `json:"id" validate:"required"`
+	Name      string  `json:"name" validate:"required"`
 	CoverURL  *string `json:"cover_url,omitempty"`
 	SpotifyID *string `json:"spotify_id,omitempty"`
-	CreatedAt string  `json:"created_at"`
+	CreatedAt string  `json:"created_at" validate:"required"`
 }
 
 func GetArtistsByUser(database *sql.DB, userID int) ([]Artist, error) {

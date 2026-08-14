@@ -1,10 +1,19 @@
 basePath: /
 definitions:
+  handlers.ApiErrorResponse:
+    properties:
+      error:
+        type: string
+    required:
+    - error
+    type: object
   handlers.ArtistIDRequest:
     properties:
       artist_id:
         example: 1
         type: integer
+    required:
+    - artist_id
     type: object
   handlers.AuthRequest:
     properties:
@@ -14,6 +23,9 @@ definitions:
       password:
         example: password123
         type: string
+    required:
+    - email
+    - password
     type: object
   handlers.CreateAlbumRequest:
     properties:
@@ -26,6 +38,9 @@ definitions:
       title:
         example: Abbey Road
         type: string
+    required:
+    - artist_id
+    - title
     type: object
   handlers.CreateArtistRequest:
     properties:
@@ -38,12 +53,23 @@ definitions:
       spotify_id:
         example: 6ml0jHmy7SNFWckrZblO5B
         type: string
+    required:
+    - name
+    type: object
+  handlers.MessageResponse:
+    properties:
+      message:
+        type: string
+    required:
+    - message
     type: object
   handlers.RefreshTokenRequest:
     properties:
       refresh_token:
         example: your-refresh-token
         type: string
+    required:
+    - refresh_token
     type: object
   handlers.SpotifyAlbumArtist:
     properties:
@@ -53,6 +79,9 @@ definitions:
       name:
         example: Radiohead
         type: string
+    required:
+    - id
+    - name
     type: object
   handlers.SpotifyAlbumSearchResult:
     properties:
@@ -73,6 +102,12 @@ definitions:
       release_date:
         example: "1997-05-21"
         type: string
+    required:
+    - artists
+    - id
+    - images
+    - name
+    - release_date
     type: object
   handlers.SpotifyArtistSearchResult:
     properties:
@@ -86,6 +121,10 @@ definitions:
       name:
         example: Radiohead
         type: string
+    required:
+    - id
+    - images
+    - name
     type: object
   handlers.SpotifyImage:
     properties:
@@ -98,6 +137,10 @@ definitions:
       width:
         example: 640
         type: integer
+    required:
+    - height
+    - url
+    - width
     type: object
   handlers.TokenResponse:
     properties:
@@ -113,6 +156,11 @@ definitions:
       token_type:
         example: Bearer
         type: string
+    required:
+    - access_token
+    - expires_in
+    - refresh_token
+    - token_type
     type: object
   handlers.UpdateAlbumRequest:
     properties:
@@ -132,8 +180,8 @@ definitions:
         example: "2024-01-15"
         type: string
       rating:
-        example: 8.5
-        type: number
+        example: 8
+        type: integer
       spotify_id:
         example: 4oDw9mW4Sro2zN1RHzlvOr
         type: string
@@ -143,6 +191,8 @@ definitions:
       year:
         example: 1969
         type: integer
+    required:
+    - artist_id
     type: object
   handlers.UpdateArtistRequest:
     properties:
@@ -173,13 +223,19 @@ definitions:
       listened_at:
         type: string
       rating:
-        type: number
+        type: integer
       spotify_id:
         type: string
       title:
         type: string
       year:
         type: integer
+    required:
+    - artist_id
+    - created_at
+    - id
+    - listened
+    - title
     type: object
   models.Artist:
     properties:
@@ -193,6 +249,10 @@ definitions:
         type: string
       spotify_id:
         type: string
+    required:
+    - created_at
+    - id
+    - name
     type: object
 host: localhost:8080
 info:
@@ -216,15 +276,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Get all albums
@@ -251,27 +307,19 @@ paths:
         "400":
           description: Invalid request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "409":
           description: Album already exists
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Create a new album
@@ -300,33 +348,23 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.MessageResponse'
         "400":
           description: Invalid request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "404":
           description: Album or artist not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Delete an album
@@ -357,27 +395,19 @@ paths:
         "400":
           description: Invalid request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "404":
           description: Album or artist not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Get a specific album
@@ -405,33 +435,23 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.MessageResponse'
         "400":
           description: Invalid request or no fields provided
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "404":
           description: Album or artist not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Update an album
@@ -452,15 +472,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Get all artists
@@ -487,27 +503,19 @@ paths:
         "400":
           description: Invalid request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "409":
           description: Artist already exists
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Create a new artist
@@ -528,33 +536,23 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.MessageResponse'
         "400":
           description: Artist has albums
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "404":
           description: Artist not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Delete an artist
@@ -578,21 +576,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "404":
           description: Artist not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Get a specific artist
@@ -620,33 +612,23 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.MessageResponse'
         "400":
           description: Invalid request or no fields provided
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "404":
           description: Artist not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Update an artist
@@ -673,21 +655,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "404":
           description: Artist not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Get all albums by an artist
@@ -716,21 +692,15 @@ paths:
         "400":
           description: Invalid JSON
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Invalid credentials
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       summary: Login user
       tags:
       - auth
@@ -753,21 +723,15 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.MessageResponse'
         "400":
           description: Invalid JSON or missing token
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       summary: Logout user
       tags:
       - auth
@@ -794,21 +758,15 @@ paths:
         "400":
           description: Invalid JSON or missing token
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Invalid or expired refresh token
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       summary: Refresh auth tokens
       tags:
       - auth
@@ -834,21 +792,15 @@ paths:
         "400":
           description: Invalid JSON or missing fields
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "409":
           description: Email already in use
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "500":
           description: Server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       summary: Register a new user
       tags:
       - auth
@@ -878,27 +830,19 @@ paths:
         "400":
           description: Missing or invalid query parameters
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "502":
           description: Spotify request failed
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "503":
           description: Spotify is not configured
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Search Spotify albums
@@ -930,27 +874,19 @@ paths:
         "400":
           description: Missing or invalid query parameters
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "502":
           description: Spotify request failed
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
         "503":
           description: Spotify is not configured
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ApiErrorResponse'
       security:
       - Bearer: []
       summary: Search Spotify artists

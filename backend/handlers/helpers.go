@@ -8,6 +8,14 @@ import (
 	"github.com/Chanadu/better-music/middleware"
 )
 
+type ApiErrorResponse struct {
+	Error string `json:"error" validate:"required"`
+}
+
+type MessageResponse struct {
+	Message string `json:"message" validate:"required"`
+}
+
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -19,8 +27,12 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	}
 }
 
-func apiError(msg string) map[string]string {
-	return map[string]string{"error": msg}
+func apiError(msg string) ApiErrorResponse {
+	return ApiErrorResponse{Error: msg}
+}
+
+func apiMessage(msg string) MessageResponse {
+	return MessageResponse{Message: msg}
 }
 
 func isEmpty(s *string) bool {

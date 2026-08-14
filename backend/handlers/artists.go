@@ -12,7 +12,7 @@ import (
 
 // CreateArtistRequest represents the request body for creating an artist
 type CreateArtistRequest struct {
-	Name      string  `json:"name" example:"The Beatles"`
+	Name      string  `json:"name" example:"The Beatles" validate:"required"`
 	CoverURL  *string `json:"cover_url,omitempty" example:"https://example.com/artist.jpg"`
 	SpotifyID *string `json:"spotify_id,omitempty" example:"6ml0jHmy7SNFWckrZblO5B"`
 }
@@ -31,8 +31,8 @@ type UpdateArtistRequest struct {
 // @Produce json
 // @Security Bearer
 // @Success 200 {array} models.Artist
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 500 {object} map[string]string "Server error"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/artists [get]
 func (h *Handler) GetArtists(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists", "method", r.Method, "path", r.URL.Path)
@@ -59,9 +59,9 @@ func (h *Handler) GetArtists(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Param id path int true "Artist ID"
 // @Success 200 {object} models.Artist
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 404 {object} map[string]string "Artist not found"
-// @Failure 500 {object} map[string]string "Server error"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 404 {object} ApiErrorResponse "Artist not found"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/artists/{id} [get]
 func (h *Handler) GetArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
@@ -93,10 +93,10 @@ func (h *Handler) GetArtist(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Param request body CreateArtistRequest true "Artist data"
 // @Success 201 {object} models.Artist
-// @Failure 400 {object} map[string]string "Invalid request"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 409 {object} map[string]string "Artist already exists"
-// @Failure 500 {object} map[string]string "Server error"
+// @Failure 400 {object} ApiErrorResponse "Invalid request"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 409 {object} ApiErrorResponse "Artist already exists"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/artists [post]
 func (h *Handler) CreateArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/artists", "method", r.Method, "path", r.URL.Path)
@@ -165,11 +165,11 @@ func (h *Handler) checkArtistExistsByID(w http.ResponseWriter, userID int, idStr
 // @Produce json
 // @Security Bearer
 // @Param id path int true "Artist ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string "Artist has albums"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 404 {object} map[string]string "Artist not found"
-// @Failure 500 {object} map[string]string "Server error"
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ApiErrorResponse "Artist has albums"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 404 {object} ApiErrorResponse "Artist not found"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/artists/{id} [delete]
 func (h *Handler) DeleteArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "DELETE /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
@@ -200,7 +200,7 @@ func (h *Handler) DeleteArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"message": "artist deleted"})
+	writeJSON(w, http.StatusOK, apiMessage("artist deleted"))
 }
 
 // UpdateArtist godoc
@@ -212,11 +212,11 @@ func (h *Handler) DeleteArtist(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Param id path int true "Artist ID"
 // @Param request body UpdateArtistRequest true "Update data"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string "Invalid request or no fields provided"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 404 {object} map[string]string "Artist not found"
-// @Failure 500 {object} map[string]string "Server error"
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ApiErrorResponse "Invalid request or no fields provided"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 404 {object} ApiErrorResponse "Artist not found"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/artists/{id} [put]
 func (h *Handler) UpdateArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "PUT /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
@@ -248,7 +248,7 @@ func (h *Handler) UpdateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"message": "artist updated"})
+	writeJSON(w, http.StatusOK, apiMessage("artist updated"))
 }
 
 // GetArtistAlbums godoc
@@ -259,9 +259,9 @@ func (h *Handler) UpdateArtist(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Param id path int true "Artist ID"
 // @Success 200 {array} models.Album
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 404 {object} map[string]string "Artist not found"
-// @Failure 500 {object} map[string]string "Server error"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 404 {object} ApiErrorResponse "Artist not found"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/artists/{id}/albums [get]
 func (h *Handler) GetArtistAlbums(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/artists/{id}/albums", "method", r.Method, "path", r.URL.Path)

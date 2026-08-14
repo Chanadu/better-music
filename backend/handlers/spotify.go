@@ -26,28 +26,28 @@ const (
 var errSpotifyNotConfigured = errors.New("spotify is not configured")
 
 type SpotifyImage struct {
-	URL    string `json:"url" example:"https://i.scdn.co/image/ab67616d00001e02"`
-	Width  int    `json:"width" example:"640"`
-	Height int    `json:"height" example:"640"`
+	URL    string `json:"url" example:"https://i.scdn.co/image/ab67616d00001e02" validate:"required"`
+	Width  int    `json:"width" example:"640" validate:"required"`
+	Height int    `json:"height" example:"640" validate:"required"`
 }
 
 type SpotifyArtistSearchResult struct {
-	ID     string         `json:"id" example:"4Z8W4fKeB5YxbusRsdQVPb"`
-	Name   string         `json:"name" example:"Radiohead"`
-	Images []SpotifyImage `json:"images"`
+	ID     string         `json:"id" example:"4Z8W4fKeB5YxbusRsdQVPb" validate:"required"`
+	Name   string         `json:"name" example:"Radiohead" validate:"required"`
+	Images []SpotifyImage `json:"images" validate:"required"`
 }
 
 type SpotifyAlbumArtist struct {
-	ID   string `json:"id" example:"4Z8W4fKeB5YxbusRsdQVPb"`
-	Name string `json:"name" example:"Radiohead"`
+	ID   string `json:"id" example:"4Z8W4fKeB5YxbusRsdQVPb" validate:"required"`
+	Name string `json:"name" example:"Radiohead" validate:"required"`
 }
 
 type SpotifyAlbumSearchResult struct {
-	ID          string               `json:"id" example:"6ZG5lRT77aJ3btmArcykra"`
-	Name        string               `json:"name" example:"OK Computer"`
-	Artists     []SpotifyAlbumArtist `json:"artists"`
-	Images      []SpotifyImage       `json:"images"`
-	ReleaseDate string               `json:"release_date" example:"1997-05-21"`
+	ID          string               `json:"id" example:"6ZG5lRT77aJ3btmArcykra" validate:"required"`
+	Name        string               `json:"name" example:"OK Computer" validate:"required"`
+	Artists     []SpotifyAlbumArtist `json:"artists" validate:"required"`
+	Images      []SpotifyImage       `json:"images" validate:"required"`
+	ReleaseDate string               `json:"release_date" example:"1997-05-21" validate:"required"`
 }
 
 type spotifyTokenResponse struct {
@@ -237,10 +237,10 @@ func writeSpotifyError(w http.ResponseWriter, message string, status int, err er
 // @Param q query string true "Search query"
 // @Param limit query int false "Max results (1-10)"
 // @Success 200 {array} handlers.SpotifyArtistSearchResult
-// @Failure 400 {object} map[string]string "Missing or invalid query parameters"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 502 {object} map[string]string "Spotify request failed"
-// @Failure 503 {object} map[string]string "Spotify is not configured"
+// @Failure 400 {object} ApiErrorResponse "Missing or invalid query parameters"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 502 {object} ApiErrorResponse "Spotify request failed"
+// @Failure 503 {object} ApiErrorResponse "Spotify is not configured"
 // @Router /api/spotify/search/artists [get]
 func (h *Handler) SearchSpotifyArtists(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/spotify/search/artists", "method", r.Method, "path", r.URL.Path)
@@ -283,10 +283,10 @@ func (h *Handler) SearchSpotifyArtists(w http.ResponseWriter, r *http.Request) {
 // @Param q query string true "Search query"
 // @Param limit query int false "Max results (1-10)"
 // @Success 200 {array} handlers.SpotifyAlbumSearchResult
-// @Failure 400 {object} map[string]string "Missing or invalid query parameters"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 502 {object} map[string]string "Spotify request failed"
-// @Failure 503 {object} map[string]string "Spotify is not configured"
+// @Failure 400 {object} ApiErrorResponse "Missing or invalid query parameters"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 502 {object} ApiErrorResponse "Spotify request failed"
+// @Failure 503 {object} ApiErrorResponse "Spotify is not configured"
 // @Router /api/spotify/search/albums [get]
 func (h *Handler) SearchSpotifyAlbums(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/spotify/search/albums", "method", r.Method, "path", r.URL.Path)

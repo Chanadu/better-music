@@ -12,14 +12,14 @@ import (
 
 // CreateAlbumRequest represents the request body for creating an album
 type CreateAlbumRequest struct {
-	ArtistID  int     `json:"artist_id" example:"1"`
-	Title     string  `json:"title" example:"Abbey Road"`
+	ArtistID  int     `json:"artist_id" example:"1" validate:"required"`
+	Title     string  `json:"title" example:"Abbey Road" validate:"required"`
 	SpotifyID *string `json:"spotify_id,omitempty" example:"4oDw9mW4Sro2zN1RHzlvOr"`
 }
 
 // UpdateAlbumRequest represents the request body for updating an album
 type UpdateAlbumRequest struct {
-	ArtistID   int     `json:"artist_id" example:"1"`
+	ArtistID   int     `json:"artist_id" example:"1" validate:"required"`
 	Title      *string `json:"title,omitempty" example:"Abbey Road"`
 	CoverURL   *string `json:"cover_url,omitempty" example:"https://example.com/cover.jpg"`
 	Year       *int    `json:"year,omitempty" example:"1969"`
@@ -32,7 +32,7 @@ type UpdateAlbumRequest struct {
 
 // ArtistIDRequest represents a request body with just an artist ID
 type ArtistIDRequest struct {
-	ArtistID int `json:"artist_id" example:"1"`
+	ArtistID int `json:"artist_id" example:"1" validate:"required"`
 }
 
 // GetAlbums godoc
@@ -42,8 +42,8 @@ type ArtistIDRequest struct {
 // @Produce json
 // @Security Bearer
 // @Success 200 {array} models.Album
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 500 {object} map[string]string "Server error"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/albums [get]
 func (h *Handler) GetAlbums(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/albums", "method", r.Method, "path", r.URL.Path)
@@ -92,10 +92,10 @@ func (h *Handler) checkAlbumExistsByID(w http.ResponseWriter, userID int, artist
 // @Param id path int true "Album ID"
 // @Param artist_id query int true "Artist ID"
 // @Success 200 {object} models.Album
-// @Failure 400 {object} map[string]string "Invalid request"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 404 {object} map[string]string "Album or artist not found"
-// @Failure 500 {object} map[string]string "Server error"
+// @Failure 400 {object} ApiErrorResponse "Invalid request"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 404 {object} ApiErrorResponse "Album or artist not found"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/albums/{id} [get]
 func (h *Handler) GetAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
@@ -156,10 +156,10 @@ func (h *Handler) GetAlbum(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Param request body CreateAlbumRequest true "Album data"
 // @Success 201 {object} models.Album
-// @Failure 400 {object} map[string]string "Invalid request"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 409 {object} map[string]string "Album already exists"
-// @Failure 500 {object} map[string]string "Server error"
+// @Failure 400 {object} ApiErrorResponse "Invalid request"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 409 {object} ApiErrorResponse "Album already exists"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/albums [post]
 func (h *Handler) CreateAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/albums", "method", r.Method, "path", r.URL.Path)
@@ -223,11 +223,11 @@ func (h *Handler) CreateAlbum(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Param id path int true "Album ID"
 // @Param request body UpdateAlbumRequest true "Update data"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string "Invalid request or no fields provided"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 404 {object} map[string]string "Album or artist not found"
-// @Failure 500 {object} map[string]string "Server error"
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ApiErrorResponse "Invalid request or no fields provided"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 404 {object} ApiErrorResponse "Album or artist not found"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/albums/{id} [put]
 func (h *Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "PUT /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
@@ -283,7 +283,7 @@ func (h *Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"message": "album updated"})
+	writeJSON(w, http.StatusOK, apiMessage("album updated"))
 }
 
 // DeleteAlbum godoc
@@ -295,11 +295,11 @@ func (h *Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 // @Security Bearer
 // @Param id path int true "Album ID"
 // @Param request body ArtistIDRequest true "Artist ID"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string "Invalid request"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 404 {object} map[string]string "Album or artist not found"
-// @Failure 500 {object} map[string]string "Server error"
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ApiErrorResponse "Invalid request"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 404 {object} ApiErrorResponse "Album or artist not found"
+// @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/albums/{id} [delete]
 func (h *Handler) DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "DELETE /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
@@ -343,5 +343,5 @@ func (h *Handler) DeleteAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"message": "album deleted"})
+	writeJSON(w, http.StatusOK, apiMessage("album deleted"))
 }
