@@ -55,7 +55,9 @@
 	{#if authPage}
 		{@render children()}
 	{:else}
-		<main class="px-4 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom))]">
+		<main
+			class="px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-[calc(6rem+env(safe-area-inset-bottom))]"
+		>
 			{@render children()}
 		</main>
 

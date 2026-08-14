@@ -308,6 +308,7 @@ See [LICENSE](./LICENSE) for the full text.
 
 - [ ] individual artist page
 - [ ] individual album page
+- [ ] gradient of color for ratings
 - [ ] add selecting the artist for album spotify creation
 - [ ] add daisy ui loading to spotify search
 - [ ] add text to the 1-10 ratings in albums

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { database } from '$lib/scripts/database';
-	import MediaThumbnail from '../common/MediaThumbnail.svelte';
 	import type { Album, Artist } from '$lib/scripts/types';
+	import AlbumGridItem from './AlbumGridItem.svelte';
 
 	type Item = { album: Album; artist?: Artist };
 
@@ -50,24 +50,9 @@
 					</div>
 				{/if}
 
-				<div class="grid grid-cols-3 gap-3 px-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+				<div class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
 					{#each group.albums as item}
-						<div class="min-w-0">
-							<MediaThumbnail
-								variant="card"
-								imageUrl={item.album.cover_url ?? ''}
-								label={item.album.title}
-								alt={`${item.album.title} cover`}
-							/>
-
-							<div class="mt-2 text-xs font-semibold text-wrap wrap-break-word">
-								{item.album.title}
-							</div>
-
-							<div class="text-base-content/60 text-xs font-semibold text-wrap wrap-break-word">
-								{item.artist?.name ?? 'Unknown Artist'}
-							</div>
-						</div>
+						<AlbumGridItem album={item.album} subtitle={item.artist?.name ?? 'Unknown Artist'} compact />
 					{/each}
 				</div>
 			</section>

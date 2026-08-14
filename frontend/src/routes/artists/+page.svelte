@@ -1,15 +1,12 @@
 <script lang="ts">
-	import TopNav from '$lib/components/navigation/TopNav.svelte';
 	import SearchBar from '$lib/components/common/SearchBar.svelte';
 	import MediaThumbnail from '$lib/components/common/MediaThumbnail.svelte';
-	import CreateModal from '$lib/components/create/CreateModal.svelte';
+	import CreateFab from '$lib/components/create/CreateFab.svelte';
 	import { database } from '$lib/scripts/database';
 
 	let query = $state('');
 	let sort = $state('rating');
 	let reversed = $state(false);
-	let dialog = $state<HTMLDialogElement>();
-	let modalOpen = $state(false);
 
 	function chooseSort(event: Event) {
 		sort = (event.currentTarget as HTMLInputElement).value;
@@ -59,7 +56,6 @@
 	];
 </script>
 
-<TopNav breadcrumbs={['Artists']} />
 <div class="navbar flex gap-2">
 	<SearchBar placeholder="artist name..." bind:value={query} />
 
@@ -150,16 +146,4 @@
 	</ul>
 {/if}
 
-<div class="fab pb-[calc(4.5rem+env(safe-area-inset-bottom))]" class:hidden={modalOpen}>
-	<button
-		class="btn btn-lg btn-circle btn-accent"
-		onclick={() => {
-			modalOpen = true;
-			dialog?.showModal();
-		}}
-	>
-		+
-	</button>
-</div>
-
-<CreateModal type="artist" bind:dialog onclose={() => (modalOpen = false)} />
+<CreateFab type="artist" />

@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
+
 	const items = [
 		{ href: '/', label: 'Home', icon: 'M3 12h18M5 12v7h14v-7M7 9l5-5 5 5' },
 		{
 			href: '/albums',
 			label: 'Albums',
-			icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 12a5 5 0 0 1 5-5M17 12a5 5 0 0 1-5 5',
+			icon: '',
 		},
 		{
 			href: '/artists',
@@ -21,7 +23,7 @@
 	];
 </script>
 
-<nav class="dock dock-lg">
+<nav class="dock dock-sm sm:dock-lg">
 	{#each items as item}
 		{@const isActive = page.url.pathname === item.href}
 		<a
@@ -29,17 +31,21 @@
 			class={isActive ? 'dock-active text-secondary' : 'text-primary'}
 			aria-current={isActive ? 'page' : undefined}
 		>
-			<svg
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				class="h-5 w-5"
-			>
-				<path d={item.icon}></path>
-			</svg>
+			{#if item.href === '/albums'}
+				<AlbumIcon class="h-5 w-5" />
+			{:else}
+				<svg
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="h-5 w-5"
+				>
+					<path d={item.icon}></path>
+				</svg>
+			{/if}
 			<span class="dock-label">{item.label}</span>
 		</a>
 	{/each}
