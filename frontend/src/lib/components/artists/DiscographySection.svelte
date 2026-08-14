@@ -1,18 +1,18 @@
 <script lang="ts">
 	import AddAlbumCard from '$lib/components/albums/AddAlbumCard.svelte';
 	import AlbumCard from '$lib/components/albums/AlbumCard.svelte';
-	import StarIcon from '$lib/components/icons/StarIcon.svelte';
+	import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
 	import GridIcon from '$lib/components/icons/GridIcon.svelte';
 	import type { Album } from '$lib/scripts/types';
 
-	type Filter = 'all' | 'rated' | 'unrated';
+	type Filter = 'all' | 'listened' | 'unlistened';
 
 	let { albums, onadd }: { albums: Album[]; onadd?: () => void } = $props();
 	let filter = $state<Filter>('all');
 	let filteredAlbums = $derived(
 		albums.filter((album) => {
-			if (filter === 'rated') return typeof album.rating === 'number';
-			if (filter === 'unrated') return typeof album.rating !== 'number';
+			if (filter === 'listened') return album.listened;
+			if (filter === 'unlistened') return !album.listened;
 			return true;
 		}),
 	);
@@ -36,17 +36,17 @@
 			<label
 				class="join-item btn btn-outline btn-primary btn-sm sm:btn-md has-checked:bg-primary has-checked:text-primary-content gap-1.5 px-3 sm:px-4"
 			>
-				<input class="sr-only" type="radio" name="discography-filter" value="rated" bind:group={filter} />
-				<StarIcon class="size-3.5" filled />
-				Rated
+				<input class="sr-only" type="radio" name="discography-filter" value="listened" bind:group={filter} />
+				<CheckIcon class="size-3.5" />
+				Listened
 			</label>
 
 			<label
 				class="join-item btn btn-outline btn-primary btn-sm sm:btn-md has-checked:bg-primary has-checked:text-primary-content gap-1.5 px-3 sm:px-4"
 			>
-				<input class="sr-only" type="radio" name="discography-filter" value="unrated" bind:group={filter} />
-				<StarIcon class="size-3.5" />
-				Not Rated
+				<input class="sr-only" type="radio" name="discography-filter" value="unlistened" bind:group={filter} />
+				<CheckIcon class="size-3.5 opacity-40" />
+				Not Listened
 			</label>
 		</fieldset>
 	</div>

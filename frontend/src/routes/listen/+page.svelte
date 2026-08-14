@@ -2,4 +2,4 @@
 	import AlbumPage from '$lib/components/albums/AlbumPage.svelte';
 </script>
 
-<AlbumPage mode="unrated" />
+<AlbumPage mode="unlistened" />

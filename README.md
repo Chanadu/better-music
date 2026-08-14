@@ -307,6 +307,9 @@ See [LICENSE](./LICENSE) for the full text.
 ## TODO
 
 - [ ] individual album page
+- [ ] album/artist edit menus
+- [ ] more page
+- [ ] home page
 - [ ] gradient of color for ratings
 - [ ] add selecting the artist for album spotify creation
 - [ ] add daisy ui loading to spotify search

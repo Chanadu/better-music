@@ -4,6 +4,7 @@
 	import ArtistHero from '$lib/components/artists/ArtistHero.svelte';
 	import ArtistStat from '$lib/components/artists/ArtistStat.svelte';
 	import DiscographySection from '$lib/components/artists/DiscographySection.svelte';
+	import CreateAlbumModal from '$lib/components/create/CreateAlbumModal.svelte';
 	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
 	import CalendarIcon from '$lib/components/icons/CalendarIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
@@ -14,6 +15,7 @@
 
 	let artist = $state<Artist>();
 	let status = $state('Loading artist...');
+	let albumDialog = $state<HTMLDialogElement>();
 
 	let albums = $derived(
 		$database?.albums
@@ -86,5 +88,6 @@
 		/>
 	</section>
 
-	<DiscographySection {albums} />
+	<DiscographySection {albums} onadd={() => albumDialog?.showModal()} />
+	<CreateAlbumModal bind:dialog={albumDialog} initialArtistId={artist.id} />
 {/if}

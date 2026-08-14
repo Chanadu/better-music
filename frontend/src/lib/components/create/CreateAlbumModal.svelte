@@ -7,7 +7,15 @@
 	import { fetchDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
 	import type { Artist, SpotifyRow as Row } from '$lib/scripts/types';
 
-	let { dialog = $bindable(), onclose }: { dialog?: HTMLDialogElement; onclose?: () => void } = $props();
+	let {
+		dialog = $bindable(),
+		onclose,
+		initialArtistId,
+	}: {
+		dialog?: HTMLDialogElement;
+		onclose?: () => void;
+		initialArtistId?: number;
+	} = $props();
 
 	let tab = $state<'manual' | 'spotify'>('manual');
 	let name = $state('');
@@ -36,6 +44,10 @@
 	);
 
 	$effect(() => {
+		if (initialArtistId && !artistId) artistId = initialArtistId.toString();
+	});
+
+	$effect(() => {
 		fetchDatabaseData()
 			.then((data) => (artists = data.artists))
 			.catch((e) => (error = formatError(e, 'Failed to load artists')));
@@ -51,7 +63,7 @@
 		name = '';
 		selected = undefined;
 		error = '';
-		artistId = '';
+		artistId = initialArtistId?.toString() ?? '';
 		year = '';
 		comment = '';
 		listened = false;

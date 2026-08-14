@@ -5,13 +5,13 @@
 
 	type Item = { album: Album; artist?: Artist };
 
-	let { mode, query = '' }: { mode: 'rated' | 'unrated'; query?: string } = $props();
+	let { mode, query = '' }: { mode: 'listened' | 'unlistened'; query?: string } = $props();
 
 	let items = $derived.by(() => {
 		if (!$database) return [];
 		const artists = new Map($database.artists.map((artist) => [artist.id, artist]));
 		return $database.albums
-			.filter((album) => (typeof album.rating === 'number') === (mode === 'rated'))
+			.filter((album) => album.listened === (mode === 'listened'))
 			.map((album) => ({ album, artist: artists.get(album.artist_id) }))
 			.filter(
 				({ album, artist }) =>
@@ -22,14 +22,17 @@
 	});
 
 	let groups = $derived.by(() => {
-		if (mode === 'unrated') return [{ rating: undefined, albums: items }];
-		const map = new Map<number, Item[]>();
-		for (const item of items) map.set(item.album.rating ?? 0, [...(map.get(item.album.rating ?? 0) ?? []), item]);
-		return [...map].sort(([a], [b]) => b - a).map(([rating, albums]) => ({ rating, albums }));
+		if (mode === 'unlistened') return [{ rating: undefined, albums: items }];
+		const map = new Map<number | undefined, Item[]>();
+		for (const item of items) {
+			const rating = item.album.rating;
+			map.set(rating, [...(map.get(rating) ?? []), item]);
+		}
+		return [...map].sort(([a], [b]) => (b ?? -1) - (a ?? -1)).map(([rating, albums]) => ({ rating, albums }));
 	});
 </script>
 
-{#if mode === 'unrated' || items.length === 0}
+{#if mode === 'unlistened' || items.length === 0}
 	<div class="divider mt-2 mb-0"></div>
 {/if}
 
@@ -40,12 +43,12 @@
 		{query ? `No ${mode} albums match your search.` : `No ${mode} albums yet.`}
 	</div>
 {:else}
-	<div class={mode === 'unrated' ? 'mt-4' : ''}>
+	<div class={mode === 'unlistened' ? 'mt-4' : ''}>
 		{#each groups as group}
 			<section class="pt-0 pb-2">
-				{#if group.rating !== undefined}
+				{#if mode === 'listened'}
 					<div class="divider divider-center divider-primary text-xl">
-						{group.rating}/10 • {group.albums.length}
+						{group.rating === undefined ? 'Unrated' : `${group.rating}/10`} • {group.albums.length}
 						{group.albums.length === 1 ? 'album' : 'albums'}
 					</div>
 				{/if}

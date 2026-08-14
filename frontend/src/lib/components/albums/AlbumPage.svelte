@@ -2,7 +2,7 @@
 	import SearchBar from '../common/SearchBar.svelte';
 	import AlbumGrid from './AlbumGrid.svelte';
 	import CreateFab from '../create/CreateFab.svelte';
-	let { mode }: { mode: 'rated' | 'unrated' } = $props();
+	let { mode }: { mode: 'listened' | 'unlistened' } = $props();
 	let query = $state('');
 </script>
 

@@ -31,7 +31,7 @@
 		<select class="select w-full" bind:value={artistId}>
 			<option value="">Select artist</option>
 			{#each artists as artist}
-				<option value={artist.id}>{artist.name}</option>
+				<option value={artist.id.toString()}>{artist.name}</option>
 			{/each}
 		</select>
 	</FloatingField>
