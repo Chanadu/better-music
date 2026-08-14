@@ -76,7 +76,7 @@
 {:else if artist}
 	<ArtistHero {artist} />
 
-	<section class="mt-4 grid grid-cols-3" aria-label="Artist stats">
+	<section class="stats bg-base-200 mt-4 grid grid-cols-3 shadow-sm" aria-label="Artist stats">
 		<ArtistStat value={albums.length} label="Albums" icon={AlbumIcon} />
 		<ArtistStat value={addedDate} label="Added" icon={CalendarIcon} />
 		<ArtistStat
