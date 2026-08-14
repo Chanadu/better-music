@@ -1,4 +1,5 @@
 ---
+import MediaThumbnail from '../../common/MediaThumbnail.astro';
 import FloatingInput from '../../FloatingInput.astro';
 ---
 
@@ -12,11 +13,13 @@ import FloatingInput from '../../FloatingInput.astro';
 
 		<div class='flex items-center gap-4'>
 			<div class='basis-1/3 pt-3'>
-				<div
-					class='rounded-box bg-base-300 flex aspect-square w-full items-center justify-center text-4xl font-semibold'
-				>
-					<span data-manual-album-preview-initial></span>
-				</div>
+				<MediaThumbnail
+					variant='album-preview'
+					label=''
+					alt=''
+					emptyFallback=''
+					dataId='manual-album-preview'
+				/>
 			</div>
 
 			<div class='flex min-w-0 flex-1 flex-col gap-3'>

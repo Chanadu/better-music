@@ -1,5 +1,6 @@
 ---
-import Filter from '../components/artists/Filter.astro';
+import Filter from '../components/common/Filter.astro';
+import MediaThumbnail from '../components/common/MediaThumbnail.astro';
 import SearchBar from '../components/nav/SearchBar.astro';
 import TopNav from '../components/nav/TopNav.astro';
 import AddButton from '../components/AddButton.astro';
@@ -32,15 +33,7 @@ const sortOptions = [
 	<template data-artist-list-item-template>
 		<li class='p-0'>
 			<a data-artist-link class='list-row hover:bg-base-300 rounded-box transition-colors'>
-				<div>
-					<img data-artist-image class='rounded-box size-10 shrink-0 object-cover' src='' alt='' />
-					<div
-						data-artist-fallback
-						class='rounded-box bg-base-300 flex size-10 shrink-0 items-center justify-center text-sm font-semibold'
-						hidden
-					>
-					</div>
-				</div>
+				<MediaThumbnail variant='list' imageUrl='' label='' alt='' />
 				<div>
 					<div data-artist-name></div>
 					<div data-artist-meta class='text-base-content/60 text-xs font-semibold uppercase'></div>
@@ -125,35 +118,14 @@ const sortOptions = [
 			year: '2-digit',
 		}).format(new Date(artist.created_at));
 
-		const image = row.querySelector<HTMLImageElement>('[data-artist-image]');
-		const fallback = row.querySelector<HTMLElement>('[data-artist-fallback]');
+		const thumbnail = row.querySelector<HTMLElement>('[data-media-thumbnail]');
 		const link = row.querySelector<HTMLAnchorElement>('[data-artist-link]');
 		const name = row.querySelector<HTMLElement>('[data-artist-name]');
 		const meta = row.querySelector<HTMLElement>('[data-artist-meta]');
 
-		if (artist.cover_url) {
-			if (image) {
-				image.src = artist.cover_url;
-				image.alt = `${artist.name} artist image`;
-				image.hidden = false;
-			}
-
-			if (fallback) {
-				fallback.hidden = true;
-				fallback.textContent = '';
-			}
-		} else {
-			if (image) {
-				image.hidden = true;
-				image.removeAttribute('src');
-				image.alt = '';
-			}
-
-			if (fallback) {
-				fallback.hidden = false;
-				fallback.textContent = artist.name.trim().charAt(0).toUpperCase() || '?';
-			}
-		}
+		thumbnail?.setAttribute('image-url', artist.cover_url ?? '');
+		thumbnail?.setAttribute('label', artist.name);
+		thumbnail?.setAttribute('alt', `${artist.name} artist image`);
 
 		const metaParts = [`${albumCount} ${albumCount === 1 ? 'Album' : 'Albums'}`];
 

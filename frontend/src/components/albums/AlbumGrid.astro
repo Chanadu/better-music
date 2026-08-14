@@ -54,32 +54,13 @@ const { mode } = Astro.props;
 				return missingCard;
 			}
 
-			const image = card.querySelector<HTMLImageElement>('[data-album-cover]');
-			const fallback = card.querySelector<HTMLElement>('[data-album-fallback]');
+			const thumbnail = card.querySelector<HTMLElement>('[data-media-thumbnail]');
 			const title = card.querySelector<HTMLElement>('[data-album-title]');
 			const artistName = card.querySelector<HTMLElement>('[data-album-artist]');
 
-			if (album.cover_url) {
-				if (image) {
-					image.src = album.cover_url;
-					image.alt = `${album.title} cover`;
-					image.hidden = false;
-				}
-				if (fallback) {
-					fallback.hidden = true;
-					fallback.textContent = '';
-				}
-			} else {
-				if (image) {
-					image.hidden = true;
-					image.removeAttribute('src');
-					image.alt = '';
-				}
-				if (fallback) {
-					fallback.hidden = false;
-					fallback.textContent = album.title.trim().charAt(0).toUpperCase() || '?';
-				}
-			}
+			thumbnail?.setAttribute('image-url', album.cover_url ?? '');
+			thumbnail?.setAttribute('label', album.title);
+			thumbnail?.setAttribute('alt', `${album.title} cover`);
 
 			if (title) title.textContent = album.title;
 			if (artistName) artistName.textContent = artist?.name ?? 'Unknown Artist';

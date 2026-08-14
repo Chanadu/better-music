@@ -1,0 +1,133 @@
+---
+interface Props {
+	imageUrl?: string;
+	alt?: string;
+	label?: string;
+	fallbackText?: string;
+	emptyFallback?: string;
+	variant?: 'card' | 'list' | 'result' | 'artist-preview' | 'album-preview';
+	class?: string;
+	dataId?: string;
+}
+
+const {
+	imageUrl = '',
+	alt = '',
+	label = '',
+	fallbackText,
+	emptyFallback = '?',
+	variant = 'list',
+	class: className = '',
+	dataId,
+} = Astro.props;
+
+const resolvedFallbackText = fallbackText ?? (label.trim().charAt(0).toUpperCase() || emptyFallback);
+
+const variantClasses = {
+	card: 'aspect-square w-full text-3xl',
+	list: 'size-10 shrink-0 text-sm',
+	result: 'size-10 shrink-0 text-sm',
+	'artist-preview': 'size-44 text-5xl sm:size-56 sm:text-6xl',
+	'album-preview': 'aspect-square w-full text-4xl',
+};
+---
+
+<media-thumbnail
+	class:list={['block overflow-hidden', variantClasses[variant], className]}
+	image-url={imageUrl}
+	alt={alt}
+	label={label}
+	fallback-text={fallbackText}
+	empty-fallback={emptyFallback}
+	data-media-thumbnail
+	data-thumbnail-id={dataId}
+>
+	<img
+		class='rounded-box bg-base-300 size-full object-cover'
+		src={imageUrl || undefined}
+		alt={imageUrl ? alt : ''}
+		hidden={!imageUrl}
+		data-media-thumbnail-image
+	/>
+	<div
+		class='rounded-box bg-base-300 flex size-full items-center justify-center font-semibold'
+		hidden={Boolean(imageUrl)}
+		role={!imageUrl && resolvedFallbackText ? 'img' : undefined}
+		aria-label={!imageUrl && resolvedFallbackText ? alt : undefined}
+		aria-hidden={!imageUrl && !resolvedFallbackText ? 'true' : undefined}
+		data-media-thumbnail-fallback
+	>
+		{resolvedFallbackText}
+	</div>
+</media-thumbnail>
+
+<script>
+	class MediaThumbnailElement extends HTMLElement {
+		static observedAttributes = ['image-url', 'alt', 'label', 'fallback-text', 'empty-fallback'];
+
+		connectedCallback() {
+			this.render();
+		}
+
+		attributeChangedCallback() {
+			if (this.isConnected) this.render();
+		}
+
+		private render() {
+			const image = this.querySelector<HTMLImageElement>('[data-media-thumbnail-image]');
+			const fallback = this.querySelector<HTMLElement>('[data-media-thumbnail-fallback]');
+			const imageUrl = this.getAttribute('image-url')?.trim() ?? '';
+			const alt = this.getAttribute('alt') ?? '';
+			const label = this.getAttribute('label') ?? '';
+			const emptyFallback = this.getAttribute('empty-fallback') ?? '?';
+			const fallbackText =
+				this.getAttribute('fallback-text') ?? (label.trim().charAt(0).toUpperCase() || emptyFallback);
+
+			const showFallback = () => {
+				if (image) {
+					image.hidden = true;
+					image.removeAttribute('src');
+					image.alt = '';
+				}
+
+				if (fallback) {
+					fallback.hidden = false;
+					fallback.textContent = fallbackText;
+					fallback.toggleAttribute('aria-hidden', !fallbackText);
+
+					if (fallbackText) {
+						fallback.setAttribute('role', 'img');
+						fallback.setAttribute('aria-label', alt);
+					} else {
+						fallback.removeAttribute('role');
+						fallback.removeAttribute('aria-label');
+					}
+				}
+			};
+
+			if (!imageUrl) {
+				showFallback();
+				return;
+			}
+
+			if (image) {
+				image.onerror = showFallback;
+				image.src = imageUrl;
+				image.alt = alt;
+				image.hidden = false;
+			}
+
+			if (fallback) {
+				fallback.hidden = true;
+				fallback.textContent = '';
+				fallback.removeAttribute('aria-hidden');
+				fallback.removeAttribute('aria-label');
+				fallback.removeAttribute('role');
+			}
+		}
+	}
+
+	if (!customElements.get('media-thumbnail')) {
+		customElements.define('media-thumbnail', MediaThumbnailElement);
+	}
+</script>

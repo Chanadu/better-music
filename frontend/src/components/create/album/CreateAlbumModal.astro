@@ -57,7 +57,7 @@ import SpotifySearchSection from '../SpotifySearchSection.astro';
 	const listenedFields = document.querySelector<HTMLElement>('[data-manual-album-listened-fields]');
 	const ratingMarkers = document.querySelectorAll<HTMLElement>('[data-rating-marker]');
 	const ratingValues = document.querySelectorAll<HTMLElement>('[data-rating-value]');
-	const albumPreviewInitial = document.querySelector<HTMLElement>('[data-manual-album-preview-initial]');
+	const albumPreview = document.querySelector<HTMLElement>('[data-thumbnail-id="manual-album-preview"]');
 	const errorAlert = createErrorAlert();
 	let isSavingAlbum = false;
 	let latestArtists: Artist[] = [];
@@ -149,9 +149,9 @@ import SpotifySearchSection from '../SpotifySearchSection.astro';
 	};
 
 	const updateAlbumPreview = () => {
-		if (!albumPreviewInitial) return;
-
-		albumPreviewInitial.textContent = fields.title?.value.trim().charAt(0).toUpperCase() ?? '';
+		const title = fields.title?.value.trim() ?? '';
+		albumPreview?.setAttribute('label', title);
+		albumPreview?.setAttribute('alt', title ? `${title} album preview` : '');
 	};
 
 	const getAlbumMetadata = () => ({

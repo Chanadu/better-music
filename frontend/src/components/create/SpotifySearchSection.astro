@@ -1,4 +1,5 @@
 ---
+import MediaThumbnail from '../common/MediaThumbnail.astro';
 import SearchBar from '../nav/SearchBar.astro';
 
 interface Props {
@@ -19,18 +20,9 @@ const resultCount = type === 'artist' ? 5 : 3;
 					<label class='block cursor-default'>
 						<input type='radio' name={`spotify_${type}`} class='peer sr-only' disabled />
 						<div class='list-row hover:bg-base-300/50 peer-checked:bg-primary peer-checked:text-primary-content peer-checked:hover:bg-primary peer-checked:hover:text-primary-content items-center'>
-							<img
-								data-spotify-image
-								class='rounded-box bg-base-300 peer-checked:bg-primary-content/20 size-10 shrink-0 object-cover'
-								src=''
-								alt=''
-								hidden
-							/>
-							<div
-								data-spotify-image-fallback
-								class='rounded-box bg-base-300 peer-checked:bg-primary-content/20 size-10 shrink-0'
-							/>
+							<MediaThumbnail variant='result' alt='' fallbackText='' />
 							<div class='min-w-0'>
+								<span data-spotify-row-loading class='loading loading-dots loading-md' hidden />
 								<div data-spotify-name class='text-base-content/35 truncate'>
 									Start searching...
 								</div>
@@ -108,8 +100,7 @@ const resultCount = type === 'artist' ? 5 : 3;
 			} = data;
 			const label = row.querySelector<HTMLLabelElement>('label');
 			const input = row.querySelector<HTMLInputElement>('input[type="radio"]');
-			const image = row.querySelector<HTMLImageElement>('[data-spotify-image]');
-			const fallback = row.querySelector<HTMLElement>('[data-spotify-image-fallback]');
+			const thumbnail = row.querySelector<HTMLElement>('[data-media-thumbnail]');
 			const nameElement = row.querySelector<HTMLElement>('[data-spotify-name]');
 			const metaElement = row.querySelector<HTMLElement>('[data-spotify-meta]');
 
@@ -137,14 +128,13 @@ const resultCount = type === 'artist' ? 5 : 3;
 			label?.classList.toggle('cursor-pointer', !disabled);
 			label?.classList.toggle('cursor-default', disabled);
 
-			if (image && fallback) {
-				const hasImage = Boolean(imageUrl);
-				image.hidden = !hasImage;
-				fallback.hidden = hasImage;
-				if (hasImage) {
-					image.src = imageUrl;
-					image.alt = `${name} ${type} image`;
-				}
+			thumbnail?.setAttribute('image-url', imageUrl ?? '');
+			thumbnail?.setAttribute('label', name);
+			thumbnail?.setAttribute('alt', `${name} ${type} image`);
+			if (disabled) {
+				thumbnail?.setAttribute('fallback-text', '');
+			} else {
+				thumbnail?.removeAttribute('fallback-text');
 			}
 
 			if (nameElement) nameElement.textContent = name;
@@ -161,12 +151,32 @@ const resultCount = type === 'artist' ? 5 : 3;
 			}
 		};
 
+		const setLoading = (isLoading: boolean) => {
+			resultsList?.setAttribute('aria-busy', String(isLoading));
+			rows.forEach((row) => {
+				const loadingIndicator = row.querySelector<HTMLElement>('[data-spotify-row-loading]');
+				const nameElement = row.querySelector<HTMLElement>('[data-spotify-name]');
+				const metaElement = row.querySelector<HTMLElement>('[data-spotify-meta]');
+
+				if (loadingIndicator) loadingIndicator.hidden = !isLoading;
+				if (nameElement) nameElement.hidden = isLoading;
+				if (metaElement) metaElement.hidden = isLoading;
+			});
+		};
+
+		const renderLoading = () => {
+			rows.forEach((row, index) => updateRow(row, { id: `loading-${index}`, name: '', disabled: true }));
+			setLoading(true);
+		};
+
 		const renderMessage = (message: string) => {
+			setLoading(false);
 			rows.forEach((row, index) => updateRow(row, { id: `placeholder-${index}`, name: message, disabled: true }));
 			keepSelectionVisible(0);
 		};
 
 		const renderResults = (results: RowData[]) => {
+			setLoading(false);
 			const visibleResults =
 				selected && !results.some(({ id }) => id === selected?.id) ? results.slice(0, -1) : results;
 			rows.forEach((row, index) =>
@@ -180,7 +190,7 @@ const resultCount = type === 'artist' ? 5 : 3;
 			const requestId = ++latestRequest;
 			if (!query) return renderMessage('Start searching...');
 
-			renderMessage('Searching Spotify...');
+			renderLoading();
 			try {
 				const results = await searchSpotify(type, query, rows.length);
 				if (requestId !== latestRequest) return;
