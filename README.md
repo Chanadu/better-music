@@ -294,3 +294,4 @@ See [LICENSE](./LICENSE) for the full text.
 - [ ] add daisy ui loading to spotify search
 - [ ] add text to the 1-10 ratings in albums
 - [ ] skeletons
+- [ ] spotify shuffling with shortcut
