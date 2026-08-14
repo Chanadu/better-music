@@ -10,6 +10,8 @@
 		"build": "astro build",
 		"preview": "astro preview",
 		"astro": "astro",
+		"api:types": "node scripts/generate-api-types.mjs",
+		"api:types:check": "npm run api:types -- --check",
 		"format": "prettier --write .",
 		"format:check": "prettier --check ."
 	},
