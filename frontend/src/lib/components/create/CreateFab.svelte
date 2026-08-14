@@ -1,5 +1,6 @@
 <script lang="ts">
-	import CreateModal from './CreateModal.svelte';
+	import CreateAlbumModal from './CreateAlbumModal.svelte';
+	import CreateArtistModal from './CreateArtistModal.svelte';
 
 	let { type }: { type: 'artist' | 'album' } = $props();
 	let dialog = $state<HTMLDialogElement>();
@@ -20,4 +21,8 @@
 	</button>
 </div>
 
-<CreateModal {type} bind:dialog onclose={() => (modalOpen = false)} />
+{#if type === 'artist'}
+	<CreateArtistModal bind:dialog onclose={() => (modalOpen = false)} />
+{:else}
+	<CreateAlbumModal bind:dialog onclose={() => (modalOpen = false)} />
+{/if}

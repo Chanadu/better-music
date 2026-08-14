@@ -1,6 +1,6 @@
 <script lang="ts">
 	import SearchBar from '$lib/components/common/SearchBar.svelte';
-	import MediaThumbnail from '$lib/components/common/MediaThumbnail.svelte';
+	import ArtistListItem from '$lib/components/artists/ArtistListItem.svelte';
 	import CreateFab from '$lib/components/create/CreateFab.svelte';
 	import { database } from '$lib/scripts/database';
 
@@ -108,40 +108,7 @@
 {:else}
 	<ul class="list bg-base-200 rounded-box mt-4 shadow-md">
 		{#each items as item}
-			<li class="p-0">
-				<a
-					href={`/artist?id=${item.artist.id}`}
-					class="list-row hover:bg-base-300 rounded-box transition-colors"
-					aria-label={`Open ${item.artist.name}`}
-				>
-					<MediaThumbnail
-						variant="list"
-						imageUrl={item.artist.cover_url ?? ''}
-						label={item.artist.name}
-						alt={`${item.artist.name} artist image`}
-					/>
-
-					<div>
-						<div>{item.artist.name}</div>
-
-						<div class="text-base-content/60 text-xs font-semibold uppercase">
-							{item.albumCount}
-
-							{item.albumCount === 1 ? 'Album' : 'Albums'}
-
-							{#if item.averageRating !== null}
-								• Avg {item.averageRating.toFixed(1)}
-							{/if}
-
-							• Added {new Intl.DateTimeFormat(undefined, {
-								month: '2-digit',
-								day: '2-digit',
-								year: '2-digit',
-							}).format(new Date(item.artist.created_at))}
-						</div>
-					</div>
-				</a>
-			</li>
+			<ArtistListItem {...item} />
 		{/each}
 	</ul>
 {/if}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { database } from '$lib/scripts/database';
 	import type { Album, Artist } from '$lib/scripts/types';
-	import AlbumGridItem from './AlbumGridItem.svelte';
+	import AlbumCard from './AlbumCard.svelte';
 
 	type Item = { album: Album; artist?: Artist };
 
@@ -52,7 +52,7 @@
 
 				<div class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
 					{#each group.albums as item}
-						<AlbumGridItem album={item.album} subtitle={item.artist?.name ?? 'Unknown Artist'} compact />
+						<AlbumCard album={item.album} subtitle={item.artist?.name ?? 'Unknown Artist'} compact />
 					{/each}
 				</div>
 			</section>

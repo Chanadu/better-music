@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Artist } from '$lib/scripts/types';
+	import EditIcon from '../icons/EditIcon.svelte';
 
 	let { artist, onedit }: { artist: Artist; onedit?: () => void } = $props();
 	let imageFailed = $state(false);
@@ -45,9 +46,6 @@
 		aria-label="Edit artist"
 		onclick={onedit}
 	>
-		<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-			<path d="M12 20h9"></path>
-			<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
-		</svg>
+		<EditIcon class="size-5" />
 	</button>
 </section>

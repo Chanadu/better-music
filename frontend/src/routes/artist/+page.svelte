@@ -7,6 +7,7 @@
 	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
 	import CalendarIcon from '$lib/components/icons/CalendarIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
+	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { ApiError, artistsApi } from '$lib/scripts/api';
 	import { database } from '$lib/scripts/database';
 	import type { Artist } from '$lib/scripts/types';
@@ -64,16 +65,7 @@
 		{:else}
 			<div class="text-center">
 				<div class="bg-base-200 mx-auto mb-4 flex size-14 items-center justify-center rounded-full">
-					<svg
-						class="text-base-content/50 size-6"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<circle cx="12" cy="12" r="9"></circle>
-						<path d="M9 9h.01M15 9h.01M8 16c1-1.3 2.3-2 4-2s3 .7 4 2"></path>
-					</svg>
+					<SadFaceIcon class="text-base-content/50 size-6" />
 				</div>
 
 				<p class="text-base-content/60">{status}</p>

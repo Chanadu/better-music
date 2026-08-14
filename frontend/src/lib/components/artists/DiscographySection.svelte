@@ -1,6 +1,8 @@
 <script lang="ts">
-	import AlbumGridItem from '$lib/components/albums/AlbumGridItem.svelte';
+	import AddAlbumCard from '$lib/components/albums/AddAlbumCard.svelte';
+	import AlbumCard from '$lib/components/albums/AlbumCard.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
+	import GridIcon from '$lib/components/icons/GridIcon.svelte';
 	import type { Album } from '$lib/scripts/types';
 
 	type Filter = 'all' | 'rated' | 'unrated';
@@ -27,21 +29,7 @@
 				class="join-item btn btn-outline btn-primary btn-sm sm:btn-md has-checked:bg-primary has-checked:text-primary-content gap-1.5 px-3 sm:px-4"
 			>
 				<input class="sr-only" type="radio" name="discography-filter" value="all" bind:group={filter} />
-				<svg
-					class="size-3.5"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.8"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					aria-hidden="true"
-				>
-					<rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"></rect>
-					<rect x="14" y="3.5" width="6.5" height="6.5" rx="1"></rect>
-					<rect x="3.5" y="14" width="6.5" height="6.5" rx="1"></rect>
-					<rect x="14" y="14" width="6.5" height="6.5" rx="1"></rect>
-				</svg>
+				<GridIcon class="size-3.5" />
 				All
 			</label>
 
@@ -65,13 +53,13 @@
 
 	<div class="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 		{#each filteredAlbums as album}
-			<AlbumGridItem
+			<AlbumCard
 				{album}
 				subtitle={`${album.year ?? 'Year unknown'}${album.listened ? ' · Listened' : ''}`}
 				showRating
 			/>
 		{/each}
 
-		<AlbumGridItem add subtitle="New release" onclick={onadd} />
+		<AddAlbumCard subtitle="New release" onclick={onadd} />
 	</div>
 </section>

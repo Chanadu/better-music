@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SearchIcon from '../icons/SearchIcon.svelte';
+
 	let { placeholder = 'Search', value = $bindable('') }: { placeholder?: string; value?: string } = $props();
 </script>
 
@@ -8,17 +10,7 @@
 	</span>
 
 	<label class="input input-md input-primary text-primary flex w-full items-center gap-2">
-		<svg
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			class="h-4 w-4 shrink-0"
-			aria-hidden="true"
-		>
-			<circle cx="11" cy="11" r="7"></circle>
-			<path d="m21 21-4.3-4.3"></path>
-		</svg>
+		<SearchIcon class="h-4 w-4 shrink-0" />
 		<input type="search" class="grow" {placeholder} bind:value />
 	</label>
 </div>
