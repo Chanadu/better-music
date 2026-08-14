@@ -45,7 +45,7 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 </BaseModal>
 
 <script>
-	import { albumsApi, artistsApi } from '../../../scripts/api';
+	import { albumsApi, artistsApi, spotifyApi } from '../../../scripts/api';
 	import { fetchDatabaseData, refreshDatabaseData } from '../../../scripts/database';
 	import { createErrorAlert } from '../../../scripts/error-alert';
 	import type { Artist } from '../../../scripts/api-types';
@@ -194,8 +194,33 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 
 		if (existingArtist) return existingArtist;
 
+		let cover_url: string | undefined;
+
+		if (spotify_id) {
+			try {
+				const spotifyArtists = await spotifyApi.searchArtists(name, 10);
+				const matchingArtist = spotifyArtists.find((artist) => artist.id === spotify_id);
+				cover_url = matchingArtist?.images[0]?.url;
+
+				if (!matchingArtist) {
+					console.warn(
+						`Spotify artist search returned no match for "${name}" with ID "${spotify_id}".`,
+						spotifyArtists,
+					);
+				} else if (!cover_url) {
+					console.warn(
+						`Spotify artist "${name}" with ID "${spotify_id}" has no cover image.`,
+						matchingArtist,
+					);
+				}
+			} catch (error) {
+				console.warn('Could not fetch the Spotify artist cover image.', error);
+			}
+		}
+
 		const createdArtist = await artistsApi.create({
 			name,
+			cover_url,
 			spotify_id,
 		});
 
