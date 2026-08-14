@@ -1,18 +1,30 @@
 import type { TokenResponse } from './types';
+import { clearStoredDatabaseCaches } from './database-cache';
 
 const keys = {
 	access: 'betterMusicAccessToken',
 	refresh: 'betterMusicRefreshToken',
 	expires: 'betterMusicAccessTokenExpiresAt',
+	userId: 'betterMusicUserId',
+};
+
+export const getCurrentUserId = () => {
+	const userId = Number(localStorage.getItem(keys.userId));
+
+	return Number.isInteger(userId) && userId > 0 ? userId : null;
 };
 
 export const saveTokens = (tokens: TokenResponse) => {
 	localStorage.setItem(keys.access, tokens.access_token);
 	localStorage.setItem(keys.refresh, tokens.refresh_token);
 	localStorage.setItem(keys.expires, String(Date.now() + tokens.expires_in * 1000));
+	localStorage.setItem(keys.userId, String(tokens.user_id));
 };
 
-export const clearTokens = () => Object.values(keys).forEach((key) => localStorage.removeItem(key));
+export const clearTokens = () => {
+	Object.values(keys).forEach((key) => localStorage.removeItem(key));
+	clearStoredDatabaseCaches();
+};
 
 const requestRefresh = async () => {
 	const refreshToken = localStorage.getItem(keys.refresh);
@@ -41,6 +53,11 @@ const requestRefresh = async () => {
 export const getValidAccessToken = async () => {
 	const token = localStorage.getItem(keys.access);
 	const expiresAt = Number(localStorage.getItem(keys.expires) ?? 0);
+
+	if (token && getCurrentUserId() === null) {
+		clearTokens();
+		return null;
+	}
 
 	return token && expiresAt - 30_000 > Date.now() ? token : requestRefresh();
 };

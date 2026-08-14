@@ -1,26 +1,37 @@
 import { writable } from 'svelte/store';
 import { albumsApi, ApiError, artistsApi } from './api';
-import { clearTokens } from './auth';
+import { clearTokens, getCurrentUserId } from './auth';
+import { databaseCacheKey } from './database-cache';
 import type { Album, Artist } from './types';
 
 export type DatabaseData = { artists: Artist[]; albums: Album[]; loadedAt: number };
 export const database = writable<DatabaseData | null>(null);
-const cacheKey = 'betterMusicDatabaseData';
-let current: DatabaseData | null = null;
-let request: Promise<DatabaseData> | null = null;
+let current: { userId: number; data: DatabaseData } | null = null;
+let request: { userId: number; promise: Promise<DatabaseData> } | null = null;
 let lastRefreshStartedAt = 0;
 
-const publish = (data: DatabaseData) => {
-	current = data;
-	sessionStorage.setItem(cacheKey, JSON.stringify(data));
+const publish = (userId: number, data: DatabaseData) => {
+	if (getCurrentUserId() !== userId) return data;
+
+	current = { userId, data };
+	sessionStorage.setItem(databaseCacheKey(userId), JSON.stringify(data));
 	database.set(data);
 
 	return data;
 };
 
 export const loadCachedDatabase = () => {
-	if (current) return current;
+	const userId = getCurrentUserId();
+	if (userId === null) {
+		if (current) database.set(null);
+		current = null;
+		return null;
+	}
+	if (current?.userId === userId) return current.data;
 
+	if (current) database.set(null);
+	current = null;
+	const cacheKey = databaseCacheKey(userId);
 	const raw = sessionStorage.getItem(cacheKey);
 
 	if (!raw) return null;
@@ -30,7 +41,7 @@ export const loadCachedDatabase = () => {
 
 		if (!Array.isArray(value.artists) || !Array.isArray(value.albums)) throw new Error();
 
-		current = value;
+		current = { userId, data: value };
 		database.set(value);
 
 		return value;
@@ -42,15 +53,18 @@ export const loadCachedDatabase = () => {
 };
 
 export const fetchDatabaseData = async ({ force = false } = {}) => {
+	const userId = getCurrentUserId();
+	if (userId === null) throw new Error('Not authenticated');
+
 	const cached = loadCachedDatabase();
 
 	if (!force && cached) return cached;
-	if (!force && request) return request;
+	if (!force && request?.userId === userId) return request.promise;
 
 	lastRefreshStartedAt = Date.now();
 
-	request = Promise.all([artistsApi.list(), albumsApi.list()])
-		.then(([artists, albums]) => publish({ artists, albums, loadedAt: Date.now() }))
+	const promise = Promise.all([artistsApi.list(), albumsApi.list()])
+		.then(([artists, albums]) => publish(userId, { artists, albums, loadedAt: Date.now() }))
 		.catch((error) => {
 			if (error instanceof ApiError && error.status === 401) {
 				clearTokens();
@@ -60,10 +74,11 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 			throw error;
 		})
 		.finally(() => {
-			request = null;
+			if (request?.promise === promise) request = null;
 		});
+	request = { userId, promise };
 
-	return request;
+	return promise;
 };
 export const refreshDatabaseData = () => fetchDatabaseData({ force: true });
 

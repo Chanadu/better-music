@@ -1199,7 +1199,8 @@ const docTemplate = `{
                 "access_token",
                 "expires_in",
                 "refresh_token",
-                "token_type"
+                "token_type",
+                "user_id"
             ],
             "properties": {
                 "access_token": {
@@ -1217,6 +1218,10 @@ const docTemplate = `{
                 "token_type": {
                     "type": "string",
                     "example": "Bearer"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 42
                 }
             }
         },

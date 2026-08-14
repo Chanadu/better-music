@@ -306,7 +306,6 @@ See [LICENSE](./LICENSE) for the full text.
 
 ## TODO
 
-- [ ] individual artist page
 - [ ] individual album page
 - [ ] gradient of color for ratings
 - [ ] add selecting the artist for album spotify creation

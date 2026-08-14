@@ -32,6 +32,7 @@ type TokenResponse struct {
 	RefreshToken string `json:"refresh_token" example:"M2vK0r5mMWhM6Lqg0k4cCso1WW1wmX7uCUNB3vV9Q-U" validate:"required"`
 	TokenType    string `json:"token_type" example:"Bearer" validate:"required"`
 	ExpiresIn    int64  `json:"expires_in" example:"900" validate:"required"`
+	UserID       int    `json:"user_id" example:"42" validate:"required"`
 }
 
 func (h *Handler) generateJWT(userID int) (string, error) {
@@ -97,6 +98,7 @@ func (h *Handler) issueTokens(userID int) (*TokenResponse, error) {
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    int64(h.Config.AccessTTL / time.Second),
+		UserID:       userID,
 	}, nil
 }
 

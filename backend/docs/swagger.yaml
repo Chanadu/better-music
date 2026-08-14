@@ -156,11 +156,15 @@ definitions:
       token_type:
         example: Bearer
         type: string
+      user_id:
+        example: 42
+        type: integer
     required:
     - access_token
     - expires_in
     - refresh_token
     - token_type
+    - user_id
     type: object
   handlers.UpdateAlbumRequest:
     properties:

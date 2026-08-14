@@ -64,6 +64,7 @@ export type TokenResponse = {
 	expires_in: number;
 	refresh_token: string;
 	token_type: string;
+	user_id: number;
 };
 
 export type UpdateAlbumRequest = {
