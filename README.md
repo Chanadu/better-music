@@ -306,9 +306,14 @@ See [LICENSE](./LICENSE) for the full text.
 
 ## TODO
 
+- [ ] individual artist page
+- [ ] individual album page
 - [ ] add selecting the artist for album spotify creation
 - [ ] add daisy ui loading to spotify search
 - [ ] add text to the 1-10 ratings in albums
-- [ ] skeletons
+- [ ] add sorting to albums (name, added date)
 - [ ] spotify shuffling with shortcut
+- [ ] settings menu
 - [ ] toggle for grid and list view for artists and albums
+- [ ] skeletons
+- [ ] add daisy ui indicator to newly added albums/artists, remove it on page reload

@@ -1,0 +1,165 @@
+<script lang="ts">
+	import TopNav from '$lib/components/navigation/TopNav.svelte';
+	import SearchBar from '$lib/components/common/SearchBar.svelte';
+	import MediaThumbnail from '$lib/components/common/MediaThumbnail.svelte';
+	import CreateModal from '$lib/components/create/CreateModal.svelte';
+	import { database } from '$lib/scripts/database';
+
+	let query = $state('');
+	let sort = $state('rating');
+	let reversed = $state(false);
+	let dialog = $state<HTMLDialogElement>();
+	let modalOpen = $state(false);
+
+	function chooseSort(event: Event) {
+		sort = (event.currentTarget as HTMLInputElement).value;
+		(event.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
+	}
+
+	function averageRating(ratings: number[]) {
+		if (ratings.length === 0) return null;
+		return ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+	}
+
+	let items = $derived.by(() => {
+		if (!$database) return [];
+
+		const result = $database.artists
+			.map((artist) => {
+				const albums = $database!.albums.filter((album) => album.artist_id === artist.id);
+				const ratings = albums.flatMap((album) => (typeof album.rating === 'number' ? [album.rating] : []));
+
+				return {
+					artist,
+					albumCount: albums.length,
+					averageRating: averageRating(ratings),
+				};
+			})
+			.filter(({ artist }) => artist.name.toLowerCase().includes(query.trim().toLowerCase()));
+
+		const direction = reversed ? -1 : 1;
+
+		return result.sort((a, b) => {
+			if (sort === 'name') {
+				return direction * a.artist.name.localeCompare(b.artist.name);
+			}
+
+			if (sort === 'added') {
+				return direction * (new Date(b.artist.created_at).getTime() - new Date(a.artist.created_at).getTime());
+			}
+
+			return direction * ((b.averageRating ?? -1) - (a.averageRating ?? -1));
+		});
+	});
+
+	const options = [
+		{ label: 'Rating', value: 'rating' },
+		{ label: 'Name', value: 'name' },
+		{ label: 'Added', value: 'added' },
+	];
+</script>
+
+<TopNav breadcrumbs={['Artists']} />
+<div class="navbar flex gap-2">
+	<SearchBar placeholder="artist name..." bind:value={query} />
+
+	<div class="join pt-3">
+		<details class="dropdown">
+			<summary
+				class="btn btn-outline btn-secondary join-item justify-between"
+				style="width: calc(6ch + 4rem); min-width: calc(6ch + 4rem);"
+			>
+				{options.find((o) => o.value === sort)?.label}
+			</summary>
+
+			<ul
+				class="dropdown-content menu bg-base-100 border-secondary text-secondary rounded-box z-10 mt-2 w-full border-2 shadow"
+			>
+				{#each options as option}
+					<li>
+						<label>
+							<input
+								type="radio"
+								class="radio radio-secondary radio-xs"
+								name="sort"
+								value={option.value}
+								checked={sort === option.value}
+								onchange={chooseSort}
+							/>
+							{option.label}
+						</label>
+					</li>
+				{/each}
+			</ul>
+		</details>
+
+		<label class="join-item btn btn-square btn-outline btn-secondary swap swap-rotate shrink-0">
+			<input type="checkbox" bind:checked={reversed} />
+			<span class="swap-on">↑</span>
+			<span class="swap-off">↓</span>
+		</label>
+	</div>
+</div>
+
+<div class="divider mt-2 mb-0"></div>
+
+{#if !$database}
+	<div class="text-base-content/60 mt-4 px-2">Loading artists...</div>
+{:else if items.length === 0}
+	<div class="text-base-content/60 mt-4 px-2">
+		{query ? 'No artists match your search.' : 'No artists yet.'}
+	</div>
+{:else}
+	<ul class="list bg-base-200 rounded-box mt-4 shadow-md">
+		{#each items as item}
+			<li class="p-0">
+				<a
+					href={`/artist?id=${item.artist.id}`}
+					class="list-row hover:bg-base-300 rounded-box transition-colors"
+					aria-label={`Open ${item.artist.name}`}
+				>
+					<MediaThumbnail
+						variant="list"
+						imageUrl={item.artist.cover_url ?? ''}
+						label={item.artist.name}
+						alt={`${item.artist.name} artist image`}
+					/>
+
+					<div>
+						<div>{item.artist.name}</div>
+
+						<div class="text-base-content/60 text-xs font-semibold uppercase">
+							{item.albumCount}
+
+							{item.albumCount === 1 ? 'Album' : 'Albums'}
+
+							{#if item.averageRating !== null}
+								• Avg {item.averageRating.toFixed(1)}
+							{/if}
+
+							• Added {new Intl.DateTimeFormat(undefined, {
+								month: '2-digit',
+								day: '2-digit',
+								year: '2-digit',
+							}).format(new Date(item.artist.created_at))}
+						</div>
+					</div>
+				</a>
+			</li>
+		{/each}
+	</ul>
+{/if}
+
+<div class="fab pb-[calc(4.5rem+env(safe-area-inset-bottom))]" class:hidden={modalOpen}>
+	<button
+		class="btn btn-lg btn-circle btn-accent"
+		onclick={() => {
+			modalOpen = true;
+			dialog?.showModal();
+		}}
+	>
+		+
+	</button>
+</div>
+
+<CreateModal type="artist" bind:dialog onclose={() => (modalOpen = false)} />
