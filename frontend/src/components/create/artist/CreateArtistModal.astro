@@ -2,7 +2,7 @@
 import BaseModal from '../BaseModal.astro';
 import ErrorAlert from '../../ErrorAlert.astro';
 import ManualArtistSection from './ManualArtistSection.astro';
-import SpotifyArtistSection from './SpotifyArtistSection.astro';
+import SpotifySearchSection from '../SpotifySearchSection.astro';
 ---
 
 <BaseModal title='Create Artist'>
@@ -26,7 +26,7 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 			class='tab flex-1'
 			aria-label='Spotify'
 		/>
-		<SpotifyArtistSection />
+		<SpotifySearchSection type='artist' />
 	</div>
 
 	<ErrorAlert />
@@ -68,14 +68,14 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 		const selectedSpotifyInput = document.querySelector<HTMLInputElement>(
 			'input[name="spotify_artist"]:checked:not(:disabled)',
 		);
-		const selectedSpotifyRow = selectedSpotifyInput?.closest<HTMLElement>('[data-spotify-artist-result-item]');
+		const selectedSpotifyRow = selectedSpotifyInput?.closest<HTMLElement>('[data-spotify-result]');
 
 		if (!selectedSpotifyInput || !selectedSpotifyRow) return undefined;
 
 		return {
-			name: selectedSpotifyRow.dataset.spotifyArtistName ?? '',
-			cover_url: selectedSpotifyRow.dataset.spotifyArtistImageUrl || undefined,
-			spotify_id: selectedSpotifyRow.dataset.spotifyArtistId ?? selectedSpotifyInput.value,
+			name: selectedSpotifyRow.dataset.spotifyName ?? '',
+			cover_url: selectedSpotifyRow.dataset.spotifyImageUrl || undefined,
+			spotify_id: selectedSpotifyRow.dataset.spotifyId ?? selectedSpotifyInput.value,
 		};
 	};
 
@@ -85,7 +85,7 @@ import SpotifyArtistSection from './SpotifyArtistSection.astro';
 		}
 
 		document.querySelector<HTMLInputElement>('input[name="spotify_artist"]:checked')?.click();
-		document.dispatchEvent(new CustomEvent('create-artist-modal-reset'));
+		document.dispatchEvent(new CustomEvent('spotify-search-reset'));
 		errorAlert.hide();
 		updateSaveArtistButton();
 	};

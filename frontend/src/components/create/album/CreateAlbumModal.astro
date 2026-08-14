@@ -3,7 +3,7 @@ import ErrorAlert from '../../ErrorAlert.astro';
 import BaseModal from '../BaseModal.astro';
 import ListenedAlbumSection from './ListenedAlbumSection.astro';
 import ManualAlbumSection from './ManualAlbumSection.astro';
-import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
+import SpotifySearchSection from '../SpotifySearchSection.astro';
 ---
 
 <BaseModal title='Create Album'>
@@ -27,7 +27,7 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 			class='tab flex-1'
 			aria-label='Spotify'
 		/>
-		<SpotifyAlbumSection />
+		<SpotifySearchSection type='album' />
 	</div>
 
 	<div class='px-2 pt-4'>
@@ -166,21 +166,21 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 		const selectedSpotifyInput = document.querySelector<HTMLInputElement>(
 			'input[name="spotify_album"]:checked:not(:disabled)',
 		);
-		const selectedSpotifyRow = selectedSpotifyInput?.closest<HTMLElement>('[data-spotify-album-result-item]');
+		const selectedSpotifyRow = selectedSpotifyInput?.closest<HTMLElement>('[data-spotify-result]');
 
 		if (!selectedSpotifyInput || !selectedSpotifyRow) return undefined;
 
 		return {
-			title: selectedSpotifyRow.dataset.spotifyAlbumName ?? '',
-			cover_url: selectedSpotifyRow.dataset.spotifyAlbumImageUrl || undefined,
-			spotify_id: selectedSpotifyRow.dataset.spotifyAlbumId ?? selectedSpotifyInput.value,
+			title: selectedSpotifyRow.dataset.spotifyName ?? '',
+			cover_url: selectedSpotifyRow.dataset.spotifyImageUrl || undefined,
+			spotify_id: selectedSpotifyRow.dataset.spotifyId ?? selectedSpotifyInput.value,
 			year:
-				selectedSpotifyRow.dataset.spotifyAlbumReleaseYear ?
-					Number(selectedSpotifyRow.dataset.spotifyAlbumReleaseYear)
+				selectedSpotifyRow.dataset.spotifyReleaseYear ?
+					Number(selectedSpotifyRow.dataset.spotifyReleaseYear)
 				:	undefined,
 			artist: {
-				name: selectedSpotifyRow.dataset.spotifyAlbumArtistName ?? '',
-				spotify_id: selectedSpotifyRow.dataset.spotifyAlbumArtistId || undefined,
+				name: selectedSpotifyRow.dataset.spotifyArtistName ?? '',
+				spotify_id: selectedSpotifyRow.dataset.spotifyArtistId || undefined,
 			},
 		};
 	};
@@ -254,7 +254,7 @@ import SpotifyAlbumSection from './SpotifyAlbumSection.astro';
 		}
 
 		document.querySelector<HTMLInputElement>('input[name="spotify_album"]:checked')?.click();
-		document.dispatchEvent(new CustomEvent('create-album-modal-reset'));
+		document.dispatchEvent(new CustomEvent('spotify-search-reset'));
 		updateRatingMeasure();
 		updateListenedFields();
 		updateAlbumPreview();

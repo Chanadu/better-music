@@ -139,8 +139,9 @@ const { mode } = Astro.props;
 			if (divider) divider.hidden = mode === 'rated';
 			if (status) status.hidden = true;
 
+			albums.sort((first, second) => first.album.title.localeCompare(second.album.title));
+
 			if (mode === 'unrated') {
-				albums.sort((first, second) => first.album.title.localeCompare(second.album.title));
 				groups.append(createAlbumGroup(albums));
 				return;
 			}
@@ -152,16 +153,7 @@ const { mode } = Astro.props;
 			});
 
 			const ratings = [...albumsByRating.keys()].sort((first, second) => second - first);
-			groups.append(
-				...ratings.map((rating) =>
-					createAlbumGroup(
-						[...(albumsByRating.get(rating) ?? [])].sort((first, second) =>
-							first.album.title.localeCompare(second.album.title),
-						),
-						rating,
-					),
-				),
-			);
+			groups.append(...ratings.map((rating) => createAlbumGroup(albumsByRating.get(rating) ?? [], rating)));
 		};
 
 		onDatabaseData((data) => {
