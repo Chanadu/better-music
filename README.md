@@ -215,6 +215,22 @@ go run .
 go build .
 ```
 
+### API contract generation
+
+The backend Swagger document is the source of truth for frontend API types. After changing a Go API request or response model, regenerate both artifacts from the repository root:
+
+```bash
+just api
+```
+
+To verify that the checked-in TypeScript types match the checked-in Swagger document:
+
+```bash
+just api-check
+```
+
+Do not edit `frontend/src/scripts/api-types.ts` directly.
+
 ## API Overview
 
 Public auth endpoints:
@@ -295,3 +311,4 @@ See [LICENSE](./LICENSE) for the full text.
 - [ ] add text to the 1-10 ratings in albums
 - [ ] skeletons
 - [ ] spotify shuffling with shortcut
+- [ ] toggle for grid and list view for artists and albums
