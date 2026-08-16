@@ -81,6 +81,7 @@
 		imageUrl={album.cover_url}
 		imageAlt={`${album.title} album cover`}
 		editLabel="Edit album"
+		deleteLabel="Delete album"
 		backHref={getReturnHref(page.url, '/albums')}
 	/>
 

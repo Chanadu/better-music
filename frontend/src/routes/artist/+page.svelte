@@ -82,6 +82,7 @@
 		imageUrl={artist.cover_url}
 		imageAlt={`${artist.name} artist portrait`}
 		editLabel="Edit artist"
+		deleteLabel="Delete artist"
 		backHref={getReturnHref(page.url, '/artists')}
 	/>
 

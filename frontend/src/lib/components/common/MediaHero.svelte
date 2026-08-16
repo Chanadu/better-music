@@ -1,5 +1,6 @@
 <script lang="ts">
 	import BackIcon from '$lib/components/icons/BackIcon.svelte';
+	import DeleteIcon from '$lib/components/icons/DeleteIcon.svelte';
 	import EditIcon from '$lib/components/icons/EditIcon.svelte';
 
 	let {
@@ -8,6 +9,7 @@
 		imageUrl,
 		imageAlt,
 		editLabel,
+		deleteLabel,
 		backHref,
 		onedit,
 	}: {
@@ -16,6 +18,7 @@
 		imageUrl?: string | null;
 		imageAlt: string;
 		editLabel: string;
+		deleteLabel: string;
 		backHref: string;
 		onedit?: () => void;
 	} = $props();
@@ -59,21 +62,26 @@
 
 	<div class="absolute inset-x-0 bottom-5 px-4 sm:bottom-7 sm:px-8">
 		<h1
-			class="pr-16 text-4xl leading-none font-black tracking-tight wrap-break-word text-white sm:text-6xl lg:text-7xl"
+			class="pr-28 text-4xl leading-none font-black tracking-tight wrap-break-word text-white sm:text-6xl lg:text-7xl"
 		>
 			{title}
 		</h1>
 		{#if subtitle !== undefined && subtitle !== null && subtitle !== ''}
-			<p class="text-base-content/70 mt-3 pr-16 text-lg font-medium sm:text-xl">{subtitle}</p>
+			<p class="text-base-content/70 mt-3 pr-28 text-lg font-medium sm:text-xl">{subtitle}</p>
 		{/if}
 	</div>
 
-	<button
-		class="btn btn-square btn-outline btn-secondary absolute right-4 bottom-5 z-10 shadow-xl sm:right-8 sm:bottom-7"
-		type="button"
-		aria-label={editLabel}
-		onclick={onedit}
-	>
-		<EditIcon class="size-5" />
-	</button>
+	<div class="absolute right-4 bottom-5 z-10 flex gap-2 sm:right-8 sm:bottom-7">
+		<button
+			class="btn btn-square btn-outline btn-secondary shadow-xl"
+			type="button"
+			aria-label={editLabel}
+			onclick={onedit}
+		>
+			<EditIcon class="size-5" />
+		</button>
+		<button class="btn btn-square btn-outline btn-error shadow-xl" type="button" aria-label={deleteLabel}>
+			<DeleteIcon class="size-5" />
+		</button>
+	</div>
 </section>
