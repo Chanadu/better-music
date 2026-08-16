@@ -310,6 +310,10 @@ See [LICENSE](./LICENSE) for the full text.
 - [ ] more page
 - [ ] home page
 - [ ] settings menu
+    - light mode dark mode
+    - change text of ratings
+    - delete account
+    - change account password username all taht
 - [ ] save filter option on artist page on reload and page chagne
 - [ ] gradient of color for ratings
 - [ ] add selecting the artist for album spotify creation

@@ -3,13 +3,22 @@
 	import ArtistListItem from '$lib/components/artists/ArtistListItem.svelte';
 	import CreateFab from '$lib/components/create/CreateFab.svelte';
 	import { database } from '$lib/scripts/database';
+	import { useSortPreference } from '$lib/scripts/sort-preferences.svelte';
 
 	let query = $state('');
-	let sort = $state('rating');
-	let reversed = $state(false);
+	const options = [
+		{ label: 'Rating', value: 'rating' },
+		{ label: 'Name', value: 'name' },
+		{ label: 'Added', value: 'added' },
+	] as const;
+	let sorting = useSortPreference(
+		() => 'bettermusic:sort:artists',
+		options.map((option) => option.value),
+		{ sort: 'rating', reversed: false },
+	);
 
 	function chooseSort(event: Event) {
-		sort = (event.currentTarget as HTMLInputElement).value;
+		sorting.sort = (event.currentTarget as HTMLInputElement).value as typeof sorting.sort;
 		(event.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
 	}
 
@@ -34,26 +43,20 @@
 			})
 			.filter(({ artist }) => artist.name.toLowerCase().includes(query.trim().toLowerCase()));
 
-		const direction = reversed ? -1 : 1;
+		const direction = sorting.reversed ? -1 : 1;
 
 		return result.sort((a, b) => {
-			if (sort === 'name') {
+			if (sorting.sort === 'name') {
 				return direction * a.artist.name.localeCompare(b.artist.name);
 			}
 
-			if (sort === 'added') {
+			if (sorting.sort === 'added') {
 				return direction * (new Date(b.artist.created_at).getTime() - new Date(a.artist.created_at).getTime());
 			}
 
 			return direction * ((b.averageRating ?? -1) - (a.averageRating ?? -1));
 		});
 	});
-
-	const options = [
-		{ label: 'Rating', value: 'rating' },
-		{ label: 'Name', value: 'name' },
-		{ label: 'Added', value: 'added' },
-	];
 </script>
 
 <div class="navbar flex gap-2">
@@ -65,7 +68,7 @@
 				class="btn btn-outline btn-secondary join-item justify-between"
 				style="width: calc(6ch + 4rem); min-width: calc(6ch + 4rem);"
 			>
-				{options.find((o) => o.value === sort)?.label}
+				{options.find((o) => o.value === sorting.sort)?.label}
 			</summary>
 
 			<ul
@@ -79,7 +82,7 @@
 								class="radio radio-secondary radio-xs"
 								name="sort"
 								value={option.value}
-								checked={sort === option.value}
+								checked={sorting.sort === option.value}
 								onchange={chooseSort}
 							/>
 							{option.label}
@@ -90,7 +93,7 @@
 		</details>
 
 		<label class="join-item btn btn-square btn-outline btn-secondary swap swap-rotate shrink-0">
-			<input type="checkbox" bind:checked={reversed} />
+			<input type="checkbox" bind:checked={sorting.reversed} />
 			<span class="swap-on">↑</span>
 			<span class="swap-off">↓</span>
 		</label>
