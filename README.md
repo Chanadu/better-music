@@ -306,7 +306,8 @@ See [LICENSE](./LICENSE) for the full text.
 
 ## TODO
 
-- [ ] album/artist edit menus & delete option
+- [ ] album/artist edit menus 
+- [ ] delete option
 - [ ] more page
 - [ ] home page
 - [ ] settings menu
@@ -314,9 +315,7 @@ See [LICENSE](./LICENSE) for the full text.
     - change text of ratings
     - delete account
     - change account password username all taht
-- [ ] save filter option on artist page on reload and page chagne
 - [ ] gradient of color for ratings
-- [ ] add selecting the artist for album spotify creation
 - [ ] spotify shuffling with shortcut
 - [ ] toggle for grid and list view for artists and albums
 - [ ] skeletons

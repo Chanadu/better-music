@@ -1,18 +1,31 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import AlbumArtistCard from '$lib/components/albums/AlbumArtistCard.svelte';
 	import AlbumNotes from '$lib/components/albums/AlbumNotes.svelte';
 	import AlbumStats from '$lib/components/albums/AlbumStats.svelte';
 	import MediaHero from '$lib/components/common/MediaHero.svelte';
+	import DeleteConfirmationDialog from '$lib/components/common/DeleteConfirmationDialog.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { albumsApi, ApiError, artistsApi } from '$lib/scripts/api';
 	import { getReturnHref } from '$lib/scripts/navigation';
+	import { refreshDatabaseData } from '$lib/scripts/database';
 	import type { Album, Artist } from '$lib/scripts/types';
 
 	let album = $state<Album>();
 	let artist = $state<Artist>();
 	let status = $state('Loading album...');
+	let deleteDialog = $state<HTMLDialogElement>();
+	let backHref = $derived(getReturnHref(page.url, '/albums'));
+
+	async function deleteAlbum() {
+		if (!album) return;
+
+		await albumsApi.delete(album.id, album.artist_id);
+		void refreshDatabaseData().catch((error) => console.error('Failed to refresh albums after deletion', error));
+		await goto(backHref, { replaceState: true });
+	}
 
 	let listenedDate = $derived.by(() => {
 		if (!album?.listened_at) return null;
@@ -82,7 +95,16 @@
 		imageAlt={`${album.title} album cover`}
 		editLabel="Edit album"
 		deleteLabel="Delete album"
-		backHref={getReturnHref(page.url, '/albums')}
+		{backHref}
+		ondelete={() => deleteDialog?.showModal()}
+	/>
+
+	<DeleteConfirmationDialog
+		bind:dialog={deleteDialog}
+		title={`Delete album (${album.title})?`}
+		description={`“${album.title}” will be permanently removed from your library.`}
+		confirmLabel="Delete album"
+		onconfirm={deleteAlbum}
 	/>
 
 	<div class="mx-auto max-w-5xl">

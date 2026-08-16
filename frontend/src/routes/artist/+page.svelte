@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import DiscographySection from '$lib/components/artists/DiscographySection.svelte';
 	import MediaHero from '$lib/components/common/MediaHero.svelte';
+	import DeleteConfirmationDialog from '$lib/components/common/DeleteConfirmationDialog.svelte';
 	import StatCard from '$lib/components/common/StatCard.svelte';
 	import CreateAlbumModal from '$lib/components/create/CreateAlbumModal.svelte';
 	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
@@ -10,13 +12,15 @@
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { ApiError, artistsApi } from '$lib/scripts/api';
-	import { database } from '$lib/scripts/database';
+	import { database, refreshDatabaseData } from '$lib/scripts/database';
 	import { getReturnHref } from '$lib/scripts/navigation';
 	import type { Artist } from '$lib/scripts/types';
 
 	let artist = $state<Artist>();
 	let status = $state('Loading artist...');
 	let albumDialog = $state<HTMLDialogElement>();
+	let deleteDialog = $state<HTMLDialogElement>();
+	let backHref = $derived(getReturnHref(page.url, '/artists'));
 
 	let albums = $derived(
 		$database?.albums
@@ -38,6 +42,19 @@
 			}).format(new Date(artist.created_at))
 		:	'—',
 	);
+	let deleteBlockedReason = $derived(
+		albums.length > 0 ?
+			`Remove ${albums.length === 1 ? 'the album' : `all ${albums.length} albums`} from this artist first.`
+		:	undefined,
+	);
+
+	async function deleteArtist() {
+		if (!artist) return;
+
+		await artistsApi.delete(artist.id);
+		void refreshDatabaseData().catch((error) => console.error('Failed to refresh artists after deletion', error));
+		await goto(backHref, { replaceState: true });
+	}
 
 	onMount(async () => {
 		const raw = page.url.searchParams.get('id');
@@ -83,7 +100,17 @@
 		imageAlt={`${artist.name} artist portrait`}
 		editLabel="Edit artist"
 		deleteLabel="Delete artist"
-		backHref={getReturnHref(page.url, '/artists')}
+		{backHref}
+		ondelete={() => deleteDialog?.showModal()}
+	/>
+
+	<DeleteConfirmationDialog
+		bind:dialog={deleteDialog}
+		title={`Delete artist (${artist.name})?`}
+		description={`${artist.name} will be permanently removed from your library.`}
+		confirmLabel="Delete artist"
+		disabledReason={deleteBlockedReason}
+		onconfirm={deleteArtist}
 	/>
 
 	<section class="mt-7 grid grid-cols-2 grid-rows-2 gap-3 sm:grid-cols-3 sm:grid-rows-1" aria-label="Artist stats">

@@ -12,6 +12,7 @@
 		deleteLabel,
 		backHref,
 		onedit,
+		ondelete,
 	}: {
 		title: string;
 		subtitle?: string | number | null;
@@ -21,6 +22,7 @@
 		deleteLabel: string;
 		backHref: string;
 		onedit?: () => void;
+		ondelete?: () => void;
 	} = $props();
 
 	let imageFailed = $state(false);
@@ -80,7 +82,12 @@
 		>
 			<EditIcon class="size-5" />
 		</button>
-		<button class="btn btn-square btn-outline btn-error shadow-xl" type="button" aria-label={deleteLabel}>
+		<button
+			class="btn btn-square btn-outline btn-error shadow-xl"
+			type="button"
+			aria-label={deleteLabel}
+			onclick={ondelete}
+		>
 			<DeleteIcon class="size-5" />
 		</button>
 	</div>
