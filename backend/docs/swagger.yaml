@@ -808,6 +808,43 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /api/spotify/artists/{id}:
+    get:
+      description: Get current Spotify metadata for an artist by Spotify ID
+      parameters:
+      - description: Spotify artist ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SpotifyArtistSearchResult'
+        "400":
+          description: Missing Spotify artist ID
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "502":
+          description: Spotify request failed
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "503":
+          description: Spotify is not configured
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+      security:
+      - Bearer: []
+      summary: Get a Spotify artist
+      tags:
+      - spotify
   /api/spotify/search/albums:
     get:
       description: Search Spotify for albums and return trimmed results for the authenticated

@@ -4,6 +4,8 @@
 	let {
 		dialog = $bindable(),
 		title,
+		headingPrefix = 'Create',
+		saveLabel,
 		error = '',
 		saving = false,
 		canSave,
@@ -13,6 +15,8 @@
 	}: {
 		dialog?: HTMLDialogElement;
 		title: string;
+		headingPrefix?: string;
+		saveLabel?: string;
 		error?: string;
 		saving?: boolean;
 		canSave: boolean;
@@ -28,7 +32,7 @@
 			<button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2">✕</button>
 		</form>
 
-		<h2 class="mb-2 text-center text-xl font-semibold">Create {title}</h2>
+		<h2 class="mb-2 text-center text-xl font-semibold">{headingPrefix} {title}</h2>
 
 		{@render children()}
 
@@ -44,7 +48,7 @@
 			</form>
 
 			<button type="button" class="btn btn-primary flex-1" disabled={!canSave} onclick={onsave}>
-				{saving ? 'Saving...' : `Save ${title}`}
+				{saving ? 'Saving...' : (saveLabel ?? `Save ${title}`)}
 			</button>
 		</div>
 	</div>

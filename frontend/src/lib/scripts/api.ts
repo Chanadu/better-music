@@ -85,6 +85,7 @@ export const albumsApi = {
 };
 
 export const spotifyApi = {
+	getArtist: (id: string) => secureJson<SpotifyArtistSearchResult>(`/api/spotify/artists/${encodeURIComponent(id)}`),
 	searchArtists: (q: string, limit?: number) =>
 		secureJson<SpotifyArtistSearchResult[]>(`/api/spotify/search/artists${query({ q, limit })}`),
 	searchAlbums: (q: string, limit?: number) =>

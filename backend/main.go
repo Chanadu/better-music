@@ -76,6 +76,7 @@ func main() {
 
 	protectedMux.HandleFunc("GET /api/spotify/search/artists", h.SearchSpotifyArtists)
 	protectedMux.HandleFunc("GET /api/spotify/search/albums", h.SearchSpotifyAlbums)
+	protectedMux.HandleFunc("GET /api/spotify/artists/{id}", h.GetSpotifyArtist)
 
 	mux.Handle("/api/", middleware.Auth(protectedMux, cfg.JWTSecret))
 

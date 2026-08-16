@@ -854,6 +854,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/spotify/artists/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get current Spotify metadata for an artist by Spotify ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "spotify"
+                ],
+                "summary": "Get a Spotify artist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Spotify artist ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SpotifyArtistSearchResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing Spotify artist ID",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Spotify request failed",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Spotify is not configured",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/spotify/search/albums": {
             "get": {
                 "security": [

@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import DiscographySection from '$lib/components/artists/DiscographySection.svelte';
+	import EditArtistModal from '$lib/components/artists/EditArtistModal.svelte';
 	import MediaHero from '$lib/components/common/MediaHero.svelte';
 	import DeleteConfirmationDialog from '$lib/components/common/DeleteConfirmationDialog.svelte';
 	import StatCard from '$lib/components/common/StatCard.svelte';
@@ -20,6 +21,7 @@
 	let status = $state('Loading artist...');
 	let albumDialog = $state<HTMLDialogElement>();
 	let deleteDialog = $state<HTMLDialogElement>();
+	let editDialog = $state<HTMLDialogElement>();
 	let backHref = $derived(getReturnHref(page.url, '/artists'));
 
 	let albums = $derived(
@@ -102,7 +104,10 @@
 		deleteLabel="Delete artist"
 		{backHref}
 		ondelete={() => deleteDialog?.showModal()}
+		onedit={() => editDialog?.showModal()}
 	/>
+
+	<EditArtistModal bind:dialog={editDialog} {artist} onupdated={(updated) => (artist = updated)} />
 
 	<DeleteConfirmationDialog
 		bind:dialog={deleteDialog}

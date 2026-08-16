@@ -207,6 +207,19 @@ func (h *Handler) searchSpotifyArtists(ctx context.Context, query string, limit 
 	return payload.Artists.Items, nil
 }
 
+func (h *Handler) getSpotifyArtist(ctx context.Context, spotifyID string) (*SpotifyArtistSearchResult, error) {
+	var artist SpotifyArtistSearchResult
+	if err := h.executeSpotifyJSONRequest(
+		ctx,
+		spotifyAPIBaseURL+"/artists/"+url.PathEscape(spotifyID),
+		&artist,
+	); err != nil {
+		return nil, err
+	}
+
+	return &artist, nil
+}
+
 func (h *Handler) searchSpotifyAlbums(ctx context.Context, query string, limit int) ([]SpotifyAlbumSearchResult, error) {
 	values := url.Values{}
 	values.Set("q", query)
@@ -272,6 +285,45 @@ func (h *Handler) SearchSpotifyArtists(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, results)
+}
+
+// GetSpotifyArtist godoc
+// @Summary Get a Spotify artist
+// @Description Get current Spotify metadata for an artist by Spotify ID
+// @Tags spotify
+// @Produce json
+// @Security Bearer
+// @Param id path string true "Spotify artist ID"
+// @Success 200 {object} SpotifyArtistSearchResult
+// @Failure 400 {object} ApiErrorResponse "Missing Spotify artist ID"
+// @Failure 401 {object} ApiErrorResponse "Unauthorized"
+// @Failure 502 {object} ApiErrorResponse "Spotify request failed"
+// @Failure 503 {object} ApiErrorResponse "Spotify is not configured"
+// @Router /api/spotify/artists/{id} [get]
+func (h *Handler) GetSpotifyArtist(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("route hit", "route", "GET /api/spotify/artists/{id}", "method", r.Method, "path", r.URL.Path)
+	if _, ok := getUserID(w, r); !ok {
+		return
+	}
+
+	spotifyID := strings.TrimSpace(r.PathValue("id"))
+	if spotifyID == "" {
+		writeJSON(w, http.StatusBadRequest, apiError("spotify artist ID is required"))
+		return
+	}
+
+	artist, err := h.getSpotifyArtist(r.Context(), spotifyID)
+	if err != nil {
+		if errors.Is(err, errSpotifyNotConfigured) {
+			writeSpotifyError(w, "spotify is not configured", http.StatusServiceUnavailable, err)
+			return
+		}
+
+		writeSpotifyError(w, "spotify artist lookup failed", http.StatusBadGateway, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, artist)
 }
 
 // SearchSpotifyAlbums godoc
