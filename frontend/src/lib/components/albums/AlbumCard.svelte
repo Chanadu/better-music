@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	import { withReturnTo } from '$lib/scripts/navigation';
 	import type { Album } from '$lib/scripts/types';
 	import MediaThumbnail from '../common/MediaThumbnail.svelte';
 	import StarIcon from '../icons/StarIcon.svelte';
@@ -15,7 +17,7 @@
 
 <a
 	class="group rounded-box focus-visible:outline-primary block min-w-0 transition duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-[0.98] active:brightness-95 active:duration-75 motion-reduce:transform-none [&:hover:not(:active)]:-translate-y-1 [&:hover:not(:active)]:scale-[1.02] [&:hover:not(:active)]:brightness-110 [&:hover:not(:active)]:drop-shadow-xl"
-	href={`/album?id=${album.id}&artist_id=${album.artist_id}`}
+	href={withReturnTo(`/album?id=${album.id}&artist_id=${album.artist_id}`, page.url)}
 	aria-label={`View ${album.title}`}
 >
 	<div class="indicator mb-3 block w-full">

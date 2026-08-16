@@ -11,6 +11,7 @@
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { ApiError, artistsApi } from '$lib/scripts/api';
 	import { database } from '$lib/scripts/database';
+	import { getReturnHref } from '$lib/scripts/navigation';
 	import type { Artist } from '$lib/scripts/types';
 
 	let artist = $state<Artist>();
@@ -81,16 +82,30 @@
 		imageUrl={artist.cover_url}
 		imageAlt={`${artist.name} artist portrait`}
 		editLabel="Edit artist"
+		backHref={getReturnHref(page.url, '/artists')}
 	/>
 
-	<section class="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Artist stats">
-		<StatCard value={albums.length} label="Albums" icon={AlbumIcon} />
-		<StatCard value={addedDate} label="Added" icon={CalendarIcon} tone="secondary" valueClass="text-xl" />
+	<section class="mt-7 grid grid-cols-2 grid-rows-2 gap-3 sm:grid-cols-3 sm:grid-rows-1" aria-label="Artist stats">
+		<StatCard
+			value={albums.length}
+			label="Albums"
+			icon={AlbumIcon}
+			class="col-start-1 row-start-1 h-full sm:col-auto sm:row-auto"
+		/>
+		<StatCard
+			value={addedDate}
+			label="Added"
+			icon={CalendarIcon}
+			tone="secondary"
+			valueClass="text-xl"
+			class="col-start-1 row-start-2 h-full sm:col-auto sm:row-auto"
+		/>
 		<StatCard
 			value={averageRating === null ? '—' : averageRating.toFixed(1)}
 			label="Avg. rating"
 			icon={StarIcon}
 			tone="accent"
+			class="col-start-2 row-span-2 row-start-1 h-full flex-col justify-center text-center sm:col-auto sm:row-span-1 sm:row-start-auto sm:flex-row sm:justify-start sm:text-left"
 		/>
 	</section>
 

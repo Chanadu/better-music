@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	import { withReturnTo } from '$lib/scripts/navigation';
 	import type { Artist } from '$lib/scripts/types';
 
 	let { artist }: { artist: Artist } = $props();
@@ -13,7 +15,7 @@
 <section class="order-1 h-full md:col-start-1 md:row-start-1">
 	<a
 		class="bg-base-200 focus-visible:outline-primary group relative flex h-full min-h-72 items-center justify-center gap-4 overflow-hidden rounded-2xl p-5 shadow-lg transition duration-200 ease-out hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.99] sm:gap-8 sm:p-8"
-		href={`/artist?id=${artist.id}`}
+		href={withReturnTo(`/artist?id=${artist.id}`, page.url)}
 		aria-label={`View ${artist.name}`}
 	>
 		<div class="relative w-1/2 shrink-0">

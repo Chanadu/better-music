@@ -309,6 +309,8 @@ See [LICENSE](./LICENSE) for the full text.
 - [ ] album/artist edit menus
 - [ ] more page
 - [ ] home page
+- [ ] save filter option on artist page on reload and page chagne
+- [ ] add filters to album pages by artist name, album name, added date
 - [ ] gradient of color for ratings
 - [ ] add selecting the artist for album spotify creation
 - [ ] add daisy ui loading to spotify search

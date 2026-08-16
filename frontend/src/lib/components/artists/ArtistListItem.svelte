@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import MediaThumbnail from '$lib/components/common/MediaThumbnail.svelte';
+	import { withReturnTo } from '$lib/scripts/navigation';
 	import type { Artist } from '$lib/scripts/types';
 
 	interface Props {
@@ -19,7 +21,7 @@
 
 <li class="p-0">
 	<a
-		href={`/artist?id=${artist.id}`}
+		href={withReturnTo(`/artist?id=${artist.id}`, page.url)}
 		class="list-row hover:bg-base-300 rounded-box transition-colors"
 		aria-label={`Open ${artist.name}`}
 	>

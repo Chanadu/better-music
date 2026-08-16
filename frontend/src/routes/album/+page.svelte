@@ -7,6 +7,7 @@
 	import MediaHero from '$lib/components/common/MediaHero.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { albumsApi, ApiError, artistsApi } from '$lib/scripts/api';
+	import { getReturnHref } from '$lib/scripts/navigation';
 	import type { Album, Artist } from '$lib/scripts/types';
 
 	let album = $state<Album>();
@@ -80,6 +81,7 @@
 		imageUrl={album.cover_url}
 		imageAlt={`${album.title} album cover`}
 		editLabel="Edit album"
+		backHref={getReturnHref(page.url, '/albums')}
 	/>
 
 	<div class="mx-auto max-w-5xl">

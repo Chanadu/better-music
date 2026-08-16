@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BackIcon from '$lib/components/icons/BackIcon.svelte';
 	import EditIcon from '$lib/components/icons/EditIcon.svelte';
 
 	let {
@@ -7,6 +8,7 @@
 		imageUrl,
 		imageAlt,
 		editLabel,
+		backHref,
 		onedit,
 	}: {
 		title: string;
@@ -14,6 +16,7 @@
 		imageUrl?: string | null;
 		imageAlt: string;
 		editLabel: string;
+		backHref: string;
 		onedit?: () => void;
 	} = $props();
 
@@ -26,6 +29,14 @@
 </script>
 
 <section class="relative -mx-4 -mt-2 h-[60dvh] overflow-hidden">
+	<a
+		class="btn btn-square btn-soft btn-accent absolute top-4 left-4 z-10 shadow-xl sm:top-6 sm:left-8"
+		href={backHref}
+		aria-label="Go back"
+	>
+		<BackIcon class="size-6" />
+	</a>
+
 	{#if imageUrl && !imageFailed}
 		<img
 			class="absolute inset-0 size-full object-cover"
