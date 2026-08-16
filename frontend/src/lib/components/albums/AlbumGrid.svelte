@@ -22,20 +22,43 @@
 		return label ? `${rating}/10 • ${label}` : `${rating}/10`;
 	}
 
-	let { mode, query = '' }: { mode: 'listened' | 'unlistened'; query?: string } = $props();
+	let {
+		mode,
+		query = '',
+		sort = 'added',
+		reversed = false,
+	}: {
+		mode: 'listened' | 'unlistened';
+		query?: string;
+		sort?: 'album' | 'artist' | 'added';
+		reversed?: boolean;
+	} = $props();
 
 	let items = $derived.by(() => {
 		if (!$database) return [];
 		const artists = new Map($database.artists.map((artist) => [artist.id, artist]));
-		return $database.albums
+		const result = $database.albums
 			.filter((album) => album.listened === (mode === 'listened'))
 			.map((album) => ({ album, artist: artists.get(album.artist_id) }))
 			.filter(
 				({ album, artist }) =>
 					album.title.toLowerCase().includes(query.trim().toLowerCase()) ||
 					(artist?.name.toLowerCase() ?? '').includes(query.trim().toLowerCase()),
-			)
-			.sort((a, b) => a.album.title.localeCompare(b.album.title));
+			);
+
+		const direction = reversed ? -1 : 1;
+
+		return result.sort((a, b) => {
+			if (sort === 'artist') {
+				return direction * (a.artist?.name ?? '').localeCompare(b.artist?.name ?? '');
+			}
+
+			if (sort === 'added') {
+				return direction * (new Date(b.album.created_at).getTime() - new Date(a.album.created_at).getTime());
+			}
+
+			return direction * a.album.title.localeCompare(b.album.title);
+		});
 	});
 
 	let groups = $derived.by(() => {

@@ -310,7 +310,6 @@ See [LICENSE](./LICENSE) for the full text.
 - [ ] more page
 - [ ] home page
 - [ ] save filter option on artist page on reload and page chagne
-- [ ] add filters to album pages by artist name, album name, added date
 - [ ] gradient of color for ratings
 - [ ] settings menu
 - [ ] add selecting the artist for album spotify creation
