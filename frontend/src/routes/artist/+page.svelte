@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import ArtistHero from '$lib/components/artists/ArtistHero.svelte';
 	import DiscographySection from '$lib/components/artists/DiscographySection.svelte';
+	import MediaHero from '$lib/components/common/MediaHero.svelte';
 	import StatCard from '$lib/components/common/StatCard.svelte';
 	import CreateAlbumModal from '$lib/components/create/CreateAlbumModal.svelte';
 	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
@@ -76,7 +76,12 @@
 		{/if}
 	</div>
 {:else if artist}
-	<ArtistHero {artist} />
+	<MediaHero
+		title={artist.name}
+		imageUrl={artist.cover_url}
+		imageAlt={`${artist.name} artist portrait`}
+		editLabel="Edit artist"
+	/>
 
 	<section class="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Artist stats">
 		<StatCard value={albums.length} label="Albums" icon={AlbumIcon} />

@@ -19,12 +19,12 @@
 </script>
 
 <section class="mt-9">
-	<div class="mb-5 flex items-center gap-2">
+	<div class="mb-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-2">
 		<h2 class="text-secondary text-2xl leading-none font-black tracking-tighter sm:text-3xl">Discography</h2>
 
-		<div class="divider mx-2 my-0 min-w-4 flex-1 self-center" aria-hidden="true"></div>
+		<div class="divider mx-2 my-0 hidden min-w-4 flex-1 self-center sm:flex" aria-hidden="true"></div>
 
-		<fieldset class="join grid shrink-0 grid-cols-3" aria-label="Filter discography">
+		<fieldset class="join grid w-full shrink-0 grid-cols-3 sm:w-auto" aria-label="Filter discography">
 			<label
 				class="join-item btn btn-outline btn-primary btn-sm sm:btn-md has-checked:bg-primary has-checked:text-primary-content gap-1.5 px-3 sm:px-4"
 			>

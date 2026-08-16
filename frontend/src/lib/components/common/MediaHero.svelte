@@ -1,22 +1,36 @@
 <script lang="ts">
-	import type { Artist } from '$lib/scripts/types';
-	import EditIcon from '../icons/EditIcon.svelte';
+	import EditIcon from '$lib/components/icons/EditIcon.svelte';
 
-	let { artist, onedit }: { artist: Artist; onedit?: () => void } = $props();
+	let {
+		title,
+		subtitle,
+		imageUrl,
+		imageAlt,
+		editLabel,
+		onedit,
+	}: {
+		title: string;
+		subtitle?: string | number | null;
+		imageUrl?: string | null;
+		imageAlt: string;
+		editLabel: string;
+		onedit?: () => void;
+	} = $props();
+
 	let imageFailed = $state(false);
 
 	$effect(() => {
-		artist.cover_url;
+		imageUrl;
 		imageFailed = false;
 	});
 </script>
 
 <section class="relative -mx-4 -mt-2 h-[60dvh] overflow-hidden">
-	{#if artist.cover_url && !imageFailed}
+	{#if imageUrl && !imageFailed}
 		<img
 			class="absolute inset-0 size-full object-cover"
-			src={artist.cover_url}
-			alt={`${artist.name} artist portrait`}
+			src={imageUrl}
+			alt={imageAlt}
 			onerror={() => (imageFailed = true)}
 		/>
 	{:else}
@@ -24,7 +38,7 @@
 			class="from-primary/45 via-accent/20 to-base-300 absolute inset-0 flex items-center justify-center bg-linear-to-br"
 		>
 			<span class="text-base-content/20 text-[10rem] font-black sm:text-[15rem]" aria-hidden="true">
-				{artist.name.charAt(0).toUpperCase()}
+				{title.charAt(0).toUpperCase()}
 			</span>
 		</div>
 	{/if}
@@ -36,14 +50,17 @@
 		<h1
 			class="pr-16 text-4xl leading-none font-black tracking-tight wrap-break-word text-white sm:text-6xl lg:text-7xl"
 		>
-			{artist.name}
+			{title}
 		</h1>
+		{#if subtitle !== undefined && subtitle !== null && subtitle !== ''}
+			<p class="text-base-content/70 mt-3 pr-16 text-lg font-medium sm:text-xl">{subtitle}</p>
+		{/if}
 	</div>
 
 	<button
 		class="btn btn-square btn-outline btn-secondary absolute right-4 bottom-5 z-10 shadow-xl sm:right-8 sm:bottom-7"
 		type="button"
-		aria-label="Edit artist"
+		aria-label={editLabel}
 		onclick={onedit}
 	>
 		<EditIcon class="size-5" />

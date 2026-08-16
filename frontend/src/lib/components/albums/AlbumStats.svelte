@@ -28,19 +28,19 @@
 			'row-start-1 md:col-start-auto md:row-span-1 md:row-start-auto'}
 	>
 		<StatCard
-			value={album.listened && typeof album.rating === 'number' ? `${album.rating} / 10` : 'Unrated'}
+			value={album.listened && typeof album.rating === 'number' ? `${album.rating} / 10` : 'N/A'}
 			label="Your rating"
 			icon={StarIcon}
 			class={album.listened ?
 				'h-full flex-col justify-center text-center md:flex-row md:justify-start md:text-left'
-			: 'h-full'}
+			:	'h-full'}
 		/>
 	</div>
 
 	<div
 		class={album.listened ?
 			'col-start-1 row-start-1 md:col-start-auto md:row-start-auto'
-		: 'col-start-1 row-start-2 md:col-start-auto md:row-start-auto'}
+		:	'col-start-1 row-start-2 md:col-start-auto md:row-start-auto'}
 	>
 		<StatCard
 			value={addedDate}
@@ -55,7 +55,7 @@
 	<div
 		class={album.listened ?
 			'col-start-1 row-start-2 md:col-start-auto md:row-start-auto'
-		: 'col-start-2 row-span-2 row-start-1 md:col-start-auto md:row-span-1 md:row-start-auto'}
+		:	'col-start-2 row-span-2 row-start-1 md:col-start-auto md:row-span-1 md:row-start-auto'}
 	>
 		{#if album.listened}
 			<StatCard

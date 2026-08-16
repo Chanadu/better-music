@@ -2,9 +2,9 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import AlbumArtistCard from '$lib/components/albums/AlbumArtistCard.svelte';
-	import AlbumHero from '$lib/components/albums/AlbumHero.svelte';
 	import AlbumNotes from '$lib/components/albums/AlbumNotes.svelte';
 	import AlbumStats from '$lib/components/albums/AlbumStats.svelte';
+	import MediaHero from '$lib/components/common/MediaHero.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { albumsApi, ApiError, artistsApi } from '$lib/scripts/api';
 	import type { Album, Artist } from '$lib/scripts/types';
@@ -18,7 +18,7 @@
 		const date = new Date(album.listened_at);
 		if (Number.isNaN(date.getTime())) return album.listened_at;
 		return new Intl.DateTimeFormat(undefined, {
-			month: 'long',
+			month: 'numeric',
 			day: 'numeric',
 			year: 'numeric',
 		}).format(date);
@@ -29,7 +29,7 @@
 		const date = new Date(album.created_at);
 		if (Number.isNaN(date.getTime())) return album.created_at;
 		return new Intl.DateTimeFormat(undefined, {
-			month: 'long',
+			month: 'numeric',
 			day: 'numeric',
 			year: 'numeric',
 		}).format(date);
@@ -74,7 +74,13 @@
 		{/if}
 	</div>
 {:else if album && artist}
-	<AlbumHero {album} />
+	<MediaHero
+		title={album.title}
+		subtitle={album.year}
+		imageUrl={album.cover_url}
+		imageAlt={`${album.title} album cover`}
+		editLabel="Edit album"
+	/>
 
 	<div class="mx-auto max-w-5xl">
 		<div class="mt-7 grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.6fr)]">
