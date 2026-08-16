@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { withReturnTo } from '$lib/scripts/navigation';
+	import { newlyAdded } from '$lib/scripts/newly-added';
 	import type { Album } from '$lib/scripts/types';
 	import MediaThumbnail from '../common/MediaThumbnail.svelte';
 	import StarIcon from '../icons/StarIcon.svelte';
@@ -35,6 +36,13 @@
 				<StarIcon class="size-3" filled />
 				{album.rating}/10
 			</div>
+		{/if}
+		{#if $newlyAdded.albumIds.has(album.id)}
+			<span
+				class="status status-success status-lg indicator-item indicator-start"
+				aria-label="Newly added"
+				title="Newly added"
+			></span>
 		{/if}
 	</div>
 

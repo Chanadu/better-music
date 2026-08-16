@@ -5,6 +5,7 @@
 	import SpotifySearch from './SpotifySearch.svelte';
 	import { albumsApi, artistsApi, spotifyApi } from '$lib/scripts/api';
 	import { fetchDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
+	import { markAlbumAsNew, markArtistAsNew } from '$lib/scripts/newly-added';
 	import type { Album, Artist, SpotifyArtistCredit, SpotifyRow as Row } from '$lib/scripts/types';
 
 	let {
@@ -106,6 +107,7 @@
 			spotify_id: credit.id,
 			cover_url,
 		});
+		markArtistAsNew(created.id);
 		artists = [...artists, created];
 		return created;
 	}
@@ -134,6 +136,7 @@
 				title: tab === 'spotify' ? selected!.name : name.trim(),
 				spotify_id: tab === 'spotify' ? selected!.id : undefined,
 			});
+			markAlbumAsNew(album.id);
 
 			const metadata = {
 				artist_id: id,

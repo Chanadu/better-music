@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import MediaThumbnail from '$lib/components/common/MediaThumbnail.svelte';
 	import { withReturnTo } from '$lib/scripts/navigation';
+	import { newlyAdded } from '$lib/scripts/newly-added';
 	import type { Artist } from '$lib/scripts/types';
 
 	interface Props {
@@ -19,10 +20,18 @@
 	});
 </script>
 
-<li class="p-0">
+<li class="indicator block w-full p-0">
+	{#if $newlyAdded.artistIds.has(artist.id)}
+		<span
+			class="status status-success indicator-item indicator-start indicator-top top-1"
+			aria-label="Newly added"
+			title="Newly added"
+		></span>
+	{/if}
+
 	<a
 		href={withReturnTo(`/artist?id=${artist.id}`, page.url)}
-		class="list-row hover:bg-base-300 rounded-box transition-colors"
+		class="list-row hover:bg-base-300 rounded-box w-full transition-colors"
 		aria-label={`Open ${artist.name}`}
 	>
 		<MediaThumbnail
@@ -33,7 +42,9 @@
 		/>
 
 		<div>
-			<div>{artist.name}</div>
+			<div class="flex items-center gap-2">
+				{artist.name}
+			</div>
 
 			<div class="text-base-content/60 text-xs font-semibold uppercase">
 				{albumCount}

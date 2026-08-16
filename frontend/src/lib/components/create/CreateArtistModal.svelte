@@ -4,6 +4,7 @@
 	import SpotifySearch from './SpotifySearch.svelte';
 	import { artistsApi } from '$lib/scripts/api';
 	import { refreshDatabaseData } from '$lib/scripts/database';
+	import { markArtistAsNew } from '$lib/scripts/newly-added';
 	import type { SpotifyRow as Row } from '$lib/scripts/types';
 
 	let { dialog = $bindable(), onclose }: { dialog?: HTMLDialogElement; onclose?: () => void } = $props();
@@ -36,11 +37,12 @@
 		error = '';
 
 		try {
-			await artistsApi.create(
+			const artist = await artistsApi.create(
 				tab === 'manual' ?
 					{ name: name.trim() }
 				:	{ name: selected!.name, cover_url: selected!.imageUrl, spotify_id: selected!.id },
 			);
+			markArtistAsNew(artist.id);
 			await refreshDatabaseData();
 			dialog?.close();
 			reset();

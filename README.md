@@ -309,11 +309,10 @@ See [LICENSE](./LICENSE) for the full text.
 - [ ] album/artist edit menus & delete option
 - [ ] more page
 - [ ] home page
+- [ ] settings menu
 - [ ] save filter option on artist page on reload and page chagne
 - [ ] gradient of color for ratings
-- [ ] settings menu
 - [ ] add selecting the artist for album spotify creation
 - [ ] spotify shuffling with shortcut
 - [ ] toggle for grid and list view for artists and albums
-- [ ] add daisy ui indicator to newly added albums/artists, remove it on page reload
 - [ ] skeletons
