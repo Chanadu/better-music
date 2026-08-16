@@ -312,12 +312,9 @@ See [LICENSE](./LICENSE) for the full text.
 - [ ] save filter option on artist page on reload and page chagne
 - [ ] add filters to album pages by artist name, album name, added date
 - [ ] gradient of color for ratings
-- [ ] add selecting the artist for album spotify creation
-- [ ] add daisy ui loading to spotify search
-- [ ] add text to the 1-10 ratings in albums
-- [ ] add sorting to albums (name, added date)
-- [ ] spotify shuffling with shortcut
 - [ ] settings menu
+- [ ] add selecting the artist for album spotify creation
+- [ ] spotify shuffling with shortcut
 - [ ] toggle for grid and list view for artists and albums
-- [ ] skeletons
 - [ ] add daisy ui indicator to newly added albums/artists, remove it on page reload
+- [ ] skeletons

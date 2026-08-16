@@ -4,6 +4,23 @@
 	import AlbumCard from './AlbumCard.svelte';
 
 	type Item = { album: Album; artist?: Artist };
+	const ratingLabels: Record<number, string> = {
+		10: 'whoa',
+		9: 'incredible',
+		8: 'great',
+		7: 'good',
+		6: 'solid',
+		5: 'okay',
+		4: 'meh',
+		3: 'bad',
+		2: 'terrible',
+		1: "just don't",
+	};
+	function ratingHeading(rating: number | undefined) {
+		if (rating === undefined) return 'Unrated';
+		const label = ratingLabels[rating];
+		return label ? `${rating}/10 • ${label}` : `${rating}/10`;
+	}
 
 	let { mode, query = '' }: { mode: 'listened' | 'unlistened'; query?: string } = $props();
 
@@ -48,7 +65,7 @@
 			<section class="pt-0 pb-2">
 				{#if mode === 'listened'}
 					<div class="divider divider-center divider-primary text-xl">
-						{group.rating === undefined ? 'Unrated' : `${group.rating}/10`} • {group.albums.length}
+						{ratingHeading(group.rating)} • {group.albums.length}
 						{group.albums.length === 1 ? 'album' : 'albums'}
 					</div>
 				{/if}
