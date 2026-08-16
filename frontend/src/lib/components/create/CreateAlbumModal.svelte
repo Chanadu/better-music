@@ -5,7 +5,7 @@
 	import SpotifySearch from './SpotifySearch.svelte';
 	import { albumsApi, artistsApi, spotifyApi } from '$lib/scripts/api';
 	import { fetchDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
-	import type { Artist, SpotifyRow as Row } from '$lib/scripts/types';
+	import type { Album, Artist, SpotifyArtistCredit, SpotifyRow as Row } from '$lib/scripts/types';
 
 	let {
 		dialog = $bindable(),
@@ -20,10 +20,12 @@
 	let tab = $state<'manual' | 'spotify'>('manual');
 	let name = $state('');
 	let selected = $state<Row | undefined>();
+	let selectedSpotifyArtistId = $state('');
 	let error = $state('');
 	let saving = $state(false);
 	let spotify: SpotifySearch;
 	let artists = $state<Artist[]>([]);
+	let albums = $state<Album[]>([]);
 	let artistId = $state('');
 	let year = $state('');
 	let comment = $state('');
@@ -40,7 +42,10 @@
 		!year || (year.length === 4 && [...year].every(isDigit) && Number(year) >= 1000 && Number(year) <= currentYear),
 	);
 	let canSave = $derived(
-		!saving && (tab === 'spotify' ? Boolean(selected) : Boolean(name.trim()) && Boolean(artistId) && yearValid),
+		!saving &&
+			(tab === 'spotify' ?
+				Boolean(selected && selectedSpotifyArtistId)
+			:	Boolean(name.trim()) && Boolean(artistId) && yearValid),
 	);
 
 	$effect(() => {
@@ -49,8 +54,11 @@
 
 	$effect(() => {
 		fetchDatabaseData()
-			.then((data) => (artists = data.artists))
-			.catch((e) => (error = formatError(e, 'Failed to load artists')));
+			.then((data) => {
+				artists = data.artists;
+				albums = data.albums;
+			})
+			.catch((e) => (error = formatError(e, 'Failed to load library')));
 	});
 
 	function formatError(value: unknown, fallback: string) {
@@ -62,6 +70,7 @@
 		tab = 'manual';
 		name = '';
 		selected = undefined;
+		selectedSpotifyArtistId = '';
 		error = '';
 		artistId = initialArtistId?.toString() ?? '';
 		year = '';
@@ -78,26 +87,23 @@
 		return undefined;
 	}
 
-	async function findOrCreateArtist(row: Row) {
+	async function findOrCreateArtist(credit: SpotifyArtistCredit) {
 		const existing = artists.find(
 			(artist) =>
-				(row.artistId && artist.spotify_id === row.artistId) ||
-				artist.name.trim().toLowerCase() === (row.artistName ?? '').trim().toLowerCase(),
+				artist.spotify_id === credit.id ||
+				artist.name.trim().toLowerCase() === credit.name.trim().toLowerCase(),
 		);
 		if (existing) return existing;
 
 		let cover_url: string | undefined;
-		if (row.artistId && row.artistName) {
-			try {
-				cover_url = (await spotifyApi.searchArtists(row.artistName, 10)).find(
-					(artist) => artist.id === row.artistId,
-				)?.images[0]?.url;
-			} catch {}
-		}
+		try {
+			cover_url = (await spotifyApi.searchArtists(credit.name, 10)).find((artist) => artist.id === credit.id)
+				?.images[0]?.url;
+		} catch {}
 
 		const created = await artistsApi.create({
-			name: row.artistName ?? '',
-			spotify_id: row.artistId,
+			name: credit.name,
+			spotify_id: credit.id,
 			cover_url,
 		});
 		artists = [...artists, created];
@@ -111,7 +117,17 @@
 		error = '';
 
 		try {
-			const chosenArtist = tab === 'spotify' ? await findOrCreateArtist(selected!) : undefined;
+			if (tab === 'spotify') {
+				albums = (await fetchDatabaseData({ force: true })).albums;
+				if (albums.some((album) => album.spotify_id === selected!.id)) {
+					throw new Error('Album has already been added');
+				}
+			}
+
+			const selectedCredit = selected?.artists?.find((artist) => artist.id === selectedSpotifyArtistId);
+			if (tab === 'spotify' && !selectedCredit) throw new Error('Select an artist for this album');
+
+			const chosenArtist = selectedCredit ? await findOrCreateArtist(selectedCredit) : undefined;
 			const id = chosenArtist?.id ?? Number(artistId);
 			const album = await albumsApi.create({
 				artist_id: id,
@@ -170,7 +186,7 @@
 			bind:group={tab}
 		/>
 
-		<SpotifySearch bind:this={spotify} type="album" bind:selected />
+		<SpotifySearch bind:this={spotify} type="album" bind:selected bind:selectedArtistId={selectedSpotifyArtistId} />
 	</div>
 
 	<ListenedFields bind:listened bind:listenedAt bind:rating />

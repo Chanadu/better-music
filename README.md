@@ -306,7 +306,7 @@ See [LICENSE](./LICENSE) for the full text.
 
 ## TODO
 
-- [ ] album/artist edit menus
+- [ ] album/artist edit menus w delete option
 - [ ] more page
 - [ ] home page
 - [ ] save filter option on artist page on reload and page chagne

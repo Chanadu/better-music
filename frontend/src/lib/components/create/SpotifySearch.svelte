@@ -1,10 +1,15 @@
 <script lang="ts">
 	import SearchBar from '../common/SearchBar.svelte';
+	import FloatingField from '../common/FloatingField.svelte';
 	import SpotifySearchResult from './SpotifySearchResult.svelte';
 	import { spotifyApi } from '$lib/scripts/api';
 	import type { SpotifyRow as Row } from '$lib/scripts/types';
 
-	let { type, selected = $bindable(undefined) }: { type: 'artist' | 'album'; selected?: Row } = $props();
+	let {
+		type,
+		selected = $bindable(undefined),
+		selectedArtistId = $bindable(''),
+	}: { type: 'artist' | 'album'; selected?: Row; selectedArtistId?: string } = $props();
 
 	let query = $state('');
 	let rows = $state<Row[]>([]);
@@ -12,6 +17,13 @@
 	let message = $state('Start searching...');
 	let timer: ReturnType<typeof setTimeout>;
 	let count = $derived(type === 'artist' ? 5 : 3);
+
+	$effect(() => {
+		const credits = selected?.artists ?? [];
+		if (!credits.some((artist) => artist.id === selectedArtistId)) {
+			selectedArtistId = credits[0]?.id ?? '';
+		}
+	});
 
 	async function search() {
 		clearTimeout(timer);
@@ -38,8 +50,7 @@
 					id: a.id,
 					name: a.name,
 					imageUrl: a.images[0]?.url,
-					artistId: a.artists[0]?.id,
-					artistName: a.artists[0]?.name,
+					artists: a.artists,
 					releaseYear: a.release_date.split('-')[0],
 					meta: [a.artists.map((artist) => artist.name).join(', '), a.release_date.split('-')[0]]
 						.filter(Boolean)
@@ -65,6 +76,7 @@
 		query = '';
 		rows = [];
 		selected = undefined;
+		selectedArtistId = '';
 		message = 'Start searching...';
 	}
 
@@ -90,4 +102,16 @@
 			<SpotifySearchResult {row} {type} {loading} {message} bind:selected />
 		{/each}
 	</ul>
+
+	{#if type === 'album' && selected?.artists && selected.artists.length > 1}
+		<div class="mt-3">
+			<FloatingField label="Attribute album to">
+				<select class="select w-full" bind:value={selectedArtistId}>
+					{#each selected.artists as artist}
+						<option value={artist.id}>{artist.name}</option>
+					{/each}
+				</select>
+			</FloatingField>
+		</div>
+	{/if}
 </div>

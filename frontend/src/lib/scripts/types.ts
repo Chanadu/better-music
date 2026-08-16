@@ -5,7 +5,11 @@ export type SpotifyRow = {
 	name: string;
 	meta?: string;
 	imageUrl?: string;
-	artistId?: string;
-	artistName?: string;
+	artists?: SpotifyArtistCredit[];
 	releaseYear?: string;
+};
+
+export type SpotifyArtistCredit = {
+	id: string;
+	name: string;
 };
