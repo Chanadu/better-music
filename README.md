@@ -306,7 +306,6 @@ See [LICENSE](./LICENSE) for the full text.
 
 ## TODO
 
-- [ ] individual album page
 - [ ] album/artist edit menus
 - [ ] more page
 - [ ] home page

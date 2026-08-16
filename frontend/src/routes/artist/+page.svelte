@@ -2,8 +2,8 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import ArtistHero from '$lib/components/artists/ArtistHero.svelte';
-	import ArtistStat from '$lib/components/artists/ArtistStat.svelte';
 	import DiscographySection from '$lib/components/artists/DiscographySection.svelte';
+	import StatCard from '$lib/components/common/StatCard.svelte';
 	import CreateAlbumModal from '$lib/components/create/CreateAlbumModal.svelte';
 	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
 	import CalendarIcon from '$lib/components/icons/CalendarIcon.svelte';
@@ -78,13 +78,14 @@
 {:else if artist}
 	<ArtistHero {artist} />
 
-	<section class="stats bg-base-200 mt-4 grid grid-cols-3 shadow-sm" aria-label="Artist stats">
-		<ArtistStat value={albums.length} label="Albums" icon={AlbumIcon} />
-		<ArtistStat value={addedDate} label="Added" icon={CalendarIcon} />
-		<ArtistStat
+	<section class="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Artist stats">
+		<StatCard value={albums.length} label="Albums" icon={AlbumIcon} />
+		<StatCard value={addedDate} label="Added" icon={CalendarIcon} tone="secondary" valueClass="text-xl" />
+		<StatCard
 			value={averageRating === null ? '—' : averageRating.toFixed(1)}
 			label="Avg. rating"
 			icon={StarIcon}
+			tone="accent"
 		/>
 	</section>
 

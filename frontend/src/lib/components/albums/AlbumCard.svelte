@@ -13,7 +13,11 @@
 	let { album, subtitle, showRating = false, compact = false }: Props = $props();
 </script>
 
-<article class="group min-w-0">
+<a
+	class="group rounded-box focus-visible:outline-primary block min-w-0 transition duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-[0.98] active:brightness-95 active:duration-75 motion-reduce:transform-none [&:hover:not(:active)]:-translate-y-1 [&:hover:not(:active)]:scale-[1.02] [&:hover:not(:active)]:brightness-110 [&:hover:not(:active)]:drop-shadow-xl"
+	href={`/album?id=${album.id}&artist_id=${album.artist_id}`}
+	aria-label={`View ${album.title}`}
+>
 	<div class="indicator mb-3 block w-full">
 		<MediaThumbnail
 			variant="card"
@@ -33,7 +37,7 @@
 	</div>
 
 	<h3
-		class={compact ? 'mt-2 text-xs font-semibold text-wrap wrap-break-word' : 'mt-2 truncate font-semibold'}
+		class={`${compact ? 'mt-2 text-xs font-semibold text-wrap wrap-break-word' : 'mt-2 truncate font-semibold'} group-hover:text-primary transition-colors`}
 		title={album.title}
 	>
 		{album.title}
@@ -46,4 +50,4 @@
 	>
 		{subtitle}
 	</p>
-</article>
+</a>
