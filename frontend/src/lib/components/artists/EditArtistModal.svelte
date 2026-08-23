@@ -1,9 +1,10 @@
 <script lang="ts">
 	import ManualArtistForm from '$lib/components/create/ManualArtistForm.svelte';
 	import ModalShell from '$lib/components/create/ModalShell.svelte';
+	import SpotifySearch from '$lib/components/create/SpotifySearch.svelte';
 	import { artistsApi, spotifyApi } from '$lib/scripts/api';
 	import { refreshDatabaseData } from '$lib/scripts/database';
-	import type { Artist } from '$lib/scripts/types';
+	import type { Artist, SpotifyRow as Row } from '$lib/scripts/types';
 
 	let {
 		artist,
@@ -22,13 +23,18 @@
 	let refreshMessage = $state('');
 	let saving = $state(false);
 	let refreshing = $state(false);
+	let tab = $state<'details' | 'spotify'>('details');
+	let selected = $state<Row | undefined>();
+	let spotify = $state<SpotifySearch>();
 
 	let changed = $derived(
 		name.trim() !== artist.name ||
 			coverUrl.trim() !== (artist.cover_url ?? '') ||
 			spotifyId.trim() !== (artist.spotify_id ?? ''),
 	);
-	let canSave = $derived(!saving && !refreshing && Boolean(name.trim()) && changed);
+	let canSave = $derived(
+		!saving && !refreshing && (tab === 'spotify' ? Boolean(selected) : Boolean(name.trim()) && changed),
+	);
 
 	$effect(() => {
 		const current = artist;
@@ -37,6 +43,8 @@
 		spotifyId = current.spotify_id ?? '';
 		error = '';
 		refreshMessage = '';
+		tab = 'details';
+		selected = undefined;
 	});
 
 	function formatError(value: unknown, fallback: string) {
@@ -50,6 +58,9 @@
 		spotifyId = artist.spotify_id ?? '';
 		error = '';
 		refreshMessage = '';
+		tab = 'details';
+		selected = undefined;
+		spotify?.reset();
 	}
 
 	async function refreshFromSpotify() {
@@ -76,13 +87,18 @@
 		saving = true;
 		error = '';
 		try {
+			const selectedArtist = tab === 'spotify' ? selected : undefined;
+
 			await artistsApi.update(artist.id, {
-				name: name.trim(),
-				cover_url: coverUrl.trim(),
-				spotify_id: spotifyId.trim(),
+				name: selectedArtist?.name ?? name.trim(),
+				cover_url: selectedArtist?.imageUrl ?? coverUrl.trim(),
+				spotify_id: selectedArtist?.id ?? spotifyId.trim(),
 			});
+
 			const updated = await artistsApi.get(artist.id);
+
 			onupdated?.(updated);
+
 			await refreshDatabaseData();
 			dialog?.close();
 		} catch (e) {
@@ -104,20 +120,43 @@
 	onsave={save}
 	onclose={reset}
 >
-	<div class="px-2 pt-2">
-		<ManualArtistForm
-			bind:name
-			{coverUrl}
-			{spotifyId}
-			showSpotifyRefresh
-			{refreshing}
-			onrefresh={refreshFromSpotify}
+	<div role="tablist" class="tabs tabs-border flex">
+		<input
+			type="radio"
+			name="edit_artist_modal_tabs"
+			role="tab"
+			class="tab flex-1"
+			aria-label="Details"
+			value="details"
+			bind:group={tab}
+		/>
+		<div role="tabpanel" class="tab-content px-2 pt-4">
+			<ManualArtistForm
+				bind:name
+				{coverUrl}
+				{spotifyId}
+				showSpotifyRefresh={Boolean(artist.spotify_id)}
+				{refreshing}
+				onrefresh={refreshFromSpotify}
+			/>
+
+			{#if refreshMessage}
+				<div class="alert alert-success alert-soft mt-4 justify-center text-center" role="status">
+					<span>{refreshMessage}</span>
+				</div>
+			{/if}
+		</div>
+
+		<input
+			type="radio"
+			name="edit_artist_modal_tabs"
+			role="tab"
+			class="tab flex-1"
+			aria-label={artist.spotify_id ? 'Change Spotify' : 'Link Spotify'}
+			value="spotify"
+			bind:group={tab}
 		/>
 
-		{#if refreshMessage}
-			<div class="alert alert-success alert-soft mt-4 justify-center text-center" role="status">
-				<span>{refreshMessage}</span>
-			</div>
-		{/if}
+		<SpotifySearch bind:this={spotify} type="artist" bind:selected />
 	</div>
 </ModalShell>
