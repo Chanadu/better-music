@@ -34,7 +34,7 @@
 		/>
 
 		<div
-			class="list-row hover:bg-base-300/50 peer-checked:bg-primary peer-checked:text-primary-content peer-checked:hover:bg-primary peer-checked:hover:text-primary-content items-center"
+			class="list-row hover:bg-primary/10 peer-checked:bg-primary peer-checked:text-primary-content peer-checked:hover:bg-primary peer-checked:hover:text-primary-content items-center transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none"
 		>
 			<MediaThumbnail
 				variant="result"

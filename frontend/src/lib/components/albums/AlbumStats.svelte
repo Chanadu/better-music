@@ -68,12 +68,12 @@
 			/>
 		{:else}
 			<button
-				class="btn btn-ghost border-primary/35 hover:border-primary hover:bg-primary/10 group h-full min-h-28 w-full flex-col gap-2 rounded-xl border-2 border-dashed md:col-span-1"
+				class="btn btn-ghost border-primary/35 hover:bg-primary/10 h-full min-h-28 w-full flex-col gap-2 rounded-xl border-2 border-dashed transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none md:col-span-1"
 				type="button"
 				aria-label="Add rating"
 				onclick={onaddrating}
 			>
-				<PlusIcon class="text-primary size-7 transition-transform group-hover:scale-110" />
+				<PlusIcon class="text-primary size-7" />
 				<span class="text-primary font-semibold">Add rating</span>
 			</button>
 		{/if}

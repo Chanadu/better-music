@@ -17,7 +17,7 @@
 </script>
 
 <a
-	class="group rounded-box focus-visible:outline-primary block min-w-0 transition duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-[0.98] active:brightness-95 active:duration-75 motion-reduce:transform-none [&:hover:not(:active)]:-translate-y-1 [&:hover:not(:active)]:scale-[1.02] [&:hover:not(:active)]:brightness-110 [&:hover:not(:active)]:drop-shadow-xl"
+	class="rounded-box focus-visible:outline-primary hover:bg-primary/10 block min-w-0 transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none"
 	href={withReturnTo(`/album?id=${album.id}&artist_id=${album.artist_id}`, page.url)}
 	aria-label={`View ${album.title}`}
 >
@@ -47,7 +47,7 @@
 	</div>
 
 	<h3
-		class={`${compact ? 'mt-2 text-xs font-semibold text-wrap wrap-break-word' : 'mt-2 truncate font-semibold'} group-hover:text-primary transition-colors`}
+		class={compact ? 'mt-2 text-xs font-semibold text-wrap wrap-break-word' : 'mt-2 truncate font-semibold'}
 		title={album.title}
 	>
 		{album.title}

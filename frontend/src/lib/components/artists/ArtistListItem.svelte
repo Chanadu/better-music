@@ -20,7 +20,7 @@
 	});
 </script>
 
-<li class="indicator block w-full p-0">
+<li class="group/artist-list-item indicator block w-full p-0">
 	{#if $newlyAdded.artistIds.has(artist.id)}
 		<span
 			class="status status-success indicator-item indicator-start indicator-top top-1"
@@ -31,7 +31,7 @@
 
 	<a
 		href={withReturnTo(`/artist?id=${artist.id}`, page.url)}
-		class="list-row hover:bg-base-300 rounded-box w-full transition-colors"
+		class="list-row group-hover/artist-list-item:bg-primary/10 rounded-box w-full transition duration-200 ease-out group-hover/artist-list-item:-translate-y-1 group-hover/artist-list-item:shadow-xl active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none"
 		aria-label={`Open ${artist.name}`}
 	>
 		<MediaThumbnail
