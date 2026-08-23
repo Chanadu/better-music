@@ -41,7 +41,7 @@
 			alt={`${artist.name} artist image`}
 		/>
 
-		<div>
+		<div class="self-center">
 			<div class="flex items-center gap-2">
 				{artist.name}
 			</div>
