@@ -23,7 +23,7 @@
 		card: 'aspect-square w-full text-3xl',
 		list: 'size-[clamp(2.5rem,5vw,3.5rem)] shrink-0 text-sm',
 		result: 'size-[clamp(2.5rem,5vw,3.5rem)] shrink-0 text-sm',
-		'artist-preview': 'aspect-square w-1/2 text-6xl',
+		'artist-preview': 'aspect-square w-full text-6xl',
 		'album-preview': 'aspect-square w-full text-4xl',
 	};
 
