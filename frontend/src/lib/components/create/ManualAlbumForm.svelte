@@ -9,12 +9,16 @@
 		name = $bindable(''),
 		year = $bindable(''),
 		comment = $bindable(''),
+		coverUrl = '',
+		lockArtist = false,
 	}: {
 		artists: Artist[];
 		artistId?: string;
 		name?: string;
 		year?: string;
 		comment?: string;
+		coverUrl?: string;
+		lockArtist?: boolean;
 	} = $props();
 
 	function isDigit(character: string) {
@@ -28,7 +32,7 @@
 
 <div class="flex flex-col gap-3">
 	<FloatingField label="Artist">
-		<select class="select w-full" bind:value={artistId}>
+		<select class="select w-full" disabled={lockArtist} bind:value={artistId}>
 			<option value="">Select artist</option>
 			{#each artists as artist}
 				<option value={artist.id.toString()}>{artist.name}</option>
@@ -40,6 +44,7 @@
 		<div class="basis-1/3 pt-3">
 			<MediaThumbnail
 				variant="album-preview"
+				imageUrl={coverUrl}
 				label={name}
 				alt={name ? `${name} album preview` : ''}
 				emptyFallback=""

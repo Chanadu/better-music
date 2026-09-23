@@ -9,7 +9,13 @@
 		type,
 		selected = $bindable(undefined),
 		selectedArtistId = $bindable(''),
-	}: { type: 'artist' | 'album'; selected?: Row; selectedArtistId?: string } = $props();
+		showArtistPicker = true,
+	}: {
+		type: 'artist' | 'album';
+		selected?: Row;
+		selectedArtistId?: string;
+		showArtistPicker?: boolean;
+	} = $props();
 
 	let query = $state('');
 	let rows = $state<Row[]>([]);
@@ -103,7 +109,7 @@
 		{/each}
 	</ul>
 
-	{#if type === 'album' && selected?.artists && selected.artists.length > 1}
+	{#if type === 'album' && showArtistPicker && selected?.artists && selected.artists.length > 1}
 		<div class="mt-3">
 			<FloatingField label="Attribute album to">
 				<select class="select w-full" bind:value={selectedArtistId}>

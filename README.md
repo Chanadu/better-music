@@ -306,8 +306,6 @@ See [LICENSE](./LICENSE) for the full text.
 
 ## TODO
 
-- [ ] artist edit menus 
-    - put artist preview to the left, and refresh spotify button to the right
 - [ ] album edit menu
 - [ ] more page
 - [ ] home page

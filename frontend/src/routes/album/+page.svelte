@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import AlbumArtistCard from '$lib/components/albums/AlbumArtistCard.svelte';
+	import EditAlbumModal from '$lib/components/albums/EditAlbumModal.svelte';
 	import AlbumNotes from '$lib/components/albums/AlbumNotes.svelte';
 	import AlbumStats from '$lib/components/albums/AlbumStats.svelte';
 	import MediaHero from '$lib/components/common/MediaHero.svelte';
@@ -17,6 +18,7 @@
 	let artist = $state<Artist>();
 	let status = $state('Loading album...');
 	let deleteDialog = $state<HTMLDialogElement>();
+	let editDialog = $state<HTMLDialogElement>();
 	let backHref = $derived(getReturnHref(page.url, '/albums'));
 
 	async function deleteAlbum() {
@@ -97,7 +99,10 @@
 		deleteLabel="Delete album"
 		{backHref}
 		ondelete={() => deleteDialog?.showModal()}
+		onedit={() => editDialog?.showModal()}
 	/>
+
+	<EditAlbumModal bind:dialog={editDialog} {album} {artist} onupdated={(updated) => (album = updated)} />
 
 	<DeleteConfirmationDialog
 		bind:dialog={deleteDialog}
@@ -109,7 +114,7 @@
 
 	<div class="mx-auto max-w-5xl">
 		<div class="mt-7 grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.6fr)]">
-			<AlbumStats {album} {addedDate} {listenedDate} />
+			<AlbumStats {album} {addedDate} {listenedDate} onaddrating={() => editDialog?.showModal()} />
 			<AlbumArtistCard {artist} />
 		</div>
 

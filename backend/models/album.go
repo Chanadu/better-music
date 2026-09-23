@@ -145,9 +145,13 @@ func UpdateAlbum(database *sql.DB, userID int, artistID int, albumID int, title 
 			year = COALESCE($6, year),
 			spotify_id = COALESCE($7, spotify_id),
 			listened = COALESCE($8, listened),
-			rating = COALESCE($9, rating),
+			rating = CASE WHEN COALESCE($8, listened) THEN COALESCE($9, rating) ELSE NULL END,
 			comment = COALESCE($10, comment),
-			listened_at = COALESCE($11, listened_at)
+			listened_at = CASE
+				WHEN $8 IS FALSE THEN NULL
+				WHEN $8 IS TRUE THEN $11
+				ELSE COALESCE($11, listened_at)
+			END
 		WHERE user_id = $1 AND artist_id = $2 AND id = $3`,
 		userID, artistID, albumID, title, coverURL, year, spotifyID, listened, rating, comment, listenedAt,
 	)
