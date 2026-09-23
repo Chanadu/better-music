@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ratingColor } from '$lib/scripts/rating-colors';
 	import { page } from '$app/state';
 	import MediaThumbnail from '$lib/components/common/MediaThumbnail.svelte';
 	import { withReturnTo } from '$lib/scripts/navigation';
@@ -52,7 +53,7 @@
 				{albumCount === 1 ? 'Album' : 'Albums'}
 
 				{#if averageRating !== null}
-					• Avg {averageRating.toFixed(1)}
+					• <span style:color={ratingColor(averageRating)}>Avg {averageRating.toFixed(1)}</span>
 				{/if}
 
 				• Added {dateFormatter.format(new Date(artist.created_at))}

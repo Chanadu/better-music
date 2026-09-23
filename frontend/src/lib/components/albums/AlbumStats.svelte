@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ratingColor } from '$lib/scripts/rating-colors';
 	import StatCard from '$lib/components/common/StatCard.svelte';
 	import CalendarIcon from '$lib/components/icons/CalendarIcon.svelte';
 	import PlusIcon from '$lib/components/icons/PlusIcon.svelte';
@@ -30,6 +31,7 @@
 		<StatCard
 			value={album.listened && typeof album.rating === 'number' ? `${album.rating} / 10` : 'N/A'}
 			label="Your rating"
+			valueColor={ratingColor(album.listened ? album.rating : undefined)}
 			icon={StarIcon}
 			class={album.listened ?
 				'h-full flex-col justify-center text-center md:flex-row md:justify-start md:text-left'

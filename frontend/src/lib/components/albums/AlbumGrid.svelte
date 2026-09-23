@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ratingColor } from '$lib/scripts/rating-colors';
 	import { database } from '$lib/scripts/database';
 	import type { Album, Artist } from '$lib/scripts/types';
 	import AlbumCard from './AlbumCard.svelte';
@@ -87,7 +88,10 @@
 		{#each groups as group}
 			<section class="pt-0 pb-2">
 				{#if mode === 'listened'}
-					<div class="divider divider-center divider-primary text-xl">
+					<div
+						class="divider divider-center divider-primary text-xl"
+						style:color={ratingColor(group.rating)}
+					>
 						{ratingHeading(group.rating)} • {group.albums.length}
 						{group.albums.length === 1 ? 'album' : 'albums'}
 					</div>

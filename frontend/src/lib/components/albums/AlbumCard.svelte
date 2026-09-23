@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ratingColor } from '$lib/scripts/rating-colors';
 	import { page } from '$app/state';
 	import { withReturnTo } from '$lib/scripts/navigation';
 	import { newlyAdded } from '$lib/scripts/newly-added';
@@ -17,7 +18,8 @@
 </script>
 
 <a
-	class="rounded-box focus-visible:outline-primary hover:bg-primary/10 block min-w-0 transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none"
+	class="rounded-box focus-visible:outline-primary hover:bg-primary/10 block min-w-0 pb-1 transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none"
+	class:self-start={compact}
 	href={withReturnTo(`/album?id=${album.id}&artist_id=${album.artist_id}`, page.url)}
 	aria-label={`View ${album.title}`}
 >
@@ -31,7 +33,8 @@
 
 		{#if showRating && typeof album.rating === 'number'}
 			<div
-				class="indicator-item indicator-bottom indicator-center badge badge-primary mr-3 mb-1 gap-1 border-0 font-bold shadow-lg"
+				class="indicator-item indicator-bottom indicator-center badge mr-3 mb-1 gap-1 border-0 font-bold text-black shadow-lg"
+				style:background-color={ratingColor(album.rating)}
 			>
 				<StarIcon class="size-3" filled />
 				{album.rating}/10

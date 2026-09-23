@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ratingColor } from '$lib/scripts/rating-colors';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
@@ -136,6 +137,7 @@
 		<StatCard
 			value={averageRating === null ? '—' : averageRating.toFixed(1)}
 			label="Avg. rating"
+			color={ratingColor(averageRating)}
 			icon={StarIcon}
 			tone="accent"
 			class="col-start-2 row-span-2 row-start-1 h-full flex-col justify-center text-center sm:col-auto sm:row-span-1 sm:row-start-auto sm:flex-row sm:justify-start sm:text-left"

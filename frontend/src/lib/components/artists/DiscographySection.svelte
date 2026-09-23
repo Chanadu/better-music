@@ -2,8 +2,6 @@
 	import SortControls from '$lib/components/common/SortControls.svelte';
 	import AddAlbumCard from '$lib/components/albums/AddAlbumCard.svelte';
 	import AlbumCard from '$lib/components/albums/AlbumCard.svelte';
-	import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
-	import GridIcon from '$lib/components/icons/GridIcon.svelte';
 	import type { Album } from '$lib/scripts/types';
 	import { useSortPreference } from '$lib/scripts/sort-preferences.svelte';
 
@@ -11,11 +9,16 @@
 
 	let { albums, onadd }: { albums: Album[]; onadd?: () => void } = $props();
 	let filter = $state<Filter>('all');
+	const filters = [
+		{ value: 'all', label: 'All' },
+		{ value: 'listened', label: 'Listened' },
+		{ value: 'unlistened', label: 'Unlistened' },
+	] as const;
 	const sortOptions = [
-		{ label: 'Year', value: 'year' },
-		{ label: 'Album', value: 'album' },
+		{ label: 'Release year', value: 'year' },
+		{ label: 'Album title', value: 'album' },
 		{ label: 'Rating', value: 'rating' },
-		{ label: 'Added', value: 'added' },
+		{ label: 'Date added', value: 'added' },
 	] as const;
 	let sorting = useSortPreference(
 		() => 'bettermusic:sort:discography',
@@ -49,49 +52,42 @@
 </script>
 
 <section class="mt-9">
-	<div
-		class="mb-5 grid grid-cols-[auto_minmax(0.5rem,1fr)_auto] items-center gap-x-2 gap-y-3 lg:grid-cols-[auto_minmax(0.5rem,1fr)_auto_auto]"
-	>
-		<h2 class="text-secondary text-lg leading-none font-black tracking-tighter sm:text-3xl">Discography</h2>
-
-		<div class="divider my-0 w-full self-center" aria-hidden="true"></div>
-
-		<fieldset class="join grid shrink-0 grid-cols-3" aria-label="Filter discography">
-			<label
-				class="join-item btn btn-outline btn-primary btn-sm sm:btn-md has-checked:bg-primary has-checked:text-primary-content gap-1 px-1 text-xs sm:gap-1.5 sm:px-4 sm:text-sm"
-			>
-				<input class="sr-only" type="radio" name="discography-filter" value="all" bind:group={filter} />
-				<GridIcon class="size-3.5" />
-				All
-			</label>
-
-			<label
-				class="join-item btn btn-outline btn-primary btn-sm sm:btn-md has-checked:bg-primary has-checked:text-primary-content gap-1 px-1 text-xs sm:gap-1.5 sm:px-4 sm:text-sm"
-			>
-				<input class="sr-only" type="radio" name="discography-filter" value="listened" bind:group={filter} />
-				<CheckIcon class="size-3.5" />
-				Listened
-			</label>
-
-			<label
-				class="join-item btn btn-outline btn-primary btn-sm sm:btn-md has-checked:bg-primary has-checked:text-primary-content gap-1 px-1 text-xs sm:gap-1.5 sm:px-4 sm:text-sm"
-			>
-				<input class="sr-only" type="radio" name="discography-filter" value="unlistened" bind:group={filter} />
-				<CheckIcon class="size-3.5 opacity-40" />
-				Not Listened
-			</label>
-		</fieldset>
-		<div class="col-span-3 justify-self-end lg:col-span-1">
+	<div class="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 sm:gap-x-4">
+		<div class="col-span-2 col-start-1 row-start-1 flex min-w-0 items-center gap-2 sm:gap-4">
+			<h2 class="text-secondary text-3xl leading-none font-black tracking-tighter">Discography</h2>
+			<div class="divider my-0 min-w-4 flex-1 self-center" aria-hidden="true"></div>
+		</div>
+		<div class="col-start-2 row-start-3 w-44 sm:w-48 md:row-start-2">
 			<SortControls
 				options={sortOptions}
 				bind:sort={sorting.sort}
 				bind:reversed={sorting.reversed}
 				name="discography-sort"
+				fullWidth
 			/>
 		</div>
+		<fieldset
+			class="join col-span-2 col-start-1 row-start-2 grid w-full min-w-0 grid-cols-3 md:col-span-1"
+			aria-label="Filter discography"
+		>
+			{#each filters as option}
+				<label
+					class="join-item btn btn-outline btn-primary btn-md has-checked:bg-primary has-checked:text-primary-content px-2 text-sm has-focus-visible:outline-2 has-focus-visible:outline-offset-2 sm:px-6"
+				>
+					<input
+						class="sr-only"
+						type="radio"
+						name="discography-filter"
+						value={option.value}
+						bind:group={filter}
+					/>
+					{option.label}
+				</label>
+			{/each}
+		</fieldset>
 	</div>
 
-	<div class="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+	<div class="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
 		{#each filteredAlbums as album}
 			<AlbumCard {album} subtitle={`${album.year ?? 'Year unknown'}`} showRating />
 		{/each}

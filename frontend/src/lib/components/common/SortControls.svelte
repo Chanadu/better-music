@@ -4,11 +4,15 @@
 		sort = $bindable(),
 		reversed = $bindable(false),
 		name,
+		labelWidth = '6ch',
+		fullWidth = false,
 	}: {
 		options: readonly { label: string; value: T }[];
 		sort: T;
 		reversed?: boolean;
 		name: string;
+		labelWidth?: string;
+		fullWidth?: boolean;
 	} = $props();
 	function chooseSort(event: Event) {
 		sort = (event.currentTarget as HTMLInputElement).value as T;
@@ -16,11 +20,12 @@
 	}
 </script>
 
-<div class="join">
-	<details class="dropdown">
+<div class="join relative has-[details[open]]:z-20" class:w-full={fullWidth}>
+	<details class="dropdown" class:flex-1={fullWidth} class:min-w-0={fullWidth}>
 		<summary
 			class="btn btn-outline btn-secondary join-item justify-between"
-			style="width: calc(6ch + 4rem); min-width: calc(6ch + 4rem);"
+			style:width={fullWidth ? '100%' : `calc(${labelWidth} + 4rem)`}
+			style:min-width={fullWidth ? '0' : `calc(${labelWidth} + 4rem)`}
 		>
 			{options.find((option) => option.value === sort)?.label}
 		</summary>

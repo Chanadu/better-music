@@ -9,6 +9,8 @@
 		icon: Icon,
 		tone = 'primary',
 		valueClass = 'text-2xl',
+		color,
+		valueColor = color,
 		class: className = '',
 	}: {
 		value: string | number;
@@ -16,6 +18,8 @@
 		icon: Component<{ class?: string }>;
 		tone?: Tone;
 		valueClass?: string;
+		color?: string;
+		valueColor?: string;
 		class?: string;
 	} = $props();
 
@@ -27,11 +31,15 @@
 </script>
 
 <div class={`bg-base-200 flex min-h-28 min-w-0 items-center gap-4 rounded-xl px-5 py-4 shadow-sm ${className}`}>
-	<div class={`${toneClasses[tone]} flex size-11 shrink-0 items-center justify-center rounded-full`}>
+	<div
+		class={`${toneClasses[tone]} flex size-11 shrink-0 items-center justify-center rounded-full`}
+		style:color
+		style:background-color={color ? `color-mix(in srgb, ${color} 10%, transparent)` : undefined}
+	>
 		<Icon class="size-5" />
 	</div>
 	<div class="min-w-0">
 		<p class="text-base-content/50 text-xs font-bold tracking-wider uppercase">{label}</p>
-		<p class={`mt-0.5 truncate font-black ${valueClass}`} title={String(value)}>{value}</p>
+		<p class={`mt-0.5 truncate font-black ${valueClass}`} style:color={valueColor} title={String(value)}>{value}</p>
 	</div>
 </div>

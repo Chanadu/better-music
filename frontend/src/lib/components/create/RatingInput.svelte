@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ratingColor } from '$lib/scripts/rating-colors';
 	let {
 		value = $bindable(5),
 		disabled = false,
@@ -19,7 +20,9 @@
 			min="1"
 			max="10"
 			step="1"
-			class="range range-accent range-lg w-full"
+			class="range range-lg w-full"
+			style:color={ratingColor(disabled ? undefined : value)}
+			aria-label="Rating"
 			{disabled}
 			bind:value
 		/>
@@ -29,7 +32,7 @@
 				{#each values as option}
 					<span
 						class="absolute -translate-x-1/2"
-						class:text-accent={option === value}
+						style:color={ratingColor(disabled ? undefined : option)}
 						style={`left: ${((option - 1) / 9) * 100}%`}
 					>
 						{option === value ? '↓' : '|'}
@@ -43,7 +46,7 @@
 				{#each values as option}
 					<span
 						class="absolute -translate-x-1/2"
-						class:text-accent={option === value}
+						style:color={ratingColor(disabled ? undefined : option)}
 						class:text-xl={option === value}
 						style={`left: ${((option - 1) / 9) * 100}%`}
 					>
