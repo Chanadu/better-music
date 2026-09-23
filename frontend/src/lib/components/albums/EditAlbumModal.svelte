@@ -34,7 +34,6 @@
 	let tab = $state<'details' | 'spotify'>('details');
 	let selected = $state<Row | undefined>();
 	let spotify = $state<SpotifySearch>();
-	let currentYear = new Date().getFullYear();
 
 	function dateInputValue(value?: string) {
 		if (!value) return '';
@@ -42,13 +41,8 @@
 		return match?.[0] ?? '';
 	}
 
-	function isDigit(character: string) {
-		return character >= '0' && character <= '9';
-	}
+	let yearValid = $state(true);
 
-	let yearValid = $derived(
-		!year || (year.length === 4 && [...year].every(isDigit) && Number(year) >= 1000 && Number(year) <= currentYear),
-	);
 	let changed = $derived(
 		title.trim() !== album.title ||
 			coverUrl.trim() !== (album.cover_url ?? '') ||
@@ -180,6 +174,7 @@
 				artistId={album.artist_id.toString()}
 				bind:name={title}
 				bind:year
+				bind:yearValid
 				bind:comment
 				{coverUrl}
 				lockArtist

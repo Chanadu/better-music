@@ -1,4 +1,5 @@
 <script lang="ts">
+	import YearField from '../common/YearField.svelte';
 	import FloatingField from '../common/FloatingField.svelte';
 	import MediaThumbnail from '../common/MediaThumbnail.svelte';
 	import type { Artist } from '$lib/scripts/types';
@@ -8,6 +9,7 @@
 		artistId = $bindable(''),
 		name = $bindable(''),
 		year = $bindable(''),
+		yearValid = $bindable(true),
 		comment = $bindable(''),
 		coverUrl = '',
 		lockArtist = false,
@@ -16,18 +18,11 @@
 		artistId?: string;
 		name?: string;
 		year?: string;
+		yearValid?: boolean;
 		comment?: string;
 		coverUrl?: string;
 		lockArtist?: boolean;
 	} = $props();
-
-	function isDigit(character: string) {
-		return character >= '0' && character <= '9';
-	}
-
-	function cleanYear(event: Event) {
-		year = [...(event.currentTarget as HTMLInputElement).value].filter(isDigit).join('');
-	}
 </script>
 
 <div class="flex flex-col gap-3">
@@ -56,20 +51,7 @@
 				<input type="text" class="input w-full" placeholder="e.g. 2014 Forest Hills Drive" bind:value={name} />
 			</FloatingField>
 
-			<FloatingField label="Year">
-				<input
-					type="text"
-					inputmode="numeric"
-					pattern="[0-9]{4}"
-					maxlength="4"
-					class="input w-full"
-					class:validator={!!year}
-					placeholder="2014"
-					value={year}
-					oninput={cleanYear}
-				/>
-				<div class="validator-hint hidden">Enter a valid year</div>
-			</FloatingField>
+			<YearField bind:value={year} bind:valid={yearValid} />
 		</div>
 	</div>
 

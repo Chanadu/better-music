@@ -33,15 +33,9 @@
 	let listened = $state(false);
 	let listenedAt = $state('');
 	let rating = $state(5);
-	let currentYear = new Date().getFullYear();
 
-	function isDigit(character: string) {
-		return character >= '0' && character <= '9';
-	}
+	let yearValid = $state(true);
 
-	let yearValid = $derived(
-		!year || (year.length === 4 && [...year].every(isDigit) && Number(year) >= 1000 && Number(year) <= currentYear),
-	);
 	let canSave = $derived(
 		!saving &&
 			(tab === 'spotify' ?
@@ -176,7 +170,7 @@
 			bind:group={tab}
 		/>
 		<div role="tabpanel" class="tab-content px-2 pt-4">
-			<ManualAlbumForm {artists} bind:artistId bind:name bind:year bind:comment />
+			<ManualAlbumForm {artists} bind:artistId bind:name bind:year bind:yearValid bind:comment />
 		</div>
 
 		<input
