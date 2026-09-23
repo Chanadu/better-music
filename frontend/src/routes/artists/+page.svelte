@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SortControls from '$lib/components/common/SortControls.svelte';
 	import SearchBar from '$lib/components/common/SearchBar.svelte';
 	import ArtistListItem from '$lib/components/artists/ArtistListItem.svelte';
 	import CreateFab from '$lib/components/create/CreateFab.svelte';
@@ -16,11 +17,6 @@
 		options.map((option) => option.value),
 		{ sort: 'rating', reversed: false },
 	);
-
-	function chooseSort(event: Event) {
-		sorting.sort = (event.currentTarget as HTMLInputElement).value as typeof sorting.sort;
-		(event.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
-	}
 
 	function averageRating(ratings: number[]) {
 		if (ratings.length === 0) return null;
@@ -62,41 +58,8 @@
 <div class="navbar flex gap-2">
 	<SearchBar placeholder="artist name..." bind:value={query} />
 
-	<div class="join pt-3">
-		<details class="dropdown">
-			<summary
-				class="btn btn-outline btn-secondary join-item justify-between"
-				style="width: calc(6ch + 4rem); min-width: calc(6ch + 4rem);"
-			>
-				{options.find((o) => o.value === sorting.sort)?.label}
-			</summary>
-
-			<ul
-				class="dropdown-content menu bg-base-100 border-secondary text-secondary rounded-box z-10 mt-2 w-full border-2 shadow"
-			>
-				{#each options as option}
-					<li>
-						<label>
-							<input
-								type="radio"
-								class="radio radio-secondary radio-xs"
-								name="sort"
-								value={option.value}
-								checked={sorting.sort === option.value}
-								onchange={chooseSort}
-							/>
-							{option.label}
-						</label>
-					</li>
-				{/each}
-			</ul>
-		</details>
-
-		<label class="join-item btn btn-square btn-outline btn-secondary swap swap-rotate shrink-0">
-			<input type="checkbox" bind:checked={sorting.reversed} />
-			<span class="swap-on">↑</span>
-			<span class="swap-off">↓</span>
-		</label>
+	<div class="pt-3">
+		<SortControls {options} bind:sort={sorting.sort} bind:reversed={sorting.reversed} name="artist-sort" />
 	</div>
 </div>
 
