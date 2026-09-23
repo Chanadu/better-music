@@ -93,6 +93,14 @@
 		spotify?.reset();
 	}
 
+	export function markListened() {
+		reset();
+		listened = true;
+		const date = new Date();
+		listenedAt = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+		dialog?.showModal();
+	}
+
 	async function refreshFromSpotify() {
 		if (!spotifyId.trim() || refreshing) return;
 
