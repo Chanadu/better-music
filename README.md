@@ -306,7 +306,6 @@ See [LICENSE](./LICENSE) for the full text.
 
 ## TODO
 
-- [ ] album edit menu
 - [ ] more page
 - [ ] home page
 - [ ] settings menu

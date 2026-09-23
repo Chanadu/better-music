@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SpotifyIcon from '$lib/components/icons/SpotifyIcon.svelte';
 	import ListenedFields from '$lib/components/create/ListenedFields.svelte';
 	import ManualAlbumForm from '$lib/components/create/ManualAlbumForm.svelte';
 	import ModalShell from '$lib/components/create/ModalShell.svelte';
@@ -187,6 +188,7 @@
 					disabled={refreshing}
 					onclick={refreshFromSpotify}
 				>
+					<SpotifyIcon class="size-5" />
 					{refreshing ? 'Refreshing from Spotify...' : 'Refresh from Spotify'}
 				</button>
 			{/if}
