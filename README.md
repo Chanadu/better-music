@@ -1,122 +1,63 @@
 # Better Music
 
-Better Music is a full-stack music tracker for managing artists, album queues, and listened albums in a way that still works when your connection does not.
+Better Music is a self-hosted music tracker for keeping an album queue, recording listening history, and deciding what to play next.
 
-It combines an Astro frontend, a Go backend, PostgreSQL persistence, JWT auth, Spotify-assisted metadata search, and an offline-first local cache with queued background sync.
+The app pairs a SvelteKit frontend with a Go API and PostgreSQL. Spotify integration can fill in artist, album, release-year, and cover-art metadata, while manual entry remains available for anything Spotify does not have.
 
-## Highlights
+## Features
 
-- Email/password authentication with JWT access tokens and rotating refresh tokens
-- Artist library management with create, edit, delete, search, filters, and sorting
-- Album queue management with create, edit, delete, search, filters, and sorting
-- Separate listened view with ratings, comments, listened dates, and quick listened updates
-- Spotify-assisted artist and album search to prefill metadata and cover art
-- Offline-first library snapshot stored in the browser
-- Queued offline mutations for create, update, and delete operations
-- Background sync retry when the device reconnects
-- Installable PWA with service worker caching and offline fallback pages
-- Mobile-focused app shell with bottom tab navigation and swipe navigation between core pages
-- Theme toggle, settings menu, and custom/system dropdown mode support
-- Swagger docs for the backend API
-
-## Feature Overview
-
-### Authentication
-
-- Register and sign in with email and password
-- Automatic session restore on app launch
-- Access token refresh using stored refresh tokens
-- Logout from the current device
-- Route guarding for authenticated app pages
-
-### Artists
-
-- Create artists manually or from Spotify search
-- Store artist name, cover art, and Spotify ID
-- Edit and delete artists
-- Search artists by name and related album metadata
-- Filter artists by whether they have albums
-- Sort by alphabetical order, creation date, or average rating
-- See pending sync state when changes were made offline
-- Refresh the page from the database without using Spotify
-
-### Albums
-
-- Create albums manually or from Spotify search
-- Link albums to artists
-- Store title, cover art, year, Spotify ID, listened state, rating, comment, and listened date
-- Edit and delete albums
-- Search albums by title, artist, year, note, and rating-adjacent metadata
-- Filter by artist
-- Sort queue and listened pages independently
-- Mark albums as listened with a quick update flow
-- Refresh album pages from the database without using Spotify
-
-### Listened View
-
-- Dedicated listened page separate from the unlistened queue
-- Ratings with decimal support
-- Optional comments and listened date tracking
-- Drag-to-rerank behavior for listened albums
-- Alternate default sort behavior for completed listening history
-
-### Offline and PWA
-
-- App pages and shell assets cached by the service worker
-- Offline fallback route for disconnected sessions
-- Library snapshot persisted in `localStorage`
-- Optimistic local create, update, and delete mutations
-- Queued sync with retry on reconnect
-- Background Sync registration when available
-- Faster cached navigation between core pages
-- Installable standalone app experience
-
-### UI and UX
-
-- Sticky app header and bottom navigation
-- Touch swipe navigation between queue, listened, and artists pages
-- Create menu for quick entry points
-- Page skeletons and loading overlays
-- Light/dark theme toggle
-- Custom styled dropdowns with a fallback system-menu mode
+- Email/password accounts with short-lived JWT access tokens and rotating refresh tokens
+- Separate views for the album queue, listened albums, and artists
+- Create, edit, and delete artists and albums
+- Spotify search and metadata refresh through the backend
+- Ratings from 1–10, notes, and listened dates
+- Search and persistent sorting preferences for album and artist lists
+- A home page with a shuffled “next album” pick and recently listened/added albums
+- Artist and album detail pages with library statistics
+- Per-session library caching with automatic refresh when the app regains focus
+- Installable progressive web app (PWA)
+- Generated Swagger/OpenAPI documentation and frontend API types
+- Responsive, mobile-first interface built with Tailwind CSS and daisyUI
 
 ## Tech Stack
 
 ### Frontend
 
-- [Astro](https://astro.build/)
-- Tailwind CSS v4
+- [SvelteKit](https://svelte.dev/docs/kit)
+- Svelte 5 and TypeScript
+- Vite 7
+- Tailwind CSS 4 and daisyUI 5
 - `vite-plugin-pwa`
-- `sortablejs`
 
 ### Backend
 
-- Go 1.26
-- Standard `net/http` server
+- Go 1.26.1
+- Standard-library `net/http` server
 - PostgreSQL
 - `golang-migrate`
-- `golang-jwt/jwt`
-- `bcrypt`
-- Swagger via `swaggo/http-swagger`
+- `golang-jwt/jwt` and bcrypt
+- Swagger UI via `swaggo/http-swagger`
 
 ## Repository Layout
 
 ```text
 .
-├── backend/   Go API, auth, models, migrations, Swagger docs
-├── frontend/  Astro app, PWA, offline cache logic, UI
-├── deploy/    Caddy config, systemd service, deploy script
-├── LICENSE    MIT license
-└── README.md
+├── backend/   Go API, database models, migrations, and Swagger docs
+├── frontend/  SvelteKit application and PWA configuration
+├── deploy/    Caddy, systemd, and Raspberry Pi deployment files
+├── justfile   Development and API-generation commands
+└── LICENSE
 ```
 
 ## Local Development
 
 ### Prerequisites
 
-- Node.js and npm
-- Go 1.26+
+- Node.js 22.12 or newer
+- npm
+- Go 1.26.1 or newer
 - PostgreSQL
+- [`just`](https://github.com/casey/just) (optional, for the root-level shortcuts)
 
 ### 1. Clone the repository
 
@@ -125,7 +66,11 @@ git clone https://github.com/Chanadu/better-music.git
 cd better-music
 ```
 
-### 2. Configure the backend
+### 2. Create the database
+
+Create a PostgreSQL database named `better_music` (or use another name and update `POSTGRES_URL` below). Database migrations run automatically when the backend starts.
+
+### 3. Configure the backend
 
 Create `backend/.env`:
 
@@ -134,10 +79,6 @@ LOG_ENABLE=true
 LOG_DEBUG=true
 LOG_DIR=./logs
 
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
 POSTGRES_URL=postgres://postgres:postgres@localhost:5432/better_music
 
 SERVER_HOST=localhost
@@ -151,169 +92,133 @@ JWT_ACCESS_TOKEN_MINUTES=15
 JWT_REFRESH_TOKEN_HOURS=720
 ```
 
-Notes:
-
-- Create the log directory before starting the API if you keep `LOG_DIR=./logs`:
+Create the configured log directory before starting the API:
 
 ```bash
 mkdir -p backend/logs
 ```
 
-- `POSTGRES_URL` is what the backend actually uses to connect and migrate.
-- Spotify search now reads `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` from the backend environment only.
-- In debug mode the backend appends `?sslmode=disable` to the database URL.
-- The backend runs migrations automatically on startup.
+`JWT_ACCESS_TOKEN_MINUTES` and `JWT_REFRESH_TOKEN_HOURS` are optional and default to 15 minutes and 720 hours. Spotify credentials are needed for Spotify search and metadata refresh; artist and album records can still be entered manually without them.
 
-### 3. Configure the frontend
+When `LOG_DEBUG=true`, the backend adds `sslmode=disable` to `POSTGRES_URL` for local PostgreSQL connections. Set `LOG_DEBUG=false` in environments that require SSL.
 
-No frontend Spotify credentials are required. The browser uses backend `/api/spotify/*` proxy routes.
+### 4. Install frontend dependencies
 
-### 4. Start the backend
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+### 5. Run the app
+
+Start both development servers from the repository root:
+
+```bash
+just dev
+```
+
+Or run them in separate terminals:
 
 ```bash
 cd backend
 go run .
 ```
 
-The API starts on `http://localhost:8080`.
-
-Swagger docs are available at:
-
-```text
-http://localhost:8080/swagger/
-```
-
-### 5. Start the frontend
-
-In a second terminal:
-
 ```bash
 cd frontend
-npm install
 npm run dev
 ```
 
-The frontend runs on Astro's dev server and proxies `/api` requests to `http://localhost:8080`.
+The frontend is available at `http://localhost:5173` and proxies `/api` to the backend at `http://localhost:8080`. Swagger UI is available at `http://localhost:8080/swagger/`.
 
-## Available Commands
+## Commands
 
-### Frontend
+Run frontend commands from `frontend/`:
 
 ```bash
-cd frontend
-npm install
-npm run dev
-npm run build
-npm run preview
+npm run dev              # Start the Vite development server
+npm run build            # Create the static production build
+npm run preview          # Preview the production build
+npm run check            # Run Svelte and TypeScript checks
+npm run format:check     # Check formatting
 ```
 
-### Backend
+Run backend commands from `backend/`:
 
 ```bash
-cd backend
 go run .
 go build .
+go test ./...
 ```
 
 ### API contract generation
 
-The backend Swagger document is the source of truth for frontend API types. After changing a Go API request or response model, regenerate both artifacts from the repository root:
+The checked-in Swagger document is the source for the frontend API types. After changing API handlers or models, run this from the repository root:
 
 ```bash
 just api
 ```
 
-To verify that the checked-in TypeScript types match the checked-in Swagger document:
+Verify that the generated frontend types are current with:
 
 ```bash
 just api-check
 ```
 
-Do not edit `frontend/src/scripts/api-types.ts` directly.
+The generated file is `frontend/src/lib/scripts/api-types.ts`; do not edit it by hand.
 
 ## API Overview
 
-Public auth endpoints:
+Authentication endpoints are public:
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
 
-Protected resource endpoints:
+Artist, album, and Spotify endpoints require an `Authorization: Bearer <token>` header:
 
-- `GET /api/artists`
-- `GET /api/artists/{id}`
-- `POST /api/artists`
-- `PUT /api/artists/{id}`
-- `DELETE /api/artists/{id}`
+- `GET|POST /api/artists`
+- `GET|PUT|DELETE /api/artists/{id}`
 - `GET /api/artists/{id}/albums`
-- `GET /api/albums`
-- `GET /api/albums/{id}`
-- `POST /api/albums`
-- `PUT /api/albums/{id}`
-- `DELETE /api/albums/{id}`
+- `GET|POST /api/albums`
+- `GET|PUT|DELETE /api/albums/{id}`
 - `GET /api/spotify/search/artists`
 - `GET /api/spotify/search/albums`
+- `GET /api/spotify/artists/{id}`
+- `GET /api/spotify/albums/{id}`
+
+See Swagger UI for request bodies, parameters, and response schemas.
+
+## Data and Caching
+
+PostgreSQL is the source of truth. After login, the frontend fetches the current user's artists and albums and stores that snapshot in `sessionStorage` so navigation within the tab is immediate. It refreshes stale data when the page becomes visible or the window regains focus.
+
+The PWA caches the static application shell. Creating or changing library data still requires a connection to the backend; offline mutation queueing is not currently implemented.
 
 ## Deployment
 
-The `deploy/` directory contains a simple Raspberry Pi-style deployment setup:
+The `deploy/` directory contains a Raspberry Pi-oriented deployment example:
 
-- `deploy/Caddyfile` serves the built frontend and reverse proxies `/api/*` and `/swagger/*` to the backend
-- `deploy/better-music-backend.service` defines a systemd unit for the Go server
-- `deploy/deploy.sh` fetches the latest `main`, rebuilds backend and frontend, and reloads services
+- `Caddyfile` serves the static frontend and proxies `/api/*` and `/swagger/*` to `127.0.0.1:8080`
+- `better-music-backend.service` runs the Go backend with systemd
+- `deploy.sh` updates `main`, rebuilds both applications, restarts the backend, and reloads Caddy
 
-Self-hosted setup:
+These files assume the repository is installed at `/home/pi/better-music`. The included Caddyfile still points to `frontend/dist`, while SvelteKit's static adapter outputs `frontend/build` by default; align that path before deploying. Also review the service user, environment configuration, and network exposure before using the example on another host.
 
-- The app is intended to run on a Raspberry Pi as a small self-hosted music tracker
-- Caddy sits in front of the app and serves the static frontend while proxying API traffic to the Go backend
-- The public instance is exposed through Tailscale
-- The included deploy script provides a simple pull-and-restart workflow for updating the live instance
-- A current Tailscale-hosted instance is available at `https://web-pi.tail559d08.ts.net`
+## Roadmap
 
-Current deployment shape:
-
-- Backend: `127.0.0.1:8080`
-- Caddy/static frontend: `:8081`
-
-## Offline Sync Model
-
-Better Music is intentionally not just "cached pages". The app keeps a real local working copy of your library:
-
-- The latest library snapshot is stored in the browser
-- New artists and albums can be created offline with temporary local IDs
-- Updates and deletes are queued while offline
-- When the app reconnects, queued mutations are replayed against the API
-- Synced IDs are remapped from temporary local entities to real database IDs
-- Pending changes remain visible in the UI until sync completes
-
-## Current State
-
-This repository already includes:
-
-- working frontend and backend applications
-- database migrations
-- offline-first local cache and mutation queueing
-- installable PWA support
-- deployment scaffolding
+- [ ] Make the add-album button match the add-rating button
+- [ ] Automatically select “listened” when adding a rating
+- [ ] Build the More page and add library statistics
+- [ ] Add account settings, including password/email changes and account deletion
+- [ ] Add a theme selector
+- [ ] Add customizable rating labels
+- [ ] Add Spotify shuffle shortcuts
+- [ ] Add grid/list toggles for artists and albums
+- [ ] Add skeleton loading states
 
 ## License
 
-This project is licensed under the MIT License.
-
-See [LICENSE](./LICENSE) for the full text.
-
-## TODO
-
-- [ ] more page
-- [ ] home page
-- [ ] settings menu
-    - light mode dark mode
-    - change text of ratings
-    - delete account
-    - change account password username all taht
-- [ ] gradient of color for ratings
-- [ ] spotify shuffling with shortcut
-- [ ] toggle for grid and list view for artists and albums
-- [ ] skeletons
+Better Music is available under the [MIT License](./LICENSE).
