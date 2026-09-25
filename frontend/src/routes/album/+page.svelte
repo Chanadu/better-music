@@ -19,6 +19,7 @@
 	let status = $state('Loading album...');
 	let deleteDialog = $state<HTMLDialogElement>();
 	let editDialog = $state<HTMLDialogElement>();
+	let editModal = $state<EditAlbumModal>();
 	let backHref = $derived(getReturnHref(page.url, '/albums'));
 
 	async function deleteAlbum() {
@@ -97,13 +98,21 @@
 		imageAlt={`${album.title} album cover`}
 		editLabel="Edit album"
 		deleteLabel="Delete album"
-		spotifyHref={album.spotify_id ? `https://open.spotify.com/album/${encodeURIComponent(album.spotify_id)}` : undefined}
+		spotifyHref={album.spotify_id ?
+			`https://open.spotify.com/album/${encodeURIComponent(album.spotify_id)}`
+		:	undefined}
 		{backHref}
 		ondelete={() => deleteDialog?.showModal()}
 		onedit={() => editDialog?.showModal()}
 	/>
 
-	<EditAlbumModal bind:dialog={editDialog} {album} {artist} onupdated={(updated) => (album = updated)} />
+	<EditAlbumModal
+		bind:this={editModal}
+		bind:dialog={editDialog}
+		{album}
+		{artist}
+		onupdated={(updated) => (album = updated)}
+	/>
 
 	<DeleteConfirmationDialog
 		bind:dialog={deleteDialog}
@@ -115,7 +124,7 @@
 
 	<div class="mx-auto max-w-5xl">
 		<div class="mt-7 grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.6fr)]">
-			<AlbumStats {album} {addedDate} {listenedDate} onaddrating={() => editDialog?.showModal()} />
+			<AlbumStats {album} {addedDate} {listenedDate} onaddrating={() => editModal?.markListened()} />
 			<AlbumArtistCard {artist} />
 		</div>
 
