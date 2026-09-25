@@ -33,7 +33,7 @@
 
 		{#if showRating && typeof album.rating === 'number'}
 			<div
-				class="absolute right-2 bottom-2 flex items-center gap-1 rounded-lg border border-white/15 bg-black/80 px-2 py-1 text-white shadow-sm backdrop-blur-md"
+				class="bg-base-200/95 absolute right-2 bottom-2 flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1 text-white shadow-sm backdrop-blur-md"
 				aria-hidden="true"
 			>
 				<span style:color={ratingColor(album.rating)}>
