@@ -21,9 +21,9 @@
 	class="rounded-box focus-visible:outline-primary hover:bg-primary/10 block min-w-0 pb-1 transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none"
 	class:self-start={compact}
 	href={withReturnTo(`/album?id=${album.id}&artist_id=${album.artist_id}`, page.url)}
-	aria-label={`View ${album.title}`}
+	aria-label={`View ${album.title}${showRating && typeof album.rating === 'number' ? `, rated ${album.rating} out of 10` : ''}`}
 >
-	<div class="indicator mb-3 block w-full">
+	<div class="indicator relative mb-3 block w-full">
 		<MediaThumbnail
 			variant="card"
 			imageUrl={album.cover_url ?? ''}
@@ -33,11 +33,13 @@
 
 		{#if showRating && typeof album.rating === 'number'}
 			<div
-				class="indicator-item indicator-bottom indicator-center badge mr-3 mb-1 gap-1 border-0 font-bold text-black shadow-lg"
-				style:background-color={ratingColor(album.rating)}
+				class="absolute right-2 bottom-2 flex items-center gap-1 rounded-lg border border-white/15 bg-black/80 px-2 py-1 text-white shadow-sm backdrop-blur-md"
+				aria-hidden="true"
 			>
-				<StarIcon class="size-3" filled />
-				{album.rating}/10
+				<span style:color={ratingColor(album.rating)}>
+					<StarIcon class="size-3.5" filled />
+				</span>
+				<span class="text-sm leading-5 font-bold tabular-nums">{album.rating}</span>
 			</div>
 		{/if}
 		{#if $newlyAdded.albumIds.has(album.id)}

@@ -42,7 +42,7 @@
 	}
 
 	let valid = $derived(
-		isValidEmail(email) && password.length >= 4 && (mode === 'login' || confirmPassword === password),
+		mode === 'login' || (isValidEmail(email) && password.length >= 4 && confirmPassword === password),
 	);
 
 	async function submit(event: SubmitEvent) {
@@ -74,24 +74,31 @@
 		<div class="flex flex-col gap-2">
 			<div class="label">Email</div>
 			<div class="flex w-full flex-col gap-1">
-				<label class="input validator w-full">
+				<label class="input w-full" class:validator={mode === 'register'}>
 					<EmailIcon class="h-[1em] opacity-50" />
 					<input
-						type="email"
+						type={mode === 'register' ? 'email' : 'text'}
 						name="email"
 						placeholder="mail@site.com"
 						autocomplete="email"
-						required
+						required={mode === 'register'}
 						bind:value={email}
 					/>
 				</label>
-				<div class="validator-hint hidden w-full">Enter valid email address</div>
+				{#if mode === 'register'}
+					<div class="validator-hint hidden w-full">Enter valid email address</div>
+				{/if}
 			</div>
 		</div>
 
 		<div class="flex flex-col gap-2">
 			<div class="label">Password</div>
-			<PasswordField bind:value={password} bind:shown={showPassword} autocomplete={copy.passwordAutocomplete} />
+			<PasswordField
+				bind:value={password}
+				bind:shown={showPassword}
+				autocomplete={copy.passwordAutocomplete}
+				validate={mode === 'register'}
+			/>
 		</div>
 		{#if mode === 'register'}
 			<div class="flex flex-col gap-2">

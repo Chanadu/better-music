@@ -19,8 +19,7 @@
 
 	function shuffle() {
 		const alternatives = unlistened.filter((item) => item.id !== selectedId);
-		const choices = alternatives.length ? alternatives : unlistened;
-		selectedId = choices[Math.floor(Math.random() * choices.length)]?.id;
+		selectedId = alternatives[Math.floor(Math.random() * alternatives.length)]?.id;
 	}
 
 	$effect(() => {

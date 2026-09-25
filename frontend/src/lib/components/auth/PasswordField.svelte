@@ -8,24 +8,26 @@
 		shown = $bindable(false),
 		autocomplete = 'current-password',
 		hint = 'Enter at least 4 characters',
+		validate = true,
 	}: {
 		value?: string;
 		shown?: boolean;
 		autocomplete?: 'current-password' | 'new-password';
 		hint?: string;
+		validate?: boolean;
 	} = $props();
 </script>
 
 <div class="flex w-full flex-col gap-1">
-	<label class="input validator w-full">
+	<label class="input w-full" class:validator={validate}>
 		<LockIcon class="h-[1em] opacity-50" />
 
 		<input
 			type={shown ? 'text' : 'password'}
 			name="password"
 			placeholder="password"
-			required
-			minlength="4"
+			required={validate}
+			minlength={validate ? 4 : undefined}
 			{autocomplete}
 			bind:value
 		/>
@@ -42,5 +44,7 @@
 		</button>
 	</label>
 
-	<div class="validator-hint hidden w-full">{hint}</div>
+	{#if validate}
+		<div class="validator-hint hidden w-full">{hint}</div>
+	{/if}
 </div>

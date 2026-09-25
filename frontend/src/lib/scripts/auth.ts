@@ -52,7 +52,7 @@ const requestRefresh = async () => {
 
 export const getValidAccessToken = async () => {
 	const token = localStorage.getItem(keys.access);
-	const expiresAt = Number(localStorage.getItem(keys.expires) ?? 0);
+	const expiresAt = Number(localStorage.getItem(keys.expires));
 
 	if (token && getCurrentUserId() === null) {
 		clearTokens();

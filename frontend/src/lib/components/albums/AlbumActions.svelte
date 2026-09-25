@@ -17,8 +17,8 @@
 	} = $props();
 </script>
 
-<div class="@container mt-4 lg:mt-5">
-	<div class="grid grid-cols-[1fr_1.5fr_1fr] gap-2 lg:grid-cols-1 lg:gap-2.5">
+<div class="@container mt-4 sm:mt-5">
+	<div class="grid grid-cols-[1fr_1.5fr_1fr] gap-2 sm:grid-cols-1 sm:gap-2.5">
 		<AlbumActionButton color="secondary" disabled={!canShuffle} onclick={onshuffle}>
 			<ShuffleIcon />
 			Shuffle

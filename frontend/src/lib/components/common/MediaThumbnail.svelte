@@ -17,7 +17,7 @@
 
 	let failed = $state(false);
 	let shownUrl = $derived(failed ? '' : imageUrl);
-	let fallback = $derived(fallbackText ?? label.trim().charAt(0).toUpperCase() ?? emptyFallback);
+	let fallback = $derived(fallbackText ?? label.trim().charAt(0).toUpperCase());
 
 	const classes = {
 		card: 'aspect-square w-full text-3xl',

@@ -111,7 +111,7 @@
 			const spotifyAlbum = await spotifyApi.getAlbum(spotifyId.trim());
 			title = spotifyAlbum.name;
 			coverUrl = spotifyAlbum.images[0]?.url ?? '';
-			year = spotifyAlbum.release_date.split('-')[0] ?? '';
+			year = spotifyAlbum.release_date.split('-')[0];
 			refreshMessage = 'Latest album data loaded from Spotify. Save to apply it.';
 		} catch (e) {
 			error = formatError(e, 'Failed to refresh album from Spotify');
