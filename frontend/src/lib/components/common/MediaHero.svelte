@@ -2,6 +2,7 @@
 	import BackIcon from '$lib/components/icons/BackIcon.svelte';
 	import DeleteIcon from '$lib/components/icons/DeleteIcon.svelte';
 	import EditIcon from '$lib/components/icons/EditIcon.svelte';
+	import SpotifyIcon from '$lib/components/icons/SpotifyIcon.svelte';
 
 	let {
 		title,
@@ -10,6 +11,7 @@
 		imageAlt,
 		editLabel,
 		deleteLabel,
+		spotifyHref,
 		backHref,
 		onedit,
 		ondelete,
@@ -20,6 +22,7 @@
 		imageAlt: string;
 		editLabel: string;
 		deleteLabel: string;
+		spotifyHref?: string;
 		backHref: string;
 		onedit?: () => void;
 		ondelete?: () => void;
@@ -64,16 +67,30 @@
 
 	<div class="absolute inset-x-0 bottom-5 px-4 sm:bottom-7 sm:px-8">
 		<h1
-			class="pr-28 text-4xl leading-none font-black tracking-tight wrap-break-word text-white sm:text-6xl lg:text-7xl"
+			class="pr-40 text-4xl leading-none font-black tracking-tight wrap-break-word text-white sm:text-6xl lg:text-7xl"
 		>
 			{title}
 		</h1>
 		{#if subtitle !== undefined && subtitle !== null && subtitle !== ''}
-			<p class="text-base-content/70 mt-3 pr-28 text-lg font-medium sm:text-xl">{subtitle}</p>
+			<p class="text-base-content/70 mt-3 pr-40 text-lg font-medium sm:text-xl">{subtitle}</p>
 		{/if}
 	</div>
 
 	<div class="absolute right-4 bottom-5 z-10 flex gap-2 sm:right-8 sm:bottom-7">
+		{#if spotifyHref}
+			<a
+				class="btn btn-square btn-outline btn-success group shadow-xl"
+				href={spotifyHref}
+				target="_blank"
+				rel="noreferrer"
+				aria-label="Open in Spotify"
+			>
+				<SpotifyIcon
+					branded={false}
+					class="group-hover:text-success-content group-focus-visible:text-success-content size-5 text-[#1ed760]"
+				/>
+			</a>
+		{/if}
 		<button
 			class="btn btn-square btn-outline btn-secondary shadow-xl"
 			type="button"

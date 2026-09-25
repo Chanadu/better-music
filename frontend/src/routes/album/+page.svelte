@@ -97,6 +97,7 @@
 		imageAlt={`${album.title} album cover`}
 		editLabel="Edit album"
 		deleteLabel="Delete album"
+		spotifyHref={album.spotify_id ? `https://open.spotify.com/album/${encodeURIComponent(album.spotify_id)}` : undefined}
 		{backHref}
 		ondelete={() => deleteDialog?.showModal()}
 		onedit={() => editDialog?.showModal()}

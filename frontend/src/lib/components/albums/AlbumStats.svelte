@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { ratingColor } from '$lib/scripts/rating-colors';
+	import AddButton from '$lib/components/common/AddButton.svelte';
 	import StatCard from '$lib/components/common/StatCard.svelte';
 	import CalendarIcon from '$lib/components/icons/CalendarIcon.svelte';
-	import PlusIcon from '$lib/components/icons/PlusIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import type { Album } from '$lib/scripts/types';
 
@@ -69,15 +69,7 @@
 				class="h-full"
 			/>
 		{:else}
-			<button
-				class="btn btn-ghost border-primary/35 hover:bg-primary/10 h-full min-h-28 w-full flex-col gap-2 rounded-xl border-2 border-dashed transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none md:col-span-1"
-				type="button"
-				aria-label="Add rating"
-				onclick={onaddrating}
-			>
-				<PlusIcon class="text-primary size-7" />
-				<span class="text-primary font-semibold">Add rating</span>
-			</button>
+			<AddButton label="Add rating" class="h-full min-h-28 md:col-span-1" onclick={onaddrating} />
 		{/if}
 	</div>
 </section>

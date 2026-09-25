@@ -101,6 +101,7 @@
 		imageAlt={`${artist.name} artist portrait`}
 		editLabel="Edit artist"
 		deleteLabel="Delete artist"
+		spotifyHref={artist.spotify_id ? `https://open.spotify.com/artist/${encodeURIComponent(artist.spotify_id)}` : undefined}
 		{backHref}
 		ondelete={() => deleteDialog?.showModal()}
 		onedit={() => editDialog?.showModal()}

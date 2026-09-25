@@ -209,7 +209,6 @@ These files assume the repository is installed at `/home/pi/better-music`. The i
 
 ## Roadmap
 
-- [ ] Make the add-album button match the add-rating button
 - [ ] Automatically select “listened” when adding a rating
 - [ ] Build the More page and add library statistics
 - [ ] Add account settings, including password/email changes and account deletion
