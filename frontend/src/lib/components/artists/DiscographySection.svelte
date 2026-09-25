@@ -92,6 +92,6 @@
 			<AlbumCard {album} subtitle={`${album.year ?? 'Year unknown'}`} showRating />
 		{/each}
 
-		<AddAlbumCard subtitle="New release" onclick={onadd} />
+		<AddAlbumCard onclick={onadd} />
 	</div>
 </section>
