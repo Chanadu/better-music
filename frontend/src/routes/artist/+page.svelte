@@ -32,9 +32,7 @@
 	);
 	let ratedAlbums = $derived(albums.filter((album) => typeof album.rating === 'number'));
 	let averageRating = $derived(
-		ratedAlbums.length ?
-			ratedAlbums.reduce((total, album) => total + (album.rating ?? 0), 0) / ratedAlbums.length
-		:	null,
+		ratedAlbums.length ? ratedAlbums.reduce((total, album) => total + album.rating!, 0) / ratedAlbums.length : null,
 	);
 	let addedDate = $derived(
 		artist ?
@@ -63,7 +61,7 @@
 		const raw = page.url.searchParams.get('id');
 		const id = Number(raw);
 
-		if (!raw || !Number.isInteger(id) || id < 1) {
+		if (!Number.isInteger(id) || id < 1) {
 			status = 'Artist not found.';
 			return;
 		}

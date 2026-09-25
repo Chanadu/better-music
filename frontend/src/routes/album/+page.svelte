@@ -57,7 +57,7 @@
 		const id = Number(rawId);
 		const artistId = Number(rawArtistId);
 
-		if (!rawId || !rawArtistId || !Number.isInteger(id) || !Number.isInteger(artistId) || id < 1 || artistId < 1) {
+		if (!Number.isInteger(id) || !Number.isInteger(artistId) || id < 1 || artistId < 1) {
 			status = 'Album not found.';
 			return;
 		}
