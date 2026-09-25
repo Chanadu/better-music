@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ManualArtistForm from '$lib/components/create/ManualArtistForm.svelte';
-	import ModalShell from '$lib/components/create/ModalShell.svelte';
+	import FormModalShell from '$lib/components/create/FormModalShell.svelte';
 	import SpotifySearch from '$lib/components/create/SpotifySearch.svelte';
 	import { artistsApi, spotifyApi } from '$lib/scripts/api';
 	import { refreshDatabaseData } from '$lib/scripts/database';
@@ -109,7 +109,7 @@
 	}
 </script>
 
-<ModalShell
+<FormModalShell
 	bind:dialog
 	title="Artist"
 	headingPrefix="Edit"
@@ -159,4 +159,4 @@
 
 		<SpotifySearch bind:this={spotify} type="artist" bind:selected />
 	</div>
-</ModalShell>
+</FormModalShell>

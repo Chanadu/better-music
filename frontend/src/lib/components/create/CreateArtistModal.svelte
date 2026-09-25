@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ManualArtistForm from './ManualArtistForm.svelte';
-	import ModalShell from './ModalShell.svelte';
+	import FormModalShell from './FormModalShell.svelte';
 	import SpotifySearch from './SpotifySearch.svelte';
 	import { artistsApi } from '$lib/scripts/api';
 	import { refreshDatabaseData } from '$lib/scripts/database';
@@ -55,7 +55,7 @@
 	}
 </script>
 
-<ModalShell bind:dialog title="Artist" {error} {saving} {canSave} onsave={save} {onclose}>
+<FormModalShell bind:dialog title="Artist" {error} {saving} {canSave} onsave={save} {onclose}>
 	<div role="tablist" class="tabs tabs-border flex">
 		<input
 			type="radio"
@@ -82,4 +82,4 @@
 
 		<SpotifySearch bind:this={spotify} type="artist" bind:selected />
 	</div>
-</ModalShell>
+</FormModalShell>

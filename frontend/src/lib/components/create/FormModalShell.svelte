@@ -1,0 +1,54 @@
+<script lang="ts">
+	import ModalShell from '$lib/components/common/ModalShell.svelte';
+	import type { Snippet } from 'svelte';
+
+	let {
+		dialog = $bindable(),
+		title,
+		headingPrefix = 'Create',
+		saveLabel,
+		error = '',
+		saving = false,
+		canSave,
+		onsave,
+		onclose,
+		children,
+	}: {
+		dialog?: HTMLDialogElement;
+		title: string;
+		headingPrefix?: string;
+		saveLabel?: string;
+		error?: string;
+		saving?: boolean;
+		canSave: boolean;
+		onsave: () => void;
+		onclose?: () => void;
+		children: Snippet;
+	} = $props();
+</script>
+
+<ModalShell bind:dialog {onclose}>
+	<form method="dialog">
+		<button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2">✕</button>
+	</form>
+
+	<h2 class="mb-2 text-center text-xl font-semibold">{headingPrefix} {title}</h2>
+
+	{@render children()}
+
+	{#if error}
+		<div class="alert alert-error alert-soft mt-4 justify-center text-center" role="alert">
+			<span>{error}</span>
+		</div>
+	{/if}
+
+	<div class="modal-action mt-6 flex gap-4 px-2">
+		<form method="dialog" class="flex-1">
+			<button class="btn btn-soft btn-secondary w-full">Cancel</button>
+		</form>
+
+		<button type="button" class="btn btn-primary flex-1" disabled={!canSave} onclick={onsave}>
+			{saving ? 'Saving...' : (saveLabel ?? `Save ${title}`)}
+		</button>
+	</div>
+</ModalShell>

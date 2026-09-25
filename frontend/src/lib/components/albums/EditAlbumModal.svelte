@@ -2,7 +2,7 @@
 	import SpotifyIcon from '$lib/components/icons/SpotifyIcon.svelte';
 	import ListenedFields from '$lib/components/create/ListenedFields.svelte';
 	import ManualAlbumForm from '$lib/components/create/ManualAlbumForm.svelte';
-	import ModalShell from '$lib/components/create/ModalShell.svelte';
+	import FormModalShell from '$lib/components/create/FormModalShell.svelte';
 	import SpotifySearch from '$lib/components/create/SpotifySearch.svelte';
 	import { albumsApi, spotifyApi } from '$lib/scripts/api';
 	import { refreshDatabaseData } from '$lib/scripts/database';
@@ -156,7 +156,7 @@
 	}
 </script>
 
-<ModalShell
+<FormModalShell
 	bind:dialog
 	title="Album"
 	headingPrefix="Edit"
@@ -222,4 +222,4 @@
 	</div>
 
 	<ListenedFields bind:listened bind:listenedAt bind:rating />
-</ModalShell>
+</FormModalShell>

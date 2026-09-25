@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DeleteIcon from '$lib/components/icons/DeleteIcon.svelte';
+	import ModalShell from './ModalShell.svelte';
 
 	let {
 		dialog = $bindable(),
@@ -47,43 +48,40 @@
 	}
 </script>
 
-<dialog class="modal" bind:this={dialog} onclose={handleClose} oncancel={(event) => deleting && event.preventDefault()}>
-	<div class="modal-box max-w-md">
-		<div class="bg-error/15 text-error mx-auto mb-4 flex size-14 items-center justify-center rounded-full">
-			<DeleteIcon class="size-7" />
-		</div>
-
-		<h2 class="text-center text-xl font-semibold">{title}</h2>
-		<p class="text-base-content/70 mt-2 text-center">{description}</p>
-
-		{#if disabledReason}
-			<div class="alert alert-warning alert-soft mt-5 text-sm" role="status">
-				<span>{disabledReason}</span>
-			</div>
-		{/if}
-
-		{#if error}
-			<div class="alert alert-error alert-soft mt-5 text-sm" role="alert">
-				<span>{error}</span>
-			</div>
-		{/if}
-
-		<div class="modal-action mt-6 grid grid-cols-2 gap-3">
-			<form method="dialog">
-				<button class="btn btn-soft btn-secondary w-full" disabled={deleting}>Cancel</button>
-			</form>
-
-			<button
-				type="button"
-				class="btn btn-error"
-				disabled={deleting || Boolean(disabledReason)}
-				onclick={confirm}
-			>
-				{#if deleting}<span class="loading loading-spinner loading-sm"></span>{/if}
-				{deleting ? 'Deleting...' : confirmLabel}
-			</button>
-		</div>
+<ModalShell
+	bind:dialog
+	class="max-w-md"
+	backdropDisabled={deleting}
+	onclose={handleClose}
+	oncancel={(event) => deleting && event.preventDefault()}
+>
+	<div class="bg-error/15 text-error mx-auto mb-4 flex size-14 items-center justify-center rounded-full">
+		<DeleteIcon class="size-7" />
 	</div>
 
-	<form method="dialog" class="modal-backdrop"><button disabled={deleting}>close</button></form>
-</dialog>
+	<h2 class="text-center text-xl font-semibold">{title}</h2>
+	<p class="text-base-content/70 mt-2 text-center">{description}</p>
+
+	{#if disabledReason}
+		<div class="alert alert-warning alert-soft mt-5 text-sm" role="status">
+			<span>{disabledReason}</span>
+		</div>
+	{/if}
+
+	{#if error}
+		<div class="alert alert-error alert-soft mt-5 text-sm" role="alert">
+			<span>{error}</span>
+		</div>
+	{/if}
+
+	<div class="modal-action mt-6 grid grid-cols-2 gap-3">
+		<form method="dialog">
+			<button class="btn btn-soft btn-secondary w-full" disabled={deleting}>Cancel</button>
+		</form>
+
+		<button type="button" class="btn btn-error" disabled={deleting || Boolean(disabledReason)} onclick={confirm}>
+			{#if deleting}<span class="loading loading-spinner loading-sm"></span>{/if}
+			{deleting ? 'Deleting...' : confirmLabel}
+		</button>
+	</div>
+</ModalShell>
