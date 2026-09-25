@@ -7,14 +7,20 @@
 	let {
 		canShuffle,
 		canMarkListened,
+		spotifyId,
 		onshuffle,
 		onlistened,
 	}: {
 		canShuffle: boolean;
 		canMarkListened: boolean;
+		spotifyId?: string;
 		onshuffle: () => void;
 		onlistened: () => void;
 	} = $props();
+
+	let spotifyUrl = $derived(
+		spotifyId ? `https://open.spotify.com/album/${encodeURIComponent(spotifyId)}` : undefined,
+	);
 </script>
 
 <div class="@container mt-4 sm:mt-5">
@@ -23,7 +29,7 @@
 			<ShuffleIcon />
 			Shuffle
 		</AlbumActionButton>
-		<AlbumActionButton color="success">
+		<AlbumActionButton color="success" disabled={!spotifyUrl} href={spotifyUrl}>
 			<SpotifyIcon branded={false} />
 			Open in Spotify
 		</AlbumActionButton>

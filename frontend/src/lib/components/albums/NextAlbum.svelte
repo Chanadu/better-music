@@ -87,6 +87,7 @@
 				<AlbumActions
 					canShuffle={unlistened.length > 1}
 					canMarkListened={Boolean(artist)}
+					spotifyId={album.spotify_id}
 					onshuffle={shuffle}
 					onlistened={() => editModal?.markListened()}
 				/>
