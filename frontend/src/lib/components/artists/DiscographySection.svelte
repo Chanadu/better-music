@@ -72,7 +72,7 @@
 		>
 			{#each filters as option}
 				<label
-					class="join-item btn btn-outline btn-primary btn-md has-checked:bg-primary has-checked:text-primary-content px-2 text-sm has-focus-visible:outline-2 has-focus-visible:outline-offset-2 sm:px-6"
+					class="join-item btn btn-outline btn-primary has-checked:bg-primary has-checked:text-primary-content px-2 sm:px-6"
 				>
 					<input
 						class="sr-only"

@@ -63,24 +63,24 @@
 	<p class="text-base-content/70 mt-2 text-center">{description}</p>
 
 	{#if disabledReason}
-		<div class="alert alert-warning alert-soft mt-5 text-sm" role="status">
+		<div class="alert alert-warning alert-soft mt-5" role="status">
 			<span>{disabledReason}</span>
 		</div>
 	{/if}
 
 	{#if error}
-		<div class="alert alert-error alert-soft mt-5 text-sm" role="alert">
+		<div class="alert alert-error alert-soft mt-5" role="alert">
 			<span>{error}</span>
 		</div>
 	{/if}
 
-	<div class="modal-action mt-6 grid grid-cols-2 gap-3">
+	<div class="modal-action grid grid-cols-2 gap-3">
 		<form method="dialog">
 			<button class="btn btn-soft btn-secondary w-full" disabled={deleting}>Cancel</button>
 		</form>
 
 		<button type="button" class="btn btn-error" disabled={deleting || Boolean(disabledReason)} onclick={confirm}>
-			{#if deleting}<span class="loading loading-spinner loading-sm"></span>{/if}
+			{#if deleting}<span class="loading loading-sm"></span>{/if}
 			{deleting ? 'Deleting...' : confirmLabel}
 		</button>
 	</div>

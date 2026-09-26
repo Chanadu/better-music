@@ -69,7 +69,7 @@
 		</details>
 	{/if}
 
-	<label class="join-item btn btn-square btn-outline btn-secondary swap swap-rotate shrink-0">
+	<label class="join-item btn btn-square btn-outline btn-secondary swap swap-rotate">
 		<input type="checkbox" bind:checked={reversed} aria-label="Reverse sort order" />
 		<span class="swap-on" aria-hidden="true">↑</span>
 		<span class="swap-off" aria-hidden="true">↓</span>

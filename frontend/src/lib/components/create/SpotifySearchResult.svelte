@@ -13,7 +13,7 @@
 	let { row, type, loading, message, selected = $bindable(undefined) }: Props = $props();
 </script>
 
-<li class="p-0">
+<li>
 	<label class={row ? 'block cursor-pointer' : 'block cursor-default'}>
 		<input
 			type="radio"
@@ -46,7 +46,7 @@
 
 			<div class="min-w-0">
 				{#if loading}
-					<span class="loading loading-dots loading-md"></span>
+					<span class="loading loading-dots"></span>
 				{:else}
 					<div class={`truncate ${!row ? 'text-base-content/35' : ''}`}>
 						{row?.name ?? message}

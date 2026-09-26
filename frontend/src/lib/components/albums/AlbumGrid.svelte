@@ -1,25 +1,13 @@
 <script lang="ts">
-	import { ratingColor } from '$lib/scripts/rating-colors';
+	import { ratingColor, ratingLabel } from '$lib/scripts/rating-colors';
 	import { database } from '$lib/scripts/database';
 	import type { Album, Artist } from '$lib/scripts/types';
 	import AlbumCard from './AlbumCard.svelte';
 
 	type Item = { album: Album; artist?: Artist };
-	const ratingLabels: Record<number, string> = {
-		10: 'whoa',
-		9: 'incredible',
-		8: 'great',
-		7: 'good',
-		6: 'solid',
-		5: 'okay',
-		4: 'meh',
-		3: 'bad',
-		2: 'terrible',
-		1: "just don't",
-	};
 	function ratingHeading(rating: number | undefined) {
 		if (rating === undefined) return 'Unrated';
-		const label = ratingLabels[rating];
+		const label = ratingLabel(rating);
 		return label ? `${rating}/10 • ${label}` : `${rating}/10`;
 	}
 
@@ -86,12 +74,9 @@
 {:else}
 	<div class={mode === 'unlistened' ? 'mt-4' : ''}>
 		{#each groups as group}
-			<section class="pt-0 pb-2">
+			<section class="pb-2">
 				{#if mode === 'listened'}
-					<div
-						class="divider divider-center divider-primary text-xl"
-						style:color={ratingColor(group.rating)}
-					>
+					<div class="divider divider-primary text-xl" style:color={ratingColor(group.rating)}>
 						{ratingHeading(group.rating)} • {group.albums.length}
 						{group.albums.length === 1 ? 'album' : 'albums'}
 					</div>

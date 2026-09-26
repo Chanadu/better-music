@@ -9,7 +9,7 @@
 		Search
 	</span>
 
-	<label class="input input-md input-primary text-primary flex w-full items-center gap-2">
+	<label class="input input-primary text-primary w-full">
 		<SearchIcon class="h-4 w-4 shrink-0" />
 		<input type="search" class="grow" {placeholder} bind:value />
 	</label>

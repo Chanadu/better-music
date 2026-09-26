@@ -1,12 +1,16 @@
 <script lang="ts">
 	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
 	import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
+	import EditIcon from '$lib/components/icons/EditIcon.svelte';
 	import EyeIcon from '$lib/components/icons/EyeIcon.svelte';
 	import GridIcon from '$lib/components/icons/GridIcon.svelte';
 	import MoreIcon from '$lib/components/icons/MoreIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
+	import RatingSettingsDialog from './RatingSettingsDialog.svelte';
 	import SettingRow from './SettingRow.svelte';
+
+	let ratingSettingsDialog: RatingSettingsDialog;
 
 	function setDropdownStyle(event: Event) {
 		appSettings.set('useNativeDropdowns', (event.currentTarget as HTMLInputElement).checked);
@@ -22,11 +26,6 @@
 			title: 'Default library layout',
 			description: 'Choose grid or compact list views for albums and artists.',
 			icon: GridIcon,
-		},
-		{
-			title: 'Custom rating labels and colors',
-			description: 'Personalize rating names and colors while keeping scores numeric.',
-			icon: StarIcon,
 		},
 	] as const;
 
@@ -62,6 +61,20 @@
 			<SettingRow {...setting} />
 		{/each}
 		<SettingRow
+			title="Rating labels and colors"
+			description="Personalize rating names and colors while keeping scores numeric."
+			icon={StarIcon}
+		>
+			<button
+				type="button"
+				class="btn btn-soft btn-primary btn-sm gap-2 rounded-full shadow-sm"
+				onclick={() => ratingSettingsDialog.open()}
+			>
+				<EditIcon class="size-4" />
+				Customize
+			</button>
+		</SettingRow>
+		<SettingRow
 			title="Dropdown menu style"
 			description="Choose native controls or custom-styled menus."
 			icon={MoreIcon}
@@ -69,12 +82,15 @@
 			<label class="flex cursor-pointer items-center gap-3">
 				<span
 					class={`text-sm font-bold transition-colors ${
-						appSettings.values.useNativeDropdowns ? 'text-base-content/40' : 'text-primary'
+						appSettings.values.useNativeDropdowns ? 'text-base-content/40' : 'text-secondary'
 					}`}>Custom</span
 				>
 				<input
 					type="checkbox"
-					class="toggle toggle-primary toggle-lg"
+					class="toggle toggle-lg"
+					style:--input-color={appSettings.values.useNativeDropdowns ?
+						'var(--color-primary)'
+					:	'var(--color-secondary)'}
 					checked={appSettings.values.useNativeDropdowns}
 					onchange={setDropdownStyle}
 					aria-label="Use native dropdown menus"
@@ -95,3 +111,5 @@
 		{/each}
 	</div>
 </section>
+
+<RatingSettingsDialog bind:this={ratingSettingsDialog} />

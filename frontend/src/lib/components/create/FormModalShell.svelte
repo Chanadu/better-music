@@ -42,7 +42,7 @@
 		</div>
 	{/if}
 
-	<div class="modal-action mt-6 flex gap-4 px-2">
+	<div class="modal-action gap-4 px-2">
 		<form method="dialog" class="flex-1">
 			<button class="btn btn-soft btn-secondary w-full">Cancel</button>
 		</form>

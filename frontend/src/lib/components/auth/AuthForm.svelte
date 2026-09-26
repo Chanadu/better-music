@@ -17,7 +17,6 @@
 		if (mode === 'login') {
 			return {
 				button: 'Login',
-				loadingClass: 'loading-dots',
 				loadingLabel: 'Logging in',
 				passwordAutocomplete: 'current-password' as const,
 			};
@@ -25,7 +24,6 @@
 
 		return {
 			button: 'Create',
-			loadingClass: 'loading-spinner',
 			loadingLabel: 'Creating',
 			passwordAutocomplete: 'new-password' as const,
 		};
@@ -70,7 +68,7 @@
 </script>
 
 <form onsubmit={submit}>
-	<fieldset class="fieldset flex flex-col gap-4">
+	<fieldset class="fieldset gap-4">
 		<div class="flex flex-col gap-2">
 			<div class="label">Email</div>
 			<div class="flex w-full flex-col gap-1">
@@ -128,7 +126,7 @@
 		</button>
 		{#if busy}
 			<div class="text-primary flex justify-center" aria-live="polite">
-				<span class={`loading ${copy.loadingClass} loading-md`} aria-label={copy.loadingLabel}></span>
+				<span class="loading" class:loading-dots={mode === 'login'} aria-label={copy.loadingLabel}></span>
 			</div>
 		{/if}
 	</fieldset>

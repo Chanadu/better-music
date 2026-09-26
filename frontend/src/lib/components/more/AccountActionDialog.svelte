@@ -127,7 +127,7 @@
 				class:btn-accent={action === 'password'}
 				disabled={busy || !valid}
 			>
-				{#if busy}<span class="loading loading-spinner loading-sm"></span>{/if}
+				{#if busy}<span class="loading loading-sm"></span>{/if}
 				{action === 'delete' ? 'Delete account' : 'Save'}
 			</button>
 		</div>

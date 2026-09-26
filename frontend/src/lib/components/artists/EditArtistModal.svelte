@@ -120,7 +120,7 @@
 	onsave={save}
 	onclose={reset}
 >
-	<div role="tablist" class="tabs tabs-border flex">
+	<div role="tablist" class="tabs tabs-border">
 		<input
 			type="radio"
 			name="edit_artist_modal_tabs"

@@ -97,7 +97,7 @@
 		</div>
 	{:else if !$database}
 		<div class="flex min-h-64 items-center justify-center" role="status">
-			<span class="loading loading-spinner text-primary" aria-label="Loading your next album"></span>
+			<span class="loading text-primary" aria-label="Loading your next album"></span>
 		</div>
 	{:else if !unlistened.length}
 		<div class="py-12 text-center">

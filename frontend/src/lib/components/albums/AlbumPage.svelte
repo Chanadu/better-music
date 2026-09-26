@@ -19,7 +19,7 @@
 	);
 </script>
 
-<div class="navbar flex gap-2">
+<div class="navbar gap-2">
 	<SearchBar placeholder="album name..." bind:value={query} />
 
 	<div class="pt-3">

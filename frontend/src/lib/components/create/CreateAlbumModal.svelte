@@ -159,7 +159,7 @@
 </script>
 
 <FormModalShell bind:dialog title="Album" {error} {saving} {canSave} onsave={save} {onclose}>
-	<div role="tablist" class="tabs tabs-border flex">
+	<div role="tablist" class="tabs tabs-border">
 		<input
 			type="radio"
 			name="album_modal_tabs"

@@ -46,7 +46,7 @@
 				onclick={onrefresh}
 			>
 				{#if refreshing}
-					<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+					<span class="loading loading-xs" aria-hidden="true"></span>
 				{:else}
 					<SpotifyIcon class="size-5 text-[#1ed760]" />
 				{/if}

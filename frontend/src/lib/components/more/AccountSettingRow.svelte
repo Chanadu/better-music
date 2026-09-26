@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Component } from 'svelte';
 
-	type Tone = 'primary' | 'accent' | 'error';
+	type Tone = 'primary' | 'secondary' | 'accent' | 'error';
 
 	let {
 		title,
@@ -23,11 +23,13 @@
 
 	const iconClasses: Record<Tone, string> = {
 		primary: 'bg-primary/10 text-primary',
+		secondary: 'bg-secondary/10 text-secondary',
 		accent: 'bg-accent/10 text-accent',
 		error: 'bg-error/10 text-error',
 	};
 	const buttonClasses: Record<Tone, string> = {
 		primary: 'btn-primary',
+		secondary: 'btn-secondary',
 		accent: 'btn-accent',
 		error: 'btn-error',
 	};

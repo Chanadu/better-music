@@ -51,7 +51,7 @@
 			description="Change your account password"
 			actionLabel="Change"
 			icon={LockIcon}
-			tone="accent"
+			tone="secondary"
 			onclick={() => actionDialog?.open('password')}
 		/>
 		<AccountSettingRow

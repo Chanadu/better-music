@@ -79,7 +79,7 @@
 {#if status}
 	<div class="flex min-h-72 items-center justify-center">
 		{#if status === 'Loading album...'}
-			<span class="loading loading-spinner loading-lg text-primary" aria-label={status}></span>
+			<span class="loading loading-lg text-primary" aria-label={status}></span>
 		{:else}
 			<div class="text-center">
 				<div class="bg-base-200 mx-auto mb-4 flex size-14 items-center justify-center rounded-full">

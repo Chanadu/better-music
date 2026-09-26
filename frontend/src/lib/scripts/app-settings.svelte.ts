@@ -9,8 +9,46 @@ function defineSetting<T>(defaultValue: T, isValid: (value: unknown) => value is
 	return { defaultValue, isValid };
 }
 
+export const defaultRatingLabels = [
+	"just don't",
+	'terrible',
+	'bad',
+	'meh',
+	'okay',
+	'solid',
+	'good',
+	'great',
+	'incredible',
+	'whoa',
+];
+
+export const defaultRatingColors = [
+	'#DC2626',
+	'#EF4444',
+	'#F97316',
+	'#FB923C',
+	'#FBBF24',
+	'#B5CC38',
+	'#84CC16',
+	'#22C55E',
+	'#10B981',
+	'#14B8A6',
+];
+
 const definitions = {
 	useNativeDropdowns: defineSetting(false, (value): value is boolean => typeof value === 'boolean'),
+	ratingLabels: defineSetting(
+		defaultRatingLabels,
+		(value): value is string[] =>
+			Array.isArray(value) &&
+			value.length === 10 &&
+			value.every((label) => typeof label === 'string' && label.length <= 40),
+	),
+	ratingColors: defineSetting(
+		defaultRatingColors,
+		(value): value is string[] =>
+			Array.isArray(value) && value.length === 10 && value.every((color) => /^#[\dA-F]{6}$/i.test(color)),
+	),
 };
 
 type SettingValues = {
