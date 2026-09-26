@@ -1,16 +1,18 @@
 <script lang="ts">
-	import type { Component } from 'svelte';
+	import type { Component, Snippet } from 'svelte';
 
 	let {
 		title,
 		description,
 		icon: Icon,
 		tone = 'primary',
+		children,
 	}: {
 		title: string;
 		description: string;
 		icon: Component<{ class?: string }>;
 		tone?: 'primary' | 'accent';
+		children?: Snippet;
 	} = $props();
 
 	const tones = {
@@ -27,5 +29,9 @@
 		<h3 class="font-bold">{title}</h3>
 		<p class="text-base-content/55 text-sm">{description}</p>
 	</div>
-	<span class="badge badge-ghost shrink-0">Coming soon</span>
+	{#if children}
+		{@render children()}
+	{:else}
+		<span class="badge badge-ghost shrink-0">Coming soon</span>
+	{/if}
 </div>

@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import BottomNav from '$lib/components/navigation/BottomNav.svelte';
+	import { appSettings } from '$lib/scripts/app-settings.svelte';
 	import { getValidAccessToken } from '$lib/scripts/auth';
 	import { fetchDatabaseData, refreshStaleDatabaseData } from '$lib/scripts/database';
 
@@ -11,6 +12,8 @@
 	let authPage = $derived(page.url.pathname === '/login' || page.url.pathname === '/create-account');
 
 	onMount(() => {
+		appSettings.load();
+
 		const refresh = () =>
 			refreshStaleDatabaseData().catch((error) => console.error('Failed to refresh database data', error));
 

@@ -5,17 +5,18 @@
 	import GridIcon from '$lib/components/icons/GridIcon.svelte';
 	import MoreIcon from '$lib/components/icons/MoreIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
+	import { appSettings } from '$lib/scripts/app-settings.svelte';
 	import SettingRow from './SettingRow.svelte';
+
+	function setDropdownStyle(event: Event) {
+		appSettings.set('useNativeDropdowns', (event.currentTarget as HTMLInputElement).checked);
+	}
+
 	const unavailableSettings = [
 		{
 			title: 'Theme',
 			description: 'Choose light, dark, or your device theme.',
 			icon: EyeIcon,
-		},
-		{
-			title: 'Dropdown menu style',
-			description: 'Choose native controls or custom-styled menus.',
-			icon: MoreIcon,
 		},
 		{
 			title: 'Default library layout',
@@ -60,6 +61,31 @@
 		{#each unavailableSettings as setting}
 			<SettingRow {...setting} />
 		{/each}
+		<SettingRow
+			title="Dropdown menu style"
+			description="Choose native controls or custom-styled menus."
+			icon={MoreIcon}
+		>
+			<label class="flex cursor-pointer items-center gap-3">
+				<span
+					class={`text-sm font-bold transition-colors ${
+						appSettings.values.useNativeDropdowns ? 'text-base-content/40' : 'text-primary'
+					}`}>Custom</span
+				>
+				<input
+					type="checkbox"
+					class="toggle toggle-primary toggle-lg"
+					checked={appSettings.values.useNativeDropdowns}
+					onchange={setDropdownStyle}
+					aria-label="Use native dropdown menus"
+				/>
+				<span
+					class={`text-sm font-bold transition-colors ${
+						appSettings.values.useNativeDropdowns ? 'text-primary' : 'text-base-content/40'
+					}`}>Native</span
+				>
+			</label>
+		</SettingRow>
 	</div>
 
 	<h3 class="text-base-content/45 mt-7 mb-3 px-1 text-xs font-bold tracking-[0.14em] uppercase">Data & support</h3>
