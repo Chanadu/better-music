@@ -209,9 +209,13 @@ These files assume the repository is installed at `/home/pi/better-music`. The i
 
 ## Roadmap
 
-- [ ] Automatically select “listened” when adding a rating
-- [ ] Build the More page and add library statistics
-- [ ] Add account settings, including password/email changes and account deletion
+Appearance/theme selection
+Grid/list layout preferences
+Custom rating labels and colors
+CSV/JSON export
+Offline and sync status
+Help, shortcuts, and app information
+
 - [ ] Add a theme selector
 - [ ] Add customizable rating labels
 - [ ] Add Spotify shuffle shortcuts

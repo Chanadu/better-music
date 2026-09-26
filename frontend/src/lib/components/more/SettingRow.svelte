@@ -1,28 +1,25 @@
 <script lang="ts">
-	import type { Component, Snippet } from 'svelte';
+	import type { Component } from 'svelte';
 
 	let {
 		title,
 		description,
 		icon: Icon,
 		tone = 'primary',
-		children,
 	}: {
 		title: string;
 		description: string;
 		icon: Component<{ class?: string }>;
-		tone?: 'primary' | 'secondary' | 'accent';
-		children?: Snippet;
+		tone?: 'primary' | 'accent';
 	} = $props();
 
 	const tones = {
 		primary: 'bg-primary/10 text-primary',
-		secondary: 'bg-secondary/10 text-secondary',
 		accent: 'bg-accent/10 text-accent',
 	};
 </script>
 
-<div class="flex flex-wrap items-center gap-4 p-4 sm:p-5">
+<div class="flex items-center gap-4 p-4 sm:p-5">
 	<div class={`${tones[tone]} flex size-11 shrink-0 items-center justify-center rounded-full`}>
 		<Icon class="size-5" />
 	</div>
@@ -30,9 +27,5 @@
 		<h3 class="font-bold">{title}</h3>
 		<p class="text-base-content/55 text-sm">{description}</p>
 	</div>
-	{#if children}
-		{@render children()}
-	{:else}
-		<span class="badge badge-ghost shrink-0">Coming soon</span>
-	{/if}
+	<span class="badge badge-ghost shrink-0">Coming soon</span>
 </div>

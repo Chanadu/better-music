@@ -4,38 +4,8 @@
 	import EyeIcon from '$lib/components/icons/EyeIcon.svelte';
 	import GridIcon from '$lib/components/icons/GridIcon.svelte';
 	import MoreIcon from '$lib/components/icons/MoreIcon.svelte';
-	import ShuffleIcon from '$lib/components/icons/ShuffleIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
-	import { useSortPreference } from '$lib/scripts/sort-preferences.svelte';
 	import SettingRow from './SettingRow.svelte';
-	import SortPreferenceField from './SortPreferenceField.svelte';
-
-	const albumSortOptions = [
-		{ label: 'Album title', value: 'album' },
-		{ label: 'Artist name', value: 'artist' },
-		{ label: 'Date added', value: 'added' },
-	] as const;
-	const artistSortOptions = [
-		{ label: 'Average rating', value: 'rating' },
-		{ label: 'Artist name', value: 'name' },
-		{ label: 'Date added', value: 'added' },
-	] as const;
-
-	let listenedSorting = useSortPreference(
-		() => 'bettermusic:sort:albums',
-		albumSortOptions.map((option) => option.value),
-		{ sort: 'added', reversed: false },
-	);
-	let queueSorting = useSortPreference(
-		() => 'bettermusic:sort:listen',
-		albumSortOptions.map((option) => option.value),
-		{ sort: 'added', reversed: false },
-	);
-	let artistSorting = useSortPreference(
-		() => 'bettermusic:sort:artists',
-		artistSortOptions.map((option) => option.value),
-		{ sort: 'rating', reversed: false },
-	);
 	const unavailableSettings = [
 		{
 			title: 'Appearance',
@@ -85,21 +55,6 @@
 		{#each unavailableSettings as setting}
 			<SettingRow {...setting} />
 		{/each}
-
-		<SettingRow
-			title="Default sorting"
-			description="Choose how each library view opens."
-			icon={ShuffleIcon}
-			tone="secondary"
-		>
-			<div
-				class="grid w-full min-w-0 gap-x-6 gap-y-4 sm:grid-cols-[repeat(3,minmax(0,1fr))] lg:w-auto lg:flex-[2] lg:-translate-y-1"
-			>
-				<SortPreferenceField label="Listened albums" options={albumSortOptions} preference={listenedSorting} />
-				<SortPreferenceField label="Queue" options={albumSortOptions} preference={queueSorting} />
-				<SortPreferenceField label="Artists" options={artistSortOptions} preference={artistSorting} />
-			</div>
-		</SettingRow>
 	</div>
 
 	<h3 class="text-base-content/45 mt-7 mb-3 px-1 text-xs font-bold tracking-[0.14em] uppercase">Data & support</h3>
