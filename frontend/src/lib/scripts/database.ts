@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 import { albumsApi, ApiError, artistsApi } from './api';
 import { clearTokens, getCurrentUserId } from './auth';
 import { databaseCacheKey } from './database-cache';
+import { sessionCache } from './storage';
 import type { Album, Artist } from './types';
 
 export type DatabaseData = { artists: Artist[]; albums: Album[]; loadedAt: number };
@@ -14,7 +15,7 @@ const publish = (userId: number, data: DatabaseData) => {
 	if (getCurrentUserId() !== userId) return data;
 
 	current = { userId, data };
-	sessionStorage.setItem(databaseCacheKey(userId), JSON.stringify(data));
+	sessionCache.setJson(databaseCacheKey(userId), data);
 	database.set(data);
 
 	return data;
@@ -32,24 +33,20 @@ export const loadCachedDatabase = () => {
 	if (current) database.set(null);
 	current = null;
 	const cacheKey = databaseCacheKey(userId);
-	const raw = sessionStorage.getItem(cacheKey);
+	const value = sessionCache.getJson<DatabaseData>(cacheKey);
 
-	if (!raw) return null;
+	if (!value) return null;
 
-	try {
-		const value = JSON.parse(raw) as DatabaseData;
-
-		if (!Array.isArray(value.artists) || !Array.isArray(value.albums)) throw new Error();
-
+	if (Array.isArray(value.artists) && Array.isArray(value.albums)) {
 		current = { userId, data: value };
 		database.set(value);
 
 		return value;
-	} catch {
-		sessionStorage.removeItem(cacheKey);
-
-		return null;
 	}
+
+	sessionCache.remove(cacheKey);
+
+	return null;
 };
 
 export const fetchDatabaseData = async ({ force = false } = {}) => {

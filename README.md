@@ -210,6 +210,7 @@ These files assume the repository is installed at `/home/pi/better-music`. The i
 ## Roadmap
 
 Appearance/theme selection
+dropdown preferences
 Grid/list layout preferences
 Custom rating labels and colors
 CSV/JSON export

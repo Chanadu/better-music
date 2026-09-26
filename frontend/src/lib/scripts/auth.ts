@@ -1,5 +1,6 @@
 import type { TokenResponse } from './types';
 import { clearStoredDatabaseCaches } from './database-cache';
+import { persistentStorage } from './storage';
 
 const keys = {
 	access: 'betterMusicAccessToken',
@@ -9,25 +10,25 @@ const keys = {
 };
 
 export const getCurrentUserId = () => {
-	const userId = Number(localStorage.getItem(keys.userId));
+	const userId = Number(persistentStorage.get(keys.userId));
 
 	return Number.isInteger(userId) && userId > 0 ? userId : null;
 };
 
 export const saveTokens = (tokens: TokenResponse) => {
-	localStorage.setItem(keys.access, tokens.access_token);
-	localStorage.setItem(keys.refresh, tokens.refresh_token);
-	localStorage.setItem(keys.expires, String(Date.now() + tokens.expires_in * 1000));
-	localStorage.setItem(keys.userId, String(tokens.user_id));
+	persistentStorage.set(keys.access, tokens.access_token);
+	persistentStorage.set(keys.refresh, tokens.refresh_token);
+	persistentStorage.set(keys.expires, String(Date.now() + tokens.expires_in * 1000));
+	persistentStorage.set(keys.userId, String(tokens.user_id));
 };
 
 export const clearTokens = () => {
-	Object.values(keys).forEach((key) => localStorage.removeItem(key));
+	Object.values(keys).forEach((key) => persistentStorage.remove(key));
 	clearStoredDatabaseCaches();
 };
 
 const requestRefresh = async () => {
-	const refreshToken = localStorage.getItem(keys.refresh);
+	const refreshToken = persistentStorage.get(keys.refresh);
 
 	if (!refreshToken) return null;
 
@@ -51,8 +52,8 @@ const requestRefresh = async () => {
 };
 
 export const getValidAccessToken = async () => {
-	const token = localStorage.getItem(keys.access);
-	const expiresAt = Number(localStorage.getItem(keys.expires));
+	const token = persistentStorage.get(keys.access);
+	const expiresAt = Number(persistentStorage.get(keys.expires));
 
 	if (token && getCurrentUserId() === null) {
 		clearTokens();
@@ -82,7 +83,7 @@ export const authenticatedFetch = async (input: RequestInfo | URL, init: Request
 };
 
 export const logout = async () => {
-	const refreshToken = localStorage.getItem(keys.refresh);
+	const refreshToken = persistentStorage.get(keys.refresh);
 	try {
 		if (refreshToken)
 			await fetch('/api/auth/logout', {

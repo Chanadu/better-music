@@ -7,6 +7,7 @@
 	import { database, fetchDatabaseData } from '$lib/scripts/database';
 	import { withReturnTo } from '$lib/scripts/navigation';
 	import { getCurrentUserId } from '$lib/scripts/auth';
+	import { persistentStorage } from '$lib/scripts/storage';
 
 	let selectedId = $state<number>();
 	let selectionLoaded = $state(false);
@@ -30,10 +31,8 @@
 
 	$effect(() => {
 		if (!selectionLoaded || !$database || !storageKey) return;
-		try {
-			if (selectedId !== undefined) localStorage.setItem(storageKey, String(selectedId));
-			else localStorage.removeItem(storageKey);
-		} catch {}
+		if (selectedId !== undefined) persistentStorage.set(storageKey, String(selectedId));
+		else persistentStorage.remove(storageKey);
 	});
 
 	async function load() {
@@ -49,10 +48,8 @@
 		const userId = getCurrentUserId();
 		if (userId !== null) {
 			storageKey = `bettermusic:next-album:${userId}`;
-			try {
-				const savedId = Number(localStorage.getItem(storageKey));
-				if (Number.isSafeInteger(savedId) && savedId > 0) selectedId = savedId;
-			} catch {}
+			const savedId = Number(persistentStorage.get(storageKey));
+			if (Number.isSafeInteger(savedId) && savedId > 0) selectedId = savedId;
 		}
 		selectionLoaded = true;
 		void load();

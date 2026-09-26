@@ -1,4 +1,5 @@
 import { onMount } from 'svelte';
+import { persistentStorage } from './storage';
 
 type SortPreference<T extends string> = {
 	sort: T;
@@ -14,14 +15,12 @@ export function useSortPreference<T extends string>(
 	let loaded = $state(false);
 
 	onMount(() => {
-		try {
-			const saved = JSON.parse(localStorage.getItem(key()) ?? '') as Partial<SortPreference<T>>;
+		const saved = persistentStorage.getJson<Partial<SortPreference<T>>>(key());
 
-			if (validSorts.includes(saved.sort as T) && typeof saved.reversed === 'boolean') {
-				preference.sort = saved.sort as T;
-				preference.reversed = saved.reversed;
-			}
-		} catch {}
+		if (saved && validSorts.includes(saved.sort as T) && typeof saved.reversed === 'boolean') {
+			preference.sort = saved.sort as T;
+			preference.reversed = saved.reversed;
+		}
 
 		loaded = true;
 	});
@@ -29,9 +28,7 @@ export function useSortPreference<T extends string>(
 	$effect(() => {
 		if (!loaded) return;
 
-		try {
-			localStorage.setItem(key(), JSON.stringify(preference));
-		} catch {}
+		persistentStorage.setJson(key(), preference);
 	});
 
 	return preference;
