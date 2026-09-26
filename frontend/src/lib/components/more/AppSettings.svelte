@@ -1,0 +1,111 @@
+<script lang="ts">
+	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
+	import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
+	import EyeIcon from '$lib/components/icons/EyeIcon.svelte';
+	import GridIcon from '$lib/components/icons/GridIcon.svelte';
+	import MoreIcon from '$lib/components/icons/MoreIcon.svelte';
+	import ShuffleIcon from '$lib/components/icons/ShuffleIcon.svelte';
+	import StarIcon from '$lib/components/icons/StarIcon.svelte';
+	import { useSortPreference } from '$lib/scripts/sort-preferences.svelte';
+	import SettingRow from './SettingRow.svelte';
+	import SortPreferenceField from './SortPreferenceField.svelte';
+
+	const albumSortOptions = [
+		{ label: 'Album title', value: 'album' },
+		{ label: 'Artist name', value: 'artist' },
+		{ label: 'Date added', value: 'added' },
+	] as const;
+	const artistSortOptions = [
+		{ label: 'Average rating', value: 'rating' },
+		{ label: 'Artist name', value: 'name' },
+		{ label: 'Date added', value: 'added' },
+	] as const;
+
+	let listenedSorting = useSortPreference(
+		() => 'bettermusic:sort:albums',
+		albumSortOptions.map((option) => option.value),
+		{ sort: 'added', reversed: false },
+	);
+	let queueSorting = useSortPreference(
+		() => 'bettermusic:sort:listen',
+		albumSortOptions.map((option) => option.value),
+		{ sort: 'added', reversed: false },
+	);
+	let artistSorting = useSortPreference(
+		() => 'bettermusic:sort:artists',
+		artistSortOptions.map((option) => option.value),
+		{ sort: 'rating', reversed: false },
+	);
+	const unavailableSettings = [
+		{
+			title: 'Appearance',
+			description: 'Choose light, dark, or your device theme.',
+			icon: EyeIcon,
+		},
+		{
+			title: 'Default library layout',
+			description: 'Choose grid or compact list views for albums and artists.',
+			icon: GridIcon,
+		},
+		{
+			title: 'Custom rating labels and colors',
+			description: 'Personalize rating names and colors while keeping scores numeric.',
+			icon: StarIcon,
+		},
+	] as const;
+
+	const unavailableTools = [
+		{
+			title: 'Export library and ratings',
+			description: 'Download your library, ratings, notes, and listening dates.',
+			icon: AlbumIcon,
+		},
+		{
+			title: 'Offline and sync status',
+			description: 'Check your connection and sync state or retry failed changes.',
+			icon: CheckIcon,
+		},
+		{
+			title: 'Help, shortcuts, and app information',
+			description: 'Learn how Better Music works and find app details.',
+			icon: MoreIcon,
+		},
+	] as const;
+</script>
+
+<section aria-labelledby="settings-heading">
+	<div class="mb-5">
+		<h2 id="settings-heading" class="text-primary text-lg font-bold tracking-[0.14em] uppercase sm:text-xl">
+			Settings
+		</h2>
+		<p class="text-base-content/55 mt-1 text-sm">Preferences are saved on this device.</p>
+	</div>
+
+	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
+		{#each unavailableSettings as setting}
+			<SettingRow {...setting} />
+		{/each}
+
+		<SettingRow
+			title="Default sorting"
+			description="Choose how each library view opens."
+			icon={ShuffleIcon}
+			tone="secondary"
+		>
+			<div
+				class="grid w-full min-w-0 gap-x-6 gap-y-4 sm:grid-cols-[repeat(3,minmax(0,1fr))] lg:w-auto lg:flex-[2] lg:-translate-y-1"
+			>
+				<SortPreferenceField label="Listened albums" options={albumSortOptions} preference={listenedSorting} />
+				<SortPreferenceField label="Queue" options={albumSortOptions} preference={queueSorting} />
+				<SortPreferenceField label="Artists" options={artistSortOptions} preference={artistSorting} />
+			</div>
+		</SettingRow>
+	</div>
+
+	<h3 class="text-base-content/45 mt-7 mb-3 px-1 text-xs font-bold tracking-[0.14em] uppercase">Data & support</h3>
+	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
+		{#each unavailableTools as setting}
+			<SettingRow {...setting} tone="accent" />
+		{/each}
+	</div>
+</section>

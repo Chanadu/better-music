@@ -5,11 +5,14 @@
 	import DeleteIcon from '$lib/components/icons/DeleteIcon.svelte';
 	import EmailIcon from '$lib/components/icons/EmailIcon.svelte';
 	import LockIcon from '$lib/components/icons/LockIcon.svelte';
+	import LogoutIcon from '$lib/components/icons/LogoutIcon.svelte';
 	import { accountApi } from '$lib/scripts/api';
+	import { logout } from '$lib/scripts/auth';
 
 	let accountEmail = $state('');
 	let loadError = $state('');
 	let actionDialog = $state<AccountActionDialog>();
+	let loggingOut = $state(false);
 
 	onMount(async () => {
 		try {
@@ -19,6 +22,12 @@
 			loadError = 'Could not load your account details.';
 		}
 	});
+
+	async function signOut() {
+		loggingOut = true;
+		await logout();
+		location.assign('/login');
+	}
 </script>
 
 <section aria-labelledby="account-settings-heading" class="pb-4">
@@ -44,6 +53,15 @@
 			icon={LockIcon}
 			tone="accent"
 			onclick={() => actionDialog?.open('password')}
+		/>
+		<AccountSettingRow
+			title="Sign out"
+			description="Sign out of Better Music on this device"
+			actionLabel={loggingOut ? 'Signing out...' : 'Sign out'}
+			icon={LogoutIcon}
+			tone="accent"
+			disabled={loggingOut}
+			onclick={signOut}
 		/>
 		<AccountSettingRow
 			title="Delete account"
