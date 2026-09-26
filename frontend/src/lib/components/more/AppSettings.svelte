@@ -8,9 +8,14 @@
 	import SettingRow from './SettingRow.svelte';
 	const unavailableSettings = [
 		{
-			title: 'Appearance',
+			title: 'Theme',
 			description: 'Choose light, dark, or your device theme.',
 			icon: EyeIcon,
+		},
+		{
+			title: 'Dropdown menu style',
+			description: 'Choose native controls or custom-styled menus.',
+			icon: MoreIcon,
 		},
 		{
 			title: 'Default library layout',
