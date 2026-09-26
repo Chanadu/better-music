@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+  handlers.AccountResponse:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
   handlers.ApiErrorResponse:
     properties:
       error:
@@ -55,6 +62,13 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  handlers.DeleteAccountRequest:
+    properties:
+      password:
+        type: string
+    required:
+    - password
     type: object
   handlers.MessageResponse:
     properties:
@@ -210,6 +224,26 @@ definitions:
         example: 6ml0jHmy7SNFWckrZblO5B
         type: string
     type: object
+  handlers.UpdateEmailRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.UpdatePasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
   models.Album:
     properties:
       artist_id:
@@ -265,6 +299,136 @@ info:
   title: Better Music API
   version: "1.0"
 paths:
+  /api/account:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Current password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.DeleteAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+      security:
+      - Bearer: []
+      summary: Permanently delete the current account
+      tags:
+      - account
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.AccountResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+      security:
+      - Bearer: []
+      summary: Get the current account
+      tags:
+      - account
+  /api/account/email:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: New email and current password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+      security:
+      - Bearer: []
+      summary: Change the current account email
+      tags:
+      - account
+  /api/account/password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Current and new passwords
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+      security:
+      - Bearer: []
+      summary: Change the current account password
+      tags:
+      - account
   /api/albums:
     get:
       description: Get all albums for the authenticated user
@@ -808,6 +972,43 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /api/spotify/albums/{id}:
+    get:
+      description: Get current Spotify metadata for an album by Spotify ID
+      parameters:
+      - description: Spotify album ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SpotifyAlbumSearchResult'
+        "400":
+          description: Missing Spotify album ID
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "502":
+          description: Spotify request failed
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+        "503":
+          description: Spotify is not configured
+          schema:
+            $ref: '#/definitions/handlers.ApiErrorResponse'
+      security:
+      - Bearer: []
+      summary: Get a Spotify album
+      tags:
+      - spotify
   /api/spotify/artists/{id}:
     get:
       description: Get current Spotify metadata for an artist by Spotify ID

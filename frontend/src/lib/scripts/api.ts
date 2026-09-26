@@ -1,16 +1,20 @@
 import { authenticatedFetch } from './auth';
 import type {
 	Album,
+	AccountResponse,
 	Artist,
 	AuthRequest,
 	CreateAlbumRequest,
 	CreateArtistRequest,
 	MessageResponse,
+	DeleteAccountRequest,
 	RefreshTokenRequest,
 	SpotifyAlbumSearchResult,
 	SpotifyArtistSearchResult,
 	TokenResponse,
 	UpdateAlbumRequest,
+	UpdateEmailRequest,
+	UpdatePasswordRequest,
 	UpdateArtistRequest,
 } from './api-types';
 
@@ -59,6 +63,15 @@ export const authApi = {
 	register: (body: AuthRequest) => json<TokenResponse>('/api/auth/register', { method: 'POST', body }),
 	refresh: (body: RefreshTokenRequest) => json<TokenResponse>('/api/auth/refresh', { method: 'POST', body }),
 	logout: (body: RefreshTokenRequest) => json<MessageResponse>('/api/auth/logout', { method: 'POST', body }),
+};
+
+export const accountApi = {
+	get: () => secureJson<AccountResponse>('/api/account'),
+	updateEmail: (body: UpdateEmailRequest) =>
+		secureJson<MessageResponse>('/api/account/email', { method: 'PUT', body }),
+	updatePassword: (body: UpdatePasswordRequest) =>
+		secureJson<MessageResponse>('/api/account/password', { method: 'PUT', body }),
+	delete: (body: DeleteAccountRequest) => secureJson<MessageResponse>('/api/account', { method: 'DELETE', body }),
 };
 
 export const artistsApi = {

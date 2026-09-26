@@ -1,5 +1,6 @@
 <script lang="ts">
 	import StatCard from '$lib/components/common/StatCard.svelte';
+	import RatingDistributionChart from './RatingDistributionChart.svelte';
 	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
 	import ArtistIcon from '$lib/components/icons/ArtistIcon.svelte';
 	import HeadphonesIcon from '$lib/components/icons/HeadphonesIcon.svelte';
@@ -16,7 +17,7 @@
 		{ value: 'all', label: 'All time' },
 	];
 
-	let timeFilter = $state<TimeFilter>('month');
+	let timeFilter = $state<TimeFilter>('all');
 
 	function isInPeriod(album: Album, filter: TimeFilter) {
 		if (!album.listened) return false;
@@ -48,7 +49,6 @@
 			averageRating:
 				ratings.length > 0 ? ratings.reduce((total, rating) => total + rating, 0) / ratings.length : null,
 			distribution,
-			maxDistribution: Math.max(...distribution.map(({ count }) => count), 1),
 		};
 	});
 </script>
@@ -56,8 +56,9 @@
 <section aria-labelledby="library-stats-heading">
 	<div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 		<div>
-			<p class="text-secondary text-xs font-bold tracking-[0.18em] uppercase">Your library</p>
-			<h1 id="library-stats-heading" class="mt-1 text-2xl font-black sm:text-3xl">Stats</h1>
+			<h1 id="library-stats-heading" class="text-secondary text-lg font-bold tracking-[0.14em] uppercase sm:text-xl">
+				Your library
+			</h1>
 		</div>
 
 		<div class="join bg-base-200 w-fit p-1" aria-label="Stats time period">
@@ -108,29 +109,6 @@
 			/>
 		</div>
 
-		<div class="bg-base-200 mt-3 rounded-xl px-4 pt-5 pb-4 shadow-sm sm:px-6 sm:pt-6">
-			<h2 class="text-lg font-black">Rating distribution</h2>
-			<p class="text-base-content/50 mt-0.5 text-sm">Albums listened to in the selected period</p>
-
-			<div class="mt-6 grid h-52 grid-cols-10 items-end gap-1 sm:gap-3" aria-label="Rating distribution chart">
-				{#each stats.distribution as item}
-					<div class="flex h-full min-w-0 flex-col items-center justify-end gap-2">
-						<span class="text-base-content/60 text-xs font-bold" aria-hidden={item.count === 0}
-							>{item.count}</span
-						>
-						<div class="flex h-36 w-full items-end justify-center">
-							<div
-								class="w-full max-w-14 rounded-t-sm transition-[height] duration-300"
-								class:min-h-1={item.count > 0}
-								style:height={`${(item.count / stats.maxDistribution) * 100}%`}
-								style:background-color={ratingColor(item.rating)}
-								title={`${item.count} ${item.count === 1 ? 'album' : 'albums'} rated ${item.rating}`}
-							></div>
-						</div>
-						<span class="text-base-content/60 text-xs font-bold">{item.rating}</span>
-					</div>
-				{/each}
-			</div>
-		</div>
+		<RatingDistributionChart distribution={stats.distribution} />
 	{/if}
 </section>

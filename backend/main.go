@@ -60,6 +60,10 @@ func main() {
 	mux.HandleFunc("POST /api/auth/logout", h.AuthLogout)
 
 	protectedMux := http.NewServeMux()
+	protectedMux.HandleFunc("GET /api/account", h.GetAccount)
+	protectedMux.HandleFunc("PUT /api/account/email", h.UpdateAccountEmail)
+	protectedMux.HandleFunc("PUT /api/account/password", h.UpdateAccountPassword)
+	protectedMux.HandleFunc("DELETE /api/account", h.DeleteAccount)
 
 	protectedMux.HandleFunc("GET /api/artists", h.GetArtists)
 	protectedMux.HandleFunc("GET /api/artists/{id}", h.GetArtist)
