@@ -61,13 +61,13 @@
 			</h1>
 		</div>
 
-		<div class="join bg-base-200 w-fit p-1" aria-label="Stats time period">
+		<div class="join w-full sm:w-fit" aria-label="Stats time period">
 			{#each filters as filter}
 				<button
 					type="button"
-					class="join-item btn btn-sm border-0"
+					class="join-item btn btn-sm flex-1 border-0 shadow-sm sm:flex-none"
 					class:btn-secondary={timeFilter === filter.value}
-					class:btn-ghost={timeFilter !== filter.value}
+					class:btn-soft={timeFilter !== filter.value}
 					aria-pressed={timeFilter === filter.value}
 					onclick={() => (timeFilter = filter.value)}
 				>
