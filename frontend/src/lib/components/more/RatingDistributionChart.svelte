@@ -7,7 +7,7 @@
 	let maximum = $derived(Math.max(...distribution.map(({ count }) => count), 1));
 </script>
 
-<div class="bg-base-200 mt-3 rounded-xl px-4 pt-5 pb-4 shadow-sm sm:px-6 sm:pt-6">
+<div class="bg-base-200 h-full rounded-xl px-4 pt-5 pb-4 shadow-sm sm:px-6 sm:pt-6">
 	<h2 class="text-lg font-black">Rating distribution</h2>
 	<p class="text-base-content/50 mt-0.5 text-sm">Albums listened to in the selected period</p>
 
@@ -17,7 +17,7 @@
 				<span class="text-base-content/60 text-xs font-bold" aria-hidden={item.count === 0}>{item.count}</span>
 				<div class="flex h-36 w-full items-end justify-center">
 					<div
-						class="w-full max-w-14 rounded-t-sm transition-[height] duration-300"
+						class="w-full rounded-t-sm transition-[height] duration-300"
 						class:min-h-1={item.count > 0}
 						style:height={`${(item.count / maximum) * 100}%`}
 						style:background-color={ratingColor(item.rating)}

@@ -93,25 +93,29 @@
 			{/each}
 		</div>
 	{:else}
-		<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-			<StatCard value={stats.listened} label="Albums listened" icon={HeadphonesIcon} class="h-full" />
-			<StatCard
-				value={stats.artists}
-				label="Artists explored"
-				icon={ArtistIcon}
-				tone="secondary"
-				class="h-full"
-			/>
-			<StatCard value={stats.queued} label="Albums queued" icon={AlbumIcon} tone="accent" class="h-full" />
-			<StatCard
-				value={stats.averageRating === null ? '—' : stats.averageRating.toFixed(1)}
-				label="Avg. rating"
-				icon={StarIcon}
-				color={ratingColor(stats.averageRating)}
-				class="h-full"
-			/>
-		</div>
+		<div class="grid gap-3 lg:grid-cols-2">
+			<div class="grid grid-cols-2 gap-3 lg:order-2">
+				<StatCard value={stats.listened} label="Albums listened" icon={HeadphonesIcon} class="h-full" />
+				<StatCard
+					value={stats.artists}
+					label="Artists explored"
+					icon={ArtistIcon}
+					tone="secondary"
+					class="h-full"
+				/>
+				<StatCard value={stats.queued} label="Albums queued" icon={AlbumIcon} tone="accent" class="h-full" />
+				<StatCard
+					value={stats.averageRating === null ? '—' : stats.averageRating.toFixed(1)}
+					label="Avg. rating"
+					icon={StarIcon}
+					color={ratingColor(stats.averageRating)}
+					class="h-full"
+				/>
+			</div>
 
-		<RatingDistributionChart distribution={stats.distribution} />
+			<div class="lg:order-1">
+				<RatingDistributionChart distribution={stats.distribution} />
+			</div>
+		</div>
 	{/if}
 </section>
