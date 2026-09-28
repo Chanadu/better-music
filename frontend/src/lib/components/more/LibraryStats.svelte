@@ -68,7 +68,7 @@
 			{#each filters as filter}
 				<button
 					type="button"
-					class="join-item btn btn-sm flex-1 border-0 shadow-sm sm:flex-none"
+					class="join-item btn btn-sm flex-1 border-0 shadow-sm sm:btn-md sm:flex-none sm:px-6"
 					class:btn-secondary={timeFilter === filter.value}
 					class:btn-soft={timeFilter !== filter.value}
 					aria-pressed={timeFilter === filter.value}
