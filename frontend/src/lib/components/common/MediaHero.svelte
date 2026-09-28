@@ -91,20 +91,10 @@
 				/>
 			</a>
 		{/if}
-		<button
-			class="btn btn-square btn-secondary shadow-xl"
-			type="button"
-			aria-label={editLabel}
-			onclick={onedit}
-		>
+		<button class="btn btn-square btn-secondary shadow-xl" type="button" aria-label={editLabel} onclick={onedit}>
 			<EditIcon class="size-5" />
 		</button>
-		<button
-			class="btn btn-square btn-error shadow-xl"
-			type="button"
-			aria-label={deleteLabel}
-			onclick={ondelete}
-		>
+		<button class="btn btn-square btn-error shadow-xl" type="button" aria-label={deleteLabel} onclick={ondelete}>
 			<DeleteIcon class="size-5" />
 		</button>
 	</div>

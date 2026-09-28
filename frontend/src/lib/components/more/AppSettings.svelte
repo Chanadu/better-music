@@ -1,11 +1,11 @@
 <script lang="ts">
-	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
 	import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
 	import EditIcon from '$lib/components/icons/EditIcon.svelte';
 	import GridIcon from '$lib/components/icons/GridIcon.svelte';
 	import MoreIcon from '$lib/components/icons/MoreIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
+	import ExportLibrarySetting from './ExportLibrarySetting.svelte';
 	import RatingSettingsDialog from './RatingSettingsDialog.svelte';
 	import SettingRow from './SettingRow.svelte';
 	import ThemeSetting from './ThemeSetting.svelte';
@@ -25,11 +25,6 @@
 	] as const;
 
 	const unavailableTools = [
-		{
-			title: 'Export library and ratings',
-			description: 'Download your library, ratings, notes, and listening dates.',
-			icon: AlbumIcon,
-		},
 		{
 			title: 'Offline and sync status',
 			description: 'Check your connection and sync state or retry failed changes.',
@@ -100,6 +95,7 @@
 
 	<h3 class="text-base-content/45 mt-7 mb-3 px-1 text-xs font-bold tracking-[0.14em] uppercase">Data & support</h3>
 	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
+		<ExportLibrarySetting />
 		{#each unavailableTools as setting}
 			<SettingRow {...setting} tone="accent" />
 		{/each}
