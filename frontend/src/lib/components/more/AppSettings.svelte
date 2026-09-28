@@ -67,7 +67,7 @@
 		>
 			<button
 				type="button"
-				class="btn btn-soft btn-primary btn-sm gap-2 rounded-full shadow-sm"
+				class="btn btn-soft btn-primary btn-md gap-2 rounded-full shadow-sm"
 				onclick={() => ratingSettingsDialog.open()}
 			>
 				<EditIcon class="size-4" />

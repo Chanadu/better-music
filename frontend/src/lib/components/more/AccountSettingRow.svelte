@@ -43,7 +43,13 @@
 		<h3 class="font-bold">{title}</h3>
 		<p class="text-base-content/55 truncate text-sm">{description}</p>
 	</div>
-	<button type="button" class={`btn btn-soft btn-sm ${buttonClasses[tone]}`} {disabled} {onclick}>
+	<button
+		type="button"
+		class={`btn btn-soft btn-md gap-2 rounded-full shadow-sm ${buttonClasses[tone]}`}
+		{disabled}
+		{onclick}
+	>
+		<Icon class="size-4" />
 		{actionLabel}
 	</button>
 </div>
