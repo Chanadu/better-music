@@ -5,12 +5,10 @@
 <svg
 	class={className}
 	viewBox="0 0 24 24"
-	fill="none"
-	stroke="currentColor"
-	stroke-width="2"
-	stroke-linecap="round"
-	stroke-linejoin="round"
+	fill="currentColor"
 	aria-hidden="true"
 >
-	<path d="M5 12h.01M12 12h.01M19 12h.01"></path>
+	<circle cx="5" cy="12" r="2"></circle>
+	<circle cx="12" cy="12" r="2"></circle>
+	<circle cx="19" cy="12" r="2"></circle>
 </svg>
