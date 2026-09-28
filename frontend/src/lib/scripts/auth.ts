@@ -24,7 +24,7 @@ export const saveTokens = (tokens: TokenResponse) => {
 
 export const clearTokens = () => {
 	Object.values(keys).forEach((key) => persistentStorage.remove(key));
-	clearStoredDatabaseCaches();
+	void clearStoredDatabaseCaches();
 };
 
 const requestRefresh = async () => {

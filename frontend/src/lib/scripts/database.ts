@@ -1,8 +1,7 @@
 import { writable } from 'svelte/store';
 import { albumsApi, ApiError, artistsApi } from './api';
 import { clearTokens, getCurrentUserId } from './auth';
-import { databaseCacheKey } from './database-cache';
-import { sessionCache } from './storage';
+import { getStoredDatabaseCache, setStoredDatabaseCache } from './database-cache';
 import type { Album, Artist } from './types';
 
 export type DatabaseData = { artists: Artist[]; albums: Album[]; loadedAt: number };
@@ -15,13 +14,13 @@ const publish = (userId: number, data: DatabaseData) => {
 	if (getCurrentUserId() !== userId) return data;
 
 	current = { userId, data };
-	sessionCache.setJson(databaseCacheKey(userId), data);
+	void setStoredDatabaseCache(userId, data);
 	database.set(data);
 
 	return data;
 };
 
-export const loadCachedDatabase = () => {
+export const loadCachedDatabase = async () => {
 	const userId = getCurrentUserId();
 	if (userId === null) {
 		if (current) database.set(null);
@@ -32,8 +31,7 @@ export const loadCachedDatabase = () => {
 
 	if (current) database.set(null);
 	current = null;
-	const cacheKey = databaseCacheKey(userId);
-	const value = sessionCache.getJson<DatabaseData>(cacheKey);
+	const value = await getStoredDatabaseCache<DatabaseData>(userId);
 
 	if (!value) return null;
 
@@ -44,8 +42,6 @@ export const loadCachedDatabase = () => {
 		return value;
 	}
 
-	sessionCache.remove(cacheKey);
-
 	return null;
 };
 
@@ -53,7 +49,7 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 	const userId = getCurrentUserId();
 	if (userId === null) throw new Error('Not authenticated');
 
-	const cached = loadCachedDatabase();
+	const cached = await loadCachedDatabase();
 
 	if (!force && cached) return cached;
 	if (!force && request?.userId === userId) return request.promise;
@@ -79,11 +75,8 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 };
 export const refreshDatabaseData = () => fetchDatabaseData({ force: true });
 
-export const refreshStaleDatabaseData = () => {
-	const cached = loadCachedDatabase();
-
-	if (request || Date.now() - Math.max(cached?.loadedAt ?? 0, lastRefreshStartedAt) < 30_000)
-		return Promise.resolve(cached);
-
+export const refreshStaleDatabaseData = async () => {
+	const cached = await loadCachedDatabase();
+	if (request || Date.now() - Math.max(cached?.loadedAt ?? 0, lastRefreshStartedAt) < 30000) return cached;
 	return refreshDatabaseData();
 };
