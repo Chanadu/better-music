@@ -98,6 +98,8 @@ Create the configured log directory before starting the API:
 mkdir -p backend/logs
 ```
 
+Set `LOG_ENABLE=false` to disable backend log files. Logs will still be written to stdout so the service manager can capture them; `LOG_DIR` is not used in that mode.
+
 `JWT_ACCESS_TOKEN_MINUTES` and `JWT_REFRESH_TOKEN_HOURS` are optional and default to 15 minutes and 720 hours. Spotify credentials are needed for Spotify search and metadata refresh; artist and album records can still be entered manually without them.
 
 When `LOG_DEBUG=true`, the backend adds `sslmode=disable` to `POSTGRES_URL` for local PostgreSQL connections. Set `LOG_DEBUG=false` in environments that require SSL.
