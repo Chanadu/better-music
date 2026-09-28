@@ -32,7 +32,10 @@
 
 <section aria-labelledby="account-settings-heading" class="pb-4">
 	<div class="mb-4">
-		<h2 id="account-settings-heading" class="text-accent text-lg font-bold tracking-[0.14em] uppercase sm:text-xl">
+		<h2
+			id="account-settings-heading"
+			class="text-base-content text-lg font-bold tracking-[0.14em] uppercase sm:text-xl"
+		>
 			Personal details
 		</h2>
 	</div>

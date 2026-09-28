@@ -30,7 +30,7 @@
 	<div class="navbar-end">
 		<button
 			type="button"
-			class="btn btn-square btn-outline btn-accent"
+			class="btn btn-square btn-accent"
 			aria-label="Log out"
 			disabled={loggingOut}
 			onclick={signOut}

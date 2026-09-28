@@ -54,7 +54,7 @@
 <section class="mt-9">
 	<div class="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 sm:gap-x-4">
 		<div class="col-span-2 col-start-1 row-start-1 flex min-w-0 items-center gap-2 sm:gap-4">
-			<h2 class="text-secondary text-3xl leading-none font-black tracking-tighter">Discography</h2>
+			<h2 class="text-base-content text-3xl leading-none font-black tracking-tighter">Discography</h2>
 			<div class="divider my-0 min-w-4 flex-1 self-center" aria-hidden="true"></div>
 		</div>
 		<div class="col-start-2 row-start-3 w-44 sm:w-48 md:row-start-2">
@@ -72,7 +72,7 @@
 		>
 			{#each filters as option}
 				<label
-					class="join-item btn btn-outline btn-primary has-checked:bg-primary has-checked:text-primary-content px-2 sm:px-6"
+					class="join-item btn btn-ghost border-base-300 has-checked:bg-primary has-checked:text-primary-content border px-2 sm:px-6"
 				>
 					<input
 						class="sr-only"

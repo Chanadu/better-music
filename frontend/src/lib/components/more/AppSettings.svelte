@@ -2,13 +2,13 @@
 	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
 	import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
 	import EditIcon from '$lib/components/icons/EditIcon.svelte';
-	import EyeIcon from '$lib/components/icons/EyeIcon.svelte';
 	import GridIcon from '$lib/components/icons/GridIcon.svelte';
 	import MoreIcon from '$lib/components/icons/MoreIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
 	import RatingSettingsDialog from './RatingSettingsDialog.svelte';
 	import SettingRow from './SettingRow.svelte';
+	import ThemeSetting from './ThemeSetting.svelte';
 
 	let ratingSettingsDialog: RatingSettingsDialog;
 
@@ -17,11 +17,6 @@
 	}
 
 	const unavailableSettings = [
-		{
-			title: 'Theme',
-			description: 'Choose light, dark, or your device theme.',
-			icon: EyeIcon,
-		},
 		{
 			title: 'Default library layout',
 			description: 'Choose grid or compact list views for albums and artists.',
@@ -50,13 +45,14 @@
 
 <section aria-labelledby="settings-heading">
 	<div class="mb-5">
-		<h2 id="settings-heading" class="text-primary text-lg font-bold tracking-[0.14em] uppercase sm:text-xl">
+		<h2 id="settings-heading" class="text-base-content text-lg font-bold tracking-[0.14em] uppercase sm:text-xl">
 			Settings
 		</h2>
 		<p class="text-base-content/55 mt-1 text-sm">Preferences are saved on this device.</p>
 	</div>
 
 	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
+		<ThemeSetting />
 		{#each unavailableSettings as setting}
 			<SettingRow {...setting} />
 		{/each}
@@ -67,7 +63,7 @@
 		>
 			<button
 				type="button"
-				class="btn btn-soft btn-primary btn-md gap-2 rounded-full shadow-sm"
+				class="btn btn-primary btn-md gap-2 rounded-full shadow-sm"
 				onclick={() => ratingSettingsDialog.open()}
 			>
 				<EditIcon class="size-4" />
@@ -82,22 +78,20 @@
 			<label class="flex cursor-pointer items-center gap-3">
 				<span
 					class={`text-sm font-bold transition-colors ${
-						appSettings.values.useNativeDropdowns ? 'text-base-content/40' : 'text-secondary'
+						appSettings.values.useNativeDropdowns ? 'text-base-content/40' : 'text-base-content'
 					}`}>Custom</span
 				>
 				<input
 					type="checkbox"
 					class="toggle toggle-lg"
-					style:--input-color={appSettings.values.useNativeDropdowns ?
-						'var(--color-primary)'
-					:	'var(--color-secondary)'}
+					style:--input-color={'var(--color-primary)'}
 					checked={appSettings.values.useNativeDropdowns}
 					onchange={setDropdownStyle}
 					aria-label="Use native dropdown menus"
 				/>
 				<span
 					class={`text-sm font-bold transition-colors ${
-						appSettings.values.useNativeDropdowns ? 'text-primary' : 'text-base-content/40'
+						appSettings.values.useNativeDropdowns ? 'text-base-content' : 'text-base-content/40'
 					}`}>Native</span
 				>
 			</label>

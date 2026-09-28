@@ -24,9 +24,9 @@
 	} = $props();
 
 	const toneClasses: Record<Tone, string> = {
-		primary: 'bg-primary/10 text-primary',
-		secondary: 'bg-secondary/10 text-secondary',
-		accent: 'bg-accent/10 text-accent',
+		primary: 'bg-primary text-primary-content',
+		secondary: 'bg-secondary text-secondary-content',
+		accent: 'bg-accent text-accent-content',
 	};
 </script>
 

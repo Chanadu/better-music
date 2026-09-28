@@ -21,7 +21,7 @@
 		{@const Icon = item.icon}
 		<a
 			href={item.href}
-			class={isActive ? 'dock-active text-secondary' : 'text-primary'}
+			class={isActive ? 'dock-active text-base-content' : 'text-base-content/60'}
 			aria-current={isActive ? 'page' : undefined}
 		>
 			<Icon class="h-5 w-5" />

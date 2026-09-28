@@ -125,7 +125,7 @@
 			{copy.button}
 		</button>
 		{#if busy}
-			<div class="text-primary flex justify-center" aria-live="polite">
+			<div class="text-base-content flex justify-center" aria-live="polite">
 				<span class="loading" class:loading-dots={mode === 'login'} aria-label={copy.loadingLabel}></span>
 			</div>
 		{/if}

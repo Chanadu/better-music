@@ -3,10 +3,10 @@
 </script>
 
 <section class="mt-9">
-	<h2 class="text-secondary mb-4 text-sm font-black uppercase">Your notes</h2>
+	<h2 class="text-base-content mb-4 text-sm font-black uppercase">Your notes</h2>
 	{#if comment?.trim()}
 		<div
-			class="border-secondary bg-base-200/50 relative overflow-hidden rounded-r-2xl border-l-4 px-6 py-7 sm:px-9 sm:py-8"
+			class="border-base-content/25 bg-base-200/50 relative overflow-hidden rounded-r-2xl border-l-4 px-6 py-7 sm:px-9 sm:py-8"
 		>
 			<p class="text-base-content/80 relative max-w-3xl text-lg leading-8 whitespace-pre-wrap sm:text-xl">
 				{comment}

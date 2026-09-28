@@ -118,7 +118,7 @@
 			class:grid-cols-2={action === 'delete'}
 			class:gap-3={action === 'delete'}
 		>
-			<button type="button" class="btn btn-ghost" disabled={busy} onclick={() => dialog?.close()}>Cancel</button>
+			<button type="button" class="btn btn-error" disabled={busy} onclick={() => dialog?.close()}>Cancel</button>
 			<button
 				type="submit"
 				class:btn={true}

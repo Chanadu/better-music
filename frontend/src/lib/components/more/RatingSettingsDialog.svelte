@@ -72,7 +72,7 @@
 			<button type="button" class="btn btn-ghost w-full sm:mr-auto sm:w-auto" onclick={reset}
 				>Reset defaults</button
 			>
-			<button type="button" class="btn btn-ghost flex-1 sm:flex-none" onclick={() => dialog?.close()}
+			<button type="button" class="btn btn-error flex-1 sm:flex-none" onclick={() => dialog?.close()}
 				>Cancel</button
 			>
 			<button type="submit" class="btn btn-primary flex-1 sm:flex-none">Save</button>

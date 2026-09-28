@@ -25,7 +25,7 @@
 <div class="join relative has-[details[open]]:z-20" class:w-full={fullWidth}>
 	{#if appSettings.values.useNativeDropdowns}
 		<select
-			class="select select-secondary text-secondary join-item"
+			class="select join-item"
 			class:flex-1={fullWidth}
 			class:min-w-0={fullWidth}
 			style:width={fullWidth ? '100%' : `calc(${labelWidth} + 4rem)`}
@@ -40,7 +40,7 @@
 	{:else}
 		<details class="dropdown" class:flex-1={fullWidth} class:min-w-0={fullWidth}>
 			<summary
-				class="btn btn-outline btn-secondary join-item justify-between"
+				class="btn btn-secondary join-item justify-between"
 				style:width={fullWidth ? '100%' : `calc(${labelWidth} + 4rem)`}
 				style:min-width={fullWidth ? '0' : `calc(${labelWidth} + 4rem)`}
 			>
@@ -48,14 +48,14 @@
 			</summary>
 
 			<ul
-				class="dropdown-content menu bg-base-100 border-secondary text-secondary rounded-box z-10 mt-2 w-full border-2 shadow"
+				class="dropdown-content menu bg-base-100 border-base-300 text-base-content rounded-box z-10 mt-2 w-full border-2 shadow"
 			>
 				{#each options as option}
 					<li>
 						<label>
 							<input
 								type="radio"
-								class="radio radio-secondary radio-xs"
+								class="radio radio-primary radio-xs"
 								{name}
 								value={option.value}
 								checked={sort === option.value}
@@ -69,7 +69,7 @@
 		</details>
 	{/if}
 
-	<label class="join-item btn btn-square btn-outline btn-secondary swap swap-rotate">
+	<label class="join-item btn btn-square btn-secondary swap swap-rotate">
 		<input type="checkbox" bind:checked={reversed} aria-label="Reverse sort order" />
 		<span class="swap-on" aria-hidden="true">↑</span>
 		<span class="swap-off" aria-hidden="true">↓</span>

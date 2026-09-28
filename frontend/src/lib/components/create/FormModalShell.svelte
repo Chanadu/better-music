@@ -44,7 +44,7 @@
 
 	<div class="modal-action gap-4 px-2">
 		<form method="dialog" class="flex-1">
-			<button class="btn btn-soft btn-secondary w-full">Cancel</button>
+			<button class="btn btn-error w-full">Cancel</button>
 		</form>
 
 		<button type="button" class="btn btn-primary flex-1" disabled={!canSave} onclick={onsave}>

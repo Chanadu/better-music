@@ -22,10 +22,10 @@
 	} = $props();
 
 	const iconClasses: Record<Tone, string> = {
-		primary: 'bg-primary/10 text-primary',
-		secondary: 'bg-secondary/10 text-secondary',
-		accent: 'bg-accent/10 text-accent',
-		error: 'bg-error/10 text-error',
+		primary: 'bg-primary text-primary-content',
+		secondary: 'bg-secondary text-secondary-content',
+		accent: 'bg-accent text-accent-content',
+		error: 'bg-error text-error-content',
 	};
 	const buttonClasses: Record<Tone, string> = {
 		primary: 'btn-primary',
@@ -45,7 +45,7 @@
 	</div>
 	<button
 		type="button"
-		class={`btn btn-soft btn-md gap-2 rounded-full shadow-sm ${buttonClasses[tone]}`}
+		class={`btn btn-md gap-2 rounded-full shadow-sm ${buttonClasses[tone]}`}
 		{disabled}
 		{onclick}
 	>

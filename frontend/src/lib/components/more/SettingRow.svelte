@@ -16,8 +16,8 @@
 	} = $props();
 
 	const tones = {
-		primary: 'bg-primary/10 text-primary',
-		accent: 'bg-accent/10 text-accent',
+		primary: 'bg-primary text-primary-content',
+		accent: 'bg-accent text-accent-content',
 	};
 </script>
 

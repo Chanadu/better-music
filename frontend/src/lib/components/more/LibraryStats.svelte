@@ -56,7 +56,10 @@
 <section aria-labelledby="library-stats-heading">
 	<div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 		<div>
-			<h1 id="library-stats-heading" class="text-secondary text-lg font-bold tracking-[0.14em] uppercase sm:text-xl">
+			<h1
+				id="library-stats-heading"
+				class="text-base-content text-lg font-bold tracking-[0.14em] uppercase sm:text-xl"
+			>
 				Your library
 			</h1>
 		</div>

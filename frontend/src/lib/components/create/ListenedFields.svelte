@@ -27,10 +27,10 @@
 				<input type="checkbox" bind:checked={listened} onchange={toggleListened} />
 
 				<XIcon label="disabled" />
-				<CheckIcon class="text-primary" label="enabled" />
+				<CheckIcon class="text-primary-content" label="enabled" />
 			</span>
 
-			<span class="text-neutral-content group-has-checked:text-primary"> Listened </span>
+			<span class="text-base-content"> Listened </span>
 		</span>
 	</label>
 

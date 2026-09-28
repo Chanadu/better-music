@@ -76,7 +76,7 @@
 
 	<div class="modal-action grid grid-cols-2 gap-3">
 		<form method="dialog">
-			<button class="btn btn-soft btn-secondary w-full" disabled={deleting}>Cancel</button>
+			<button class="btn btn-error w-full" disabled={deleting}>Cancel</button>
 		</form>
 
 		<button type="button" class="btn btn-error" disabled={deleting || Boolean(disabledReason)} onclick={confirm}>
