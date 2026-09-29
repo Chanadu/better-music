@@ -8,6 +8,7 @@ const keys = {
 	expires: 'betterMusicAccessTokenExpiresAt',
 	userId: 'betterMusicUserId',
 };
+let refreshRequest: Promise<string | null> | null = null;
 
 export const getCurrentUserId = () => {
 	const userId = Number(persistentStorage.get(keys.userId));
@@ -27,7 +28,9 @@ export const clearTokens = () => {
 	void clearStoredDatabaseCaches();
 };
 
-const requestRefresh = async () => {
+export const hasStoredSession = () => getCurrentUserId() !== null && persistentStorage.get(keys.refresh) !== null;
+
+const performRefresh = async () => {
 	const refreshToken = persistentStorage.get(keys.refresh);
 
 	if (!refreshToken) return null;
@@ -39,16 +42,33 @@ const requestRefresh = async () => {
 			body: JSON.stringify({ refresh_token: refreshToken }),
 		});
 
-		if (!response.ok) throw new Error('Refresh failed');
+		if (!response.ok) {
+			const refreshIsCurrent = persistentStorage.get(keys.refresh) === refreshToken;
+			if (refreshIsCurrent && (response.status === 400 || response.status === 401)) clearTokens();
+			return null;
+		}
 
 		const tokens = (await response.json()) as TokenResponse;
+		if (persistentStorage.get(keys.refresh) !== refreshToken) return null;
+
 		saveTokens(tokens);
 
 		return tokens.access_token;
 	} catch {
-		clearTokens();
+		// A connection failure or temporary server problem is not a logout.
+		// Preserve the session so its cached library can still be opened.
 		return null;
 	}
+};
+
+const requestRefresh = () => {
+	if (!refreshRequest) {
+		refreshRequest = performRefresh().finally(() => {
+			refreshRequest = null;
+		});
+	}
+
+	return refreshRequest;
 };
 
 export const getValidAccessToken = async () => {
@@ -74,7 +94,10 @@ export const authenticatedFetch = async (input: RequestInfo | URL, init: Request
 	if (response.status !== 401) return response;
 
 	token = await requestRefresh();
-	if (!token) return response;
+	if (!token) {
+		if (!hasStoredSession()) return response;
+		throw new Error('Authentication is temporarily unavailable');
+	}
 
 	headers.set('Authorization', `Bearer ${token}`);
 	response = await fetch(input, { ...init, headers });

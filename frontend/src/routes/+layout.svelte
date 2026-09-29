@@ -1,11 +1,11 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import BottomNav from '$lib/components/navigation/BottomNav.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
-	import { getValidAccessToken } from '$lib/scripts/auth';
-	import { fetchDatabaseData, loadCachedDatabase, refreshStaleDatabaseData } from '$lib/scripts/database';
+	import { getValidAccessToken, hasStoredSession } from '$lib/scripts/auth';
+	import { loadCachedDatabase, refreshStaleDatabaseData } from '$lib/scripts/database';
 
 	let { children } = $props();
 	let ready = $state(false);
@@ -13,13 +13,23 @@
 
 	onMount(() => {
 		appSettings.load();
-		let initialLoadTimer: number | undefined;
 
-		const refresh = () =>
-			refreshStaleDatabaseData().catch((error) => console.error('Failed to refresh database data', error));
+		const refresh = async () => {
+			if (!navigator.onLine) return;
+
+			const token = await getValidAccessToken();
+			if (!token) {
+				if (!hasStoredSession()) location.assign('/login');
+				return;
+			}
+
+			await refreshStaleDatabaseData();
+		};
+
+		const refreshSafely = () => refresh().catch((error) => console.error('Failed to refresh database data', error));
 
 		const visibility = () => {
-			if (document.visibilityState === 'visible') refresh();
+			if (document.visibilityState === 'visible') refreshSafely();
 		};
 
 		void (async () => {
@@ -31,25 +41,25 @@
 			const cached = await loadCachedDatabase();
 			const token = await getValidAccessToken();
 
-			if (!token) {
+			if (!token && (!cached || !hasStoredSession())) {
 				location.assign('/login');
 				return;
 			}
 
 			ready = true;
-			initialLoadTimer = window.setTimeout(() => {
-				const initialLoad = cached ? refreshStaleDatabaseData() : fetchDatabaseData();
-				initialLoad.catch((error) => console.error('Failed to load database data', error));
-			}, 0);
+			await tick();
+			if (token)
+				refreshStaleDatabaseData().catch((error) => console.error('Failed to load database data', error));
 
 			document.addEventListener('visibilitychange', visibility);
-			window.addEventListener('focus', refresh);
+			window.addEventListener('focus', refreshSafely);
+			window.addEventListener('online', refreshSafely);
 		})();
 
 		return () => {
-			if (initialLoadTimer !== undefined) window.clearTimeout(initialLoadTimer);
 			document.removeEventListener('visibilitychange', visibility);
-			window.removeEventListener('focus', refresh);
+			window.removeEventListener('focus', refreshSafely);
+			window.removeEventListener('online', refreshSafely);
 		};
 	});
 </script>

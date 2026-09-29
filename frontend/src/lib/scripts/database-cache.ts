@@ -5,7 +5,7 @@ const databaseName = 'better-music';
 const databaseVersion = 1;
 const snapshotStore = 'library-snapshots';
 
-export const databaseCacheKey = (userId: number) => `${cachePrefix}${userId}`;
+const databaseCacheKey = (userId: number) => `${cachePrefix}${userId}`;
 
 const openDatabase = () =>
 	new Promise<IDBDatabase>((resolve, reject) => {
@@ -23,18 +23,17 @@ const openDatabase = () =>
 		request.onerror = () => reject(request.error ?? new Error('Could not open IndexedDB'));
 	});
 
-const runTransaction = async <T>(
-	mode: IDBTransactionMode,
-	operation: (store: IDBObjectStore, resolve: (value: T) => void, reject: (reason?: unknown) => void) => void,
-) => {
+const runTransaction = async <T>(mode: IDBTransactionMode, operation: (store: IDBObjectStore) => IDBRequest<T>) => {
 	const database = await openDatabase();
 
 	try {
 		return await new Promise<T>((resolve, reject) => {
 			const transaction = database.transaction(snapshotStore, mode);
+			const request = operation(transaction.objectStore(snapshotStore));
+
+			transaction.oncomplete = () => resolve(request.result);
 			transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'));
 			transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB transaction failed'));
-			operation(transaction.objectStore(snapshotStore), resolve, reject);
 		});
 	} finally {
 		database.close();
@@ -43,11 +42,7 @@ const runTransaction = async <T>(
 
 export const getStoredDatabaseCache = async <T>(userId: number): Promise<T | null> => {
 	try {
-		const value = await runTransaction<T | undefined>('readonly', (store, resolve, reject) => {
-			const request = store.get(userId);
-			request.onsuccess = () => resolve(request.result as T | undefined);
-			request.onerror = () => reject(request.error);
-		});
+		const value = await runTransaction<T | undefined>('readonly', (store) => store.get(userId));
 
 		if (value !== undefined) return value;
 	} catch (error) {
@@ -64,11 +59,7 @@ export const getStoredDatabaseCache = async <T>(userId: number): Promise<T | nul
 
 export const setStoredDatabaseCache = async (userId: number, value: unknown) => {
 	try {
-		await runTransaction<void>('readwrite', (store, resolve, reject) => {
-			const request = store.put(value, userId);
-			request.onsuccess = () => resolve();
-			request.onerror = () => reject(request.error);
-		});
+		await runTransaction('readwrite', (store) => store.put(value, userId));
 	} catch (error) {
 		console.warn('Could not persist the library for offline use', error);
 	}
@@ -80,11 +71,7 @@ export const clearStoredDatabaseCaches = async () => {
 	});
 
 	try {
-		await runTransaction<void>('readwrite', (store, resolve, reject) => {
-			const request = store.clear();
-			request.onsuccess = () => resolve();
-			request.onerror = () => reject(request.error);
-		});
+		await runTransaction('readwrite', (store) => store.clear());
 	} catch (error) {
 		console.warn('Could not clear the persistent library cache', error);
 	}
