@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 import { albumsApi, ApiError, artistsApi } from './api';
 import { cacheLibraryArtwork } from './artwork-cache';
-import { getCurrentUserId, invalidateSession } from './auth';
+import { getCurrentUserId, getValidAccessToken, hasStoredSession, invalidateSession } from './auth';
 import { getStoredDatabaseCache, setStoredDatabaseCache } from './database-cache';
 import type { DatabaseData } from './types';
 
@@ -114,4 +114,27 @@ export const refreshStaleDatabaseData = async () => {
 		return cached;
 	}
 	return refreshDatabaseData();
+};
+
+export const refreshDatabaseSafely = async (force = false) => {
+	try {
+		if (!navigator.onLine) {
+			markOffline();
+			return;
+		}
+
+		if (force) markConnecting();
+		const token = await getValidAccessToken();
+		if (!token) {
+			if (!hasStoredSession()) location.assign('/login');
+			else markSyncError();
+			return;
+		}
+
+		if (force) await refreshDatabaseData();
+		else await refreshStaleDatabaseData();
+	} catch (error) {
+		setSyncState(navigator.onLine ? 'error' : 'offline');
+		console.error('Failed to refresh database data', error);
+	}
 };

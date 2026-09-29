@@ -6,42 +6,11 @@
 	import BottomNav from '$lib/components/navigation/BottomNav.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
 	import { getValidAccessToken, hasStoredSession } from '$lib/scripts/auth';
-	import {
-		getDatabaseData,
-		markConnecting,
-		markOffline,
-		markSyncError,
-		refreshDatabaseData,
-		refreshStaleDatabaseData,
-	} from '$lib/scripts/database';
+	import { getDatabaseData, markOffline, markSyncError, refreshDatabaseSafely } from '$lib/scripts/database';
 
 	let { children } = $props();
 	let ready = $state(false);
 	let authPage = $derived(page.url.pathname === '/login' || page.url.pathname === '/create-account');
-
-	const refreshDatabaseSafely = async (force = false) => {
-		try {
-			if (!navigator.onLine) {
-				markOffline();
-				return;
-			}
-
-			if (force) markConnecting();
-			const token = await getValidAccessToken();
-			if (!token) {
-				if (!hasStoredSession()) location.assign('/login');
-				else markSyncError();
-				return;
-			}
-
-			if (force) await refreshDatabaseData();
-			else await refreshStaleDatabaseData();
-		} catch (error) {
-			if (navigator.onLine) markSyncError();
-			else markOffline();
-			console.error('Failed to refresh database data', error);
-		}
-	};
 
 	afterNavigate(() => {
 		if (ready && !authPage) void refreshDatabaseSafely();
