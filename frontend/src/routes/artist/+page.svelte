@@ -13,7 +13,7 @@
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { artistsApi } from '$lib/scripts/api';
-	import { database, refreshDatabaseData } from '$lib/scripts/database';
+	import { database, refreshDatabaseDataAfterMutation } from '$lib/scripts/database';
 	import { getReturnHref } from '$lib/scripts/navigation';
 
 	let albumDialog = $state<HTMLDialogElement>();
@@ -58,7 +58,9 @@
 		if (!artist) return;
 
 		await artistsApi.delete(artist.id);
-		void refreshDatabaseData().catch((error) => console.error('Failed to refresh artists after deletion', error));
+		void refreshDatabaseDataAfterMutation().catch((error) =>
+			console.error('Failed to refresh artists after deletion', error),
+		);
 		await goto(backHref, { replaceState: true });
 	}
 </script>

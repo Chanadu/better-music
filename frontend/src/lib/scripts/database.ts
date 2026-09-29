@@ -96,6 +96,16 @@ export const refreshDatabaseData = async () => {
 	return promise;
 };
 
+export const refreshDatabaseDataAfterMutation = async () => {
+	const userId = getCurrentUserId();
+	if (userId === null) throw new Error('Not authenticated');
+
+	const pending = request?.userId === userId ? request.promise : null;
+	if (pending) await pending.catch(() => undefined);
+
+	return refreshDatabaseData();
+};
+
 export const refreshStaleDatabaseData = async () => {
 	const cached = await getDatabaseData();
 	if (request) return request.promise;

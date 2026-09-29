@@ -3,7 +3,7 @@
 	import FormModalShell from './FormModalShell.svelte';
 	import SpotifySearch from './SpotifySearch.svelte';
 	import { artistsApi } from '$lib/scripts/api';
-	import { refreshDatabaseData } from '$lib/scripts/database';
+	import { refreshDatabaseDataAfterMutation } from '$lib/scripts/database';
 	import { markArtistAsNew } from '$lib/scripts/newly-added';
 	import type { SpotifyRow as Row } from '$lib/scripts/types';
 
@@ -43,7 +43,7 @@
 				:	{ name: selected!.name, cover_url: selected!.imageUrl, spotify_id: selected!.id },
 			);
 			markArtistAsNew(artist.id);
-			await refreshDatabaseData();
+			await refreshDatabaseDataAfterMutation();
 			dialog?.close();
 			reset();
 		} catch (e) {

@@ -10,7 +10,7 @@
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { albumsApi } from '$lib/scripts/api';
 	import { getReturnHref } from '$lib/scripts/navigation';
-	import { database, refreshDatabaseData } from '$lib/scripts/database';
+	import { database, refreshDatabaseDataAfterMutation } from '$lib/scripts/database';
 
 	let deleteDialog = $state<HTMLDialogElement>();
 	let editDialog = $state<HTMLDialogElement>();
@@ -34,7 +34,9 @@
 		if (!album) return;
 
 		await albumsApi.delete(album.id, album.artist_id);
-		void refreshDatabaseData().catch((error) => console.error('Failed to refresh albums after deletion', error));
+		void refreshDatabaseDataAfterMutation().catch((error) =>
+			console.error('Failed to refresh albums after deletion', error),
+		);
 		await goto(backHref, { replaceState: true });
 	}
 

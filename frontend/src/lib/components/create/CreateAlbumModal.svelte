@@ -4,7 +4,7 @@
 	import FormModalShell from './FormModalShell.svelte';
 	import SpotifySearch from './SpotifySearch.svelte';
 	import { albumsApi, artistsApi, spotifyApi } from '$lib/scripts/api';
-	import { getDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
+	import { getDatabaseData, refreshDatabaseData, refreshDatabaseDataAfterMutation } from '$lib/scripts/database';
 	import { markAlbumAsNew, markArtistAsNew } from '$lib/scripts/newly-added';
 	import type { Album, Artist, SpotifyArtistCredit, SpotifyRow as Row } from '$lib/scripts/types';
 
@@ -151,7 +151,7 @@
 				await albumsApi.update(album.id, metadata);
 			}
 
-			await refreshDatabaseData();
+			await refreshDatabaseDataAfterMutation();
 			dialog?.close();
 			reset();
 		} catch (e) {

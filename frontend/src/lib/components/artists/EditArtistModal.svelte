@@ -3,7 +3,7 @@
 	import FormModalShell from '$lib/components/create/FormModalShell.svelte';
 	import SpotifySearch from '$lib/components/create/SpotifySearch.svelte';
 	import { artistsApi, spotifyApi } from '$lib/scripts/api';
-	import { refreshDatabaseData } from '$lib/scripts/database';
+	import { refreshDatabaseDataAfterMutation } from '$lib/scripts/database';
 	import type { Artist, SpotifyRow as Row } from '$lib/scripts/types';
 
 	let {
@@ -99,7 +99,7 @@
 
 			onupdated?.(updated);
 
-			await refreshDatabaseData();
+			await refreshDatabaseDataAfterMutation();
 			dialog?.close();
 		} catch (e) {
 			error = formatError(e, 'Failed to save artist');
