@@ -23,20 +23,28 @@ export const markOffline = () => setSyncState('offline');
 export const markSyncError = () => setSyncState('error');
 export const markConnecting = () => setSyncState('connecting');
 
-const publish = (userId: number, data: DatabaseData, fresh = false) => {
+const publishCached = (userId: number, data: DatabaseData) => {
+	if (getCurrentUserId() !== userId) return data;
+
+	current = { userId, data };
+	database.set(data);
+	cacheLibraryArtwork(data);
+	syncStatus.set({
+		state: navigator.onLine ? 'connecting' : 'offline',
+		lastSyncedAt: data.loadedAt,
+	});
+
+	return data;
+};
+
+const publishFresh = (userId: number, data: DatabaseData) => {
 	if (getCurrentUserId() !== userId) return data;
 
 	current = { userId, data };
 	void setStoredDatabaseCache(userId, data);
 	database.set(data);
 	cacheLibraryArtwork(data);
-	syncStatus.set({
-		state:
-			fresh ? 'synced'
-				: navigator.onLine ? 'connecting'
-					: 'offline',
-		lastSyncedAt: data.loadedAt,
-	});
+	syncStatus.set({ state: 'synced', lastSyncedAt: data.loadedAt });
 
 	return data;
 };
@@ -56,7 +64,7 @@ export const loadCachedDatabase = async () => {
 
 	if (!value || !Array.isArray(value.artists) || !Array.isArray(value.albums)) return null;
 
-	return publish(userId, value);
+	return publishCached(userId, value);
 };
 
 export const fetchDatabaseData = async ({ force = false } = {}) => {
@@ -72,7 +80,7 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 	markConnecting();
 
 	const promise = Promise.all([artistsApi.list(), albumsApi.list()])
-		.then(([artists, albums]) => publish(userId, { artists, albums, loadedAt: Date.now() }, true))
+		.then(([artists, albums]) => publishFresh(userId, { artists, albums, loadedAt: Date.now() }))
 		.catch((error) => {
 			if (error instanceof ApiError && error.status === 401) {
 				clearTokens();
