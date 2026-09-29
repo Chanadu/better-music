@@ -37,11 +37,11 @@ const publishCached = (userId: number, data: DatabaseData) => {
 	return data;
 };
 
-const publishFresh = (userId: number, data: DatabaseData) => {
+const publishFresh = async (userId: number, data: DatabaseData) => {
 	if (getCurrentUserId() !== userId) return data;
 
 	current = { userId, data };
-	void setStoredDatabaseCache(userId, data);
+	await setStoredDatabaseCache(userId, data);
 	database.set(data);
 	cacheLibraryArtwork(data);
 	syncStatus.set({ state: 'synced', lastSyncedAt: data.loadedAt });

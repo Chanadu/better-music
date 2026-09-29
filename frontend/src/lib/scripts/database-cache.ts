@@ -3,6 +3,10 @@ import type { DatabaseData } from './types';
 const databaseName = 'better-music';
 const databaseVersion = 1;
 const snapshotStore = 'library-snapshots';
+let pendingMutation = Promise.resolve<unknown>(undefined);
+
+const runMutation = (operation: () => Promise<unknown>) =>
+	(pendingMutation = pendingMutation.then(operation, operation));
 
 const openDatabase = () =>
 	new Promise<IDBDatabase>((resolve, reject) => {
@@ -50,7 +54,7 @@ export const getStoredDatabaseCache = async (userId: number): Promise<DatabaseDa
 
 export const setStoredDatabaseCache = async (userId: number, value: DatabaseData) => {
 	try {
-		await runTransaction('readwrite', (store) => store.put(value, userId));
+		await runMutation(() => runTransaction('readwrite', (store) => store.put(value, userId)));
 	} catch (error) {
 		console.warn('Could not persist the library for offline use', error);
 	}
@@ -58,7 +62,7 @@ export const setStoredDatabaseCache = async (userId: number, value: DatabaseData
 
 export const clearStoredDatabaseCaches = async () => {
 	try {
-		await runTransaction('readwrite', (store) => store.clear());
+		await runMutation(() => runTransaction('readwrite', (store) => store.clear()));
 	} catch (error) {
 		console.warn('Could not clear the persistent library cache', error);
 	}
