@@ -2,7 +2,6 @@
 	import { ratingColor } from '$lib/scripts/rating-colors';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
 	import DiscographySection from '$lib/components/artists/DiscographySection.svelte';
 	import EditArtistModal from '$lib/components/artists/EditArtistModal.svelte';
 	import MediaHero from '$lib/components/common/MediaHero.svelte';
@@ -13,17 +12,23 @@
 	import CalendarIcon from '$lib/components/icons/CalendarIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
-	import { ApiError, artistsApi } from '$lib/scripts/api';
-	import { database, getDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
+	import { artistsApi } from '$lib/scripts/api';
+	import { database, refreshDatabaseData } from '$lib/scripts/database';
 	import { getReturnHref } from '$lib/scripts/navigation';
-	import type { Artist } from '$lib/scripts/types';
 
-	let artist = $state<Artist>();
-	let status = $state('Loading artist...');
 	let albumDialog = $state<HTMLDialogElement>();
 	let deleteDialog = $state<HTMLDialogElement>();
 	let editDialog = $state<HTMLDialogElement>();
 	let backHref = $derived(getReturnHref(page.url, '/artists'));
+
+	let id = $derived(Number(page.url.searchParams.get('id')));
+	let validId = $derived(Number.isInteger(id) && id > 0);
+	let artist = $derived(validId ? $database?.artists.find((item) => item.id === id) : undefined);
+	let status = $derived(
+		!validId || ($database && !artist) ? 'Artist not found.'
+		: artist ? ''
+		: 'Loading artist...',
+	);
 
 	let albums = $derived(
 		$database?.albums
@@ -56,41 +61,6 @@
 		void refreshDatabaseData().catch((error) => console.error('Failed to refresh artists after deletion', error));
 		await goto(backHref, { replaceState: true });
 	}
-
-	onMount(async () => {
-		const raw = page.url.searchParams.get('id');
-		const id = Number(raw);
-
-		if (!Number.isInteger(id) || id < 1) {
-			status = 'Artist not found.';
-			return;
-		}
-
-		const cached = $database ?? (await getDatabaseData());
-		const cachedArtist = cached?.artists.find((item) => item.id === id);
-
-		if (cachedArtist) {
-			artist = cachedArtist;
-			status = '';
-		}
-
-		if (!navigator.onLine) {
-			if (!artist) status = 'Artist is not available offline.';
-			return;
-		}
-
-		try {
-			artist = await artistsApi.get(id);
-			status = '';
-		} catch (error) {
-			if (error instanceof ApiError && error.status === 404) {
-				artist = undefined;
-				status = 'Artist not found.';
-			} else if (!artist) {
-				status = 'Could not load artist.';
-			}
-		}
-	});
 </script>
 
 <svelte:head>
@@ -127,7 +97,7 @@
 		onedit={() => editDialog?.showModal()}
 	/>
 
-	<EditArtistModal bind:dialog={editDialog} {artist} onupdated={(updated) => (artist = updated)} />
+	<EditArtistModal bind:dialog={editDialog} {artist} />
 
 	<DeleteConfirmationDialog
 		bind:dialog={deleteDialog}

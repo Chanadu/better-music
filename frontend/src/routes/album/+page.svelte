@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
 	import AlbumArtistCard from '$lib/components/albums/AlbumArtistCard.svelte';
 	import EditAlbumModal from '$lib/components/albums/EditAlbumModal.svelte';
 	import AlbumNotes from '$lib/components/albums/AlbumNotes.svelte';
@@ -9,18 +8,27 @@
 	import MediaHero from '$lib/components/common/MediaHero.svelte';
 	import DeleteConfirmationDialog from '$lib/components/common/DeleteConfirmationDialog.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
-	import { albumsApi, ApiError, artistsApi } from '$lib/scripts/api';
+	import { albumsApi } from '$lib/scripts/api';
 	import { getReturnHref } from '$lib/scripts/navigation';
-	import { database, getDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
-	import type { Album, Artist } from '$lib/scripts/types';
+	import { database, refreshDatabaseData } from '$lib/scripts/database';
 
-	let album = $state<Album>();
-	let artist = $state<Artist>();
-	let status = $state('Loading album...');
 	let deleteDialog = $state<HTMLDialogElement>();
 	let editDialog = $state<HTMLDialogElement>();
 	let editModal = $state<EditAlbumModal>();
 	let backHref = $derived(getReturnHref(page.url, '/albums'));
+
+	let id = $derived(Number(page.url.searchParams.get('id')));
+	let artistId = $derived(Number(page.url.searchParams.get('artist_id')));
+	let validId = $derived(Number.isInteger(id) && Number.isInteger(artistId) && id > 0 && artistId > 0);
+	let album = $derived(
+		validId ? $database?.albums.find((item) => item.id === id && item.artist_id === artistId) : undefined,
+	);
+	let artist = $derived(validId ? $database?.artists.find((item) => item.id === artistId) : undefined);
+	let status = $derived(
+		!validId || ($database && (!album || !artist)) ? 'Album not found.'
+		: album && artist ? ''
+		: 'Loading album...',
+	);
 
 	async function deleteAlbum() {
 		if (!album) return;
@@ -50,46 +58,6 @@
 			day: 'numeric',
 			year: 'numeric',
 		}).format(date);
-	});
-
-	onMount(async () => {
-		const rawId = page.url.searchParams.get('id');
-		const rawArtistId = page.url.searchParams.get('artist_id');
-		const id = Number(rawId);
-		const artistId = Number(rawArtistId);
-
-		if (!Number.isInteger(id) || !Number.isInteger(artistId) || id < 1 || artistId < 1) {
-			status = 'Album not found.';
-			return;
-		}
-
-		const cached = $database ?? (await getDatabaseData());
-		const cachedAlbum = cached?.albums.find((item) => item.id === id && item.artist_id === artistId);
-		const cachedArtist = cached?.artists.find((item) => item.id === artistId);
-
-		if (cachedAlbum && cachedArtist) {
-			album = cachedAlbum;
-			artist = cachedArtist;
-			status = '';
-		}
-
-		if (!navigator.onLine) {
-			if (!album || !artist) status = 'Album is not available offline.';
-			return;
-		}
-
-		try {
-			[album, artist] = await Promise.all([albumsApi.get(id, artistId), artistsApi.get(artistId)]);
-			status = '';
-		} catch (error) {
-			if (error instanceof ApiError && error.status === 404) {
-				album = undefined;
-				artist = undefined;
-				status = 'Album not found.';
-			} else if (!album || !artist) {
-				status = 'Could not load album.';
-			}
-		}
 	});
 </script>
 
@@ -127,13 +95,7 @@
 		onedit={() => editDialog?.showModal()}
 	/>
 
-	<EditAlbumModal
-		bind:this={editModal}
-		bind:dialog={editDialog}
-		{album}
-		{artist}
-		onupdated={(updated) => (album = updated)}
-	/>
+	<EditAlbumModal bind:this={editModal} bind:dialog={editDialog} {album} {artist} />
 
 	<DeleteConfirmationDialog
 		bind:dialog={deleteDialog}
