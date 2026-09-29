@@ -14,7 +14,7 @@
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { ApiError, artistsApi } from '$lib/scripts/api';
-	import { database, loadCachedDatabase, refreshDatabaseData } from '$lib/scripts/database';
+	import { database, getDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
 	import { getReturnHref } from '$lib/scripts/navigation';
 	import type { Artist } from '$lib/scripts/types';
 
@@ -66,7 +66,7 @@
 			return;
 		}
 
-		const cached = $database ?? (await loadCachedDatabase());
+		const cached = $database ?? (await getDatabaseData());
 		const cachedArtist = cached?.artists.find((item) => item.id === id);
 
 		if (cachedArtist) {

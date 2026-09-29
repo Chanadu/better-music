@@ -11,7 +11,7 @@
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { albumsApi, ApiError, artistsApi } from '$lib/scripts/api';
 	import { getReturnHref } from '$lib/scripts/navigation';
-	import { database, loadCachedDatabase, refreshDatabaseData } from '$lib/scripts/database';
+	import { database, getDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
 	import type { Album, Artist } from '$lib/scripts/types';
 
 	let album = $state<Album>();
@@ -63,7 +63,7 @@
 			return;
 		}
 
-		const cached = $database ?? (await loadCachedDatabase());
+		const cached = $database ?? (await getDatabaseData());
 		const cachedAlbum = cached?.albums.find((item) => item.id === id && item.artist_id === artistId);
 		const cachedArtist = cached?.artists.find((item) => item.id === artistId);
 

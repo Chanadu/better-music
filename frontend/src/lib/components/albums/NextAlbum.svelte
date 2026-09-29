@@ -4,7 +4,7 @@
 	import EditAlbumModal from '$lib/components/albums/EditAlbumModal.svelte';
 	import MediaThumbnail from '$lib/components/common/MediaThumbnail.svelte';
 	import AlbumActions from '$lib/components/albums/AlbumActions.svelte';
-	import { database, fetchDatabaseData } from '$lib/scripts/database';
+	import { database, getDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
 	import { withReturnTo } from '$lib/scripts/navigation';
 	import { getCurrentUserId } from '$lib/scripts/auth';
 	import { persistentStorage } from '$lib/scripts/storage';
@@ -38,7 +38,7 @@
 	async function load() {
 		error = '';
 		try {
-			await fetchDatabaseData();
+			if (!(await getDatabaseData())) await refreshDatabaseData();
 		} catch {
 			error = 'Could not load your albums. Please try again.';
 		}

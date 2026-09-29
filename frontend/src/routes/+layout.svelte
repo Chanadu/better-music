@@ -7,7 +7,7 @@
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
 	import { getValidAccessToken, hasStoredSession } from '$lib/scripts/auth';
 	import {
-		loadCachedDatabase,
+		getDatabaseData,
 		markConnecting,
 		markOffline,
 		markSyncError,
@@ -62,7 +62,7 @@
 				return;
 			}
 
-			const cached = await loadCachedDatabase();
+			const cached = await getDatabaseData();
 			const token = await getValidAccessToken();
 
 			if (!token && (!cached || !hasStoredSession())) {

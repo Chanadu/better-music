@@ -4,7 +4,7 @@
 	import FormModalShell from './FormModalShell.svelte';
 	import SpotifySearch from './SpotifySearch.svelte';
 	import { albumsApi, artistsApi, spotifyApi } from '$lib/scripts/api';
-	import { fetchDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
+	import { getDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
 	import { markAlbumAsNew, markArtistAsNew } from '$lib/scripts/newly-added';
 	import type { Album, Artist, SpotifyArtistCredit, SpotifyRow as Row } from '$lib/scripts/types';
 
@@ -48,13 +48,18 @@
 	});
 
 	$effect(() => {
-		fetchDatabaseData()
-			.then((data) => {
-				artists = data.artists;
-				albums = data.albums;
-			})
-			.catch((e) => (error = formatError(e, 'Failed to load library')));
+		void loadDatabaseData();
 	});
+
+	async function loadDatabaseData() {
+		try {
+			const data = (await getDatabaseData()) ?? (await refreshDatabaseData());
+			artists = data.artists;
+			albums = data.albums;
+		} catch (e) {
+			error = formatError(e, 'Failed to load library');
+		}
+	}
 
 	function formatError(value: unknown, fallback: string) {
 		const text = value instanceof Error ? value.message : fallback;
@@ -114,7 +119,7 @@
 
 		try {
 			if (tab === 'spotify') {
-				albums = (await fetchDatabaseData({ force: true })).albums;
+				albums = (await refreshDatabaseData()).albums;
 				if (albums.some((album) => album.spotify_id === selected!.id)) {
 					throw new Error('Album has already been added');
 				}

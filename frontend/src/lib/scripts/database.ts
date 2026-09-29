@@ -49,7 +49,7 @@ const publishFresh = (userId: number, data: DatabaseData) => {
 	return data;
 };
 
-export const loadCachedDatabase = async () => {
+export const getDatabaseData = async () => {
 	const userId = getCurrentUserId();
 	if (userId === null) {
 		if (current) database.set(null);
@@ -67,13 +67,10 @@ export const loadCachedDatabase = async () => {
 	return publishCached(userId, value);
 };
 
-export const fetchDatabaseData = async ({ force = false } = {}) => {
+export const refreshDatabaseData = async () => {
 	const userId = getCurrentUserId();
 	if (userId === null) throw new Error('Not authenticated');
 
-	const cached = await loadCachedDatabase();
-
-	if (!force && cached) return cached;
 	if (request?.userId === userId) return request.promise;
 
 	lastRefreshStartedAt = Date.now();
@@ -98,10 +95,9 @@ export const fetchDatabaseData = async ({ force = false } = {}) => {
 
 	return promise;
 };
-export const refreshDatabaseData = () => fetchDatabaseData({ force: true });
 
 export const refreshStaleDatabaseData = async () => {
-	const cached = await loadCachedDatabase();
+	const cached = await getDatabaseData();
 	if (request) return request.promise;
 	if (Date.now() - Math.max(cached?.loadedAt ?? 0, lastRefreshStartedAt) < 30000) {
 		if (cached) syncStatus.set({ state: 'synced', lastSyncedAt: cached.loadedAt });
