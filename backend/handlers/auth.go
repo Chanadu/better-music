@@ -123,8 +123,9 @@ func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if body.Email == "" || body.Password == "" {
-		writeJSON(w, http.StatusBadRequest, apiError("email and password required"))
+	email, validEmail := normalizeEmail(body.Email)
+	if !validEmail || body.Password == "" {
+		writeJSON(w, http.StatusBadRequest, apiError("valid email and password required"))
 		return
 	}
 
@@ -134,7 +135,7 @@ func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := models.CreateUser(h.Database, body.Email, string(passwordHash))
+	user, err := models.CreateUser(h.Database, email, string(passwordHash))
 	if err != nil {
 		writeJSON(w, http.StatusConflict, apiError("email already in use"))
 		return
@@ -170,7 +171,13 @@ func (h *Handler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := models.GetUserByEmail(h.Database, body.Email)
+	email, validEmail := normalizeEmail(body.Email)
+	if !validEmail {
+		writeJSON(w, http.StatusUnauthorized, apiError("invalid email or password"))
+		return
+	}
+
+	user, err := models.GetUserByEmail(h.Database, email)
 	if err != nil {
 		writeJSON(w, http.StatusUnauthorized, apiError("invalid email or password"))
 		return

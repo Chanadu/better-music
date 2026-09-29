@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/Chanadu/better-music/models"
 	"github.com/lib/pq"
@@ -86,8 +85,8 @@ func (h *Handler) UpdateAccountEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body.Email = strings.TrimSpace(body.Email)
-	if body.Email == "" || body.Password == "" || !strings.Contains(body.Email, "@") {
+	email, validEmail := normalizeEmail(body.Email)
+	if !validEmail || body.Password == "" {
 		writeJSON(w, http.StatusBadRequest, apiError("valid email and current password required"))
 		return
 	}
@@ -100,7 +99,7 @@ func (h *Handler) UpdateAccountEmail(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusUnauthorized, apiError("current password is incorrect"))
 		return
 	}
-	if err := models.UpdateUserEmail(h.Database, user.ID, body.Email); err != nil {
+	if err := models.UpdateUserEmail(h.Database, user.ID, email); err != nil {
 		var pqError *pq.Error
 		if errors.As(err, &pqError) && pqError.Code == "23505" {
 			writeJSON(w, http.StatusConflict, apiError("email already in use"))

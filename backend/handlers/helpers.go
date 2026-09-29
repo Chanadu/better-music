@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"net/mail"
+	"strings"
 
 	"github.com/Chanadu/better-music/middleware"
 )
@@ -33,6 +35,16 @@ func apiError(msg string) ApiErrorResponse {
 
 func apiMessage(msg string) MessageResponse {
 	return MessageResponse{Message: msg}
+}
+
+func normalizeEmail(email string) (string, bool) {
+	email = strings.ToLower(strings.TrimSpace(email))
+	address, err := mail.ParseAddress(email)
+	if err != nil || address.Address != email {
+		return "", false
+	}
+
+	return email, true
 }
 
 func isEmpty(s *string) bool {
