@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 import { albumsApi, ApiError, artistsApi } from './api';
 import { cacheLibraryArtwork } from './artwork-cache';
-import { clearTokens, getCurrentUserId } from './auth';
+import { getCurrentUserId, invalidateSession } from './auth';
 import { getStoredDatabaseCache, setStoredDatabaseCache } from './database-cache';
 import type { DatabaseData } from './types';
 
@@ -80,7 +80,7 @@ export const refreshDatabaseData = async () => {
 		.then(([artists, albums]) => publishFresh(userId, { artists, albums, loadedAt: Date.now() }))
 		.catch((error) => {
 			if (error instanceof ApiError && error.status === 401) {
-				clearTokens();
+				invalidateSession();
 				location.assign('/login');
 			} else {
 				setSyncState(navigator.onLine ? 'error' : 'offline');

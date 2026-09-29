@@ -23,9 +23,13 @@ export const saveTokens = (tokens: TokenResponse) => {
 	persistentStorage.set(keys.userId, String(tokens.user_id));
 };
 
-export const clearTokens = () => {
+export const invalidateSession = () => {
 	Object.values(keys).forEach((key) => persistentStorage.remove(key));
-	void clearStoredDatabaseCaches();
+};
+
+export const clearSession = async () => {
+	invalidateSession();
+	await clearStoredDatabaseCaches();
 };
 
 export const hasStoredSession = () => getCurrentUserId() !== null && persistentStorage.get(keys.refresh) !== null;
@@ -44,7 +48,7 @@ const performRefresh = async () => {
 
 		if (!response.ok) {
 			const refreshIsCurrent = persistentStorage.get(keys.refresh) === refreshToken;
-			if (refreshIsCurrent && (response.status === 400 || response.status === 401)) clearTokens();
+			if (refreshIsCurrent && (response.status === 400 || response.status === 401)) invalidateSession();
 			return null;
 		}
 
@@ -76,7 +80,7 @@ export const getValidAccessToken = async () => {
 	const expiresAt = Number(persistentStorage.get(keys.expires));
 
 	if (token && getCurrentUserId() === null) {
-		clearTokens();
+		invalidateSession();
 		return null;
 	}
 
@@ -107,6 +111,8 @@ export const authenticatedFetch = async (input: RequestInfo | URL, init: Request
 
 export const logout = async () => {
 	const refreshToken = persistentStorage.get(keys.refresh);
+	invalidateSession();
+
 	try {
 		if (refreshToken)
 			await fetch('/api/auth/logout', {
@@ -115,6 +121,6 @@ export const logout = async () => {
 				body: JSON.stringify({ refresh_token: refreshToken }),
 			});
 	} finally {
-		clearTokens();
+		await clearStoredDatabaseCaches();
 	}
 };

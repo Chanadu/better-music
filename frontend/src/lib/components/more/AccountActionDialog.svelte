@@ -55,7 +55,7 @@
 				await accountApi.updatePassword({ current_password: currentPassword, new_password: newPassword });
 			} else await accountApi.delete({ password: currentPassword });
 
-			finishAccountAction();
+			await finishAccountAction();
 		} catch (value) {
 			error = accountErrorMessage(value);
 			busy = false;

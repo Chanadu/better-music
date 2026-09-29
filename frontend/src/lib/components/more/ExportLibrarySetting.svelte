@@ -1,7 +1,7 @@
 <script lang="ts">
 	import DownloadIcon from '$lib/components/icons/DownloadIcon.svelte';
 	import { ApiError } from '$lib/scripts/api';
-	import { clearTokens, getCurrentUserId } from '$lib/scripts/auth';
+	import { getCurrentUserId, invalidateSession } from '$lib/scripts/auth';
 	import { downloadLibraryExport } from '$lib/scripts/library-export';
 
 	type ExportState = 'idle' | 'exporting' | 'success' | 'error';
@@ -21,7 +21,7 @@
 			feedback = `Downloaded ${filename}`;
 		} catch (value) {
 			if ((value instanceof ApiError && value.status === 401) || getCurrentUserId() === null) {
-				clearTokens();
+				invalidateSession();
 				location.assign('/login');
 				return;
 			}
