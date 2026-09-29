@@ -5,7 +5,7 @@
 	import BottomNav from '$lib/components/navigation/BottomNav.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
 	import { getValidAccessToken } from '$lib/scripts/auth';
-	import { fetchDatabaseData, refreshStaleDatabaseData } from '$lib/scripts/database';
+	import { fetchDatabaseData, loadCachedDatabase, refreshStaleDatabaseData } from '$lib/scripts/database';
 
 	let { children } = $props();
 	let ready = $state(false);
@@ -13,6 +13,7 @@
 
 	onMount(() => {
 		appSettings.load();
+		let initialLoadTimer: number | undefined;
 
 		const refresh = () =>
 			refreshStaleDatabaseData().catch((error) => console.error('Failed to refresh database data', error));
@@ -27,6 +28,7 @@
 				return;
 			}
 
+			const cached = await loadCachedDatabase();
 			const token = await getValidAccessToken();
 
 			if (!token) {
@@ -35,15 +37,17 @@
 			}
 
 			ready = true;
-			fetchDatabaseData().catch((error) => console.error('Failed to load database data', error));
-
-			refresh();
+			initialLoadTimer = window.setTimeout(() => {
+				const initialLoad = cached ? refreshStaleDatabaseData() : fetchDatabaseData();
+				initialLoad.catch((error) => console.error('Failed to load database data', error));
+			}, 0);
 
 			document.addEventListener('visibilitychange', visibility);
 			window.addEventListener('focus', refresh);
 		})();
 
 		return () => {
+			if (initialLoadTimer !== undefined) window.clearTimeout(initialLoadTimer);
 			document.removeEventListener('visibilitychange', visibility);
 			window.removeEventListener('focus', refresh);
 		};
