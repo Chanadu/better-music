@@ -223,37 +223,41 @@ func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	storedToken, err := models.GetRefreshTokenByHash(h.Database, hashRefreshToken(body.RefreshToken))
+	replacementToken, err := generateRefreshToken()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to generate refresh token: "+err.Error()))
+		return
+	}
+
+	userID, err := models.RotateRefreshToken(
+		h.Database,
+		hashRefreshToken(body.RefreshToken),
+		hashRefreshToken(replacementToken),
+		time.Now().Add(h.Config.RefreshTTL),
+	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			writeJSON(w, http.StatusUnauthorized, apiError("invalid refresh token"))
+			writeJSON(w, http.StatusUnauthorized, apiError("invalid, expired, or revoked refresh token"))
 			return
 		}
 
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to load refresh token: "+err.Error()))
-		return
-	}
-
-	if storedToken.RevokedAt.Valid || time.Now().After(storedToken.ExpiresAt) {
-		_ = models.RevokeRefreshToken(h.Database, storedToken.ID)
-
-		writeJSON(w, http.StatusUnauthorized, apiError("refresh token expired or revoked"))
-		return
-	}
-
-	err = models.RevokeRefreshToken(h.Database, storedToken.ID)
-	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to rotate refresh token: "+err.Error()))
 		return
 	}
 
-	tokens, err := h.issueTokens(storedToken.UserID)
+	accessToken, err := h.generateJWT(userID)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to generate tokens: "+err.Error()))
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to generate access token: "+err.Error()))
 		return
 	}
 
-	writeJSON(w, http.StatusOK, tokens)
+	writeJSON(w, http.StatusOK, &TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: replacementToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int64(h.Config.AccessTTL / time.Second),
+		UserID:       userID,
+	})
 }
 
 // AuthLogout godoc

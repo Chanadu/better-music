@@ -48,6 +48,46 @@ func RevokeRefreshToken(database *sql.DB, id int) error {
 	return err
 }
 
+// RotateRefreshToken atomically consumes an active refresh token and creates
+// its replacement. If the token is missing, expired, or already revoked, it
+// returns sql.ErrNoRows.
+func RotateRefreshToken(database *sql.DB, tokenHash, replacementHash string, replacementExpiresAt time.Time) (int, error) {
+	tx, err := database.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	var userID int
+	err = tx.QueryRow(
+		`UPDATE refresh_tokens
+		SET revoked_at = NOW()
+		WHERE token_hash = $1
+			AND revoked_at IS NULL
+			AND expires_at > NOW()
+		RETURNING user_id`,
+		tokenHash,
+	).Scan(&userID)
+	if err != nil {
+		return 0, err
+	}
+
+	_, err = tx.Exec(
+		`INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
+		VALUES ($1, $2, $3)`,
+		userID, replacementHash, replacementExpiresAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return userID, nil
+}
+
 func CleanupRefreshTokens(database *sql.DB) (int64, error) {
 	result, err := database.Exec(
 		`DELETE FROM refresh_tokens
