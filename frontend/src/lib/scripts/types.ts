@@ -1,4 +1,4 @@
-import type { Album, Artist } from './api-types';
+import type { Album, Artist, SpotifyAlbumArtist } from './api-types';
 
 export type * from './api-types';
 
@@ -13,7 +13,4 @@ export type SpotifyRow = {
 	releaseYear?: string;
 };
 
-export type SpotifyArtistCredit = {
-	id: string;
-	name: string;
-};
+export type SpotifyArtistCredit = SpotifyAlbumArtist;
