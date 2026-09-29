@@ -1,5 +1,4 @@
 <script lang="ts">
-	import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
 	import EditIcon from '$lib/components/icons/EditIcon.svelte';
 	import GridIcon from '$lib/components/icons/GridIcon.svelte';
 	import MoreIcon from '$lib/components/icons/MoreIcon.svelte';
@@ -8,6 +7,7 @@
 	import ExportLibrarySetting from './ExportLibrarySetting.svelte';
 	import RatingSettingsDialog from './RatingSettingsDialog.svelte';
 	import SettingRow from './SettingRow.svelte';
+	import SyncStatusSetting from './SyncStatusSetting.svelte';
 	import ThemeSetting from './ThemeSetting.svelte';
 
 	let ratingSettingsDialog: RatingSettingsDialog;
@@ -25,11 +25,6 @@
 	] as const;
 
 	const unavailableTools = [
-		{
-			title: 'Offline and sync status',
-			description: 'Check your connection and sync state or retry failed changes.',
-			icon: CheckIcon,
-		},
 		{
 			title: 'Help, shortcuts, and app information',
 			description: 'Learn how Better Music works and find app details.',
@@ -96,6 +91,7 @@
 	<h3 class="text-base-content/45 mt-7 mb-3 px-1 text-xs font-bold tracking-[0.14em] uppercase">Data & support</h3>
 	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
 		<ExportLibrarySetting />
+		<SyncStatusSetting />
 		{#each unavailableTools as setting}
 			<SettingRow {...setting} tone="accent" />
 		{/each}

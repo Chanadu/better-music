@@ -1,4 +1,8 @@
+import type { Album, Artist } from './api-types';
+
 export type * from './api-types';
+
+export type DatabaseData = { artists: Artist[]; albums: Album[]; loadedAt: number };
 
 export type SpotifyRow = {
 	id: string;

@@ -1,5 +1,5 @@
 import { sessionCache } from './storage';
-import type { DatabaseData } from './database';
+import type { DatabaseData } from './types';
 
 const cachePrefix = 'betterMusicDatabaseData:';
 const databaseName = 'better-music';
