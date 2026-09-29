@@ -33,16 +33,9 @@ export const loadCachedDatabase = async () => {
 	current = null;
 	const value = await getStoredDatabaseCache(userId);
 
-	if (!value) return null;
+	if (!value || !Array.isArray(value.artists) || !Array.isArray(value.albums)) return null;
 
-	if (Array.isArray(value.artists) && Array.isArray(value.albums)) {
-		current = { userId, data: value };
-		database.set(value);
-
-		return value;
-	}
-
-	return null;
+	return publish(userId, value);
 };
 
 export const fetchDatabaseData = async ({ force = false } = {}) => {
