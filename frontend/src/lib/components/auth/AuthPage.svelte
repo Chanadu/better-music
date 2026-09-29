@@ -4,8 +4,8 @@
 </script>
 
 <div class="hero min-h-screen">
-	<div class="hero-content w-full max-w-lg flex-col lg:flex-row">
-		<div class="text-center lg:text-left">
+	<div class="hero-content w-full max-w-lg flex-col">
+		<div class="text-center">
 			<h1 class="text-2xl font-semibold">{mode === 'login' ? 'Login' : 'Create Account'}</h1>
 		</div>
 
