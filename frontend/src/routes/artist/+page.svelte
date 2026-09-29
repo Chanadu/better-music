@@ -14,7 +14,7 @@
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
 	import { ApiError, artistsApi } from '$lib/scripts/api';
-	import { database, refreshDatabaseData } from '$lib/scripts/database';
+	import { database, loadCachedDatabase, refreshDatabaseData } from '$lib/scripts/database';
 	import { getReturnHref } from '$lib/scripts/navigation';
 	import type { Artist } from '$lib/scripts/types';
 
@@ -66,11 +66,29 @@
 			return;
 		}
 
+		const cached = $database ?? (await loadCachedDatabase());
+		const cachedArtist = cached?.artists.find((item) => item.id === id);
+
+		if (cachedArtist) {
+			artist = cachedArtist;
+			status = '';
+		}
+
+		if (!navigator.onLine) {
+			if (!artist) status = 'Artist is not available offline.';
+			return;
+		}
+
 		try {
 			artist = await artistsApi.get(id);
 			status = '';
 		} catch (error) {
-			status = error instanceof ApiError && error.status === 404 ? 'Artist not found.' : 'Could not load artist.';
+			if (error instanceof ApiError && error.status === 404) {
+				artist = undefined;
+				status = 'Artist not found.';
+			} else if (!artist) {
+				status = 'Could not load artist.';
+			}
 		}
 	});
 </script>
