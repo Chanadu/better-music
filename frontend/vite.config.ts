@@ -37,6 +37,19 @@ export default defineConfig({
 			workbox: {
 				globPatterns: ['**/*.{css,js,html,svg,png,ico,webmanifest}'],
 				navigateFallback: '/index.html',
+				runtimeCaching: [
+					{
+						urlPattern: /^https:\/\/i\.scdn\.co\/image\//,
+						handler: 'CacheFirst',
+						options: {
+							cacheName: 'better-music-cover-art',
+							cacheableResponse: { statuses: [0, 200] },
+							expiration: {
+								maxEntries: 2000,
+							},
+						},
+					},
+				],
 			},
 		}),
 	],

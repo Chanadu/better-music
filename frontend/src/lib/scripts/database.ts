@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import { albumsApi, ApiError, artistsApi } from './api';
+import { cacheLibraryArtwork } from './artwork-cache';
 import { clearTokens, getCurrentUserId } from './auth';
 import { getStoredDatabaseCache, setStoredDatabaseCache } from './database-cache';
 import type { Album, Artist } from './types';
@@ -16,6 +17,7 @@ const publish = (userId: number, data: DatabaseData) => {
 	current = { userId, data };
 	void setStoredDatabaseCache(userId, data);
 	database.set(data);
+	cacheLibraryArtwork(data);
 
 	return data;
 };
