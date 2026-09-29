@@ -14,22 +14,24 @@
 	onMount(() => {
 		appSettings.load();
 
-		const refresh = async () => {
-			if (!navigator.onLine) return;
+		const refreshDatabaseSafely = async () => {
+			try {
+				if (!navigator.onLine) return;
 
-			const token = await getValidAccessToken();
-			if (!token) {
-				if (!hasStoredSession()) location.assign('/login');
-				return;
+				const token = await getValidAccessToken();
+				if (!token) {
+					if (!hasStoredSession()) location.assign('/login');
+					return;
+				}
+
+				await refreshStaleDatabaseData();
+			} catch (error) {
+				console.error('Failed to refresh database data', error);
 			}
-
-			await refreshStaleDatabaseData();
 		};
 
-		const refreshSafely = () => refresh().catch((error) => console.error('Failed to refresh database data', error));
-
 		const visibility = () => {
-			if (document.visibilityState === 'visible') refreshSafely();
+			if (document.visibilityState === 'visible') void refreshDatabaseSafely();
 		};
 
 		void (async () => {
@@ -48,18 +50,17 @@
 
 			ready = true;
 			await tick();
-			if (token)
-				refreshStaleDatabaseData().catch((error) => console.error('Failed to load database data', error));
+			if (token) void refreshDatabaseSafely();
 
 			document.addEventListener('visibilitychange', visibility);
-			window.addEventListener('focus', refreshSafely);
-			window.addEventListener('online', refreshSafely);
+			window.addEventListener('focus', refreshDatabaseSafely);
+			window.addEventListener('online', refreshDatabaseSafely);
 		})();
 
 		return () => {
 			document.removeEventListener('visibilitychange', visibility);
-			window.removeEventListener('focus', refreshSafely);
-			window.removeEventListener('online', refreshSafely);
+			window.removeEventListener('focus', refreshDatabaseSafely);
+			window.removeEventListener('online', refreshDatabaseSafely);
 		};
 	});
 </script>
