@@ -62,21 +62,6 @@ func GetAlbumsByUser(database *sql.DB, userID int) ([]Album, error) {
 	return albums, nil
 }
 
-func AlbumExistsByName(database *sql.DB, userID int, artistID int, title string) (bool, error) {
-	var exists bool
-	err := database.QueryRow(
-		`SELECT EXISTS (
-			SELECT 1
-			FROM albums
-			WHERE user_id = $1 AND artist_id = $2 AND LOWER(title) = LOWER($3)
-		)
-		`,
-		userID, artistID, title,
-	).Scan(&exists)
-
-	return exists, err
-}
-
 func AlbumExistsByID(database *sql.DB, userID int, artistID int, albumID int) (bool, error) {
 	var exists bool
 	err := database.QueryRow(

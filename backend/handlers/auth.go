@@ -135,19 +135,42 @@ func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := models.CreateUser(h.Database, email, string(passwordHash))
+	refreshToken, err := generateRefreshToken()
 	if err != nil {
-		writeJSON(w, http.StatusConflict, apiError("email already in use"))
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to generate refresh token"))
 		return
 	}
 
-	tokens, err := h.issueTokens(user.ID)
+	user, err := models.CreateUserWithRefreshToken(
+		h.Database,
+		email,
+		string(passwordHash),
+		hashRefreshToken(refreshToken),
+		time.Now().Add(h.Config.RefreshTTL),
+	)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to generate tokens"))
+		if isPostgresConstraintError(err, "23505", "users_email_key") {
+			writeJSON(w, http.StatusConflict, apiError("email already in use"))
+			return
+		}
+
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to create account"))
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, tokens)
+	accessToken, err := h.generateJWT(user.ID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError("failed to generate access token"))
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, &TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int64(h.Config.AccessTTL / time.Second),
+		UserID:       user.ID,
+	})
 }
 
 // AuthLogin godoc

@@ -451,6 +451,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
+                    "409": {
+                        "description": "Album already exists",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Server error",
                         "schema": {
@@ -736,6 +742,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Artist not found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ApiErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Artist already exists",
                         "schema": {
                             "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }

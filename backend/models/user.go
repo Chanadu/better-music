@@ -12,18 +12,37 @@ type User struct {
 	CreatedAt    time.Time
 }
 
-func CreateUser(database *sql.DB, email, passwordHash string) (*User, error) {
-	var user User
+func CreateUserWithRefreshToken(database *sql.DB, email, passwordHash, tokenHash string, expiresAt time.Time) (*User, error) {
+	tx, err := database.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
 
-	err := database.QueryRow(
+	var user User
+	err = tx.QueryRow(
 		"INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, created_at",
 		email, passwordHash,
 	).Scan(&user.ID, &user.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err = tx.Exec(
+		`INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
+		VALUES ($1, $2, $3)`,
+		user.ID, tokenHash, expiresAt,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
 
 	user.Email = email
 	user.PasswordHash = passwordHash
-
-	return &user, err
+	return &user, nil
 }
 
 func GetUserByEmail(database *sql.DB, email string) (*User, error) {
@@ -46,15 +65,24 @@ func GetUserByID(database *sql.DB, id int) (*User, error) {
 	return &user, err
 }
 
-func UpdateUserEmail(database *sql.DB, id int, email string) error {
+func UpdateUserEmail(database *sql.DB, id int, email, expectedPasswordHash string) error {
 	tx, err := database.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	if _, err = tx.Exec("UPDATE users SET email = $1 WHERE id = $2", email, id); err != nil {
+	result, err := tx.Exec(
+		"UPDATE users SET email = $1 WHERE id = $2 AND password_hash = $3",
+		email, id, expectedPasswordHash,
+	)
+	if err != nil {
 		return err
+	}
+	if rows, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rows == 0 {
+		return sql.ErrNoRows
 	}
 	if _, err = tx.Exec("UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL", id); err != nil {
 		return err
@@ -63,15 +91,24 @@ func UpdateUserEmail(database *sql.DB, id int, email string) error {
 	return tx.Commit()
 }
 
-func UpdateUserPassword(database *sql.DB, id int, passwordHash string) error {
+func UpdateUserPassword(database *sql.DB, id int, passwordHash, expectedPasswordHash string) error {
 	tx, err := database.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	if _, err = tx.Exec("UPDATE users SET password_hash = $1 WHERE id = $2", passwordHash, id); err != nil {
+	result, err := tx.Exec(
+		"UPDATE users SET password_hash = $1 WHERE id = $2 AND password_hash = $3",
+		passwordHash, id, expectedPasswordHash,
+	)
+	if err != nil {
 		return err
+	}
+	if rows, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rows == 0 {
+		return sql.ErrNoRows
 	}
 	if _, err = tx.Exec("UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL", id); err != nil {
 		return err
@@ -80,12 +117,20 @@ func UpdateUserPassword(database *sql.DB, id int, passwordHash string) error {
 	return tx.Commit()
 }
 
-func DeleteUser(database *sql.DB, id int) error {
+func DeleteUser(database *sql.DB, id int, expectedPasswordHash string) error {
 	tx, err := database.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
+
+	var lockedUserID int
+	if err = tx.QueryRow(
+		"SELECT id FROM users WHERE id = $1 AND password_hash = $2 FOR UPDATE",
+		id, expectedPasswordHash,
+	).Scan(&lockedUserID); err != nil {
+		return err
+	}
 
 	if _, err = tx.Exec("DELETE FROM albums WHERE user_id = $1", id); err != nil {
 		return err
@@ -93,7 +138,7 @@ func DeleteUser(database *sql.DB, id int) error {
 	if _, err = tx.Exec("DELETE FROM artists WHERE user_id = $1", id); err != nil {
 		return err
 	}
-	if _, err = tx.Exec("DELETE FROM users WHERE id = $1", id); err != nil {
+	if _, err = tx.Exec("DELETE FROM users WHERE id = $1", lockedUserID); err != nil {
 		return err
 	}
 

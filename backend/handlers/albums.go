@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -193,20 +195,17 @@ func (h *Handler) CreateAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err = models.AlbumExistsByName(h.Database, userID, body.ArtistID, body.Title)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing album: "+err.Error()))
-		return
-	}
-
-	if exists {
-		writeJSON(w, http.StatusConflict, apiError("album with this name and artist already exists"))
-		return
-	}
-
 	album, err := models.CreateAlbum(h.Database, userID, body.ArtistID, body.Title, body.SpotifyID)
-
 	if err != nil {
+		if isPostgresError(err, "23505") {
+			writeJSON(w, http.StatusConflict, apiError("album with this name and artist already exists"))
+			return
+		}
+		if isPostgresError(err, "23503") {
+			writeJSON(w, http.StatusBadRequest, apiError("artist does not exist"))
+			return
+		}
+
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to create album: "+err.Error()))
 		return
 	}
@@ -227,6 +226,7 @@ func (h *Handler) CreateAlbum(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} ApiErrorResponse "Invalid request or no fields provided"
 // @Failure 401 {object} ApiErrorResponse "Unauthorized"
 // @Failure 404 {object} ApiErrorResponse "Album or artist not found"
+// @Failure 409 {object} ApiErrorResponse "Album already exists"
 // @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/albums/{id} [put]
 func (h *Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
@@ -279,6 +279,15 @@ func (h *Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 
 	err = models.UpdateAlbum(h.Database, userID, body.ArtistID, albumID, body.Title, body.CoverURL, body.Year, body.SpotifyID, body.Listened, body.Rating, body.Comment, body.ListenedAt)
 	if err != nil {
+		if isPostgresError(err, "23505") {
+			writeJSON(w, http.StatusConflict, apiError("album with this name and artist already exists"))
+			return
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, apiError("album not found"))
+			return
+		}
+
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to update album: "+err.Error()))
 		return
 	}

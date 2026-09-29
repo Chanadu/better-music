@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -99,7 +100,11 @@ func (h *Handler) UpdateAccountEmail(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusUnauthorized, apiError("current password is incorrect"))
 		return
 	}
-	if err := models.UpdateUserEmail(h.Database, user.ID, email); err != nil {
+	if err := models.UpdateUserEmail(h.Database, user.ID, email, user.PasswordHash); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusUnauthorized, apiError("current password is no longer valid"))
+			return
+		}
 		var pqError *pq.Error
 		if errors.As(err, &pqError) && pqError.Code == "23505" {
 			writeJSON(w, http.StatusConflict, apiError("email already in use"))
@@ -149,7 +154,11 @@ func (h *Handler) UpdateAccountPassword(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to hash password"))
 		return
 	}
-	if err = models.UpdateUserPassword(h.Database, user.ID, string(passwordHash)); err != nil {
+	if err = models.UpdateUserPassword(h.Database, user.ID, string(passwordHash), user.PasswordHash); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusUnauthorized, apiError("current password is no longer valid"))
+			return
+		}
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to update password"))
 		return
 	}
@@ -184,7 +193,11 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := models.DeleteUser(h.Database, user.ID); err != nil {
+	if err := models.DeleteUser(h.Database, user.ID, user.PasswordHash); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusUnauthorized, apiError("current password is no longer valid"))
+			return
+		}
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete account"))
 		return
 	}

@@ -14,7 +14,7 @@ The app pairs a SvelteKit frontend with a Go API and PostgreSQL. Spotify integra
 - Search and persistent sorting preferences for album and artist lists
 - A home page with a shuffled “next album” pick and recently listened/added albums
 - Artist and album detail pages with library statistics
-- Per-session library caching with automatic refresh when the app regains focus
+- Persistent per-user library caching in IndexedDB with automatic refresh when the app regains focus
 - Installable progressive web app (PWA)
 - Generated Swagger/OpenAPI documentation and frontend API types
 - Responsive, mobile-first interface built with Tailwind CSS and daisyUI
@@ -195,9 +195,9 @@ See Swagger UI for request bodies, parameters, and response schemas.
 
 ## Data and Caching
 
-PostgreSQL is the source of truth. After login, the frontend fetches the current user's artists and albums and stores that snapshot in `sessionStorage` so navigation within the tab is immediate. It refreshes stale data when the page becomes visible or the window regains focus.
+PostgreSQL is the source of truth. On startup, the frontend hydrates the library from a per-user IndexedDB snapshot before requesting data from the server, then refreshes stale data in the background. The snapshot remains available across app and browser restarts, and existing `sessionStorage` snapshots are migrated into IndexedDB when first read. Network and temporary server failures during token refresh preserve the cached session; confirmed invalid refresh tokens still clear it. The app retries authentication and synchronization after reconnecting and also checks for stale data when the page becomes visible or the window regains focus.
 
-The PWA caches the static application shell. Creating or changing library data still requires a connection to the backend; offline mutation queueing is not currently implemented.
+The PWA caches the static application shell and prefetches Spotify artwork referenced by the synchronized library. A status badge reports when the app is offline, connecting, synchronized, or unable to reach the backend, along with the last successful synchronization time. Creating or changing library data still requires a connection to the backend; offline mutation queueing is not currently implemented.
 
 ## Deployment
 
@@ -215,7 +215,6 @@ Appearance/theme selection
 Grid/list layout preferences
 Custom rating labels and colors
 CSV/JSON export
-Offline and sync status
 Help, shortcuts, and app information
 
 - [ ] Add a theme selector

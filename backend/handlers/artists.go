@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -119,20 +121,13 @@ func (h *Handler) CreateArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := models.ArtistExistsByName(h.Database, userID, body.Name)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
-		return
-	}
-
-	if exists {
-		writeJSON(w, http.StatusConflict, apiError("artist with this name already exists"))
-		return
-	}
-
 	artist, err := models.CreateArtist(h.Database, userID, body.Name, body.CoverURL, body.SpotifyID)
-
 	if err != nil {
+		if isPostgresError(err, "23505") {
+			writeJSON(w, http.StatusConflict, apiError("artist with this name already exists"))
+			return
+		}
+
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to create artist: "+err.Error()))
 		return
 	}
@@ -183,19 +178,17 @@ func (h *Handler) DeleteArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	albums, err := models.GetArtistAlbums(h.Database, userID, artistID)
+	err := models.DeleteArtist(h.Database, userID, artistID)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to check artist's albums: "+err.Error()))
-		return
-	}
+		if isPostgresError(err, "23503") {
+			writeJSON(w, http.StatusBadRequest, apiError("artist cannot be deleted because it has albums"))
+			return
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, apiError("artist not found"))
+			return
+		}
 
-	if len(albums) > 0 {
-		writeJSON(w, http.StatusBadRequest, apiError("artist cannot be deleted because it has albums"))
-		return
-	}
-
-	err = models.DeleteArtist(h.Database, userID, artistID)
-	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete artist: "+err.Error()))
 		return
 	}
@@ -216,6 +209,7 @@ func (h *Handler) DeleteArtist(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} ApiErrorResponse "Invalid request or no fields provided"
 // @Failure 401 {object} ApiErrorResponse "Unauthorized"
 // @Failure 404 {object} ApiErrorResponse "Artist not found"
+// @Failure 409 {object} ApiErrorResponse "Artist already exists"
 // @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/artists/{id} [put]
 func (h *Handler) UpdateArtist(w http.ResponseWriter, r *http.Request) {
@@ -244,6 +238,15 @@ func (h *Handler) UpdateArtist(w http.ResponseWriter, r *http.Request) {
 
 	err := models.UpdateArtist(h.Database, userID, artistID, body.Name, body.CoverURL, body.SpotifyID)
 	if err != nil {
+		if isPostgresError(err, "23505") {
+			writeJSON(w, http.StatusConflict, apiError("artist with this name already exists"))
+			return
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, apiError("artist not found"))
+			return
+		}
+
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to update artist: "+err.Error()))
 		return
 	}

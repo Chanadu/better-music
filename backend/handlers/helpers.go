@@ -2,13 +2,25 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"net/mail"
 	"strings"
 
 	"github.com/Chanadu/better-music/middleware"
+	"github.com/lib/pq"
 )
+
+func isPostgresError(err error, code pq.ErrorCode) bool {
+	var pqError *pq.Error
+	return errors.As(err, &pqError) && pqError.Code == code
+}
+
+func isPostgresConstraintError(err error, code pq.ErrorCode, constraint string) bool {
+	var pqError *pq.Error
+	return errors.As(err, &pqError) && pqError.Code == code && pqError.Constraint == constraint
+}
 
 type ApiErrorResponse struct {
 	Error string `json:"error" validate:"required"`
