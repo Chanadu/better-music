@@ -1,7 +1,6 @@
-type ArtworkLibrary = {
-	artists: { cover_url?: string | null }[];
-	albums: { cover_url?: string | null }[];
-};
+import type { DatabaseData } from './types';
+
+type ArtworkLibrary = Pick<DatabaseData, 'artists' | 'albums'>;
 
 const spotifyArtworkPrefix = 'https://i.scdn.co/image/';
 const artworkCacheName = 'better-music-cover-art';
