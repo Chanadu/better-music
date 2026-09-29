@@ -9,7 +9,6 @@ export default defineConfig({
 		sveltekit(),
 		VitePWA({
 			registerType: 'autoUpdate',
-			includeAssets: ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png'],
 			manifest: {
 				name: 'Better Music',
 				short_name: 'Better Music',

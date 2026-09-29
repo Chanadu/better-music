@@ -27,11 +27,7 @@ type LogConfig struct {
 }
 
 type PostgresConfig struct {
-	Url      string
-	Username string
-	Password string
-	Host     string
-	Port     string
+	Url string
 }
 
 type ServerConfig struct {
@@ -110,11 +106,7 @@ func LoadConfig() (Config, error) {
 			Debug:   logDebug,
 		},
 		DB: PostgresConfig{
-			Username: os.Getenv("POSTGRES_USER"),
-			Password: os.Getenv("POSTGRES_PASSWORD"),
-			Host:     os.Getenv("POSTGRES_HOST"),
-			Port:     os.Getenv("POSTGRES_PORT"),
-			Url:      os.Getenv("POSTGRES_URL"),
+			Url: os.Getenv("POSTGRES_URL"),
 		},
 		Server: ServerConfig{
 			Host: os.Getenv("SERVER_HOST"),

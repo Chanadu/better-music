@@ -19,17 +19,6 @@ const createSafeStorage = (getStorage: () => Storage) => {
 		} catch {}
 	};
 
-	const keys = () => {
-		try {
-			const storage = getStorage();
-			return Array.from({ length: storage.length }, (_, index) => storage.key(index)).filter(
-				(key): key is string => key !== null,
-			);
-		} catch {
-			return [];
-		}
-	};
-
 	const getJson = <T>(key: string): T | null => {
 		try {
 			const value = get(key);
@@ -45,8 +34,7 @@ const createSafeStorage = (getStorage: () => Storage) => {
 		} catch {}
 	};
 
-	return { get, set, remove, keys, getJson, setJson };
+	return { get, set, remove, getJson, setJson };
 };
 
 export const persistentStorage = createSafeStorage(() => localStorage);
-export const sessionCache = createSafeStorage(() => sessionStorage);

@@ -8,7 +8,6 @@ import type {
 	CreateArtistRequest,
 	MessageResponse,
 	DeleteAccountRequest,
-	RefreshTokenRequest,
 	SpotifyAlbumSearchResult,
 	SpotifyArtistSearchResult,
 	TokenResponse,
@@ -61,8 +60,6 @@ const query = (values: Record<string, string | number | undefined>) => {
 export const authApi = {
 	login: (body: AuthRequest) => json<TokenResponse>('/api/auth/login', { method: 'POST', body }),
 	register: (body: AuthRequest) => json<TokenResponse>('/api/auth/register', { method: 'POST', body }),
-	refresh: (body: RefreshTokenRequest) => json<TokenResponse>('/api/auth/refresh', { method: 'POST', body }),
-	logout: (body: RefreshTokenRequest) => json<MessageResponse>('/api/auth/logout', { method: 'POST', body }),
 };
 
 export const accountApi = {
@@ -81,7 +78,6 @@ export const artistsApi = {
 	update: (id: number, body: UpdateArtistRequest) =>
 		secureJson<MessageResponse>(`/api/artists/${id}`, { method: 'PUT', body }),
 	delete: (id: number) => secureJson<MessageResponse>(`/api/artists/${id}`, { method: 'DELETE' }),
-	albums: (id: number) => secureJson<Album[]>(`/api/artists/${id}/albums`),
 };
 
 export const albumsApi = {

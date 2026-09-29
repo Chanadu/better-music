@@ -1,12 +1,8 @@
-import { sessionCache } from './storage';
 import type { DatabaseData } from './types';
 
-const cachePrefix = 'betterMusicDatabaseData:';
 const databaseName = 'better-music';
 const databaseVersion = 1;
 const snapshotStore = 'library-snapshots';
-
-const databaseCacheKey = (userId: number) => `${cachePrefix}${userId}`;
 
 const openDatabase = () =>
 	new Promise<IDBDatabase>((resolve, reject) => {
@@ -45,17 +41,11 @@ export const getStoredDatabaseCache = async (userId: number): Promise<DatabaseDa
 	try {
 		const value = await runTransaction<DatabaseData | undefined>('readonly', (store) => store.get(userId));
 
-		if (value !== undefined) return value;
+		return value ?? null;
 	} catch (error) {
 		console.warn('Could not read the persistent library cache', error);
+		return null;
 	}
-
-	// Promote the old per-tab cache after upgrading an existing installation.
-	const legacyKey = databaseCacheKey(userId);
-	const legacy = sessionCache.getJson<DatabaseData>(legacyKey);
-	if (legacy) void setStoredDatabaseCache(userId, legacy);
-
-	return legacy;
 };
 
 export const setStoredDatabaseCache = async (userId: number, value: DatabaseData) => {
@@ -67,10 +57,6 @@ export const setStoredDatabaseCache = async (userId: number, value: DatabaseData
 };
 
 export const clearStoredDatabaseCaches = async () => {
-	sessionCache.keys().forEach((key) => {
-		if (key.startsWith(cachePrefix)) sessionCache.remove(key);
-	});
-
 	try {
 		await runTransaction('readwrite', (store) => store.clear());
 	} catch (error) {
