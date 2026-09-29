@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount, tick } from 'svelte';
 	import BottomNav from '$lib/components/navigation/BottomNav.svelte';
@@ -18,32 +19,36 @@
 	let ready = $state(false);
 	let authPage = $derived(page.url.pathname === '/login' || page.url.pathname === '/create-account');
 
+	const refreshDatabaseSafely = async (force = false) => {
+		try {
+			if (!navigator.onLine) {
+				markOffline();
+				return;
+			}
+
+			if (force) markConnecting();
+			const token = await getValidAccessToken();
+			if (!token) {
+				if (!hasStoredSession()) location.assign('/login');
+				else markSyncError();
+				return;
+			}
+
+			if (force) await refreshDatabaseData();
+			else await refreshStaleDatabaseData();
+		} catch (error) {
+			if (navigator.onLine) markSyncError();
+			else markOffline();
+			console.error('Failed to refresh database data', error);
+		}
+	};
+
+	afterNavigate(() => {
+		if (ready && !authPage) void refreshDatabaseSafely();
+	});
+
 	onMount(() => {
 		appSettings.load();
-
-		const refreshDatabaseSafely = async (force = false) => {
-			try {
-				if (!navigator.onLine) {
-					markOffline();
-					return;
-				}
-
-				markConnecting();
-				const token = await getValidAccessToken();
-				if (!token) {
-					if (!hasStoredSession()) location.assign('/login');
-					else markSyncError();
-					return;
-				}
-
-				if (force) await refreshDatabaseData();
-				else await refreshStaleDatabaseData();
-			} catch (error) {
-				if (navigator.onLine) markSyncError();
-				else markOffline();
-				console.error('Failed to refresh database data', error);
-			}
-		};
 
 		const visibility = () => {
 			if (document.visibilityState === 'visible') void refreshDatabaseSafely();
