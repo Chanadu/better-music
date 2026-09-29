@@ -1,4 +1,5 @@
 import { sessionCache } from './storage';
+import type { DatabaseData } from './database';
 
 const cachePrefix = 'betterMusicDatabaseData:';
 const databaseName = 'better-music';
@@ -40,9 +41,9 @@ const runTransaction = async <T>(mode: IDBTransactionMode, operation: (store: ID
 	}
 };
 
-export const getStoredDatabaseCache = async <T>(userId: number): Promise<T | null> => {
+export const getStoredDatabaseCache = async (userId: number): Promise<DatabaseData | null> => {
 	try {
-		const value = await runTransaction<T | undefined>('readonly', (store) => store.get(userId));
+		const value = await runTransaction<DatabaseData | undefined>('readonly', (store) => store.get(userId));
 
 		if (value !== undefined) return value;
 	} catch (error) {
@@ -51,13 +52,13 @@ export const getStoredDatabaseCache = async <T>(userId: number): Promise<T | nul
 
 	// Promote the old per-tab cache after upgrading an existing installation.
 	const legacyKey = databaseCacheKey(userId);
-	const legacy = sessionCache.getJson<T>(legacyKey);
+	const legacy = sessionCache.getJson<DatabaseData>(legacyKey);
 	if (legacy) void setStoredDatabaseCache(userId, legacy);
 
 	return legacy;
 };
 
-export const setStoredDatabaseCache = async (userId: number, value: unknown) => {
+export const setStoredDatabaseCache = async (userId: number, value: DatabaseData) => {
 	try {
 		await runTransaction('readwrite', (store) => store.put(value, userId));
 	} catch (error) {

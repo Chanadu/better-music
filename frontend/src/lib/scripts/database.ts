@@ -31,7 +31,7 @@ export const loadCachedDatabase = async () => {
 
 	if (current) database.set(null);
 	current = null;
-	const value = await getStoredDatabaseCache<DatabaseData>(userId);
+	const value = await getStoredDatabaseCache(userId);
 
 	if (!value) return null;
 
