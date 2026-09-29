@@ -21,7 +21,7 @@
 			feedback = `Downloaded ${filename}`;
 		} catch (value) {
 			if ((value instanceof ApiError && value.status === 401) || getCurrentUserId() === null) {
-				invalidateSession();
+				await invalidateSession();
 				location.assign('/login');
 				return;
 			}

@@ -23,13 +23,13 @@ export const saveTokens = (tokens: TokenResponse) => {
 	persistentStorage.set(keys.userId, String(tokens.user_id));
 };
 
-export const invalidateSession = () => {
+export const invalidateSession = async () => {
 	Object.values(keys).forEach((key) => persistentStorage.remove(key));
+	await clearStoredDatabaseCaches();
 };
 
 export const clearSession = async () => {
-	invalidateSession();
-	await clearStoredDatabaseCaches();
+	await invalidateSession();
 };
 
 export const hasStoredSession = () => getCurrentUserId() !== null && persistentStorage.get(keys.refresh) !== null;
@@ -48,7 +48,7 @@ const performRefresh = async () => {
 
 		if (!response.ok) {
 			const refreshIsCurrent = persistentStorage.get(keys.refresh) === refreshToken;
-			if (refreshIsCurrent && (response.status === 400 || response.status === 401)) invalidateSession();
+			if (refreshIsCurrent && (response.status === 400 || response.status === 401)) await invalidateSession();
 			return null;
 		}
 
@@ -80,7 +80,7 @@ export const getValidAccessToken = async () => {
 	const expiresAt = Number(persistentStorage.get(keys.expires));
 
 	if (token && getCurrentUserId() === null) {
-		invalidateSession();
+		await invalidateSession();
 		return null;
 	}
 
@@ -111,7 +111,7 @@ export const authenticatedFetch = async (input: RequestInfo | URL, init: Request
 
 export const logout = async () => {
 	const refreshToken = persistentStorage.get(keys.refresh);
-	invalidateSession();
+	const clearSessionRequest = invalidateSession();
 
 	try {
 		if (refreshToken)
@@ -121,6 +121,6 @@ export const logout = async () => {
 				body: JSON.stringify({ refresh_token: refreshToken }),
 			});
 	} finally {
-		await clearStoredDatabaseCaches();
+		await clearSessionRequest;
 	}
 };

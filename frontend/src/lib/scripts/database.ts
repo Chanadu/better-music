@@ -78,9 +78,9 @@ export const refreshDatabaseData = async () => {
 
 	const promise = Promise.all([artistsApi.list(), albumsApi.list()])
 		.then(([artists, albums]) => publishFresh(userId, { artists, albums, loadedAt: Date.now() }))
-		.catch((error) => {
+		.catch(async (error) => {
 			if (error instanceof ApiError && error.status === 401) {
-				invalidateSession();
+				await invalidateSession();
 				location.assign('/login');
 			} else {
 				setSyncState(navigator.onLine ? 'error' : 'offline');
