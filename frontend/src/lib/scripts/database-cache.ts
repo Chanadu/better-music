@@ -66,9 +66,7 @@ const runTransaction = async <T>(
 	} catch (error) {
 		try {
 			transaction.abort();
-		} catch {
-			// The transaction may already have aborted or completed.
-		}
+		} catch { }
 		await completion.catch(() => undefined);
 		throw error;
 	} finally {
@@ -101,10 +99,6 @@ export const setStoredDatabaseCache = async (userId: number, value: DatabaseData
 	}
 };
 
-/**
- * Updates the visible local library and its outbox in one IndexedDB transaction.
- * The returned snapshot can be published to the Svelte store after the commit.
- */
 export const applyOptimisticMutation = async (
 	userId: number,
 	mutation: PendingMutation,
