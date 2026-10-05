@@ -2,7 +2,7 @@ import { writable } from 'svelte/store';
 import { albumsApi, ApiError, artistsApi } from './api';
 import { cacheLibraryArtwork } from './artwork-cache';
 import { getCurrentUserId, getValidAccessToken, hasStoredSession, invalidateSession } from './auth';
-import { getStoredDatabaseCache, setStoredDatabaseCache } from './database-cache';
+import { getPendingMutations, getStoredDatabaseCache, setStoredDatabaseCache } from './database-cache';
 import type { DatabaseData, EntityId, MutationEntity, PendingMutation, RecordSyncStatus, TemporaryId } from './types';
 
 export type { DatabaseData } from './types';
@@ -40,8 +40,16 @@ const publishCached = (userId: number, data: DatabaseData) => {
 const publishFresh = async (userId: number, data: DatabaseData) => {
 	if (getCurrentUserId() !== userId) return data;
 
+	const saved = await setStoredDatabaseCache(userId, data);
+	if (getCurrentUserId() !== userId) return data;
+
+	if (!saved) {
+		const cached = await getStoredDatabaseCache(userId);
+		if (!cached) throw new Error('Could not load the library with pending changes');
+
+		return publishCached(userId, cached);
+	}
 	current = { userId, data };
-	await setStoredDatabaseCache(userId, data);
 	database.set(data);
 	cacheLibraryArtwork(data);
 	syncStatus.set({ state: 'synced', lastSyncedAt: data.loadedAt });
@@ -108,11 +116,18 @@ export const refreshDatabaseDataAfterMutation = async () => {
 
 export const refreshStaleDatabaseData = async () => {
 	const cached = await getDatabaseData();
+
 	if (request) return request.promise;
+
 	if (Date.now() - Math.max(cached?.loadedAt ?? 0, lastRefreshStartedAt) < 30000) {
-		if (cached) syncStatus.set({ state: 'synced', lastSyncedAt: cached.loadedAt });
+		const userId = getCurrentUserId();
+
+		if (cached && userId !== null && !(await getPendingMutations(userId)).length)
+			syncStatus.set({ state: 'synced', lastSyncedAt: cached.loadedAt });
+
 		return cached;
 	}
+
 	return refreshDatabaseData();
 };
 

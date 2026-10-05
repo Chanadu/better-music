@@ -63,6 +63,7 @@ type PendingMutationBase<Entity extends MutationEntity, Operation extends Mutati
 	payload: MutationPayloads[Entity][Operation];
 	baseVersion?: number;
 	createdAt: number;
+	sequence?: number;
 	attempts: number;
 	status: MutationStatus;
 };

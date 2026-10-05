@@ -1,5 +1,5 @@
 import type { TokenResponse } from './types';
-import { clearStoredDatabaseCaches } from './database-cache';
+import { deleteStoredLibrary } from './database-cache';
 import { persistentStorage } from './storage';
 
 const keys = {
@@ -25,11 +25,12 @@ export const saveTokens = (tokens: TokenResponse) => {
 
 export const invalidateSession = async () => {
 	Object.values(keys).forEach((key) => persistentStorage.remove(key));
-	await clearStoredDatabaseCaches();
 };
 
 export const clearSession = async () => {
+	const userId = getCurrentUserId();
 	await invalidateSession();
+	if (userId !== null) await deleteStoredLibrary(userId);
 };
 
 export const hasStoredSession = () => getCurrentUserId() !== null && persistentStorage.get(keys.refresh) !== null;
@@ -111,7 +112,7 @@ export const authenticatedFetch = async (input: RequestInfo | URL, init: Request
 
 export const logout = async () => {
 	const refreshToken = persistentStorage.get(keys.refresh);
-	const clearSessionRequest = invalidateSession();
+	const clearSessionRequest = clearSession();
 
 	try {
 		if (refreshToken)
