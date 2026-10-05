@@ -10,6 +10,7 @@ const { definitions = {} } = JSON.parse(await readFile(swaggerPath, 'utf8'));
 const typeName = (reference) => reference.split('/').at(-1).split('.').at(-1);
 
 const toTypeScript = (schema) => {
+	if (schema?.["x-nullable"]) return `${toTypeScript({ ...schema, "x-nullable": false })} | null`;
 	if (!schema) return 'unknown';
 	if (schema.$ref) return typeName(schema.$ref);
 	if (schema.enum) return schema.enum.map((value) => JSON.stringify(value)).join(' | ');

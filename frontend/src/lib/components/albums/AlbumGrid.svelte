@@ -54,7 +54,7 @@
 		if (mode === 'unlistened') return [{ rating: undefined, albums: items }];
 		const map = new Map<number | undefined, Item[]>();
 		for (const item of items) {
-			const rating = item.album.rating;
+			const rating = item.album.rating ?? undefined;
 			map.set(rating, [...(map.get(rating) ?? []), item]);
 		}
 		return [...map].sort(([a], [b]) => (b ?? -1) - (a ?? -1)).map(([rating, albums]) => ({ rating, albums }));

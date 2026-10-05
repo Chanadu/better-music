@@ -7,11 +7,31 @@ definitions:
     required:
     - email
     type: object
+  handlers.AlbumConflictResponse:
+    properties:
+      current:
+        $ref: '#/definitions/models.Album'
+      error:
+        type: string
+    required:
+    - current
+    - error
+    type: object
   handlers.ApiErrorResponse:
     properties:
       error:
         type: string
     required:
+    - error
+    type: object
+  handlers.ArtistConflictResponse:
+    properties:
+      current:
+        $ref: '#/definitions/models.Artist'
+      error:
+        type: string
+    required:
+    - current
     - error
     type: object
   handlers.ArtistIDRequest:
@@ -39,12 +59,30 @@ definitions:
       artist_id:
         example: 1
         type: integer
+      comment:
+        type: string
+        x-nullable: true
+      cover_url:
+        type: string
+        x-nullable: true
+      listened:
+        type: boolean
+      listened_at:
+        type: string
+        x-nullable: true
+      rating:
+        type: integer
+        x-nullable: true
       spotify_id:
         example: 4oDw9mW4Sro2zN1RHzlvOr
         type: string
+        x-nullable: true
       title:
         example: Abbey Road
         type: string
+      year:
+        type: integer
+        x-nullable: true
     required:
     - artist_id
     - title
@@ -54,12 +92,14 @@ definitions:
       cover_url:
         example: https://example.com/artist.jpg
         type: string
+        x-nullable: true
       name:
         example: The Beatles
         type: string
       spotify_id:
         example: 6ml0jHmy7SNFWckrZblO5B
         type: string
+        x-nullable: true
     required:
     - name
     type: object
@@ -188,41 +228,47 @@ definitions:
       comment:
         example: Classic album
         type: string
+        x-nullable: true
       cover_url:
         example: https://example.com/cover.jpg
         type: string
+        x-nullable: true
       listened:
         example: true
         type: boolean
       listened_at:
         example: "2024-01-15"
         type: string
+        x-nullable: true
       rating:
         example: 8
         type: integer
+        x-nullable: true
       spotify_id:
         example: 4oDw9mW4Sro2zN1RHzlvOr
         type: string
+        x-nullable: true
       title:
         example: Abbey Road
         type: string
       year:
         example: 1969
         type: integer
-    required:
-    - artist_id
+        x-nullable: true
     type: object
   handlers.UpdateArtistRequest:
     properties:
       cover_url:
         example: https://example.com/artist.jpg
         type: string
+        x-nullable: true
       name:
         example: The Beatles
         type: string
       spotify_id:
         example: 6ml0jHmy7SNFWckrZblO5B
         type: string
+        x-nullable: true
     type: object
   handlers.UpdateEmailRequest:
     properties:
@@ -250,8 +296,10 @@ definitions:
         type: integer
       comment:
         type: string
+        x-nullable: true
       cover_url:
         type: string
+        x-nullable: true
       created_at:
         type: string
       id:
@@ -260,25 +308,33 @@ definitions:
         type: boolean
       listened_at:
         type: string
+        x-nullable: true
       rating:
         type: integer
+        x-nullable: true
       spotify_id:
         type: string
+        x-nullable: true
       title:
         type: string
+      version:
+        type: integer
       year:
         type: integer
+        x-nullable: true
     required:
     - artist_id
     - created_at
     - id
     - listened
     - title
+    - version
     type: object
   models.Artist:
     properties:
       cover_url:
         type: string
+        x-nullable: true
       created_at:
         type: string
       id:
@@ -287,10 +343,14 @@ definitions:
         type: string
       spotify_id:
         type: string
+        x-nullable: true
+      version:
+        type: integer
     required:
     - created_at
     - id
     - name
+    - version
     type: object
 host: localhost:8080
 info:
@@ -459,6 +519,10 @@ paths:
       - application/json
       description: Create a new album for an artist
       parameters:
+      - description: Account-scoped mutation ID; reuse only for an identical request
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Album data
         in: body
         name: request
@@ -499,15 +563,22 @@ paths:
       - application/json
       description: Delete an album by ID
       parameters:
+      - description: Expected positive record version, bare or quoted
+        in: header
+        name: If-Match
+        type: string
+      - description: Account-scoped mutation ID; reuse only for an identical request
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Album ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Artist ID
+      - description: Optional artist ID; must match the album's artist
         in: body
         name: request
-        required: true
         schema:
           $ref: '#/definitions/handlers.ArtistIDRequest'
       produces:
@@ -526,9 +597,13 @@ paths:
           schema:
             $ref: '#/definitions/handlers.ApiErrorResponse'
         "404":
-          description: Album or artist not found
+          description: Album belongs to another artist
           schema:
             $ref: '#/definitions/handlers.ApiErrorResponse'
+        "412":
+          description: Version conflict with current record
+          schema:
+            $ref: '#/definitions/handlers.AlbumConflictResponse'
         "500":
           description: Server error
           schema:
@@ -586,6 +661,14 @@ paths:
       - application/json
       description: Update an album's information
       parameters:
+      - description: Expected positive record version, bare or quoted
+        in: header
+        name: If-Match
+        type: string
+      - description: Account-scoped mutation ID; reuse only for an identical request
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Album ID
         in: path
         name: id
@@ -603,7 +686,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.MessageResponse'
+            $ref: '#/definitions/models.Album'
         "400":
           description: Invalid request or no fields provided
           schema:
@@ -620,6 +703,10 @@ paths:
           description: Album already exists
           schema:
             $ref: '#/definitions/handlers.ApiErrorResponse'
+        "412":
+          description: Version conflict with current record
+          schema:
+            $ref: '#/definitions/handlers.AlbumConflictResponse'
         "500":
           description: Server error
           schema:
@@ -659,6 +746,10 @@ paths:
       - application/json
       description: Create a new artist for the authenticated user
       parameters:
+      - description: Account-scoped mutation ID; reuse only for an identical request
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Artist data
         in: body
         name: request
@@ -697,6 +788,14 @@ paths:
     delete:
       description: Delete an artist by ID (must have no albums)
       parameters:
+      - description: Expected positive record version, bare or quoted
+        in: header
+        name: If-Match
+        type: string
+      - description: Account-scoped mutation ID; reuse only for an identical request
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Artist ID
         in: path
         name: id
@@ -717,10 +816,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/handlers.ApiErrorResponse'
-        "404":
-          description: Artist not found
+        "412":
+          description: Version conflict with current record
           schema:
-            $ref: '#/definitions/handlers.ApiErrorResponse'
+            $ref: '#/definitions/handlers.ArtistConflictResponse'
         "500":
           description: Server error
           schema:
@@ -767,6 +866,14 @@ paths:
       - application/json
       description: Update an artist's name and/or Spotify ID
       parameters:
+      - description: Expected positive record version, bare or quoted
+        in: header
+        name: If-Match
+        type: string
+      - description: Account-scoped mutation ID; reuse only for an identical request
+        in: header
+        name: Idempotency-Key
+        type: string
       - description: Artist ID
         in: path
         name: id
@@ -784,7 +891,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.MessageResponse'
+            $ref: '#/definitions/models.Artist'
         "400":
           description: Invalid request or no fields provided
           schema:
@@ -801,6 +908,10 @@ paths:
           description: Artist already exists
           schema:
             $ref: '#/definitions/handlers.ApiErrorResponse'
+        "412":
+          description: Version conflict with current record
+          schema:
+            $ref: '#/definitions/handlers.ArtistConflictResponse'
         "500":
           description: Server error
           schema:

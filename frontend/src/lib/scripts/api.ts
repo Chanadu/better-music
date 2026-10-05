@@ -76,7 +76,7 @@ export const artistsApi = {
 	get: (id: number) => secureJson<Artist>(`/api/artists/${id}`),
 	create: (body: CreateArtistRequest) => secureJson<Artist>('/api/artists', { method: 'POST', body }),
 	update: (id: number, body: UpdateArtistRequest) =>
-		secureJson<MessageResponse>(`/api/artists/${id}`, { method: 'PUT', body }),
+		secureJson<Artist>(`/api/artists/${id}`, { method: 'PUT', body }),
 	delete: (id: number) => secureJson<MessageResponse>(`/api/artists/${id}`, { method: 'DELETE' }),
 };
 
@@ -85,7 +85,7 @@ export const albumsApi = {
 	get: (id: number, artistId: number) => secureJson<Album>(`/api/albums/${id}${query({ artist_id: artistId })}`),
 	create: (body: CreateAlbumRequest) => secureJson<Album>('/api/albums', { method: 'POST', body }),
 	update: (id: number, body: UpdateAlbumRequest) =>
-		secureJson<MessageResponse>(`/api/albums/${id}`, { method: 'PUT', body }),
+		secureJson<Album>(`/api/albums/${id}`, { method: 'PUT', body }),
 	delete: (id: number, artistId: number) =>
 		secureJson<MessageResponse>(`/api/albums/${id}`, {
 			method: 'DELETE',

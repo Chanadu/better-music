@@ -1,38 +1,38 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/Chanadu/better-music/models"
 )
 
-// CreateAlbumRequest represents the request body for creating an album
 type CreateAlbumRequest struct {
-	ArtistID  int     `json:"artist_id" example:"1" validate:"required"`
-	Title     string  `json:"title" example:"Abbey Road" validate:"required"`
-	SpotifyID *string `json:"spotify_id,omitempty" example:"4oDw9mW4Sro2zN1RHzlvOr"`
-}
-
-// UpdateAlbumRequest represents the request body for updating an album
-type UpdateAlbumRequest struct {
 	ArtistID   int     `json:"artist_id" example:"1" validate:"required"`
-	Title      *string `json:"title,omitempty" example:"Abbey Road"`
-	CoverURL   *string `json:"cover_url,omitempty" example:"https://example.com/cover.jpg"`
-	Year       *int    `json:"year,omitempty" example:"1969"`
-	SpotifyID  *string `json:"spotify_id,omitempty" example:"4oDw9mW4Sro2zN1RHzlvOr"`
-	Listened   *bool   `json:"listened,omitempty" example:"true"`
-	Rating     *int    `json:"rating,omitempty" example:"8"`
-	Comment    *string `json:"comment,omitempty" example:"Classic album"`
-	ListenedAt *string `json:"listened_at,omitempty" example:"2024-01-15"`
+	Title      string  `json:"title" example:"Abbey Road" validate:"required"`
+	SpotifyID  *string `json:"spotify_id,omitempty" extensions:"x-nullable" example:"4oDw9mW4Sro2zN1RHzlvOr"`
+	CoverURL   *string `json:"cover_url,omitempty" extensions:"x-nullable"`
+	Year       *int    `json:"year,omitempty" extensions:"x-nullable"`
+	Listened   *bool   `json:"listened,omitempty"`
+	Rating     *int    `json:"rating,omitempty" extensions:"x-nullable"`
+	Comment    *string `json:"comment,omitempty" extensions:"x-nullable"`
+	ListenedAt *string `json:"listened_at,omitempty" extensions:"x-nullable"`
 }
 
-// ArtistIDRequest represents a request body with just an artist ID
+type UpdateAlbumRequest struct {
+	ArtistID   int     `json:"artist_id,omitempty" example:"1"`
+	Title      *string `json:"title,omitempty" example:"Abbey Road"`
+	CoverURL   *string `json:"cover_url,omitempty" extensions:"x-nullable" example:"https://example.com/cover.jpg"`
+	Year       *int    `json:"year,omitempty" extensions:"x-nullable" example:"1969"`
+	SpotifyID  *string `json:"spotify_id,omitempty" extensions:"x-nullable" example:"4oDw9mW4Sro2zN1RHzlvOr"`
+	Listened   *bool   `json:"listened,omitempty" example:"true"`
+	Rating     *int    `json:"rating,omitempty" extensions:"x-nullable" example:"8"`
+	Comment    *string `json:"comment,omitempty" extensions:"x-nullable" example:"Classic album"`
+	ListenedAt *string `json:"listened_at,omitempty" extensions:"x-nullable" example:"2024-01-15"`
+}
+
 type ArtistIDRequest struct {
 	ArtistID int `json:"artist_id" example:"1" validate:"required"`
 }
@@ -146,6 +146,7 @@ func (h *Handler) GetAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("ETag", strconv.Quote(strconv.Itoa(album.Version)))
 	writeJSON(w, http.StatusOK, album)
 }
 
@@ -156,6 +157,7 @@ func (h *Handler) GetAlbum(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Security Bearer
+// @Param Idempotency-Key header string false "Account-scoped mutation ID; reuse only for an identical request"
 // @Param request body CreateAlbumRequest true "Album data"
 // @Success 201 {object} models.Album
 // @Failure 400 {object} ApiErrorResponse "Invalid request"
@@ -164,53 +166,7 @@ func (h *Handler) GetAlbum(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/albums [post]
 func (h *Handler) CreateAlbum(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("route hit", "route", "POST /api/albums", "method", r.Method, "path", r.URL.Path)
-	var body CreateAlbumRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
-		return
-	}
-
-	body.Title = strings.TrimSpace(body.Title)
-
-	if body.Title == "" {
-		writeJSON(w, http.StatusBadRequest, apiError("title is required"))
-		return
-	}
-
-	userID, ok := getUserID(w, r)
-	if !ok {
-		return
-	}
-
-	exists, err := models.ArtistExistsByID(h.Database, userID, body.ArtistID)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
-		return
-	}
-
-	if !exists {
-		writeJSON(w, http.StatusBadRequest, apiError("artist does not exist"))
-		return
-	}
-
-	album, err := models.CreateAlbum(h.Database, userID, body.ArtistID, body.Title, body.SpotifyID)
-	if err != nil {
-		if isPostgresError(err, "23505") {
-			writeJSON(w, http.StatusConflict, apiError("album with this name and artist already exists"))
-			return
-		}
-		if isPostgresError(err, "23503") {
-			writeJSON(w, http.StatusBadRequest, apiError("artist does not exist"))
-			return
-		}
-
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to create album: "+err.Error()))
-		return
-	}
-
-	writeJSON(w, http.StatusCreated, album)
+	h.handleLibraryMutation(w, r, models.AlbumEntity)
 }
 
 // UpdateAlbum godoc
@@ -220,79 +176,20 @@ func (h *Handler) CreateAlbum(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Security Bearer
+// @Param If-Match header string false "Expected positive record version, bare or quoted"
+// @Param Idempotency-Key header string false "Account-scoped mutation ID; reuse only for an identical request"
 // @Param id path int true "Album ID"
 // @Param request body UpdateAlbumRequest true "Update data"
-// @Success 200 {object} MessageResponse
+// @Success 200 {object} models.Album
 // @Failure 400 {object} ApiErrorResponse "Invalid request or no fields provided"
 // @Failure 401 {object} ApiErrorResponse "Unauthorized"
 // @Failure 404 {object} ApiErrorResponse "Album or artist not found"
 // @Failure 409 {object} ApiErrorResponse "Album already exists"
+// @Failure 412 {object} AlbumConflictResponse "Version conflict with current record"
 // @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/albums/{id} [put]
 func (h *Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("route hit", "route", "PUT /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
-
-	var body UpdateAlbumRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
-		return
-	}
-
-	if body.ArtistID <= 0 {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid artist ID"))
-		return
-	}
-
-	if body.Title == nil && body.CoverURL == nil && body.Year == nil && body.SpotifyID == nil && body.Listened == nil && body.Rating == nil && body.Comment == nil && body.ListenedAt == nil {
-		writeJSON(w, http.StatusBadRequest, apiError("at least one field must be provided"))
-		return
-	}
-
-	if body.Rating != nil {
-		if *body.Rating < 1 || *body.Rating > 10 {
-			writeJSON(w, http.StatusBadRequest, apiError("rating must be between 1 and 10"))
-			return
-		}
-	}
-
-	userID, ok := getUserID(w, r)
-	if !ok {
-		return
-	}
-
-	exists, err := models.ArtistExistsByID(h.Database, userID, body.ArtistID)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
-		return
-	}
-
-	if !exists {
-		writeJSON(w, http.StatusNotFound, apiError("artist not found"))
-		return
-	}
-
-	albumID, ok := h.checkAlbumExistsByID(w, userID, body.ArtistID, r.PathValue("id"))
-	if !ok {
-		return
-	}
-
-	err = models.UpdateAlbum(h.Database, userID, body.ArtistID, albumID, body.Title, body.CoverURL, body.Year, body.SpotifyID, body.Listened, body.Rating, body.Comment, body.ListenedAt)
-	if err != nil {
-		if isPostgresError(err, "23505") {
-			writeJSON(w, http.StatusConflict, apiError("album with this name and artist already exists"))
-			return
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			writeJSON(w, http.StatusNotFound, apiError("album not found"))
-			return
-		}
-
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to update album: "+err.Error()))
-		return
-	}
-
-	writeJSON(w, http.StatusOK, apiMessage("album updated"))
+	h.handleLibraryMutation(w, r, models.AlbumEntity)
 }
 
 // DeleteAlbum godoc
@@ -302,55 +199,17 @@ func (h *Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Security Bearer
+// @Param If-Match header string false "Expected positive record version, bare or quoted"
+// @Param Idempotency-Key header string false "Account-scoped mutation ID; reuse only for an identical request"
 // @Param id path int true "Album ID"
-// @Param request body ArtistIDRequest true "Artist ID"
+// @Param request body ArtistIDRequest false "Optional artist ID; must match the album's artist"
 // @Success 200 {object} MessageResponse
 // @Failure 400 {object} ApiErrorResponse "Invalid request"
 // @Failure 401 {object} ApiErrorResponse "Unauthorized"
-// @Failure 404 {object} ApiErrorResponse "Album or artist not found"
+// @Failure 404 {object} ApiErrorResponse "Album belongs to another artist"
+// @Failure 412 {object} AlbumConflictResponse "Version conflict with current record"
 // @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/albums/{id} [delete]
 func (h *Handler) DeleteAlbum(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("route hit", "route", "DELETE /api/albums/{id}", "method", r.Method, "path", r.URL.Path)
-
-	var body ArtistIDRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
-		return
-	}
-
-	if body.ArtistID <= 0 {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid artist ID"))
-		return
-	}
-
-	userID, ok := getUserID(w, r)
-	if !ok {
-		return
-	}
-
-	exists, err := models.ArtistExistsByID(h.Database, userID, body.ArtistID)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to check existing artist: "+err.Error()))
-		return
-	}
-
-	if !exists {
-		writeJSON(w, http.StatusNotFound, apiError("artist not found"))
-		return
-	}
-
-	albumID, ok := h.checkAlbumExistsByID(w, userID, body.ArtistID, r.PathValue("id"))
-	if !ok {
-		return
-	}
-
-	err = models.DeleteAlbum(h.Database, userID, body.ArtistID, albumID)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete album: "+err.Error()))
-		return
-	}
-
-	writeJSON(w, http.StatusOK, apiMessage("album deleted"))
+	h.handleLibraryMutation(w, r, models.AlbumEntity)
 }

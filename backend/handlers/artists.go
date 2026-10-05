@@ -1,29 +1,23 @@
 package handlers
 
 import (
-	"database/sql"
-	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/Chanadu/better-music/models"
 )
 
-// CreateArtistRequest represents the request body for creating an artist
 type CreateArtistRequest struct {
 	Name      string  `json:"name" example:"The Beatles" validate:"required"`
-	CoverURL  *string `json:"cover_url,omitempty" example:"https://example.com/artist.jpg"`
-	SpotifyID *string `json:"spotify_id,omitempty" example:"6ml0jHmy7SNFWckrZblO5B"`
+	CoverURL  *string `json:"cover_url,omitempty" extensions:"x-nullable" example:"https://example.com/artist.jpg"`
+	SpotifyID *string `json:"spotify_id,omitempty" extensions:"x-nullable" example:"6ml0jHmy7SNFWckrZblO5B"`
 }
 
-// UpdateArtistRequest represents the request body for updating an artist
 type UpdateArtistRequest struct {
 	Name      *string `json:"name,omitempty" example:"The Beatles"`
-	CoverURL  *string `json:"cover_url,omitempty" example:"https://example.com/artist.jpg"`
-	SpotifyID *string `json:"spotify_id,omitempty" example:"6ml0jHmy7SNFWckrZblO5B"`
+	CoverURL  *string `json:"cover_url,omitempty" extensions:"x-nullable" example:"https://example.com/artist.jpg"`
+	SpotifyID *string `json:"spotify_id,omitempty" extensions:"x-nullable" example:"6ml0jHmy7SNFWckrZblO5B"`
 }
 
 // GetArtists godoc
@@ -49,7 +43,6 @@ func (h *Handler) GetArtists(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// writeJSON(w, http.StatusOK, fmt.Sprintf("Get artists for user %d", userID))
 	writeJSON(w, http.StatusOK, artists)
 }
 
@@ -83,6 +76,7 @@ func (h *Handler) GetArtist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("ETag", strconv.Quote(strconv.Itoa(artist.Version)))
 	writeJSON(w, http.StatusOK, artist)
 }
 
@@ -93,6 +87,7 @@ func (h *Handler) GetArtist(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Security Bearer
+// @Param Idempotency-Key header string false "Account-scoped mutation ID; reuse only for an identical request"
 // @Param request body CreateArtistRequest true "Artist data"
 // @Success 201 {object} models.Artist
 // @Failure 400 {object} ApiErrorResponse "Invalid request"
@@ -101,38 +96,7 @@ func (h *Handler) GetArtist(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/artists [post]
 func (h *Handler) CreateArtist(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("route hit", "route", "POST /api/artists", "method", r.Method, "path", r.URL.Path)
-	var body CreateArtistRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
-		return
-	}
-
-	body.Name = strings.TrimSpace(body.Name)
-
-	if body.Name == "" {
-		writeJSON(w, http.StatusBadRequest, apiError("name is required"))
-		return
-	}
-
-	userID, ok := getUserID(w, r)
-	if !ok {
-		return
-	}
-
-	artist, err := models.CreateArtist(h.Database, userID, body.Name, body.CoverURL, body.SpotifyID)
-	if err != nil {
-		if isPostgresError(err, "23505") {
-			writeJSON(w, http.StatusConflict, apiError("artist with this name already exists"))
-			return
-		}
-
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to create artist: "+err.Error()))
-		return
-	}
-
-	writeJSON(w, http.StatusCreated, artist)
+	h.handleLibraryMutation(w, r, models.ArtistEntity)
 }
 
 func (h *Handler) checkArtistExistsByID(w http.ResponseWriter, userID int, idStr string) (int, bool) {
@@ -159,41 +123,17 @@ func (h *Handler) checkArtistExistsByID(w http.ResponseWriter, userID int, idStr
 // @Tags artists
 // @Produce json
 // @Security Bearer
+// @Param If-Match header string false "Expected positive record version, bare or quoted"
+// @Param Idempotency-Key header string false "Account-scoped mutation ID; reuse only for an identical request"
 // @Param id path int true "Artist ID"
 // @Success 200 {object} MessageResponse
 // @Failure 400 {object} ApiErrorResponse "Artist has albums"
 // @Failure 401 {object} ApiErrorResponse "Unauthorized"
-// @Failure 404 {object} ApiErrorResponse "Artist not found"
+// @Failure 412 {object} ArtistConflictResponse "Version conflict with current record"
 // @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/artists/{id} [delete]
 func (h *Handler) DeleteArtist(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("route hit", "route", "DELETE /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
-	userID, ok := getUserID(w, r)
-	if !ok {
-		return
-	}
-
-	artistID, ok := h.checkArtistExistsByID(w, userID, r.PathValue("id"))
-	if !ok {
-		return
-	}
-
-	err := models.DeleteArtist(h.Database, userID, artistID)
-	if err != nil {
-		if isPostgresError(err, "23503") {
-			writeJSON(w, http.StatusBadRequest, apiError("artist cannot be deleted because it has albums"))
-			return
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			writeJSON(w, http.StatusNotFound, apiError("artist not found"))
-			return
-		}
-
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete artist: "+err.Error()))
-		return
-	}
-
-	writeJSON(w, http.StatusOK, apiMessage("artist deleted"))
+	h.handleLibraryMutation(w, r, models.ArtistEntity)
 }
 
 // UpdateArtist godoc
@@ -203,55 +143,20 @@ func (h *Handler) DeleteArtist(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Security Bearer
+// @Param If-Match header string false "Expected positive record version, bare or quoted"
+// @Param Idempotency-Key header string false "Account-scoped mutation ID; reuse only for an identical request"
 // @Param id path int true "Artist ID"
 // @Param request body UpdateArtistRequest true "Update data"
-// @Success 200 {object} MessageResponse
+// @Success 200 {object} models.Artist
 // @Failure 400 {object} ApiErrorResponse "Invalid request or no fields provided"
 // @Failure 401 {object} ApiErrorResponse "Unauthorized"
 // @Failure 404 {object} ApiErrorResponse "Artist not found"
 // @Failure 409 {object} ApiErrorResponse "Artist already exists"
+// @Failure 412 {object} ArtistConflictResponse "Version conflict with current record"
 // @Failure 500 {object} ApiErrorResponse "Server error"
 // @Router /api/artists/{id} [put]
 func (h *Handler) UpdateArtist(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("route hit", "route", "PUT /api/artists/{id}", "method", r.Method, "path", r.URL.Path)
-	var body UpdateArtistRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON: "+err.Error()))
-		return
-	}
-
-	if isEmpty(body.Name) && isEmpty(body.CoverURL) && isEmpty(body.SpotifyID) {
-		writeJSON(w, http.StatusBadRequest, apiError("at least one field must be provided"))
-		return
-	}
-
-	userID, ok := getUserID(w, r)
-	if !ok {
-		return
-	}
-
-	artistID, ok := h.checkArtistExistsByID(w, userID, r.PathValue("id"))
-	if !ok {
-		return
-	}
-
-	err := models.UpdateArtist(h.Database, userID, artistID, body.Name, body.CoverURL, body.SpotifyID)
-	if err != nil {
-		if isPostgresError(err, "23505") {
-			writeJSON(w, http.StatusConflict, apiError("artist with this name already exists"))
-			return
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			writeJSON(w, http.StatusNotFound, apiError("artist not found"))
-			return
-		}
-
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to update artist: "+err.Error()))
-		return
-	}
-
-	writeJSON(w, http.StatusOK, apiMessage("artist updated"))
+	h.handleLibraryMutation(w, r, models.ArtistEntity)
 }
 
 // GetArtistAlbums godoc

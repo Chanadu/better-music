@@ -281,6 +281,12 @@ const docTemplate = `{
                 "summary": "Create a new album",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Account-scoped mutation ID; reuse only for an identical request",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "description": "Album data",
                         "name": "request",
                         "in": "body",
@@ -410,6 +416,18 @@ const docTemplate = `{
                 "summary": "Update an album",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Expected positive record version, bare or quoted",
+                        "name": "If-Match",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Account-scoped mutation ID; reuse only for an identical request",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "description": "Album ID",
                         "name": "id",
@@ -430,7 +448,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
+                            "$ref": "#/definitions/models.Album"
                         }
                     },
                     "400": {
@@ -455,6 +473,12 @@ const docTemplate = `{
                         "description": "Album already exists",
                         "schema": {
                             "$ref": "#/definitions/handlers.ApiErrorResponse"
+                        }
+                    },
+                    "412": {
+                        "description": "Version conflict with current record",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AlbumConflictResponse"
                         }
                     },
                     "500": {
@@ -484,6 +508,18 @@ const docTemplate = `{
                 "summary": "Delete an album",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Expected positive record version, bare or quoted",
+                        "name": "If-Match",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Account-scoped mutation ID; reuse only for an identical request",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "description": "Album ID",
                         "name": "id",
@@ -491,10 +527,9 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Artist ID",
+                        "description": "Optional artist ID; must match the album's artist",
                         "name": "request",
                         "in": "body",
-                        "required": true,
                         "schema": {
                             "$ref": "#/definitions/handlers.ArtistIDRequest"
                         }
@@ -520,9 +555,15 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Album or artist not found",
+                        "description": "Album belongs to another artist",
                         "schema": {
                             "$ref": "#/definitions/handlers.ApiErrorResponse"
+                        }
+                    },
+                    "412": {
+                        "description": "Version conflict with current record",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AlbumConflictResponse"
                         }
                     },
                     "500": {
@@ -591,6 +632,12 @@ const docTemplate = `{
                 ],
                 "summary": "Create a new artist",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Account-scoped mutation ID; reuse only for an identical request",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
                     {
                         "description": "Artist data",
                         "name": "request",
@@ -705,6 +752,18 @@ const docTemplate = `{
                 "summary": "Update an artist",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Expected positive record version, bare or quoted",
+                        "name": "If-Match",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Account-scoped mutation ID; reuse only for an identical request",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "description": "Artist ID",
                         "name": "id",
@@ -725,7 +784,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.MessageResponse"
+                            "$ref": "#/definitions/models.Artist"
                         }
                     },
                     "400": {
@@ -752,6 +811,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
+                    "412": {
+                        "description": "Version conflict with current record",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ArtistConflictResponse"
+                        }
+                    },
                     "500": {
                         "description": "Server error",
                         "schema": {
@@ -775,6 +840,18 @@ const docTemplate = `{
                 ],
                 "summary": "Delete an artist",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Expected positive record version, bare or quoted",
+                        "name": "If-Match",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Account-scoped mutation ID; reuse only for an identical request",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
                     {
                         "type": "integer",
                         "description": "Artist ID",
@@ -802,10 +879,10 @@ const docTemplate = `{
                             "$ref": "#/definitions/handlers.ApiErrorResponse"
                         }
                     },
-                    "404": {
-                        "description": "Artist not found",
+                    "412": {
+                        "description": "Version conflict with current record",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ApiErrorResponse"
+                            "$ref": "#/definitions/handlers.ArtistConflictResponse"
                         }
                     },
                     "500": {
@@ -1337,12 +1414,42 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.AlbumConflictResponse": {
+            "type": "object",
+            "required": [
+                "current",
+                "error"
+            ],
+            "properties": {
+                "current": {
+                    "$ref": "#/definitions/models.Album"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.ApiErrorResponse": {
             "type": "object",
             "required": [
                 "error"
             ],
             "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.ArtistConflictResponse": {
+            "type": "object",
+            "required": [
+                "current",
+                "error"
+            ],
+            "properties": {
+                "current": {
+                    "$ref": "#/definitions/models.Artist"
+                },
                 "error": {
                     "type": "string"
                 }
@@ -1388,13 +1495,37 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1
                 },
+                "comment": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "cover_url": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "listened": {
+                    "type": "boolean"
+                },
+                "listened_at": {
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "rating": {
+                    "type": "integer",
+                    "x-nullable": true
+                },
                 "spotify_id": {
                     "type": "string",
+                    "x-nullable": true,
                     "example": "4oDw9mW4Sro2zN1RHzlvOr"
                 },
                 "title": {
                     "type": "string",
                     "example": "Abbey Road"
+                },
+                "year": {
+                    "type": "integer",
+                    "x-nullable": true
                 }
             }
         },
@@ -1406,6 +1537,7 @@ const docTemplate = `{
             "properties": {
                 "cover_url": {
                     "type": "string",
+                    "x-nullable": true,
                     "example": "https://example.com/artist.jpg"
                 },
                 "name": {
@@ -1414,6 +1546,7 @@ const docTemplate = `{
                 },
                 "spotify_id": {
                     "type": "string",
+                    "x-nullable": true,
                     "example": "6ml0jHmy7SNFWckrZblO5B"
                 }
             }
@@ -1585,9 +1718,6 @@ const docTemplate = `{
         },
         "handlers.UpdateAlbumRequest": {
             "type": "object",
-            "required": [
-                "artist_id"
-            ],
             "properties": {
                 "artist_id": {
                     "type": "integer",
@@ -1595,10 +1725,12 @@ const docTemplate = `{
                 },
                 "comment": {
                     "type": "string",
+                    "x-nullable": true,
                     "example": "Classic album"
                 },
                 "cover_url": {
                     "type": "string",
+                    "x-nullable": true,
                     "example": "https://example.com/cover.jpg"
                 },
                 "listened": {
@@ -1607,14 +1739,17 @@ const docTemplate = `{
                 },
                 "listened_at": {
                     "type": "string",
+                    "x-nullable": true,
                     "example": "2024-01-15"
                 },
                 "rating": {
                     "type": "integer",
+                    "x-nullable": true,
                     "example": 8
                 },
                 "spotify_id": {
                     "type": "string",
+                    "x-nullable": true,
                     "example": "4oDw9mW4Sro2zN1RHzlvOr"
                 },
                 "title": {
@@ -1623,6 +1758,7 @@ const docTemplate = `{
                 },
                 "year": {
                     "type": "integer",
+                    "x-nullable": true,
                     "example": 1969
                 }
             }
@@ -1632,6 +1768,7 @@ const docTemplate = `{
             "properties": {
                 "cover_url": {
                     "type": "string",
+                    "x-nullable": true,
                     "example": "https://example.com/artist.jpg"
                 },
                 "name": {
@@ -1640,6 +1777,7 @@ const docTemplate = `{
                 },
                 "spotify_id": {
                     "type": "string",
+                    "x-nullable": true,
                     "example": "6ml0jHmy7SNFWckrZblO5B"
                 }
             }
@@ -1681,17 +1819,20 @@ const docTemplate = `{
                 "created_at",
                 "id",
                 "listened",
-                "title"
+                "title",
+                "version"
             ],
             "properties": {
                 "artist_id": {
                     "type": "integer"
                 },
                 "comment": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true
                 },
                 "cover_url": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true
                 },
                 "created_at": {
                     "type": "string"
@@ -1703,19 +1844,26 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "listened_at": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true
                 },
                 "rating": {
-                    "type": "integer"
+                    "type": "integer",
+                    "x-nullable": true
                 },
                 "spotify_id": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true
                 },
                 "title": {
                     "type": "string"
                 },
-                "year": {
+                "version": {
                     "type": "integer"
+                },
+                "year": {
+                    "type": "integer",
+                    "x-nullable": true
                 }
             }
         },
@@ -1724,11 +1872,13 @@ const docTemplate = `{
             "required": [
                 "created_at",
                 "id",
-                "name"
+                "name",
+                "version"
             ],
             "properties": {
                 "cover_url": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true
                 },
                 "created_at": {
                     "type": "string"
@@ -1740,7 +1890,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "spotify_id": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "version": {
+                    "type": "integer"
                 }
             }
         }

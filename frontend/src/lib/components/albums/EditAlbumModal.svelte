@@ -36,7 +36,7 @@
 	let selected = $state<Row | undefined>();
 	let spotify = $state<SpotifySearch>();
 
-	function dateInputValue(value?: string) {
+	function dateInputValue(value?: string | null) {
 		if (!value) return '';
 		const match = value.match(/^\d{4}-\d{2}-\d{2}/);
 		return match?.[0] ?? '';

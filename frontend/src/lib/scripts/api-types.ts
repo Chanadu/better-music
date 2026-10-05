@@ -5,7 +5,17 @@ export type AccountResponse = {
 	email: string;
 };
 
+export type AlbumConflictResponse = {
+	current: Album;
+	error: string;
+};
+
 export type ApiErrorResponse = {
+	error: string;
+};
+
+export type ArtistConflictResponse = {
+	current: Artist;
 	error: string;
 };
 
@@ -20,14 +30,20 @@ export type AuthRequest = {
 
 export type CreateAlbumRequest = {
 	artist_id: number;
-	spotify_id?: string;
+	comment?: string | null;
+	cover_url?: string | null;
+	listened?: boolean;
+	listened_at?: string | null;
+	rating?: number | null;
+	spotify_id?: string | null;
 	title: string;
+	year?: number | null;
 };
 
 export type CreateArtistRequest = {
-	cover_url?: string;
+	cover_url?: string | null;
 	name: string;
-	spotify_id?: string;
+	spotify_id?: string | null;
 };
 
 export type DeleteAccountRequest = {
@@ -76,21 +92,21 @@ export type TokenResponse = {
 };
 
 export type UpdateAlbumRequest = {
-	artist_id: number;
-	comment?: string;
-	cover_url?: string;
+	artist_id?: number;
+	comment?: string | null;
+	cover_url?: string | null;
 	listened?: boolean;
-	listened_at?: string;
-	rating?: number;
-	spotify_id?: string;
+	listened_at?: string | null;
+	rating?: number | null;
+	spotify_id?: string | null;
 	title?: string;
-	year?: number;
+	year?: number | null;
 };
 
 export type UpdateArtistRequest = {
-	cover_url?: string;
+	cover_url?: string | null;
 	name?: string;
-	spotify_id?: string;
+	spotify_id?: string | null;
 };
 
 export type UpdateEmailRequest = {
@@ -105,22 +121,24 @@ export type UpdatePasswordRequest = {
 
 export type Album = {
 	artist_id: number;
-	comment?: string;
-	cover_url?: string;
+	comment?: string | null;
+	cover_url?: string | null;
 	created_at: string;
 	id: number;
 	listened: boolean;
-	listened_at?: string;
-	rating?: number;
-	spotify_id?: string;
+	listened_at?: string | null;
+	rating?: number | null;
+	spotify_id?: string | null;
 	title: string;
-	year?: number;
+	version: number;
+	year?: number | null;
 };
 
 export type Artist = {
-	cover_url?: string;
+	cover_url?: string | null;
 	created_at: string;
 	id: number;
 	name: string;
-	spotify_id?: string;
+	spotify_id?: string | null;
+	version: number;
 };

@@ -30,15 +30,32 @@ type MessageResponse struct {
 	Message string `json:"message" validate:"required"`
 }
 
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
-	slog.Info("Status: " + http.StatusText(status))
-	s, err := json.Marshal(v)
-	if err == nil {
-		slog.Info("Response: " + string(s))
+func encodeJSON(value any) ([]byte, error) {
+	body, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
 	}
+	return append(body, '\n'), nil
+}
+
+func writeEncodedJSON(w http.ResponseWriter, status int, headers map[string]string, body []byte) {
+	w.Header().Set("Content-Type", "application/json")
+	for key, value := range headers {
+		w.Header().Set(key, value)
+	}
+	w.WriteHeader(status)
+	_, _ = w.Write(body)
+	slog.Info("Status: " + http.StatusText(status))
+	slog.Info("Response: " + strings.TrimSuffix(string(body), "\n"))
+}
+
+func writeJSON(w http.ResponseWriter, status int, value any) {
+	body, err := encodeJSON(value)
+	if err != nil {
+		status = http.StatusInternalServerError
+		body, _ = encodeJSON(apiError("failed to encode response"))
+	}
+	writeEncodedJSON(w, status, nil, body)
 }
 
 func apiError(msg string) ApiErrorResponse {

@@ -8,7 +8,7 @@
 	let headingId = $derived(`recently-${mode}-heading`);
 	let dateField: 'listened_at' | 'created_at' = $derived(mode === 'listened' ? 'listened_at' : 'created_at');
 
-	function timestamp(value?: string) {
+	function timestamp(value?: string | null) {
 		const parsed = value ? Date.parse(value) : NaN;
 		return Number.isFinite(parsed) ? parsed : 0;
 	}

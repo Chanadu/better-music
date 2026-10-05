@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { comment }: { comment?: string } = $props();
+	let { comment }: { comment?: string | null } = $props();
 </script>
 
 <section class="mt-9">
