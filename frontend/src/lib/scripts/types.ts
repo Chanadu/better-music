@@ -15,12 +15,27 @@ export type DatabaseData = { artists: Artist[]; albums: Album[]; loadedAt: numbe
 export type MutationEntity = 'artist' | 'album';
 export type MutationOperation = 'create' | 'update' | 'delete';
 export type MutationStatus = 'pending' | 'syncing' | 'conflict' | 'failed';
-export type EntityId = number | string;
+export type TemporaryId = `local:${string}`;
+export type EntityId = number | TemporaryId;
+export type RecordSyncStatus = MutationStatus | 'synced';
 
-export type CreateAlbumMutationPayload = Omit<CreateAlbumRequest, 'artist_id'> &
-	Partial<Omit<UpdateAlbumRequest, 'artist_id' | 'title'>> & {
+type RecordIdentity = { id: number; version: number } | { id: TemporaryId; version: null };
+
+export type LocalArtist = Omit<Artist, 'id' | 'version'> & RecordIdentity;
+export type LocalAlbum = Omit<Album, 'id' | 'artist_id' | 'version'> &
+	RecordIdentity & {
 		artist_id: EntityId;
 	};
+
+export type LocalDatabaseData = {
+	artists: LocalArtist[];
+	albums: LocalAlbum[];
+	loadedAt: number;
+};
+
+export type CreateAlbumMutationPayload = Omit<CreateAlbumRequest, 'artist_id'> & {
+	artist_id: EntityId;
+};
 
 export type UpdateAlbumMutationPayload = Omit<UpdateAlbumRequest, 'artist_id'> & {
 	artist_id: EntityId;
@@ -39,7 +54,6 @@ type MutationPayloads = {
 	};
 };
 
-/** A local change that has not yet been acknowledged by the backend. */
 type PendingMutationBase<Entity extends MutationEntity, Operation extends MutationOperation> = {
 	mutationId: string;
 	userId: number;

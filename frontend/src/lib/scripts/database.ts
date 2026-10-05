@@ -3,7 +3,7 @@ import { albumsApi, ApiError, artistsApi } from './api';
 import { cacheLibraryArtwork } from './artwork-cache';
 import { getCurrentUserId, getValidAccessToken, hasStoredSession, invalidateSession } from './auth';
 import { getStoredDatabaseCache, setStoredDatabaseCache } from './database-cache';
-import type { DatabaseData } from './types';
+import type { DatabaseData, EntityId, MutationEntity, PendingMutation, RecordSyncStatus, TemporaryId } from './types';
 
 export type { DatabaseData } from './types';
 export type SyncStatus = {
@@ -137,4 +137,30 @@ export const refreshDatabaseSafely = async (force = false) => {
 		setSyncState(navigator.onLine ? 'error' : 'offline');
 		console.error('Failed to refresh database data', error);
 	}
+};
+
+export const createTemporaryId = (): TemporaryId => `local:${crypto.randomUUID()}`;
+
+export const isTemporaryId = (id: EntityId): id is TemporaryId => typeof id === 'string' && id.startsWith('local:');
+
+const statusPriority: Record<RecordSyncStatus, number> = {
+	synced: 0,
+	pending: 1,
+	syncing: 2,
+	failed: 3,
+	conflict: 4,
+};
+
+export const getRecordSyncStatus = (
+	mutations: readonly PendingMutation[],
+	userId: number,
+	entity: MutationEntity,
+	entityId: EntityId,
+): RecordSyncStatus => {
+	let status: RecordSyncStatus = 'synced';
+	for (const mutation of mutations) {
+		if (mutation.userId !== userId || mutation.entity !== entity || mutation.entityId !== entityId) continue;
+		if (statusPriority[mutation.status] > statusPriority[status]) status = mutation.status;
+	}
+	return status;
 };
