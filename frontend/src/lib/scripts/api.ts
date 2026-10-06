@@ -30,15 +30,39 @@ export class ApiError extends Error {
 
 type JsonInit = Omit<RequestInit, 'body'> & { body?: unknown };
 
+export type MutationOptions = { mutationId: string };
+export type VersionedMutationOptions = MutationOptions & { baseVersion: number };
+
+const mutationHeaders = (options: MutationOptions): Headers => {
+	if (!options.mutationId.trim() || options.mutationId.length > 255) {
+		throw new Error('A persisted mutation ID is required');
+	}
+
+	return new Headers({ 'Idempotency-Key': options.mutationId });
+};
+
+const versionedMutationHeaders = (options: VersionedMutationOptions): Headers => {
+	const headers = mutationHeaders(options);
+	if (!Number.isSafeInteger(options.baseVersion) || options.baseVersion <= 0) {
+		throw new Error('A positive record version is required');
+	}
+
+	headers.set('If-Match', String(options.baseVersion));
+	return headers;
+};
+
 const json = async <T>(path: string, init: JsonInit = {}, fetcher: typeof fetch = fetch): Promise<T> => {
 	const headers = new Headers(init.headers);
 	if (init.body !== undefined) headers.set('Content-Type', 'application/json');
+
 	const response = await fetcher(path, {
 		...init,
 		headers,
 		body: init.body === undefined ? undefined : JSON.stringify(init.body),
 	});
+
 	const body = await response.json().catch(() => null);
+
 	if (!response.ok) {
 		const candidate = body as { error?: string; message?: string } | null;
 		throw new ApiError(
@@ -47,6 +71,7 @@ const json = async <T>(path: string, init: JsonInit = {}, fetcher: typeof fetch 
 			body,
 		);
 	}
+
 	return body as T;
 };
 
@@ -74,22 +99,29 @@ export const accountApi = {
 export const artistsApi = {
 	list: () => secureJson<Artist[]>('/api/artists'),
 	get: (id: number) => secureJson<Artist>(`/api/artists/${id}`),
-	create: (body: CreateArtistRequest) => secureJson<Artist>('/api/artists', { method: 'POST', body }),
-	update: (id: number, body: UpdateArtistRequest) =>
-		secureJson<Artist>(`/api/artists/${id}`, { method: 'PUT', body }),
-	delete: (id: number) => secureJson<MessageResponse>(`/api/artists/${id}`, { method: 'DELETE' }),
+	create: (body: CreateArtistRequest, options: MutationOptions) =>
+		secureJson<Artist>('/api/artists', { method: 'POST', body, headers: mutationHeaders(options) }),
+	update: (id: number, body: UpdateArtistRequest, options: VersionedMutationOptions) =>
+		secureJson<Artist>(`/api/artists/${id}`, { method: 'PUT', body, headers: versionedMutationHeaders(options) }),
+	delete: (id: number, options: VersionedMutationOptions) =>
+		secureJson<MessageResponse>(`/api/artists/${id}`, {
+			method: 'DELETE',
+			headers: versionedMutationHeaders(options),
+		}),
 };
 
 export const albumsApi = {
 	list: () => secureJson<Album[]>('/api/albums'),
 	get: (id: number, artistId: number) => secureJson<Album>(`/api/albums/${id}${query({ artist_id: artistId })}`),
-	create: (body: CreateAlbumRequest) => secureJson<Album>('/api/albums', { method: 'POST', body }),
-	update: (id: number, body: UpdateAlbumRequest) =>
-		secureJson<Album>(`/api/albums/${id}`, { method: 'PUT', body }),
-	delete: (id: number, artistId: number) =>
+	create: (body: CreateAlbumRequest, options: MutationOptions) =>
+		secureJson<Album>('/api/albums', { method: 'POST', body, headers: mutationHeaders(options) }),
+	update: (id: number, body: UpdateAlbumRequest, options: VersionedMutationOptions) =>
+		secureJson<Album>(`/api/albums/${id}`, { method: 'PUT', body, headers: versionedMutationHeaders(options) }),
+	delete: (id: number, artistId: number, options: VersionedMutationOptions) =>
 		secureJson<MessageResponse>(`/api/albums/${id}`, {
 			method: 'DELETE',
 			body: { artist_id: artistId },
+			headers: versionedMutationHeaders(options),
 		}),
 };
 
