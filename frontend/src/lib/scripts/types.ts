@@ -1,6 +1,6 @@
 import type {
-	Album,
-	Artist,
+	Album as ServerAlbum,
+	Artist as ServerArtist,
 	CreateAlbumRequest,
 	CreateArtistRequest,
 	SpotifyAlbumArtist,
@@ -10,7 +10,10 @@ import type {
 
 export type * from './api-types';
 
-export type DatabaseData = { artists: Artist[]; albums: Album[]; loadedAt: number };
+export type ServerDatabaseData = { artists: ServerArtist[]; albums: ServerAlbum[]; loadedAt: number };
+export type DatabaseData = LocalDatabaseData;
+export type Artist = LocalArtist;
+export type Album = LocalAlbum;
 
 export type MutationEntity = 'artist' | 'album';
 export type MutationOperation = 'create' | 'update' | 'delete';
@@ -21,8 +24,8 @@ export type RecordSyncStatus = MutationStatus | 'synced';
 
 type RecordIdentity = { id: number; version: number } | { id: TemporaryId; version: null };
 
-export type LocalArtist = Omit<Artist, 'id' | 'version'> & RecordIdentity;
-export type LocalAlbum = Omit<Album, 'id' | 'artist_id' | 'version'> &
+export type LocalArtist = Omit<ServerArtist, 'id' | 'version'> & RecordIdentity;
+export type LocalAlbum = Omit<ServerAlbum, 'id' | 'artist_id' | 'version'> &
 	RecordIdentity & {
 		artist_id: EntityId;
 	};

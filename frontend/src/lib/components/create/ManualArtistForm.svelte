@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { online } from 'svelte/reactivity/window';
 	import FloatingField from '../common/FloatingField.svelte';
 	import MediaThumbnail from '../common/MediaThumbnail.svelte';
 	import SpotifyIcon from '../icons/SpotifyIcon.svelte';
@@ -40,7 +41,7 @@
 			<button
 				type="button"
 				class="btn btn-soft aspect-square h-auto w-full flex-col gap-3 whitespace-normal"
-				disabled={refreshing || !spotifyId}
+				disabled={refreshing || !spotifyId || online.current === false}
 				aria-label={refreshing ? 'Refreshing artist data from Spotify' : 'Refresh artist data from Spotify'}
 				title={spotifyId ? 'Refresh artist data from Spotify' : 'This artist is not linked to Spotify'}
 				onclick={onrefresh}

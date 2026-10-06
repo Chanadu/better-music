@@ -1,15 +1,17 @@
 <script lang="ts">
+	import RecordSyncBadge from '$lib/components/common/RecordSyncBadge.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import EditAlbumModal from '$lib/components/albums/EditAlbumModal.svelte';
 	import MediaThumbnail from '$lib/components/common/MediaThumbnail.svelte';
 	import AlbumActions from '$lib/components/albums/AlbumActions.svelte';
-	import { database, getDatabaseData, refreshDatabaseData } from '$lib/scripts/database';
+	import { database, getDatabaseData, refreshDatabaseData, parseEntityId } from '$lib/scripts/database';
 	import { withReturnTo } from '$lib/scripts/navigation';
 	import { getCurrentUserId } from '$lib/scripts/auth';
+	import type { EntityId } from '$lib/scripts/types';
 	import { persistentStorage } from '$lib/scripts/storage';
 
-	let selectedId = $state<number>();
+	let selectedId = $state<EntityId>();
 	let selectionLoaded = $state(false);
 	let storageKey = '';
 	let editModal = $state<EditAlbumModal>();
@@ -48,8 +50,7 @@
 		const userId = getCurrentUserId();
 		if (userId !== null) {
 			storageKey = `bettermusic:next-album:${userId}`;
-			const savedId = Number(persistentStorage.get(storageKey));
-			if (Number.isSafeInteger(savedId) && savedId > 0) selectedId = savedId;
+			selectedId = parseEntityId(persistentStorage.get(storageKey)) ?? undefined;
 		}
 		selectionLoaded = true;
 		void load();
@@ -75,7 +76,10 @@
 			</a>
 			<div class="min-w-0">
 				<div aria-live="polite" aria-atomic="true">
-					<h1 class="text-xl leading-tight font-bold wrap-break-word sm:text-2xl">{album.title}</h1>
+					<h1 class="text-xl leading-tight font-bold wrap-break-word sm:text-2xl">
+						{album.title}
+						<RecordSyncBadge entity="album" id={album.id} variant="dot" />
+					</h1>
 					<p class="text-base-content/75 mt-1.5 text-base">
 						{artist?.name ?? 'Unknown artist'}
 						<span class="text-base-content/50"> · {album.year ?? 'Year unknown'}</span>

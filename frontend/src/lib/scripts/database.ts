@@ -2,16 +2,36 @@ import { writable } from 'svelte/store';
 import { albumsApi, ApiError, artistsApi } from './api';
 import { cacheLibraryArtwork } from './artwork-cache';
 import { getCurrentUserId, getValidAccessToken, hasStoredSession, invalidateSession } from './auth';
-import { getPendingMutations, getStoredDatabaseCache, setStoredDatabaseCache } from './database-cache';
-import type { DatabaseData, EntityId, MutationEntity, PendingMutation, RecordSyncStatus, TemporaryId } from './types';
+import {
+	applyOptimisticMutation,
+	getPendingMutations,
+	getStoredDatabaseCache,
+	setStoredDatabaseCache,
+} from './database-cache';
+import type {
+	DatabaseData,
+	EntityId,
+	MutationEntity,
+	PendingMutation,
+	RecordSyncStatus,
+	TemporaryId,
+	Artist,
+	Album,
+	CreateArtistRequest,
+	UpdateArtistRequest,
+	CreateAlbumMutationPayload,
+	UpdateAlbumMutationPayload,
+	ServerDatabaseData,
+} from './types';
 
 export type { DatabaseData } from './types';
 export type SyncStatus = {
-	state: 'connecting' | 'synced' | 'offline' | 'error';
+	state: 'connecting' | 'synced' | 'pending' | 'offline' | 'error';
 	lastSyncedAt: number | null;
 };
 
 export const database = writable<DatabaseData | null>(null);
+export const pendingMutations = writable<PendingMutation[]>([]);
 export const syncStatus = writable<SyncStatus>({ state: 'connecting', lastSyncedAt: null });
 let current: { userId: number; data: DatabaseData } | null = null;
 let request: { userId: number; promise: Promise<DatabaseData> } | null = null;
@@ -23,21 +43,25 @@ export const markOffline = () => setSyncState('offline');
 export const markSyncError = () => setSyncState('error');
 export const markConnecting = () => setSyncState('connecting');
 
-const publishCached = (userId: number, data: DatabaseData) => {
+const publishCached = (userId: number, data: DatabaseData, hasPending = false) => {
 	if (getCurrentUserId() !== userId) return data;
 
 	current = { userId, data };
 	database.set(data);
 	cacheLibraryArtwork(data);
 	syncStatus.set({
-		state: navigator.onLine ? 'connecting' : 'offline',
-		lastSyncedAt: data.loadedAt,
+		state:
+			navigator.onLine ?
+				hasPending ? 'pending'
+				:	'connecting'
+			:	'offline',
+		lastSyncedAt: data.loadedAt || null,
 	});
 
 	return data;
 };
 
-const publishFresh = async (userId: number, data: DatabaseData) => {
+const publishFresh = async (userId: number, data: ServerDatabaseData) => {
 	if (getCurrentUserId() !== userId) return data;
 
 	const saved = await setStoredDatabaseCache(userId, data);
@@ -47,7 +71,9 @@ const publishFresh = async (userId: number, data: DatabaseData) => {
 		const cached = await getStoredDatabaseCache(userId);
 		if (!cached) throw new Error('Could not load the library with pending changes');
 
-		return publishCached(userId, cached);
+		const mutations = await getPendingMutations(userId);
+		if (getCurrentUserId() === userId) pendingMutations.set(mutations);
+		return publishCached(userId, cached, true);
 	}
 	current = { userId, data };
 	database.set(data);
@@ -62,6 +88,7 @@ export const getDatabaseData = async () => {
 	if (userId === null) {
 		if (current) database.set(null);
 		current = null;
+		pendingMutations.set([]);
 		return null;
 	}
 	if (current?.userId === userId) return current.data;
@@ -72,7 +99,9 @@ export const getDatabaseData = async () => {
 
 	if (!value || !Array.isArray(value.artists) || !Array.isArray(value.albums)) return null;
 
-	return publishCached(userId, value);
+	const mutations = await getPendingMutations(userId);
+	if (getCurrentUserId() === userId) pendingMutations.set(mutations);
+	return publishCached(userId, value, mutations.length > 0);
 };
 
 export const refreshDatabaseData = async () => {
@@ -102,16 +131,6 @@ export const refreshDatabaseData = async () => {
 	request = { userId, promise };
 
 	return promise;
-};
-
-export const refreshDatabaseDataAfterMutation = async () => {
-	const userId = getCurrentUserId();
-	if (userId === null) throw new Error('Not authenticated');
-
-	const pending = request?.userId === userId ? request.promise : null;
-	if (pending) await pending.catch(() => undefined);
-
-	return refreshDatabaseData();
 };
 
 export const refreshStaleDatabaseData = async () => {
@@ -178,4 +197,183 @@ export const getRecordSyncStatus = (
 		if (statusPriority[mutation.status] > statusPriority[status]) status = mutation.status;
 	}
 	return status;
+};
+
+export const parseEntityId = (value: string | null): EntityId | null => {
+	if (value?.startsWith('local:')) return value as TemporaryId;
+	const id = Number(value);
+	return Number.isInteger(id) && id > 0 ? id : null;
+};
+
+const newMutation = () => {
+	const userId = getCurrentUserId();
+	if (userId === null) throw new Error('Not authenticated');
+	return { mutationId: crypto.randomUUID(), userId, createdAt: Date.now(), attempts: 0, status: 'pending' as const };
+};
+
+const requiredName = (value: string, label: string) => {
+	const name = value.trim();
+	if (!name) throw new Error(`${label} is required`);
+	return name;
+};
+
+const definedFields = <T extends object>(value: T): T =>
+	Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
+
+const queueMutation = async (mutation: PendingMutation) => {
+	const result = await applyOptimisticMutation(mutation.userId, mutation, (library) => {
+		if (getCurrentUserId() !== mutation.userId) throw new Error('Account changed before the change was saved');
+		if (mutation.entity === 'artist') {
+			const existing = library.artists.find((item) => item.id === mutation.entityId);
+			mutation.baseVersion = existing?.version ?? undefined;
+			if (mutation.operation === 'delete') {
+				if (library.albums.some((item) => item.artist_id === mutation.entityId))
+					throw new Error('Remove this artist’s albums first');
+				return { ...library, artists: library.artists.filter((item) => item.id !== mutation.entityId) };
+			}
+			if (mutation.operation === 'update' && !existing) throw new Error('Artist not found');
+			const payload = definedFields(mutation.payload);
+			if (!Object.keys(payload).length) throw new Error('At least one field must be provided');
+			const name = requiredName(payload.name ?? existing?.name ?? '', 'Name');
+			if (
+				library.artists.some(
+					(item) => item.id !== mutation.entityId && item.name.toLowerCase() === name.toLowerCase(),
+				)
+			)
+				throw new Error('Artist with this name already exists');
+			const record: Artist =
+				mutation.operation === 'create' ?
+					{
+						...payload,
+						name,
+						id: mutation.entityId as TemporaryId,
+						version: null,
+						created_at: new Date(mutation.createdAt).toISOString(),
+					}
+				:	{ ...existing!, ...payload, name };
+			return {
+				...library,
+				artists:
+					mutation.operation === 'create' ?
+						[record, ...library.artists]
+					:	library.artists.map((item) => (item.id === record.id ? record : item)),
+			};
+		}
+		const existing = library.albums.find((item) => item.id === mutation.entityId);
+		mutation.baseVersion = existing?.version ?? undefined;
+		if (mutation.operation === 'delete')
+			return { ...library, albums: library.albums.filter((item) => item.id !== mutation.entityId) };
+		if (mutation.operation === 'update' && !existing) throw new Error('Album not found');
+		const payload = definedFields(mutation.payload);
+		if (mutation.operation === 'update' && !Object.keys(payload).some((field) => field !== 'artist_id'))
+			throw new Error('At least one field must be provided');
+		if (!library.artists.some((item) => item.id === payload.artist_id)) throw new Error('Artist not found');
+		if (existing && existing.artist_id !== payload.artist_id) throw new Error('Cannot change an album’s artist');
+		const title = requiredName(payload.title ?? existing?.title ?? '', 'Title');
+		if (payload.rating != null && (!Number.isInteger(payload.rating) || payload.rating < 1 || payload.rating > 10))
+			throw new Error('Rating must be between 1 and 10');
+		if (payload.year != null && !Number.isInteger(payload.year)) throw new Error('Year must be an integer');
+		if (
+			library.albums.some(
+				(item) =>
+					item.id !== mutation.entityId &&
+					item.artist_id === payload.artist_id &&
+					item.title.toLowerCase() === title.toLowerCase(),
+			)
+		)
+			throw new Error('Album with this title already exists for this artist');
+		const record: Album =
+			mutation.operation === 'create' ?
+				{
+					...payload,
+					title,
+					id: mutation.entityId as TemporaryId,
+					version: null,
+					listened: payload.listened ?? false,
+					created_at: new Date(mutation.createdAt).toISOString(),
+				}
+			:	{ ...existing!, ...payload, title };
+		if (payload.listened === false) {
+			record.rating = null;
+			record.listened_at = null;
+		}
+		return {
+			...library,
+			albums:
+				mutation.operation === 'create' ?
+					[record, ...library.albums]
+				:	library.albums.map((item) => (item.id === record.id ? record : item)),
+		};
+	});
+	if (getCurrentUserId() === mutation.userId) {
+		current = { userId: mutation.userId, data: result.library };
+		database.set(result.library);
+		pendingMutations.set(result.mutations);
+		syncStatus.set({
+			state: navigator.onLine ? 'pending' : 'offline',
+			lastSyncedAt: result.library.loadedAt || null,
+		});
+		cacheLibraryArtwork(result.library);
+	}
+	return result.library;
+};
+
+export const artistsLibrary = {
+	create: async (payload: CreateArtistRequest) => {
+		const entityId = createTemporaryId();
+		const library = await queueMutation({
+			...newMutation(),
+			entity: 'artist',
+			operation: 'create',
+			entityId,
+			payload: definedFields(payload),
+		});
+		return library.artists.find((item) => item.id === entityId)!;
+	},
+	update: async (entityId: EntityId, payload: UpdateArtistRequest) => {
+		const library = await queueMutation({
+			...newMutation(),
+			entity: 'artist',
+			operation: 'update',
+			entityId,
+			payload: definedFields(payload),
+		});
+		return library.artists.find((item) => item.id === entityId)!;
+	},
+	delete: async (entityId: EntityId) => {
+		await queueMutation({ ...newMutation(), entity: 'artist', operation: 'delete', entityId, payload: null });
+	},
+};
+
+export const albumsLibrary = {
+	create: async (payload: CreateAlbumMutationPayload) => {
+		const entityId = createTemporaryId();
+		const library = await queueMutation({
+			...newMutation(),
+			entity: 'album',
+			operation: 'create',
+			entityId,
+			payload: definedFields(payload),
+		});
+		return library.albums.find((item) => item.id === entityId)!;
+	},
+	update: async (entityId: EntityId, payload: UpdateAlbumMutationPayload) => {
+		const library = await queueMutation({
+			...newMutation(),
+			entity: 'album',
+			operation: 'update',
+			entityId,
+			payload: definedFields(payload),
+		});
+		return library.albums.find((item) => item.id === entityId)!;
+	},
+	delete: async (entityId: EntityId, artistId: EntityId) => {
+		await queueMutation({
+			...newMutation(),
+			entity: 'album',
+			operation: 'delete',
+			entityId,
+			payload: { artist_id: artistId },
+		});
+	},
 };

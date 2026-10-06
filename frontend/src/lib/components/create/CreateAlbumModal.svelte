@@ -1,12 +1,13 @@
 <script lang="ts">
+	import { online } from 'svelte/reactivity/window';
 	import ListenedFields from './ListenedFields.svelte';
 	import ManualAlbumForm from './ManualAlbumForm.svelte';
 	import FormModalShell from './FormModalShell.svelte';
 	import SpotifySearch from './SpotifySearch.svelte';
-	import { albumsApi, artistsApi, spotifyApi } from '$lib/scripts/api';
-	import { getDatabaseData, refreshDatabaseData, refreshDatabaseDataAfterMutation } from '$lib/scripts/database';
+	import { spotifyApi } from '$lib/scripts/api';
+	import { albumsLibrary, artistsLibrary, database, getDatabaseData, parseEntityId } from '$lib/scripts/database';
 	import { markAlbumAsNew, markArtistAsNew } from '$lib/scripts/newly-added';
-	import type { Album, Artist, SpotifyArtistCredit, SpotifyRow as Row } from '$lib/scripts/types';
+	import type { Album, Artist, EntityId, SpotifyArtistCredit, SpotifyRow as Row } from '$lib/scripts/types';
 
 	let {
 		dialog = $bindable(),
@@ -15,7 +16,7 @@
 	}: {
 		dialog?: HTMLDialogElement;
 		onclose?: () => void;
-		initialArtistId?: number;
+		initialArtistId?: EntityId;
 	} = $props();
 
 	let tab = $state<'manual' | 'spotify'>('manual');
@@ -36,6 +37,10 @@
 
 	let yearValid = $state(true);
 
+	$effect(() => {
+		if (online.current === false && tab === 'spotify') tab = 'manual';
+	});
+
 	let canSave = $derived(
 		!saving &&
 			(tab === 'spotify' ?
@@ -48,12 +53,15 @@
 	});
 
 	$effect(() => {
-		void loadDatabaseData();
+		if ($database) {
+			artists = $database.artists;
+			albums = $database.albums;
+		} else void loadDatabaseData();
 	});
 
 	async function loadDatabaseData() {
 		try {
-			const data = (await getDatabaseData()) ?? (await refreshDatabaseData());
+			const data = (await getDatabaseData()) ?? { artists: [], albums: [], loadedAt: 0 };
 			artists = data.artists;
 			albums = data.albums;
 		} catch (e) {
@@ -97,11 +105,12 @@
 
 		let cover_url: string | undefined;
 		try {
-			cover_url = (await spotifyApi.searchArtists(credit.name, 10)).find((artist) => artist.id === credit.id)
-				?.images[0]?.url;
+			if (navigator.onLine)
+				cover_url = (await spotifyApi.searchArtists(credit.name, 10)).find((artist) => artist.id === credit.id)
+					?.images[0]?.url;
 		} catch {}
 
-		const created = await artistsApi.create({
+		const created = await artistsLibrary.create({
 			name: credit.name,
 			spotify_id: credit.id,
 			cover_url,
@@ -119,7 +128,7 @@
 
 		try {
 			if (tab === 'spotify') {
-				albums = (await refreshDatabaseData()).albums;
+				albums = (await getDatabaseData())?.albums ?? [];
 				if (albums.some((album) => album.spotify_id === selected!.id)) {
 					throw new Error('Album has already been added');
 				}
@@ -129,29 +138,21 @@
 			if (tab === 'spotify' && !selectedCredit) throw new Error('Select an artist for this album');
 
 			const chosenArtist = selectedCredit ? await findOrCreateArtist(selectedCredit) : undefined;
-			const id = chosenArtist?.id ?? Number(artistId);
-			const album = await albumsApi.create({
+			const id = chosenArtist?.id ?? parseEntityId(artistId);
+			if (id === null) throw new Error('Select an artist');
+			const album = await albumsLibrary.create({
 				artist_id: id,
 				title: tab === 'spotify' ? selected!.name : name.trim(),
 				spotify_id: tab === 'spotify' ? selected!.id : undefined,
-			});
-			markAlbumAsNew(album.id);
-
-			const metadata = {
-				artist_id: id,
 				cover_url: tab === 'spotify' ? selected!.imageUrl : undefined,
 				year: getAlbumYear(),
-				listened: listened || undefined,
+				listened,
 				rating: listened ? rating : undefined,
 				comment: comment.trim() || undefined,
 				listened_at: listened ? listenedAt || undefined : undefined,
-			};
+			});
+			markAlbumAsNew(album.id);
 
-			if (Object.values(metadata).some((value, index) => index > 0 && value !== undefined)) {
-				await albumsApi.update(album.id, metadata);
-			}
-
-			await refreshDatabaseDataAfterMutation();
 			dialog?.close();
 			reset();
 		} catch (e) {
@@ -184,6 +185,7 @@
 			role="tab"
 			class="tab flex-1"
 			aria-label="Spotify"
+			disabled={online.current === false}
 			value="spotify"
 			bind:group={tab}
 		/>

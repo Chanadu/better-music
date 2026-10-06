@@ -13,7 +13,7 @@
 		if (exportState === 'exporting') return;
 
 		exportState = 'exporting';
-		feedback = 'Preparing a fresh copy of your library…';
+		feedback = 'Preparing your library, including queued changes…';
 
 		try {
 			const filename = await downloadLibraryExport();

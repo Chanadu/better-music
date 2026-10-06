@@ -1,4 +1,4 @@
-import type { Album, Artist, DatabaseData, LocalDatabaseData, PendingMutation } from './types';
+import type { DatabaseData, LocalDatabaseData, PendingMutation, ServerDatabaseData } from './types';
 
 const databaseName = 'better-music';
 const databaseVersion = 3;
@@ -22,7 +22,7 @@ const openDatabase = () =>
 			const outbox =
 				database.objectStoreNames.contains(outboxStore) ?
 					request.transaction!.objectStore(outboxStore)
-					: database.createObjectStore(outboxStore, { keyPath: 'mutationId' });
+				:	database.createObjectStore(outboxStore, { keyPath: 'mutationId' });
 			if (!outbox.indexNames.contains(userIndex)) outbox.createIndex(userIndex, 'userId');
 		};
 		request.onblocked = () => {
@@ -63,7 +63,7 @@ const runTransaction = async <T>(
 		} catch (error) {
 			try {
 				transaction.abort();
-			} catch { }
+			} catch {}
 			await completed.catch(() => undefined);
 			throw error;
 		}
@@ -113,7 +113,7 @@ export const applyOptimisticMutation = async (
 	userId: number,
 	mutation: PendingMutation,
 	update: (library: LocalDatabaseData) => LocalDatabaseData,
-): Promise<LocalDatabaseData> => {
+) => {
 	const result = await updateLibraryAndOutbox(userId, ({ library, mutations }) => ({
 		library: update(library),
 		mutations: [
@@ -124,7 +124,7 @@ export const applyOptimisticMutation = async (
 			},
 		],
 	}));
-	return result.library;
+	return result;
 };
 
 export const updatePendingMutation = async (
@@ -167,13 +167,7 @@ export const getStoredDatabaseCache = async (userId: number): Promise<DatabaseDa
 		const library = await getStoredLibrary(userId);
 		if (!library) return null;
 
-		return {
-			artists: library.artists.filter((artist): artist is Artist => typeof artist.id === 'number'),
-			albums: library.albums.filter(
-				(album): album is Album => typeof album.id === 'number' && typeof album.artist_id === 'number',
-			),
-			loadedAt: library.loadedAt,
-		};
+		return library;
 	} catch (error) {
 		console.warn('Could not read the persistent library cache', error);
 
@@ -181,7 +175,7 @@ export const getStoredDatabaseCache = async (userId: number): Promise<DatabaseDa
 	}
 };
 
-export const setStoredDatabaseCache = (userId: number, value: DatabaseData): Promise<boolean> =>
+export const setStoredDatabaseCache = (userId: number, value: ServerDatabaseData): Promise<boolean> =>
 	runTransaction('readwrite', async (transaction) => {
 		const pending = await readRequest(transaction.objectStore(outboxStore).index(userIndex).count(userId));
 		if (pending) return false;

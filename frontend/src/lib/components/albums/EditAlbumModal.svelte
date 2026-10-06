@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { online } from 'svelte/reactivity/window';
 	import SpotifyIcon from '$lib/components/icons/SpotifyIcon.svelte';
 	import ListenedFields from '$lib/components/create/ListenedFields.svelte';
 	import ManualAlbumForm from '$lib/components/create/ManualAlbumForm.svelte';
 	import FormModalShell from '$lib/components/create/FormModalShell.svelte';
 	import SpotifySearch from '$lib/components/create/SpotifySearch.svelte';
-	import { albumsApi, spotifyApi } from '$lib/scripts/api';
-	import { refreshDatabaseDataAfterMutation } from '$lib/scripts/database';
+	import { spotifyApi } from '$lib/scripts/api';
+	import { albumsLibrary } from '$lib/scripts/database';
 	import type { Album, Artist, SpotifyRow as Row } from '$lib/scripts/types';
 
 	let {
@@ -54,6 +55,10 @@
 			(listened && rating !== (album.rating ?? 5)) ||
 			(listened && listenedAt !== dateInputValue(album.listened_at)),
 	);
+	$effect(() => {
+		if (online.current === false && tab === 'spotify') tab = 'details';
+	});
+
 	let canSave = $derived(
 		!saving &&
 			!refreshing &&
@@ -102,7 +107,7 @@
 	}
 
 	async function refreshFromSpotify() {
-		if (!spotifyId.trim() || refreshing) return;
+		if (!navigator.onLine || !spotifyId.trim() || refreshing) return;
 
 		refreshing = true;
 		error = '';
@@ -129,24 +134,22 @@
 			const selectedAlbum = tab === 'spotify' ? selected : undefined;
 			const selectedYear = selectedAlbum?.releaseYear;
 
-			await albumsApi.update(album.id, {
+			const updated = await albumsLibrary.update(album.id, {
 				artist_id: album.artist_id,
 				title: selectedAlbum?.name ?? title.trim(),
-				cover_url: selectedAlbum?.imageUrl ?? coverUrl.trim(),
-				spotify_id: selectedAlbum?.id ?? spotifyId.trim(),
+				cover_url: selectedAlbum?.imageUrl ?? (coverUrl.trim() || null),
+				spotify_id: selectedAlbum?.id ?? (spotifyId.trim() || null),
 				year:
 					selectedYear ? Number(selectedYear)
 					: year ? Number(year)
-					: undefined,
-				comment: comment.trim(),
+					: null,
+				comment: comment.trim() || null,
 				listened,
 				rating: listened ? rating : undefined,
-				listened_at: listened ? listenedAt || undefined : undefined,
+				listened_at: listened ? listenedAt || null : undefined,
 			});
 
-			const updated = await albumsApi.get(album.id, album.artist_id);
 			onupdated?.(updated);
-			await refreshDatabaseDataAfterMutation();
 			dialog?.close();
 		} catch (e) {
 			error = formatError(e, 'Failed to save album');
@@ -193,7 +196,7 @@
 				<button
 					type="button"
 					class="btn btn-soft mt-4 w-full"
-					disabled={refreshing}
+					disabled={refreshing || online.current === false}
 					onclick={refreshFromSpotify}
 				>
 					<SpotifyIcon class="size-5" />
@@ -214,6 +217,7 @@
 			role="tab"
 			class="tab flex-1"
 			aria-label={album.spotify_id ? 'Change Spotify' : 'Link Spotify'}
+			disabled={online.current === false}
 			value="spotify"
 			bind:group={tab}
 		/>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import BackIcon from '$lib/components/icons/BackIcon.svelte';
 	import DeleteIcon from '$lib/components/icons/DeleteIcon.svelte';
 	import EditIcon from '$lib/components/icons/EditIcon.svelte';
@@ -6,6 +7,7 @@
 
 	let {
 		title,
+		titleSuffix,
 		subtitle,
 		imageUrl,
 		imageAlt,
@@ -17,6 +19,7 @@
 		ondelete,
 	}: {
 		title: string;
+		titleSuffix?: Snippet;
 		subtitle?: string | number | null;
 		imageUrl?: string | null;
 		imageAlt: string;
@@ -70,6 +73,7 @@
 			class="pr-40 text-4xl leading-none font-black tracking-tight wrap-break-word text-white sm:text-6xl lg:text-7xl"
 		>
 			{title}
+			{@render titleSuffix?.()}
 		</h1>
 		{#if subtitle !== undefined && subtitle !== null && subtitle !== ''}
 			<p class="text-base-content/70 mt-3 pr-40 text-lg font-medium sm:text-xl">{subtitle}</p>
@@ -87,7 +91,7 @@
 			>
 				<SpotifyIcon
 					branded={false}
-					class="group-hover:text-success-content group-focus-visible:text-success-content size-5 text-[#1ed760]"
+					class="size-5 text-black"
 				/>
 			</a>
 		{/if}

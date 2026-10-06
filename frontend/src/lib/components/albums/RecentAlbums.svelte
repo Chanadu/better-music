@@ -16,7 +16,11 @@
 	let recentAlbums = $derived(
 		($database?.albums ?? [])
 			.filter((album) => (mode === 'listened' ? album.listened : album.rating == null))
-			.sort((a, b) => timestamp(b[dateField]) - timestamp(a[dateField]) || b.id - a.id)
+			.sort(
+				(a, b) =>
+					timestamp(b[dateField]) - timestamp(a[dateField]) ||
+					String(b.id).localeCompare(String(a.id), undefined, { numeric: true }),
+			)
 			.slice(0, 6),
 	);
 	let artistNames = $derived(new Map($database?.artists.map((artist) => [artist.id, artist.name]) ?? []));

@@ -1,7 +1,8 @@
 import { albumsApi, artistsApi } from './api';
-import type { DatabaseData } from './types';
+import { getDatabaseData } from './database';
+import type { DatabaseData, EntityId } from './types';
 
-export const LIBRARY_EXPORT_FORMAT_VERSION = 1 as const;
+export const LIBRARY_EXPORT_FORMAT_VERSION = 2 as const;
 
 export type LibraryExportSource = Pick<DatabaseData, 'artists' | 'albums'>;
 
@@ -12,7 +13,7 @@ export async function fetchFreshLibraryForExport(): Promise<LibraryExportSource>
 }
 
 export type ExportArtist = {
-	id: number;
+	id: EntityId;
 	name: string;
 	cover_url: string | null;
 	spotify_id: string | null;
@@ -20,8 +21,8 @@ export type ExportArtist = {
 };
 
 export type ExportAlbum = {
-	id: number;
-	artist_id: number;
+	id: EntityId;
+	artist_id: EntityId;
 	title: string;
 	cover_url: string | null;
 	year: number | null;
@@ -33,7 +34,7 @@ export type ExportAlbum = {
 	created_at: string;
 };
 
-export type LibraryExportV1 = {
+export type LibraryExportV2 = {
 	format_version: typeof LIBRARY_EXPORT_FORMAT_VERSION;
 	application: 'better-music';
 	exported_at: string;
@@ -43,9 +44,9 @@ export type LibraryExportV1 = {
 	};
 };
 
-export function buildLibraryExport(source: LibraryExportSource, exportedAt = new Date()): LibraryExportV1 {
+export function buildLibraryExport(source: LibraryExportSource, exportedAt = new Date()): LibraryExportV2 {
 	const artists = [...source.artists]
-		.sort((first, second) => first.id - second.id)
+		.sort((first, second) => String(first.id).localeCompare(String(second.id), undefined, { numeric: true }))
 		.map((artist): ExportArtist => ({
 			id: artist.id,
 			name: artist.name,
@@ -54,7 +55,7 @@ export function buildLibraryExport(source: LibraryExportSource, exportedAt = new
 			created_at: artist.created_at,
 		}));
 	const albums = [...source.albums]
-		.sort((first, second) => first.id - second.id)
+		.sort((first, second) => String(first.id).localeCompare(String(second.id), undefined, { numeric: true }))
 		.map((album): ExportAlbum => ({
 			id: album.id,
 			artist_id: album.artist_id,
@@ -77,12 +78,12 @@ export function buildLibraryExport(source: LibraryExportSource, exportedAt = new
 	};
 }
 
-export function createLibraryExportBlob(exportData: LibraryExportV1): Blob {
+export function createLibraryExportBlob(exportData: LibraryExportV2): Blob {
 	return new Blob([`${JSON.stringify(exportData, null, 2)}\n`], { type: 'application/json' });
 }
 
 export async function downloadLibraryExport(): Promise<string> {
-	const source = await fetchFreshLibraryForExport();
+	const source = (await getDatabaseData()) ?? (await fetchFreshLibraryForExport());
 	const exportedAt = new Date();
 	const exportData = buildLibraryExport(source, exportedAt);
 	const blob = createLibraryExportBlob(exportData);

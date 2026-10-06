@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RecordSyncBadge from '$lib/components/common/RecordSyncBadge.svelte';
 	import { ratingColor } from '$lib/scripts/rating-colors';
 	import { page } from '$app/state';
 	import { withReturnTo } from '$lib/scripts/navigation';
@@ -52,10 +53,13 @@
 	</div>
 
 	<h3
-		class={compact ? 'mt-2 text-xs font-semibold text-wrap wrap-break-word' : 'mt-2 truncate font-semibold'}
+		class={compact ?
+			'mt-2 flex items-center gap-2 text-xs font-semibold'
+		:	'mt-2 flex items-center gap-2 font-semibold'}
 		title={album.title}
 	>
-		{album.title}
+		<span class={compact ? 'min-w-0 text-wrap wrap-break-word' : 'min-w-0 truncate'}>{album.title}</span>
+		<RecordSyncBadge entity="album" id={album.id} variant="dot" />
 	</h3>
 
 	<p

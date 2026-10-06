@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RecordSyncBadge from '$lib/components/common/RecordSyncBadge.svelte';
 	import { ratingColor } from '$lib/scripts/rating-colors';
 	import { page } from '$app/state';
 	import MediaThumbnail from '$lib/components/common/MediaThumbnail.svelte';
@@ -21,7 +22,7 @@
 	});
 </script>
 
-<li class="group/artist-list-item indicator block">
+<li class="group/artist-list-item indicator block w-full">
 	{#if $newlyAdded.artistIds.has(artist.id)}
 		<span
 			class="status status-success indicator-item indicator-start indicator-top top-1"
@@ -45,6 +46,7 @@
 		<div class="self-center">
 			<div class="flex items-center gap-2">
 				{artist.name}
+				<RecordSyncBadge entity="artist" id={artist.id} variant="dot" />
 			</div>
 
 			<div class="text-base-content/60 text-xs font-semibold uppercase">

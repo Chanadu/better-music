@@ -1,8 +1,9 @@
 import { writable } from 'svelte/store';
+import type { EntityId } from './types';
 
 type NewlyAdded = {
-	albumIds: ReadonlySet<number>;
-	artistIds: ReadonlySet<number>;
+	albumIds: ReadonlySet<EntityId>;
+	artistIds: ReadonlySet<EntityId>;
 };
 
 export const newlyAdded = writable<NewlyAdded>({
@@ -10,14 +11,14 @@ export const newlyAdded = writable<NewlyAdded>({
 	artistIds: new Set(),
 });
 
-export function markAlbumAsNew(id: number) {
+export function markAlbumAsNew(id: EntityId) {
 	newlyAdded.update((value) => ({
 		...value,
 		albumIds: new Set(value.albumIds).add(id),
 	}));
 }
 
-export function markArtistAsNew(id: number) {
+export function markArtistAsNew(id: EntityId) {
 	newlyAdded.update((value) => ({
 		...value,
 		artistIds: new Set(value.artistIds).add(id),

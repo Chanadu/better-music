@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RecordSyncBadge from '$lib/components/common/RecordSyncBadge.svelte';
 	import { ratingColor } from '$lib/scripts/rating-colors';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -12,8 +13,7 @@
 	import CalendarIcon from '$lib/components/icons/CalendarIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
-	import { artistsApi } from '$lib/scripts/api';
-	import { database, refreshDatabaseDataAfterMutation } from '$lib/scripts/database';
+	import { database, artistsLibrary, parseEntityId } from '$lib/scripts/database';
 	import { getReturnHref } from '$lib/scripts/navigation';
 
 	let albumDialog = $state<HTMLDialogElement>();
@@ -21,8 +21,8 @@
 	let editDialog = $state<HTMLDialogElement>();
 	let backHref = $derived(getReturnHref(page.url, '/artists'));
 
-	let id = $derived(Number(page.url.searchParams.get('id')));
-	let validId = $derived(Number.isInteger(id) && id > 0);
+	let id = $derived(parseEntityId(page.url.searchParams.get('id')));
+	let validId = $derived(id !== null);
 	let artist = $derived(validId ? $database?.artists.find((item) => item.id === id) : undefined);
 	let status = $derived(
 		!validId || ($database && !artist) ? 'Artist not found.'
@@ -57,10 +57,7 @@
 	async function deleteArtist() {
 		if (!artist) return;
 
-		await artistsApi.delete(artist.id);
-		void refreshDatabaseDataAfterMutation().catch((error) =>
-			console.error('Failed to refresh artists after deletion', error),
-		);
+		await artistsLibrary.delete(artist.id);
 		await goto(backHref, { replaceState: true });
 	}
 </script>
@@ -97,7 +94,11 @@
 		{backHref}
 		ondelete={() => deleteDialog?.showModal()}
 		onedit={() => editDialog?.showModal()}
-	/>
+	>
+		{#snippet titleSuffix()}
+			<RecordSyncBadge entity="artist" id={artist.id} variant="dot" />
+		{/snippet}
+	</MediaHero>
 
 	<EditArtistModal bind:dialog={editDialog} {artist} />
 

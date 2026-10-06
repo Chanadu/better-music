@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { online } from 'svelte/reactivity/window';
 	import ManualArtistForm from '$lib/components/create/ManualArtistForm.svelte';
 	import FormModalShell from '$lib/components/create/FormModalShell.svelte';
 	import SpotifySearch from '$lib/components/create/SpotifySearch.svelte';
-	import { artistsApi, spotifyApi } from '$lib/scripts/api';
-	import { refreshDatabaseDataAfterMutation } from '$lib/scripts/database';
+	import { spotifyApi } from '$lib/scripts/api';
+	import { artistsLibrary } from '$lib/scripts/database';
 	import type { Artist, SpotifyRow as Row } from '$lib/scripts/types';
 
 	let {
@@ -32,6 +33,10 @@
 			coverUrl.trim() !== (artist.cover_url ?? '') ||
 			spotifyId.trim() !== (artist.spotify_id ?? ''),
 	);
+	$effect(() => {
+		if (online.current === false && tab === 'spotify') tab = 'details';
+	});
+
 	let canSave = $derived(
 		!saving && !refreshing && (tab === 'spotify' ? Boolean(selected) : Boolean(name.trim()) && changed),
 	);
@@ -64,7 +69,7 @@
 	}
 
 	async function refreshFromSpotify() {
-		if (!spotifyId.trim() || refreshing) return;
+		if (!navigator.onLine || !spotifyId.trim() || refreshing) return;
 
 		refreshing = true;
 		error = '';
@@ -89,17 +94,14 @@
 		try {
 			const selectedArtist = tab === 'spotify' ? selected : undefined;
 
-			await artistsApi.update(artist.id, {
+			const updated = await artistsLibrary.update(artist.id, {
 				name: selectedArtist?.name ?? name.trim(),
-				cover_url: selectedArtist?.imageUrl ?? coverUrl.trim(),
-				spotify_id: selectedArtist?.id ?? spotifyId.trim(),
+				cover_url: selectedArtist?.imageUrl ?? (coverUrl.trim() || null),
+				spotify_id: selectedArtist?.id ?? (spotifyId.trim() || null),
 			});
-
-			const updated = await artistsApi.get(artist.id);
 
 			onupdated?.(updated);
 
-			await refreshDatabaseDataAfterMutation();
 			dialog?.close();
 		} catch (e) {
 			error = formatError(e, 'Failed to save artist');
@@ -153,6 +155,7 @@
 			role="tab"
 			class="tab flex-1"
 			aria-label={artist.spotify_id ? 'Change Spotify' : 'Link Spotify'}
+			disabled={online.current === false}
 			value="spotify"
 			bind:group={tab}
 		/>

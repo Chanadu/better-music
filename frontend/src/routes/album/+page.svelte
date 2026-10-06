@@ -1,4 +1,5 @@
 <script lang="ts">
+	import RecordSyncBadge from '$lib/components/common/RecordSyncBadge.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import AlbumArtistCard from '$lib/components/albums/AlbumArtistCard.svelte';
@@ -8,18 +9,17 @@
 	import MediaHero from '$lib/components/common/MediaHero.svelte';
 	import DeleteConfirmationDialog from '$lib/components/common/DeleteConfirmationDialog.svelte';
 	import SadFaceIcon from '$lib/components/icons/SadFaceIcon.svelte';
-	import { albumsApi } from '$lib/scripts/api';
 	import { getReturnHref } from '$lib/scripts/navigation';
-	import { database, refreshDatabaseDataAfterMutation } from '$lib/scripts/database';
+	import { database, albumsLibrary, parseEntityId } from '$lib/scripts/database';
 
 	let deleteDialog = $state<HTMLDialogElement>();
 	let editDialog = $state<HTMLDialogElement>();
 	let editModal = $state<EditAlbumModal>();
 	let backHref = $derived(getReturnHref(page.url, '/albums'));
 
-	let id = $derived(Number(page.url.searchParams.get('id')));
-	let artistId = $derived(Number(page.url.searchParams.get('artist_id')));
-	let validId = $derived(Number.isInteger(id) && Number.isInteger(artistId) && id > 0 && artistId > 0);
+	let id = $derived(parseEntityId(page.url.searchParams.get('id')));
+	let artistId = $derived(parseEntityId(page.url.searchParams.get('artist_id')));
+	let validId = $derived(id !== null && artistId !== null);
 	let album = $derived(
 		validId ? $database?.albums.find((item) => item.id === id && item.artist_id === artistId) : undefined,
 	);
@@ -33,10 +33,7 @@
 	async function deleteAlbum() {
 		if (!album) return;
 
-		await albumsApi.delete(album.id, album.artist_id);
-		void refreshDatabaseDataAfterMutation().catch((error) =>
-			console.error('Failed to refresh albums after deletion', error),
-		);
+		await albumsLibrary.delete(album.id, album.artist_id);
 		await goto(backHref, { replaceState: true });
 	}
 
@@ -95,7 +92,11 @@
 		{backHref}
 		ondelete={() => deleteDialog?.showModal()}
 		onedit={() => editDialog?.showModal()}
-	/>
+	>
+		{#snippet titleSuffix()}
+			<RecordSyncBadge entity="album" id={album.id} variant="dot" />
+		{/snippet}
+	</MediaHero>
 
 	<EditAlbumModal bind:this={editModal} bind:dialog={editDialog} {album} {artist} />
 
