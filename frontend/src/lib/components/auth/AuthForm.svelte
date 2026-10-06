@@ -118,7 +118,7 @@
 
 		<button
 			type="submit"
-			class="btn btn-primary mx-auto mt-4 w-min"
+			class="btn hover-lift btn-primary mx-auto mt-4 w-min"
 			class:btn-disabled={!valid || busy}
 			disabled={!valid || busy}
 		>

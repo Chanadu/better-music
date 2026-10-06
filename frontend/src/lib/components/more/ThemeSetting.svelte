@@ -59,7 +59,7 @@
 				{/each}
 				<button
 					type="button"
-					class="bg-base-100 text-base-content focus-visible:outline-base-content cursor-pointer rounded-xl p-3 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none"
+					class="bg-base-100 text-base-content focus-visible:outline-base-content cursor-pointer rounded-xl p-3 text-left shadow-sm hover-lift focus-visible:outline-2 focus-visible:outline-offset-2"
 					onclick={() => themePickerDialog.open()}
 				>
 					<GridIcon class="mb-3 size-4" />

@@ -13,7 +13,7 @@
 </script>
 
 <button
-	class={`btn btn-ghost border-base-content/25 hover:bg-base-300 w-full flex-col gap-2 rounded-xl border-dashed transition hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none ${className}`}
+	class={`btn btn-ghost border-base-content/25 hover:bg-base-300 hover-lift w-full flex-col gap-2 rounded-xl border-dashed ${className}`}
 	type="button"
 	aria-label={label}
 	{onclick}

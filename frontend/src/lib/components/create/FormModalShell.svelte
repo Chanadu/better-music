@@ -29,7 +29,7 @@
 
 <ModalShell bind:dialog {onclose}>
 	<form method="dialog">
-		<button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2">✕</button>
+		<button class="btn hover-lift btn-sm btn-circle btn-ghost absolute top-2 right-2">✕</button>
 	</form>
 
 	<h2 class="mb-2 text-center text-xl font-semibold">{headingPrefix} {title}</h2>
@@ -44,10 +44,10 @@
 
 	<div class="modal-action gap-4 px-2">
 		<form method="dialog" class="flex-1">
-			<button class="btn btn-error w-full">Cancel</button>
+			<button class="btn hover-lift btn-error w-full">Cancel</button>
 		</form>
 
-		<button type="button" class="btn btn-primary flex-1" disabled={!canSave} onclick={onsave}>
+		<button type="button" class="btn hover-lift btn-primary flex-1" disabled={!canSave} onclick={onsave}>
 			{saving ? 'Saving...' : (saveLabel ?? `Save ${title}`)}
 		</button>
 	</div>

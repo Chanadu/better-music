@@ -50,7 +50,7 @@
 	</div>
 	<button
 		type="button"
-		class="btn btn-accent btn-md shrink-0 gap-2 rounded-full shadow-sm"
+		class="btn hover-lift btn-accent btn-md shrink-0 gap-2 rounded-full shadow-sm"
 		disabled={exportState === 'exporting'}
 		onclick={exportLibrary}
 	>

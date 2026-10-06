@@ -127,7 +127,7 @@
 			type="radio"
 			name="edit_artist_modal_tabs"
 			role="tab"
-			class="tab flex-1"
+			class="tab hover-lift flex-1"
 			aria-label="Details"
 			value="details"
 			bind:group={tab}
@@ -153,7 +153,7 @@
 			type="radio"
 			name="edit_artist_modal_tabs"
 			role="tab"
-			class="tab flex-1"
+			class="tab hover-lift flex-1"
 			aria-label={artist.spotify_id ? 'Change Spotify' : 'Link Spotify'}
 			disabled={online.current === false}
 			value="spotify"

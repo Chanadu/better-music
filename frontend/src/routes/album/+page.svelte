@@ -74,7 +74,7 @@
 					<SadFaceIcon class="text-base-content/50 size-6" />
 				</div>
 				<p class="text-base-content/60">{status}</p>
-				<a class="btn btn-ghost btn-sm mt-3" href="/albums">Back to albums</a>
+				<a class="btn hover-lift btn-ghost btn-sm mt-3" href="/albums">Back to albums</a>
 			</div>
 		{/if}
 	</div>

@@ -77,7 +77,7 @@
 				</div>
 
 				<p class="text-base-content/60">{status}</p>
-				<a class="btn btn-ghost btn-sm mt-3" href="/artists">Back to artists</a>
+				<a class="btn hover-lift btn-ghost btn-sm mt-3" href="/artists">Back to artists</a>
 			</div>
 		{/if}
 	</div>

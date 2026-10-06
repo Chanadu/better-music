@@ -175,7 +175,7 @@
 			type="radio"
 			name="edit_album_modal_tabs"
 			role="tab"
-			class="tab flex-1"
+			class="tab hover-lift flex-1"
 			aria-label="Details"
 			value="details"
 			bind:group={tab}
@@ -195,7 +195,7 @@
 			{#if album.spotify_id}
 				<button
 					type="button"
-					class="btn btn-soft mt-4 w-full"
+					class="btn btn-soft hover-lift mt-4 w-full"
 					disabled={refreshing || online.current === false}
 					onclick={refreshFromSpotify}
 				>
@@ -215,7 +215,7 @@
 			type="radio"
 			name="edit_album_modal_tabs"
 			role="tab"
-			class="tab flex-1"
+			class="tab hover-lift flex-1"
 			aria-label={album.spotify_id ? 'Change Spotify' : 'Link Spotify'}
 			disabled={online.current === false}
 			value="spotify"

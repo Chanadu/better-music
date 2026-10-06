@@ -40,7 +40,7 @@
 		{#if showSpotifyRefresh}
 			<button
 				type="button"
-				class="btn btn-soft aspect-square h-auto w-full flex-col gap-3 whitespace-normal"
+				class="btn btn-soft hover-lift aspect-square h-auto w-full flex-col gap-3 whitespace-normal"
 				disabled={refreshing || !spotifyId || online.current === false}
 				aria-label={refreshing ? 'Refreshing artist data from Spotify' : 'Refresh artist data from Spotify'}
 				title={spotifyId ? 'Refresh artist data from Spotify' : 'This artist is not linked to Spotify'}

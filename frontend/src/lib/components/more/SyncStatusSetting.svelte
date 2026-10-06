@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CheckIcon from '$lib/components/icons/CheckIcon.svelte';
+	import SyncIcon from '$lib/components/icons/SyncIcon.svelte';
 	import { pendingMutations, refreshDatabaseData, syncStatus } from '$lib/scripts/database';
 	import SettingRow from './SettingRow.svelte';
 
@@ -32,12 +33,14 @@
 <SettingRow title="Offline and sync status" {description} icon={CheckIcon} tone="accent">
 	<button
 		type="button"
-		class="btn btn-accent btn-md shrink-0 rounded-full shadow-sm"
+		class="btn hover-lift btn-accent btn-md shrink-0 rounded-full shadow-sm"
 		disabled={$syncStatus.state === 'connecting' || $syncStatus.state === 'offline'}
 		onclick={syncNow}
 	>
 		{#if $syncStatus.state === 'connecting'}
 			<span class="loading loading-sm" aria-hidden="true"></span>
+		{:else}
+			<SyncIcon class="size-4" />
 		{/if}
 		{$syncStatus.state === 'connecting' ? 'Syncing…' : 'Sync now'}
 	</button>

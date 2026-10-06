@@ -64,7 +64,7 @@
 			type="radio"
 			name="artist_modal_tabs"
 			role="tab"
-			class="tab flex-1"
+			class="tab hover-lift flex-1"
 			aria-label="Manual"
 			value="manual"
 			bind:group={tab}
@@ -77,7 +77,7 @@
 			type="radio"
 			name="artist_modal_tabs"
 			role="tab"
-			class="tab flex-1"
+			class="tab hover-lift flex-1"
 			aria-label="Spotify"
 			disabled={online.current === false}
 			value="spotify"

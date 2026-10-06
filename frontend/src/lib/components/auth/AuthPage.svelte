@@ -16,10 +16,10 @@
 				<p class="text-base-content/70 mt-2 text-center text-sm">
 					{#if mode === 'login'}
 						Need an account?
-						<a href="/create-account" class="link link-primary">Create account</a>
+						<a href="/create-account" class="link link-primary hover-lift inline-block">Create account</a>
 					{:else}
 						Already have an account?
-						<a href="/login" class="link link-primary">Log in</a>
+						<a href="/login" class="link link-primary hover-lift inline-block">Log in</a>
 					{/if}
 				</p>
 			</div>

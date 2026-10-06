@@ -118,9 +118,10 @@
 			class:grid-cols-2={action === 'delete'}
 			class:gap-3={action === 'delete'}
 		>
-			<button type="button" class="btn btn-error" disabled={busy} onclick={() => dialog?.close()}>Cancel</button>
+			<button type="button" class="btn hover-lift btn-error" disabled={busy} onclick={() => dialog?.close()}>Cancel</button>
 			<button
 				type="submit"
+				class="hover-lift"
 				class:btn={true}
 				class:btn-error={action === 'delete'}
 				class:btn-primary={action === 'email'}

@@ -38,3 +38,7 @@
 	--depth: 1;
 	--noise: 0;
 }
+
+@utility hover-lift {
+	@apply transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none;
+}

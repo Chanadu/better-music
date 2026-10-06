@@ -14,7 +14,7 @@
 
 <section class="group/artist-card order-1 h-full md:col-start-1 md:row-start-1">
 	<a
-		class="bg-base-200 focus-visible:outline-base-content group-hover/artist-card:bg-base-300 relative flex h-full min-h-72 items-center justify-center gap-4 overflow-hidden rounded-2xl p-5 shadow-lg transition duration-200 ease-out group-hover/artist-card:-translate-y-1 group-hover/artist-card:scale-[1.02] group-hover/artist-card:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none sm:gap-8 sm:p-8"
+		class="bg-base-200 focus-visible:outline-base-content group-hover/artist-card:bg-base-300 relative flex h-full min-h-72 items-center justify-center gap-4 overflow-hidden rounded-2xl p-5 shadow-lg hover-lift focus-visible:outline-2 focus-visible:outline-offset-4 sm:gap-8 sm:p-8"
 		href={withReturnTo(`/artist?id=${artist.id}`, page.url)}
 		aria-label={`View ${artist.name}`}
 	>

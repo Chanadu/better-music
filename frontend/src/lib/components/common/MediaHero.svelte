@@ -41,7 +41,7 @@
 
 <section class="relative -mx-4 -mt-2 h-[60dvh] overflow-hidden">
 	<a
-		class="btn btn-square btn-accent absolute top-4 left-4 z-10 shadow-xl sm:top-6 sm:left-8"
+		class="btn hover-lift btn-square btn-accent absolute top-4 left-4 z-10 shadow-xl sm:top-6 sm:left-8"
 		href={backHref}
 		aria-label="Go back"
 	>
@@ -83,22 +83,29 @@
 	<div class="absolute right-4 bottom-5 z-10 flex gap-2 sm:right-8 sm:bottom-7">
 		{#if spotifyHref}
 			<a
-				class="btn btn-square btn-success group shadow-xl"
+				class="btn hover-lift btn-square btn-success group shadow-xl"
 				href={spotifyHref}
 				target="_blank"
 				rel="noreferrer"
 				aria-label="Open in Spotify"
 			>
-				<SpotifyIcon
-					branded={false}
-					class="size-5 text-black"
-				/>
+				<SpotifyIcon branded={false} class="size-5 text-black" />
 			</a>
 		{/if}
-		<button class="btn btn-square btn-secondary shadow-xl" type="button" aria-label={editLabel} onclick={onedit}>
+		<button
+			class="btn hover-lift btn-square btn-secondary shadow-xl"
+			type="button"
+			aria-label={editLabel}
+			onclick={onedit}
+		>
 			<EditIcon class="size-5" />
 		</button>
-		<button class="btn btn-square btn-error shadow-xl" type="button" aria-label={deleteLabel} onclick={ondelete}>
+		<button
+			class="btn hover-lift btn-square btn-error shadow-xl"
+			type="button"
+			aria-label={deleteLabel}
+			onclick={ondelete}
+		>
 			<DeleteIcon class="size-5" />
 		</button>
 	</div>

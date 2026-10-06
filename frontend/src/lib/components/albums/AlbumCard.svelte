@@ -19,7 +19,7 @@
 </script>
 
 <a
-	class="rounded-box focus-visible:outline-base-content hover:bg-base-200 block min-w-0 pb-1 transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:shadow-sm active:duration-75 motion-reduce:transform-none"
+	class="rounded-box focus-visible:outline-base-content hover:bg-base-200 hover-lift block min-w-0 pb-1 focus-visible:outline-2 focus-visible:outline-offset-4"
 	class:self-start={compact}
 	href={withReturnTo(`/album?id=${album.id}&artist_id=${album.artist_id}`, page.url)}
 	aria-label={`View ${album.title}${showRating && typeof album.rating === 'number' ? `, rated ${album.rating} out of 10` : ''}`}

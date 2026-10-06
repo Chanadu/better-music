@@ -32,7 +32,7 @@
 			<h2 id={headingId} class="text-xl font-semibold">{title}</h2>
 			<a
 				href={mode === 'listened' ? '/albums' : '/listen'}
-				class="text-base-content/60 inline-flex shrink-0 items-center gap-1 border-b border-transparent text-sm hover:border-current focus-visible:border-current"
+				class="hover-lift text-base-content/60 inline-flex shrink-0 items-center gap-1 border-b border-transparent text-sm hover:border-current focus-visible:border-current"
 			>
 				View all
 				<BackIcon class="size-4 rotate-180" />

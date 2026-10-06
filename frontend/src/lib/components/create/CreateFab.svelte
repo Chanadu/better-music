@@ -16,7 +16,7 @@
 	class="fab pb-[calc(3.5rem+env(safe-area-inset-bottom))] sm:pb-[calc(4.5rem+env(safe-area-inset-bottom))]"
 	class:hidden={modalOpen}
 >
-	<button type="button" class="btn btn-lg btn-circle btn-accent" aria-label={`Create ${type}`} onclick={openModal}>
+	<button type="button" class="btn btn-lg btn-circle btn-accent hover-lift" aria-label={`Create ${type}`} onclick={openModal}>
 		+
 	</button>
 </div>

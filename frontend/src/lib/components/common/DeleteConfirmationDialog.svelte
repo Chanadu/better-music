@@ -76,10 +76,10 @@
 
 	<div class="modal-action grid grid-cols-2 gap-3">
 		<form method="dialog">
-			<button class="btn btn-error w-full" disabled={deleting}>Cancel</button>
+			<button class="btn hover-lift btn-error w-full" disabled={deleting}>Cancel</button>
 		</form>
 
-		<button type="button" class="btn btn-error" disabled={deleting || Boolean(disabledReason)} onclick={confirm}>
+		<button type="button" class="btn hover-lift btn-error" disabled={deleting || Boolean(disabledReason)} onclick={confirm}>
 			{#if deleting}<span class="loading loading-sm"></span>{/if}
 			{deleting ? 'Deleting...' : confirmLabel}
 		</button>

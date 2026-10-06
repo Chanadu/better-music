@@ -72,7 +72,7 @@
 		>
 			{#each filters as option}
 				<label
-					class="join-item btn btn-ghost border-base-300 has-checked:bg-primary has-checked:text-primary-content border px-2 sm:px-6"
+					class="join-item btn hover-lift btn-ghost border-base-300 has-checked:bg-primary has-checked:text-primary-content border px-2 sm:px-6"
 				>
 					<input
 						class="sr-only"

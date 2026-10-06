@@ -34,7 +34,7 @@
 
 		<button
 			type="button"
-			class="btn btn-square btn-ghost btn-xs swap swap-rotate"
+			class="btn hover-lift btn-square btn-ghost btn-xs swap swap-rotate"
 			class:swap-active={shown}
 			aria-label={shown ? 'Hide password' : 'Show password'}
 			onclick={() => (shown = !shown)}

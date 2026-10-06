@@ -65,7 +65,7 @@
 			<a
 				href={withReturnTo(`/album?id=${album.id}&artist_id=${album.artist_id}`, page.url)}
 				aria-label={`View ${album.title}`}
-				class="rounded-box block"
+				class="rounded-box hover-lift block"
 			>
 				<MediaThumbnail
 					variant="card"
@@ -97,7 +97,7 @@
 	{:else if error}
 		<div role="alert" class="py-10 text-center">
 			<p>{error}</p>
-			<button class="btn btn-soft mt-4" onclick={load}>Try again</button>
+			<button class="btn btn-soft hover-lift mt-4" onclick={load}>Try again</button>
 		</div>
 	{:else if !$database}
 		<div class="flex min-h-64 items-center justify-center" role="status">
@@ -107,7 +107,7 @@
 		<div class="py-12 text-center">
 			<h3 class="text-xl font-semibold">Your queue is all caught up</h3>
 			<p class="text-base-content/60 mt-2">Add an album to find your next listen.</p>
-			<a href="/listen" class="btn btn-primary mt-5">Add an album</a>
+			<a href="/listen" class="btn btn-primary hover-lift mt-5">Add an album</a>
 		</div>
 	{/if}
 </section>

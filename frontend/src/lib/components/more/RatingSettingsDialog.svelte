@@ -54,7 +54,7 @@
 					bind:value={labels[index]}
 				/>
 				<label
-					class="border-base-300 has-focus-visible:outline-primary relative size-9 cursor-pointer overflow-hidden rounded-lg border-2 has-focus-visible:outline-2 has-focus-visible:outline-offset-2"
+					class="hover-lift border-base-300 has-focus-visible:outline-primary relative size-9 cursor-pointer overflow-hidden rounded-lg border-2 has-focus-visible:outline-2 has-focus-visible:outline-offset-2"
 					style:background-color={colors[index]}
 					title={`Choose color for rating ${index + 1}`}
 				>
@@ -69,13 +69,13 @@
 		</div>
 
 		<div class="modal-action flex-wrap items-center">
-			<button type="button" class="btn btn-ghost w-full sm:mr-auto sm:w-auto" onclick={reset}
+			<button type="button" class="btn hover-lift btn-ghost w-full sm:mr-auto sm:w-auto" onclick={reset}
 				>Reset defaults</button
 			>
-			<button type="button" class="btn btn-error flex-1 sm:flex-none" onclick={() => dialog?.close()}
+			<button type="button" class="btn hover-lift btn-error flex-1 sm:flex-none" onclick={() => dialog?.close()}
 				>Cancel</button
 			>
-			<button type="submit" class="btn btn-primary flex-1 sm:flex-none">Save</button>
+			<button type="submit" class="btn hover-lift btn-primary flex-1 sm:flex-none">Save</button>
 		</div>
 	</form>
 </ModalShell>
