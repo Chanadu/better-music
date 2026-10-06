@@ -6,6 +6,7 @@ import {
 	applyOptimisticMutation,
 	getPendingMutations,
 	getStoredDatabaseCache,
+	reconcileSuccessfulMutation,
 	setStoredDatabaseCache,
 } from './database-cache';
 import type {
@@ -22,6 +23,7 @@ import type {
 	CreateAlbumMutationPayload,
 	UpdateAlbumMutationPayload,
 	ServerDatabaseData,
+	SuccessfulMutationResponse,
 } from './types';
 
 export type { DatabaseData } from './types';
@@ -203,6 +205,25 @@ export const parseEntityId = (value: string | null): EntityId | null => {
 	if (value?.startsWith('local:')) return value as TemporaryId;
 	const id = Number(value);
 	return Number.isInteger(id) && id > 0 ? id : null;
+};
+
+// Publish only after the reconciliation transaction commits successfully.
+// The queue processor will call this after an accepted create, update, or delete.
+export const reconcileMutationResponse = async (
+	userId: number,
+	mutationId: string,
+	response: SuccessfulMutationResponse,
+) => {
+	const result = await reconcileSuccessfulMutation(userId, mutationId, response);
+	if (result && getCurrentUserId() === userId) {
+		pendingMutations.set(
+			[...result.mutations].sort(
+				(left, right) => (left.sequence ?? left.createdAt) - (right.sequence ?? right.createdAt),
+			),
+		);
+		publishCached(userId, result.library, result.mutations.length > 0);
+	}
+	return result;
 };
 
 const newMutation = () => {

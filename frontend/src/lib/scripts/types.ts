@@ -77,6 +77,13 @@ export type PendingMutation = {
 	}[MutationOperation];
 }[MutationEntity];
 
+export type LibraryUpdate = { library: LocalDatabaseData; mutations: PendingMutation[] };
+
+export type SuccessfulMutationResponse =
+	| { entity: 'artist'; operation: 'create' | 'update'; record: ServerArtist }
+	| { entity: 'album'; operation: 'create' | 'update'; record: ServerAlbum }
+	| { entity: MutationEntity; operation: 'delete' };
+
 export type SpotifyRow = {
 	id: string;
 	name: string;

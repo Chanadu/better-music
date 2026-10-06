@@ -1,4 +1,12 @@
-import type { DatabaseData, LocalDatabaseData, PendingMutation, ServerDatabaseData } from './types';
+import type {
+	DatabaseData,
+	LibraryUpdate,
+	LocalDatabaseData,
+	PendingMutation,
+	ServerDatabaseData,
+	SuccessfulMutationResponse,
+} from './types';
+import { compareMutationOrder, reconcileLibraryUpdate } from './database-reconciliation';
 
 const databaseName = 'better-music';
 const databaseVersion = 3;
@@ -6,34 +14,43 @@ const libraryStore = 'library-snapshots';
 const outboxStore = 'mutation-outbox';
 const userIndex = 'user-id';
 
-type LibraryUpdate = { library: LocalDatabaseData; mutations: PendingMutation[] };
-
 const openDatabase = () =>
 	new Promise<IDBDatabase>((resolve, reject) => {
 		if (!globalThis.indexedDB) {
 			reject(new Error('IndexedDB is not available'));
 			return;
 		}
+
 		const request = indexedDB.open(databaseName, databaseVersion);
 		let blocked = false;
+
 		request.onupgradeneeded = () => {
 			const database = request.result;
+
 			if (!database.objectStoreNames.contains(libraryStore)) database.createObjectStore(libraryStore);
+
 			const outbox =
 				database.objectStoreNames.contains(outboxStore) ?
 					request.transaction!.objectStore(outboxStore)
-				:	database.createObjectStore(outboxStore, { keyPath: 'mutationId' });
+					: database.createObjectStore(outboxStore, { keyPath: 'mutationId' });
+
 			if (!outbox.indexNames.contains(userIndex)) outbox.createIndex(userIndex, 'userId');
 		};
+
 		request.onblocked = () => {
 			blocked = true;
 			reject(new Error('Close older app tabs to upgrade local storage, then try again'));
 		};
+
 		request.onerror = () => reject(request.error ?? new Error('Could not open IndexedDB'));
+
 		request.onsuccess = () => {
 			const database = request.result;
+
 			database.onversionchange = () => database.close();
+
 			if (blocked) database.close();
+
 			else resolve(database);
 		};
 	});
@@ -49,22 +66,28 @@ const runTransaction = async <T>(
 	operation: (transaction: IDBTransaction) => T | Promise<T>,
 ): Promise<T> => {
 	const database = await openDatabase();
+
 	try {
 		const transaction = database.transaction([libraryStore, outboxStore], mode);
+
 		const completed = new Promise<void>((resolve, reject) => {
 			transaction.oncomplete = () => resolve();
 			transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'));
 		});
+
 		void completed.catch(() => undefined);
+
 		try {
 			const result = await operation(transaction);
 			await completed;
+
 			return result;
 		} catch (error) {
 			try {
 				transaction.abort();
-			} catch {}
+			} catch { }
 			await completed.catch(() => undefined);
+
 			throw error;
 		}
 	} finally {
@@ -85,8 +108,37 @@ export const getStoredLibrary = (userId: number): Promise<LocalDatabaseData | nu
 
 export const getPendingMutations = async (userId: number): Promise<PendingMutation[]> => {
 	const mutations = await runTransaction('readonly', (transaction) => readMutations(transaction, userId));
-	return mutations.sort((left, right) => (left.sequence ?? left.createdAt) - (right.sequence ?? right.createdAt));
+
+	return mutations.sort(compareMutationOrder);
 };
+
+export const reconcileSuccessfulMutation = (
+	userId: number,
+	mutationId: string,
+	response: SuccessfulMutationResponse,
+): Promise<LibraryUpdate | null> =>
+	runTransaction('readwrite', async (transaction) => {
+		const snapshots = transaction.objectStore(libraryStore);
+		const outbox = transaction.objectStore(outboxStore);
+
+		const [library, mutations] = await Promise.all([
+			readRequest<LocalDatabaseData | undefined>(snapshots.get(userId)),
+			readMutations(transaction, userId),
+		]);
+
+		const mutation = mutations.find((item) => item.mutationId === mutationId);
+
+		if (!mutation) return library ? { library, mutations } : null;
+		if (!library) throw new Error('Cannot reconcile a mutation without its library');
+
+		const updated = reconcileLibraryUpdate({ library, mutations }, mutation, response);
+
+		for (const item of updated.mutations) outbox.put(item);
+		snapshots.put(updated.library, userId);
+		outbox.delete(mutationId);
+
+		return updated;
+	});
 
 export const updateLibraryAndOutbox = (
 	userId: number,
@@ -94,17 +146,23 @@ export const updateLibraryAndOutbox = (
 ): Promise<LibraryUpdate> =>
 	runTransaction('readwrite', async (transaction) => {
 		const snapshots = transaction.objectStore(libraryStore);
+
 		const [library, mutations] = await Promise.all([
 			readRequest<LocalDatabaseData | undefined>(snapshots.get(userId)),
 			readMutations(transaction, userId),
 		]);
+
 		const updated = update({ library: library ?? { artists: [], albums: [], loadedAt: 0 }, mutations });
+
 		if (updated.mutations.some((mutation) => mutation.userId !== userId)) {
 			throw new Error('Mutation user does not match the library owner');
 		}
+
 		const outbox = transaction.objectStore(outboxStore);
+
 		for (const mutation of mutations) outbox.delete(mutation.mutationId);
 		for (const mutation of updated.mutations) outbox.add(mutation);
+
 		snapshots.put(updated.library, userId);
 		return updated;
 	});
@@ -124,6 +182,7 @@ export const applyOptimisticMutation = async (
 			},
 		],
 	}));
+
 	return result;
 };
 
@@ -141,6 +200,7 @@ export const updatePendingMutation = async (
 			return updated;
 		}),
 	}));
+
 	return result.mutations.find((mutation) => mutation.mutationId === mutationId) ?? null;
 };
 
