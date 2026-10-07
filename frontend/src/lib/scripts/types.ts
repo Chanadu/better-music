@@ -69,6 +69,7 @@ type PendingMutationBase<Entity extends MutationEntity, Operation extends Mutati
 	sequence?: number;
 	attempts: number;
 	status: MutationStatus;
+	failure?: { message: string; status?: number; body?: unknown };
 };
 
 export type PendingMutation = {
