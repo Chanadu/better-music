@@ -69,7 +69,16 @@ type PendingMutationBase<Entity extends MutationEntity, Operation extends Mutati
 	sequence?: number;
 	attempts: number;
 	status: MutationStatus;
-	failure?: { message: string; status?: number; body?: unknown };
+	// Separate server failure budget from sends interrupted by connectivity or authentication.
+	retryFailures?: number;
+	nextAttemptAt?: number;
+	failure?: {
+		kind?: 'retryable' | 'invalid-data' | 'permanent' | 'conflict' | 'authentication' | 'connection' | 'storage';
+		message: string;
+		status?: number;
+		body?: unknown;
+		retryAfter?: string;
+	};
 };
 
 export type PendingMutation = {

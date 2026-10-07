@@ -10,6 +10,13 @@ const keys = {
 };
 let refreshRequest: Promise<string | null> | null = null;
 
+export class AuthenticationError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'AuthenticationError';
+	}
+}
+
 export const getCurrentUserId = () => {
 	const userId = Number(persistentStorage.get(keys.userId));
 
@@ -90,7 +97,7 @@ export const getValidAccessToken = async () => {
 
 export const authenticatedFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
 	let token = await getValidAccessToken();
-	if (!token) throw new Error('Not authenticated');
+	if (!token) throw new AuthenticationError('Not authenticated');
 
 	const headers = new Headers(init.headers);
 	headers.set('Authorization', `Bearer ${token}`);
@@ -101,7 +108,7 @@ export const authenticatedFetch = async (input: RequestInfo | URL, init: Request
 	token = await requestRefresh();
 	if (!token) {
 		if (!hasStoredSession()) return response;
-		throw new Error('Authentication is temporarily unavailable');
+		throw new AuthenticationError('Authentication is temporarily unavailable');
 	}
 
 	headers.set('Authorization', `Bearer ${token}`);

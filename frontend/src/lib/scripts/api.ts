@@ -22,6 +22,7 @@ export class ApiError extends Error {
 		message: string,
 		public status: number,
 		public body: unknown,
+		public retryAfter: string | null = null,
 	) {
 		super(message);
 		this.name = 'ApiError';
@@ -69,6 +70,7 @@ const json = async <T>(path: string, init: JsonInit = {}, fetcher: typeof fetch 
 			candidate?.error ?? candidate?.message ?? `Request failed: ${response.status}`,
 			response.status,
 			body,
+			response.headers.get('Retry-After'),
 		);
 	}
 
