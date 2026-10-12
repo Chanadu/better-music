@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { ratingColor } from '$lib/scripts/rating-colors';
+
 	let {
 		value = $bindable(5),
 		disabled = false,
@@ -12,10 +13,13 @@
 </script>
 
 <fieldset class="fieldset">
-	<legend class="fieldset-legend">Rating</legend>
+	<legend class="fieldset-legend">
+		Rating
+	</legend>
 
 	<div class="w-full">
 		<input
+			name="rating"
 			type="range"
 			min="1"
 			max="10"

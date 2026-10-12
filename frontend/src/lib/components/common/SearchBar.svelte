@@ -11,6 +11,7 @@
 
 	<label class="input input-primary text-base-content w-full">
 		<SearchIcon class="h-4 w-4 shrink-0" />
-		<input type="search" class="grow" {placeholder} bind:value />
+
+		<input name="search" type="search" class="grow" {placeholder} bind:value />
 	</label>
 </div>

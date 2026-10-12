@@ -111,6 +111,30 @@ export const reconcileLibraryUpdate = (
 		.filter((item) => laterIds.has(item.mutationId) && item.entity === mutation.entity && item.entityId === newId)
 		.sort(compareMutationOrder);
 
+	// Keep recovery snapshots consistent with server IDs and accepted versions.
+	for (const item of mutations) {
+		const remap = (record: LocalArtist | LocalAlbum | null | undefined) => {
+			if (!record) return record;
+			let updated = { ...record };
+			if (item.entity === mutation.entity && record.id === oldId) updated.id = newId;
+			if (mutation.entity === 'artist' && 'artist_id' in updated && updated.artist_id === oldId)
+				updated.artist_id = newId;
+			return updated;
+		};
+		item.before = remap(item.before);
+		item.after = remap(item.after);
+	}
+	let snapshot: LocalArtist | LocalAlbum | null = response.operation === 'delete' ? null : response.record;
+	for (const item of later) {
+		item.before = snapshot;
+		if (!snapshot && item.operation === 'update') {
+			item.status = 'blocked';
+			item.blockedReason = 'The server record was deleted. Resolve the missing record or discard this edit.';
+		}
+		snapshot = snapshot ? replay(snapshot, [item]) : null;
+		item.after = snapshot ?? item.after;
+	}
+
 	let library = { ...current.library };
 
 	if (mutation.entity === 'artist') {

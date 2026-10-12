@@ -1,27 +1,36 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
+	import { previewContext, type PreviewContext } from '$lib/components/preview/context';
+	const preview = getContext<PreviewContext | undefined>(previewContext);
+	const instanceId = $props.id();
 	import { online } from 'svelte/reactivity/window';
 	import ManualArtistForm from '$lib/components/create/ManualArtistForm.svelte';
 	import FormModalShell from '$lib/components/create/FormModalShell.svelte';
 	import SpotifySearch from '$lib/components/create/SpotifySearch.svelte';
 	import { spotifyApi } from '$lib/scripts/api';
-	import { artistsLibrary } from '$lib/scripts/database';
-	import type { Artist, SpotifyRow as Row } from '$lib/scripts/types';
+	import type { Artist, SpotifyRow as Row, UpdateArtistRequest } from '$lib/scripts/types';
 
 	let {
 		artist,
 		dialog = $bindable(),
 		onupdated,
+		onsave,
+		mode = 'edit',
+		recoveryMessages = [],
 	}: {
 		artist: Artist;
 		dialog?: HTMLDialogElement;
 		onupdated?: (artist: Artist) => void;
+		onsave: (payload: UpdateArtistRequest) => Promise<Artist>;
+		mode?: 'edit' | 'correct';
+		recoveryMessages?: string[];
 	} = $props();
 
 	let name = $state('');
 	let coverUrl = $state('');
 	let spotifyId = $state('');
 	let error = $state('');
-	let refreshMessage = $state('');
+	let refreshed = $state(false);
 	let saving = $state(false);
 	let refreshing = $state(false);
 	let tab = $state<'details' | 'spotify'>('details');
@@ -34,7 +43,7 @@
 			spotifyId.trim() !== (artist.spotify_id ?? ''),
 	);
 	$effect(() => {
-		if (online.current === false && tab === 'spotify') tab = 'details';
+		if ((preview?.online ?? online.current) === false && tab === 'spotify') tab = 'details';
 	});
 
 	let canSave = $derived(
@@ -43,11 +52,12 @@
 
 	$effect(() => {
 		const current = artist;
+		if (!current) return;
 		name = current.name;
 		coverUrl = current.cover_url ?? '';
 		spotifyId = current.spotify_id ?? '';
 		error = '';
-		refreshMessage = '';
+		refreshed = false;
 		tab = 'details';
 		selected = undefined;
 	});
@@ -58,11 +68,13 @@
 	}
 
 	function reset() {
-		name = artist.name;
-		coverUrl = artist.cover_url ?? '';
-		spotifyId = artist.spotify_id ?? '';
+		if (artist) {
+			name = artist.name;
+			coverUrl = artist.cover_url ?? '';
+			spotifyId = artist.spotify_id ?? '';
+		}
 		error = '';
-		refreshMessage = '';
+		refreshed = false;
 		tab = 'details';
 		selected = undefined;
 		spotify?.reset();
@@ -73,12 +85,12 @@
 
 		refreshing = true;
 		error = '';
-		refreshMessage = '';
+		refreshed = false;
 		try {
 			const spotifyArtist = await spotifyApi.getArtist(spotifyId.trim());
 			name = spotifyArtist.name;
 			coverUrl = spotifyArtist.images[0]?.url ?? '';
-			refreshMessage = 'Latest artist data loaded from Spotify. Save to apply it.';
+			refreshed = true;
 		} catch (e) {
 			error = formatError(e, 'Failed to refresh artist from Spotify');
 		} finally {
@@ -94,15 +106,15 @@
 		try {
 			const selectedArtist = tab === 'spotify' ? selected : undefined;
 
-			const updated = await artistsLibrary.update(artist.id, {
+			const payload: UpdateArtistRequest = {
 				name: selectedArtist?.name ?? name.trim(),
 				cover_url: selectedArtist?.imageUrl ?? (coverUrl.trim() || null),
 				spotify_id: selectedArtist?.id ?? (spotifyId.trim() || null),
-			});
-
-			onupdated?.(updated);
+			};
+			const updated = await onsave(payload);
 
 			dialog?.close();
+			onupdated?.(updated);
 		} catch (e) {
 			error = formatError(e, 'Failed to save artist');
 		} finally {
@@ -114,24 +126,37 @@
 <FormModalShell
 	bind:dialog
 	title="Artist"
-	headingPrefix="Edit"
-	saveLabel="Save changes"
+	headingPrefix={mode === 'correct' ? 'Correct' : 'Edit'}
+	saveLabel={mode === 'correct' ? 'Save correction' : 'Save changes'}
 	{error}
 	{saving}
 	{canSave}
 	onsave={save}
 	onclose={reset}
 >
+	{#if recoveryMessages.length}
+		<div class="alert alert-warning alert-soft my-4">
+			<ul class="list-disc pl-4">
+				{#each recoveryMessages as message}
+					<li>
+						{message}
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
+
 	<div role="tablist" class="tabs tabs-border">
 		<input
 			type="radio"
-			name="edit_artist_modal_tabs"
+			name={preview ? `edit_artist_modal_tabs-${instanceId}` : 'edit_artist_modal_tabs'}
 			role="tab"
 			class="tab hover-lift flex-1"
 			aria-label="Details"
 			value="details"
 			bind:group={tab}
 		/>
+
 		<div role="tabpanel" class="tab-content px-2 pt-4">
 			<ManualArtistForm
 				bind:name
@@ -139,23 +164,18 @@
 				{spotifyId}
 				showSpotifyRefresh={Boolean(artist.spotify_id)}
 				{refreshing}
+				{refreshed}
 				onrefresh={refreshFromSpotify}
 			/>
-
-			{#if refreshMessage}
-				<div class="alert alert-success alert-soft mt-4 justify-center text-center" role="status">
-					<span>{refreshMessage}</span>
-				</div>
-			{/if}
 		</div>
 
 		<input
 			type="radio"
-			name="edit_artist_modal_tabs"
+			name={preview ? `edit_artist_modal_tabs-${instanceId}` : 'edit_artist_modal_tabs'}
 			role="tab"
 			class="tab hover-lift flex-1"
 			aria-label={artist.spotify_id ? 'Change Spotify' : 'Link Spotify'}
-			disabled={online.current === false}
+			disabled={(preview?.online ?? online.current) === false}
 			value="spotify"
 			bind:group={tab}
 		/>

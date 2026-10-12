@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
+	import { previewContext, type PreviewContext } from '$lib/components/preview/context';
+	const preview = getContext<PreviewContext | undefined>(previewContext);
 	import RecordSyncBadge from '$lib/components/common/RecordSyncBadge.svelte';
 	import { ratingColor } from '$lib/scripts/rating-colors';
 	import { page } from '$app/state';
@@ -22,18 +25,19 @@
 	});
 </script>
 
-<li class="group/artist-list-item indicator block w-full">
-	{#if $newlyAdded.artistIds.has(artist.id)}
+<li class="group/artist-list-item indicator rounded-box hover-lift block w-full">
+	{#if preview?.newlyAdded ?? $newlyAdded.artistIds.has(artist.id)}
 		<span
 			class="status status-success indicator-item indicator-start indicator-top top-1"
 			aria-label="Newly added"
 			title="Newly added"
-		></span>
+		>
+		</span>
 	{/if}
 
 	<a
 		href={withReturnTo(`/artist?id=${artist.id}`, page.url)}
-		class="list-row hover-lift group-hover/artist-list-item:bg-base-300"
+		class="list-row group-hover/artist-list-item:bg-base-300"
 		aria-label={`Open ${artist.name}`}
 	>
 		<MediaThumbnail
@@ -46,16 +50,18 @@
 		<div class="self-center">
 			<div class="flex items-center gap-2">
 				{artist.name}
-				<RecordSyncBadge entity="artist" id={artist.id} variant="dot" />
+				<RecordSyncBadge entity="artist" id={artist.id} />
 			</div>
 
 			<div class="text-base-content/60 text-xs font-semibold uppercase">
 				{albumCount}
 
 				{albumCount === 1 ? 'Album' : 'Albums'}
-
 				{#if averageRating !== null}
-					• <span style:color={ratingColor(averageRating)}>Avg {averageRating.toFixed(1)}</span>
+					•
+					<span style:color={ratingColor(averageRating)}>
+						Avg {averageRating.toFixed(1)}
+					</span>
 				{/if}
 
 				• Added {dateFormatter.format(new Date(artist.created_at))}

@@ -29,6 +29,7 @@
 
 <FloatingField label="Year">
 	<input
+		name="year"
 		type="text"
 		aria-label="Year"
 		inputmode="numeric"
@@ -40,6 +41,7 @@
 		{value}
 		oninput={cleanYear}
 	/>
+
 	<div id={`${fieldId}-error`} class="validator-hint hidden">
 		Enter a year between 1000 and {new Date().getFullYear()}
 	</div>

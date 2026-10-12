@@ -7,7 +7,26 @@ import type {
 	SuccessfulMutationResponse,
 } from './types';
 import { compareMutationOrder, reconcileLibraryUpdate } from './database-reconciliation';
+import { hasActiveQueueWork } from './queue-state';
 import { notifySyncChange } from './sync-events';
+
+export class LocalStorageError extends Error {
+	constructor(message: string, cause?: DOMException | null) {
+		super(message, { cause });
+		this.name = 'LocalStorageError';
+	}
+}
+
+const storageError = (error: DOMException | null, fallback: string) => {
+	console.error(fallback, error);
+
+	return new LocalStorageError(
+		error?.name === 'QuotaExceededError' ?
+			'This device’s storage is full. Free space and try saving again. Your change was not saved.'
+		:	`${fallback}. Check browser storage permissions and close older app tabs, then try again. Your change was not saved.`,
+		error,
+	);
+};
 
 const databaseName = 'better-music';
 const databaseVersion = 5;
@@ -18,7 +37,11 @@ const userIndex = 'user-id';
 const openDatabase = () =>
 	new Promise<IDBDatabase>((resolve, reject) => {
 		if (!globalThis.indexedDB) {
-			reject(new Error('IndexedDB is not available'));
+			reject(
+				new LocalStorageError(
+					'Local storage is unavailable. Enable browser storage for this site before saving changes.',
+				),
+			);
 			return;
 		}
 
@@ -41,10 +64,14 @@ const openDatabase = () =>
 
 		request.onblocked = () => {
 			blocked = true;
-			reject(new Error('Close older app tabs to upgrade local storage, then try again'));
+			reject(
+				new LocalStorageError(
+					'Close older app tabs to upgrade local storage, then try again. Changes cannot be saved until the upgrade completes.',
+				),
+			);
 		};
 
-		request.onerror = () => reject(request.error ?? new Error('Could not open IndexedDB'));
+		request.onerror = () => reject(storageError(request.error, 'Could not open local storage'));
 
 		request.onsuccess = () => {
 			const database = request.result;
@@ -59,7 +86,7 @@ const openDatabase = () =>
 const readRequest = <T>(request: IDBRequest<T>) =>
 	new Promise<T>((resolve, reject) => {
 		request.onsuccess = () => resolve(request.result);
-		request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed'));
+		request.onerror = () => reject(storageError(request.error, 'Could not read or write local storage'));
 	});
 
 const runTransaction = async <T>(
@@ -73,7 +100,8 @@ const runTransaction = async <T>(
 
 		const completed = new Promise<void>((resolve, reject) => {
 			transaction.oncomplete = () => resolve();
-			transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'));
+			transaction.onabort = () =>
+				reject(storageError(transaction.error, 'The local storage transaction did not commit'));
 		});
 
 		void completed.catch(() => undefined);
@@ -91,6 +119,9 @@ const runTransaction = async <T>(
 
 			throw error;
 		}
+	} catch (error) {
+		if (error instanceof DOMException) throw storageError(error, 'Could not commit local storage');
+		throw error;
 	} finally {
 		database.close();
 	}
@@ -100,12 +131,13 @@ const readMutations = (transaction: IDBTransaction, userId: number) =>
 	readRequest<PendingMutation[]>(transaction.objectStore(outboxStore).index(userIndex).getAll(userId));
 
 export const recoverInterruptedMutations = async (userId: number, checkOwnership: () => void) => {
+	if (!(await getPendingMutations(userId)).some((item) => item.status === 'syncing')) return;
 	await updateLibraryAndOutbox(
 		userId,
 		(current) => ({
 			...current,
 			mutations: current.mutations.map((mutation) =>
-				mutation.status === 'syncing' ? { ...mutation, status: 'pending' } : mutation,
+				mutation.status === 'syncing' ? { ...mutation, status: 'pending', outcomeUnknown: true } : mutation,
 			),
 		}),
 		checkOwnership,
@@ -175,6 +207,7 @@ export const updateLibraryAndOutbox = async (
 	userId: number,
 	update: (current: LibraryUpdate) => LibraryUpdate,
 	checkOwnership?: () => void,
+	cacheGeneration?: string,
 ): Promise<LibraryUpdate> => {
 	const result = await runTransaction('readwrite', async (transaction) => {
 		checkOwnership?.();
@@ -185,6 +218,11 @@ export const updateLibraryAndOutbox = async (
 			readMutations(transaction, userId),
 		]);
 
+		if (cacheGeneration !== undefined) {
+			const metadata = await readRequest<SyncMetadata | undefined>(snapshots.get(`sync:${userId}`));
+			if (metadata?.generation !== cacheGeneration)
+				throw new Error('The local cache changed. Open recovery again.');
+		}
 		const updated = update({ library: library ?? { artists: [], albums: [], loadedAt: 0 }, mutations });
 
 		if (updated.mutations.some((mutation) => mutation.userId !== userId)) {
@@ -214,7 +252,14 @@ export const applyOptimisticMutation = async (
 	update: (library: LocalDatabaseData) => LocalDatabaseData,
 ) => {
 	const result = await updateLibraryAndOutbox(userId, ({ library, mutations }) => ({
-		library: update(library),
+		library: (() => {
+			const updated = update(library);
+			mutation.after =
+				mutation.entity === 'artist' ?
+					(updated.artists.find((item) => item.id === mutation.entityId) ?? null)
+				:	(updated.albums.find((item) => item.id === mutation.entityId) ?? null);
+			return updated;
+		})(),
 		mutations: [
 			...mutations,
 			{
@@ -306,6 +351,9 @@ export type SyncMetadata = {
 	lastQueueCompletedAt?: number;
 	lastLibraryRefreshedAt?: number;
 	lastSyncedAt?: number;
+	activity?: 'syncing' | 'idle' | 'paused';
+	pauseReason?: string;
+	error?: string;
 };
 
 export const getSyncMetadata = (userId: number): Promise<SyncMetadata> =>
@@ -330,8 +378,7 @@ export const markQueueCompletion = (userId: number, generation: string, check: (
 		check();
 
 		if (metadata?.generation !== generation) throw new Error('Library cache changed');
-		if (!queue.some((item) => item.status === 'pending' || item.status === 'syncing'))
-			store.put({ ...metadata, lastQueueCompletedAt: Date.now() }, `sync:${userId}`);
+		if (!hasActiveQueueWork(queue)) store.put({ ...metadata, lastQueueCompletedAt: Date.now() }, `sync:${userId}`);
 	});
 
 export const mergeLibraryRefresh = (
@@ -395,9 +442,7 @@ export const mergeLibraryRefresh = (
 			{
 				...metadata,
 				lastLibraryRefreshedAt: value.loadedAt,
-				...(!mutations.some((item) => item.status === 'pending' || item.status === 'syncing') ?
-					{ lastSyncedAt: value.loadedAt }
-				:	{}),
+				...(!hasActiveQueueWork(mutations) ? { lastSyncedAt: value.loadedAt } : {}),
 			},
 			`sync:${userId}`,
 		);
@@ -407,3 +452,34 @@ export const mergeLibraryRefresh = (
 		notifySyncChange({ userId, type: 'library' });
 		return result;
 	});
+
+export const getStoredSyncState = (userId: number) =>
+	runTransaction('readonly', async (transaction) => {
+		const store = transaction.objectStore(libraryStore);
+		const [library, mutations, metadata] = await Promise.all([
+			readRequest<LocalDatabaseData | undefined>(store.get(userId)),
+			readMutations(transaction, userId),
+			readRequest<SyncMetadata | undefined>(store.get(`sync:${userId}`)),
+		]);
+		return {
+			library: library ?? null,
+			mutations: mutations.sort(compareMutationOrder),
+			metadata: metadata ?? null,
+		};
+	});
+
+export const setSyncActivity = async (
+	userId: number,
+	generation: string,
+	activity: NonNullable<SyncMetadata['activity']>,
+	pauseReason?: string,
+	error?: string,
+) => {
+	await runTransaction('readwrite', async (transaction) => {
+		const store = transaction.objectStore(libraryStore);
+		const metadata = await readRequest<SyncMetadata | undefined>(store.get(`sync:${userId}`));
+		if (metadata?.generation === generation)
+			store.put({ ...metadata, activity, pauseReason, error }, `sync:${userId}`);
+	});
+	notifySyncChange({ userId, type: 'library' });
+};

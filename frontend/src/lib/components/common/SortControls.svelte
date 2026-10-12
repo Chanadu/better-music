@@ -1,4 +1,7 @@
 <script lang="ts" generics="T extends string">
+	import { getContext } from 'svelte';
+	import { previewContext, type PreviewContext } from '$lib/components/preview/context';
+	const preview = getContext<PreviewContext | undefined>(previewContext);
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
 
 	let {
@@ -18,18 +21,18 @@
 	} = $props();
 	function chooseSort(event: Event) {
 		sort = (event.currentTarget as HTMLInputElement).value as T;
-		(event.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
+		if (!preview) (event.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
 	}
 </script>
 
 <div class="join relative has-[details[open]]:z-20" class:w-full={fullWidth}>
-	{#if appSettings.values.useNativeDropdowns}
+	{#if preview?.nativeDropdowns ?? appSettings.values.useNativeDropdowns}
 		<select
-			style:background-image="linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%)"
+			style:background-image={'linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%)'}
 			style:background-position="calc(100% - 20px) 50%, calc(100% - 16px) 50%"
 			style:background-size="4px 4px"
 			style:background-repeat="no-repeat"
-			class="btn btn-secondary shadow-none join-item appearance-none justify-between pr-10 text-left"
+			class="btn btn-secondary join-item hover-lift appearance-none justify-between pr-10 text-left shadow-none"
 			class:flex-1={fullWidth}
 			class:min-w-0={fullWidth}
 			style:width={fullWidth ? '100%' : `calc(${labelWidth} + 4rem)`}
@@ -38,13 +41,16 @@
 			bind:value={sort}
 		>
 			{#each options as option}
-				<option value={option.value}>{option.label}</option>
+				<option value={option.value}>
+					{option.label}
+				</option>
 			{/each}
 		</select>
 	{:else}
-		<details class="dropdown" class:flex-1={fullWidth} class:min-w-0={fullWidth}>
+
+		<details open={preview ? true : undefined} class="dropdown" class:flex-1={fullWidth} class:min-w-0={fullWidth}>
 			<summary
-				class="btn btn-secondary shadow-none join-item justify-between"
+				class="btn btn-secondary join-item hover-lift justify-between shadow-none"
 				style:width={fullWidth ? '100%' : `calc(${labelWidth} + 4rem)`}
 				style:min-width={fullWidth ? '0' : `calc(${labelWidth} + 4rem)`}
 			>
@@ -73,9 +79,15 @@
 		</details>
 	{/if}
 
-	<label class="join-item btn btn-square btn-secondary shadow-none swap swap-rotate">
-		<input type="checkbox" bind:checked={reversed} aria-label="Reverse sort order" />
-		<span class="swap-on" aria-hidden="true">↑</span>
-		<span class="swap-off" aria-hidden="true">↓</span>
+	<label class="join-item btn btn-square btn-secondary swap swap-rotate hover-lift shadow-none">
+		<input name="reversed" type="checkbox" bind:checked={reversed} aria-label="Reverse sort order" />
+
+		<span class="swap-on" aria-hidden="true">
+			↑
+		</span>
+
+		<span class="swap-off" aria-hidden="true">
+			↓
+		</span>
 	</label>
 </div>

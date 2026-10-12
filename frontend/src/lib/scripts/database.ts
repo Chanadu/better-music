@@ -11,14 +11,17 @@ import {
 import {
 	applyOptimisticMutation,
 	getPendingMutations,
-	getStoredDatabaseCache,
-	getStoredLibraryUpdate,
+	getStoredLibrary,
 	reconcileSuccessfulMutation,
 	getSyncMetadata,
 	markQueueCompletion,
 	mergeLibraryRefresh,
+	getStoredSyncState,
+	LocalStorageError,
 } from './database-cache';
 import { withSyncOwnership, sendWithTimeout, type QueueOwnership } from './sync-coordination';
+import { getMutationStatus, hasActiveQueueWork, hasUnknownOutcome } from './queue-state';
+import { syncConfig } from './sync-config';
 import { subscribeSyncChanges, type SyncChange } from './sync-events';
 import type {
 	DatabaseData,
@@ -40,11 +43,16 @@ export type { DatabaseData } from './types';
 export type SyncStatus = {
 	state: 'connecting' | 'synced' | 'pending' | 'offline' | 'error';
 	lastSyncedAt: number | null;
+	lastQueueCompletedAt?: number | null;
+	lastLibraryRefreshedAt?: number | null;
+	pauseReason?: string;
+	error?: string;
 };
 
 export const database = writable<DatabaseData | null>(null);
 export const pendingMutations = writable<PendingMutation[]>([]);
 export const syncStatus = writable<SyncStatus>({ state: 'connecting', lastSyncedAt: null });
+export const storageProblem = writable<string | null>(null);
 export const queueProcessorStatus = writable<SyncChange | null>(null);
 
 let current: { userId: number; data: DatabaseData } | null = null;
@@ -56,7 +64,8 @@ let schedulingRevision = 0;
 const setSyncState = (state: SyncStatus['state']) => syncStatus.update((status) => ({ ...status, state }));
 
 export const markOffline = () => setSyncState('offline');
-export const markSyncError = () => setSyncState('error');
+export const markSyncError = (reason = 'Synchronization could not complete. Try Sync now.') =>
+	syncStatus.update((status) => ({ ...status, state: 'error', pauseReason: reason }));
 export const markConnecting = () => setSyncState('connecting');
 
 const publishCached = (userId: number, data: DatabaseData, hasPending = false) => {
@@ -65,21 +74,51 @@ const publishCached = (userId: number, data: DatabaseData, hasPending = false) =
 	current = { userId, data };
 	database.set(data);
 	cacheLibraryArtwork(data);
-	syncStatus.set({
+	syncStatus.update((previous) => ({
+		...previous,
 		state:
 			navigator.onLine ?
 				hasPending ? 'pending'
 				:	'connecting'
 			:	'offline',
-		lastSyncedAt: data.loadedAt || null,
-	});
+	}));
 
 	return data;
 };
 
+const publishStoredState = async (userId: number, stored: Awaited<ReturnType<typeof getStoredSyncState>>) => {
+	const session = getSessionGeneration();
+	const held = navigator.locks ? ((await navigator.locks.query()).held ?? []) : [];
+	if (getCurrentUserId() !== userId || getSessionGeneration() !== session) return;
+	const active =
+		stored.metadata?.activity === 'syncing' && held.some((lock) => lock.name === syncConfig.lockPrefix + userId);
+	const { library, mutations, metadata } = stored;
+	current = library ? { userId, data: library } : null;
+	database.set(library);
+	pendingMutations.set(mutations);
+	if (library) cacheLibraryArtwork(library);
+	const interrupted = metadata?.activity === 'syncing' && !active;
+	syncStatus.set({
+		state:
+			!navigator.onLine ? 'offline'
+			: active ? 'connecting'
+			: metadata?.activity === 'paused' || interrupted ? 'error'
+			: hasActiveQueueWork(mutations) ? 'pending'
+			: metadata?.lastLibraryRefreshedAt ? 'synced'
+			: 'pending',
+		lastSyncedAt: metadata?.lastSyncedAt ?? null,
+		lastQueueCompletedAt: metadata?.lastQueueCompletedAt ?? null,
+		lastLibraryRefreshedAt: metadata?.lastLibraryRefreshedAt ?? null,
+		pauseReason:
+			interrupted ?
+				'A previous sync was interrupted. Reconcile any unknown request outcomes before recovery.'
+			:	metadata?.pauseReason,
+		error: metadata?.error,
+	});
+};
+
 let reloadingLocalState = false;
 let localStateChanged = false;
-
 const reloadLocalState = async () => {
 	localStateChanged = true;
 	if (reloadingLocalState) return;
@@ -88,26 +127,15 @@ const reloadLocalState = async () => {
 		while (localStateChanged) {
 			localStateChanged = false;
 			const userId = getCurrentUserId();
-
+			const session = getSessionGeneration();
 			if (userId === null) continue;
-
-			const stored = await getStoredLibraryUpdate(userId);
-			if (getCurrentUserId() !== userId) continue;
-
-			pendingMutations.set(stored?.mutations ?? []);
-
-			if (stored) {
-				current = { userId, data: stored.library };
-				database.set(stored.library);
-
-				cacheLibraryArtwork(stored.library);
-
-				if (stored.mutations.length > 0) setSyncState(navigator.onLine ? 'pending' : 'offline');
-			} else {
-				current = null;
-				database.set(null);
-			}
+			const stored = await getStoredSyncState(userId);
+			if (getCurrentUserId() === userId && getSessionGeneration() === session)
+				await publishStoredState(userId, stored);
 		}
+	} catch (error) {
+		if (error instanceof LocalStorageError) storageProblem.set(error.message);
+		throw error;
 	} finally {
 		reloadingLocalState = false;
 	}
@@ -131,26 +159,30 @@ subscribeSyncChanges((change) => {
 
 export const getDatabaseData = async () => {
 	const userId = getCurrentUserId();
-
 	if (userId === null) {
-		if (current) database.set(null);
 		current = null;
+		database.set(null);
 		pendingMutations.set([]);
+		syncStatus.set({ state: 'error', lastSyncedAt: null });
 		return null;
 	}
-
 	if (current?.userId === userId) return current.data;
+	try {
+		const session = getSessionGeneration();
+		const stored = await getStoredSyncState(userId);
+		if (getCurrentUserId() !== userId || getSessionGeneration() !== session) return null;
+		await publishStoredState(userId, stored);
+		return stored.library;
+	} catch (error) {
+		if (error instanceof LocalStorageError) storageProblem.set(error.message);
+		markSyncError();
+		return null;
+	}
+};
 
-	if (current) database.set(null);
-	current = null;
-	const value = await getStoredDatabaseCache(userId);
-
-	if (!value || !Array.isArray(value.artists) || !Array.isArray(value.albums)) return null;
-
-	const mutations = await getPendingMutations(userId);
-	if (getCurrentUserId() === userId) pendingMutations.set(mutations);
-
-	return publishCached(userId, value, mutations.length > 0);
+export const retryLocalStorage = async () => {
+	await reloadLocalState();
+	storageProblem.set(null);
 };
 
 const scheduleRetry = async () => {
@@ -181,10 +213,20 @@ const syncPass = async (userId: number, generation: string, ownership: QueueOwne
 	if (!(await getValidAccessToken())) throw new Error('Authentication is unavailable');
 	ownership.check();
 	const queueResult = await processMutationQueue(ownership);
-	if (queueResult.paused) throw new Error(`Synchronization paused: ${queueResult.pauseReason}`);
+	if (queueResult.paused)
+		throw new Error(
+			{
+				connection: 'Connection unavailable. Reconnect to resume.',
+				authentication: 'Authentication unavailable. Sign in to the same account to resume.',
+				storage:
+					'Local storage could not commit the server result. Fix storage, then reconcile the original request.',
+				account: 'The active account changed.',
+				coordination: 'Synchronization was interrupted in another browser context.',
+			}[queueResult.pauseReason ?? 'coordination'],
+		);
 	await markQueueCompletion(userId, generation, ownership.check);
 
-	const baseline = await getStoredDatabaseCache(userId);
+	const baseline = await getStoredLibrary(userId);
 	const [artists, albums] = await sendWithTimeout(ownership, (signal) =>
 		Promise.all([artistsApi.list(signal), albumsApi.list(signal)]),
 	);
@@ -202,12 +244,12 @@ const syncPass = async (userId: number, generation: string, ownership: QueueOwne
 	database.set(merged.library);
 	pendingMutations.set(merged.mutations);
 	cacheLibraryArtwork(merged.library);
+	storageProblem.set(null);
 	syncStatus.set({
-		state:
-			merged.mutations.some((item) => item.status === 'pending' || item.status === 'syncing') ?
-				'pending'
-			:	'synced',
+		state: hasActiveQueueWork(merged.mutations) ? 'pending' : 'synced',
 		lastSyncedAt: metadata.lastSyncedAt ?? null,
+		lastQueueCompletedAt: metadata.lastQueueCompletedAt ?? null,
+		lastLibraryRefreshedAt: metadata.lastLibraryRefreshedAt ?? null,
 	});
 	return merged.library;
 };
@@ -230,6 +272,7 @@ const synchronize = async (run: SyncRun): Promise<DatabaseData> => {
 		if (!result) throw new Error('Synchronization interrupted');
 		return result.data;
 	} catch (error) {
+		if (error instanceof LocalStorageError) storageProblem.set(error.message);
 		if (sameSession()) {
 			if (error instanceof ApiError && error.status === 401) await invalidateSession();
 			setSyncState(navigator.onLine ? 'error' : 'offline');
@@ -268,12 +311,13 @@ export const refreshDatabaseSafely = async () => {
 
 		if (!token) {
 			if (!hasStoredSession()) location.assign('/login');
-			else markSyncError();
+			else markSyncError('Authentication unavailable. Sign in to the same account to resume.');
 			return;
 		}
 
 		await refreshDatabaseData();
 	} catch (error) {
+		if (error instanceof LocalStorageError) storageProblem.set(error.message);
 		setSyncState(navigator.onLine ? 'error' : 'offline');
 		console.error('Failed to refresh database data', error);
 	}
@@ -287,8 +331,10 @@ const statusPriority: Record<RecordSyncStatus, number> = {
 	synced: 0,
 	pending: 1,
 	syncing: 2,
-	failed: 3,
-	conflict: 4,
+	paused: 2,
+	blocked: 3,
+	failed: 4,
+	conflict: 5,
 };
 
 export const getRecordSyncStatus = (
@@ -296,12 +342,20 @@ export const getRecordSyncStatus = (
 	userId: number,
 	entity: MutationEntity,
 	entityId: EntityId,
+	syncState?: SyncStatus['state'],
 ): RecordSyncStatus => {
 	let status: RecordSyncStatus = 'synced';
 
 	for (const mutation of mutations) {
 		if (mutation.userId !== userId || mutation.entity !== entity || mutation.entityId !== entityId) continue;
-		if (statusPriority[mutation.status] > statusPriority[status]) status = mutation.status;
+		let next: RecordSyncStatus = getMutationStatus(mutation, mutations);
+		if (
+			['pending', 'syncing'].includes(next) &&
+			syncState !== 'connecting' &&
+			(syncState === 'offline' || syncState === 'error' || hasUnknownOutcome(mutation))
+		)
+			next = 'paused';
+		if (statusPriority[next] > statusPriority[status]) status = next;
 	}
 
 	return status;
@@ -359,6 +413,7 @@ const queueMutation = async (mutation: PendingMutation) => {
 		if (mutation.entity === 'artist') {
 			const existing = library.artists.find((item) => item.id === mutation.entityId);
 			mutation.baseVersion = existing?.version ?? undefined;
+			mutation.before = existing ? { ...existing } : null;
 
 			if (mutation.operation === 'delete') {
 				if (library.albums.some((item) => item.artist_id === mutation.entityId))
@@ -401,6 +456,7 @@ const queueMutation = async (mutation: PendingMutation) => {
 		const existing = library.albums.find((item) => item.id === mutation.entityId);
 
 		mutation.baseVersion = existing?.version ?? undefined;
+		mutation.before = existing ? { ...existing } : null;
 
 		if (mutation.operation === 'delete')
 			return { ...library, albums: library.albums.filter((item) => item.id !== mutation.entityId) };
@@ -457,16 +513,17 @@ const queueMutation = async (mutation: PendingMutation) => {
 					[record, ...library.albums]
 				:	library.albums.map((item) => (item.id === record.id ? record : item)),
 		};
+	}).catch((error) => {
+		if (error instanceof LocalStorageError) storageProblem.set(error.message);
+		throw error;
 	});
+	storageProblem.set(null);
 
 	if (getCurrentUserId() === mutation.userId) {
 		current = { userId: mutation.userId, data: result.library };
 		database.set(result.library);
 		pendingMutations.set(result.mutations);
-		syncStatus.set({
-			state: navigator.onLine ? 'pending' : 'offline',
-			lastSyncedAt: result.library.loadedAt || null,
-		});
+		setSyncState(navigator.onLine ? 'pending' : 'offline');
 		cacheLibraryArtwork(result.library);
 	}
 

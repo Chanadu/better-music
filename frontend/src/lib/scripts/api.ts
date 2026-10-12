@@ -100,7 +100,7 @@ export const accountApi = {
 
 export const artistsApi = {
 	list: (signal?: AbortSignal) => secureJson<Artist[]>('/api/artists', { signal }),
-	get: (id: number) => secureJson<Artist>(`/api/artists/${id}`),
+	get: (id: number, signal?: AbortSignal) => secureJson<Artist>(`/api/artists/${id}`, { signal }),
 	create: (body: CreateArtistRequest, options: MutationOptions) =>
 		secureJson<Artist>('/api/artists', {
 			method: 'POST',
@@ -125,7 +125,8 @@ export const artistsApi = {
 
 export const albumsApi = {
 	list: (signal?: AbortSignal) => secureJson<Album[]>('/api/albums', { signal }),
-	get: (id: number, artistId: number) => secureJson<Album>(`/api/albums/${id}${query({ artist_id: artistId })}`),
+	get: (id: number, artistId: number, signal?: AbortSignal) =>
+		secureJson<Album>(`/api/albums/${id}${query({ artist_id: artistId })}`, { signal }),
 	create: (body: CreateAlbumRequest, options: MutationOptions) =>
 		secureJson<Album>('/api/albums', {
 			method: 'POST',

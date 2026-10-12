@@ -24,13 +24,16 @@
 	<label class="group divider mb-1 cursor-pointer">
 		<span class="flex items-center gap-3">
 			<span class="toggle has-checked:bg-primary has-checked:text-primary-content">
-				<input type="checkbox" bind:checked={listened} onchange={toggleListened} />
+				<input name="listened" type="checkbox" bind:checked={listened} onchange={toggleListened} />
 
 				<XIcon label="disabled" />
+
 				<CheckIcon class="text-primary-content" label="enabled" />
 			</span>
 
-			<span class="text-base-content"> Listened </span>
+			<span class="text-base-content">
+				Listened
+			</span>
 		</span>
 	</label>
 
@@ -38,7 +41,7 @@
 		<RatingInput disabled={!listened} bind:value={rating} />
 
 		<FloatingField label="Listened At">
-			<input type="date" class="input w-full" disabled={!listened} bind:value={listenedAt} />
+			<input name="listenedAt" type="date" class="input w-full" disabled={!listened} bind:value={listenedAt} />
 		</FloatingField>
 	</div>
 </div>

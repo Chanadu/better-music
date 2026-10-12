@@ -5,6 +5,7 @@ import { withSyncOwnership, sendWithTimeout, SyncOwnershipLostError, type QueueO
 import { reconcileMutationResponse } from './database';
 import { compareMutationOrder } from './database-reconciliation';
 import type { PendingMutation, SuccessfulMutationResponse } from './types';
+import { getBlockingMutations, hasUnknownOutcome } from './queue-state';
 import { syncConfig } from './sync-config';
 
 type ProcessorDependencies = {
@@ -134,27 +135,6 @@ export const sendQueuedMutation = async (
 	return { entity: mutation.entity, operation: 'delete' };
 };
 
-const blocked = (mutation: PendingMutation, queue: PendingMutation[]) =>
-	queue.some((other) => {
-		const earlier = compareMutationOrder(other, mutation) < 0;
-
-		if (other.entity === mutation.entity && other.entityId === mutation.entityId) return earlier;
-
-		if (mutation.entity === 'artist') {
-			return (
-				mutation.operation === 'delete' &&
-				other.entity === 'album' &&
-				other.payload.artist_id === mutation.entityId
-			);
-		}
-
-		if (other.entity !== 'artist' || other.entityId !== mutation.payload.artist_id) return false;
-
-		if (other.operation === 'delete') return mutation.operation !== 'delete' && other.status !== 'pending';
-
-		return typeof mutation.payload.artist_id !== 'number' || other.status !== 'pending' || earlier;
-	});
-
 // Sending and retry scheduling use the same dependency and rate-limit rules.
 export const getQueueWork = (queue: PendingMutation[], now = Date.now()) => {
 	const rateLimit = queue.reduce(
@@ -162,7 +142,7 @@ export const getQueueWork = (queue: PendingMutation[], now = Date.now()) => {
 			item.failure?.status === syncConfig.http.rateLimit ? Math.max(deadline, item.nextAttemptAt ?? 0) : deadline,
 		0,
 	);
-	const eligible = queue.filter((item) => item.status === 'pending' && !blocked(item, queue));
+	const eligible = queue.filter((item) => item.status === 'pending' && !getBlockingMutations(item, queue).length);
 	const attemptAt = (item: PendingMutation) => Math.max(item.nextAttemptAt ?? 0, rateLimit);
 	const retries = eligible.filter((item) => item.nextAttemptAt !== undefined || rateLimit > now);
 	return {
@@ -179,7 +159,16 @@ const failurePauseReason = (failure: Failure) =>
 	failure.kind === 'connection' || failure.kind === 'authentication' ? failure.kind : undefined;
 
 const withFailure = (mutation: PendingMutation, failure: Failure): PendingMutation => {
-	const updated = { ...mutation, failure, nextAttemptAt: undefined };
+	const definite =
+		['invalid-data', 'permanent', 'conflict'].includes(failure.kind ?? '') &&
+		failure.status !== 403 &&
+		!failure.message.includes('Idempotency-Key was already used');
+	const updated = {
+		...mutation,
+		failure,
+		nextAttemptAt: undefined,
+		outcomeUnknown: definite ? false : hasUnknownOutcome(mutation),
+	};
 	if (failurePauseReason(failure)) return { ...updated, status: 'pending' };
 	if (failure.kind === 'conflict') return { ...updated, status: 'conflict' };
 	if (failure.kind !== 'retryable') return { ...updated, status: 'failed' };
@@ -252,7 +241,7 @@ export const createQueueProcessor = (dependencies: ProcessorDependencies) => {
 				const claimed = await update(mutation.mutationId, (item) => {
 					if (item.status !== 'pending' || (item.nextAttemptAt ?? 0) > Date.now()) return item;
 					didClaim = true;
-					return { ...item, status: 'syncing', attempts: item.attempts + 1 };
+					return { ...item, status: 'syncing', outcomeUnknown: true, attempts: item.attempts + 1 };
 				});
 
 				if (!didClaim || !claimed) continue;
@@ -341,3 +330,51 @@ export const processMutationQueue = createQueueProcessor({
 	send: sendQueuedMutation,
 	reconcile: reconcileMutationResponse,
 });
+
+// Replay only the original request under the existing account lock before recovery.
+export const reconcileUncertainMutation = async (userId: number, mutationId: string, ownership: QueueOwnership) => {
+	const item = (await getPendingMutations(userId)).find((item) => item.mutationId === mutationId);
+	if (!item || !hasUnknownOutcome(item)) return;
+	const queue = await getPendingMutations(userId);
+	const deadline = queue.reduce(
+		(deadline, current) =>
+			current.failure?.status === syncConfig.http.rateLimit ?
+				Math.max(deadline, current.nextAttemptAt ?? 0)
+			:	deadline,
+		item.nextAttemptAt ?? 0,
+	);
+	if (deadline > Date.now())
+		throw new Error(
+			`This request can be reconciled after ${new Date(deadline).toLocaleString()}. Retry delays and rate limits still apply.`,
+		);
+	const claimed = await updatePendingMutation(
+		userId,
+		mutationId,
+		(item) => ({
+			...item,
+			status: 'syncing',
+			outcomeUnknown: true,
+			attempts: item.attempts + 1,
+		}),
+		ownership.check,
+	);
+	if (!claimed) return;
+	let response: SuccessfulMutationResponse;
+	try {
+		response = await sendWithTimeout(ownership, (signal) => sendQueuedMutation(claimed, signal));
+	} catch (error) {
+		ownership.check();
+		const updated = await updatePendingMutation(
+			userId,
+			mutationId,
+			(item) => withFailure(item, classifyFailure(error)),
+			ownership.check,
+		);
+		if (updated && hasUnknownOutcome(updated))
+			throw new Error(
+				'The server outcome is still unknown. Reconnect and reconcile before changing or discarding this request.',
+			);
+		return;
+	}
+	await reconcileMutationResponse(userId, mutationId, response, ownership.check);
+};

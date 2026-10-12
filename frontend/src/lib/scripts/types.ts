@@ -17,10 +17,10 @@ export type Album = LocalAlbum;
 
 export type MutationEntity = 'artist' | 'album';
 export type MutationOperation = 'create' | 'update' | 'delete';
-export type MutationStatus = 'pending' | 'syncing' | 'conflict' | 'failed';
+export type MutationStatus = 'pending' | 'syncing' | 'conflict' | 'failed' | 'blocked';
 export type TemporaryId = `local:${string}`;
 export type EntityId = number | TemporaryId;
-export type RecordSyncStatus = MutationStatus | 'synced';
+export type RecordSyncStatus = MutationStatus | 'paused' | 'synced';
 
 type RecordIdentity = { id: number; version: number } | { id: TemporaryId; version: null };
 
@@ -70,6 +70,10 @@ type PendingMutationBase<Entity extends MutationEntity, Operation extends Mutati
 	sequence?: number;
 	attempts: number;
 	status: MutationStatus;
+	outcomeUnknown?: boolean;
+	blockedReason?: string;
+	before?: LocalArtist | LocalAlbum | null;
+	after?: LocalArtist | LocalAlbum | null;
 	retryFailures?: number;
 	nextAttemptAt?: number;
 	failure?: {

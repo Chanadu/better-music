@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { getContext, onDestroy } from 'svelte';
+	import { previewContext, type PreviewContext } from '$lib/components/preview/context';
+	const preview = getContext<PreviewContext | undefined>(previewContext);
 	import SearchBar from '../common/SearchBar.svelte';
 	import FloatingField from '../common/FloatingField.svelte';
 	import SpotifySearchResult from './SpotifySearchResult.svelte';
@@ -31,7 +34,14 @@
 		}
 	});
 
+	onDestroy(() => clearTimeout(timer));
+
 	async function search() {
+		if (preview) {
+			rows = query.trim() ? [{ id: `preview-${type}`, name: query.trim(), meta: 'Preview result' }] : [];
+			message = rows.length ? '' : 'Start searching...';
+			return;
+		}
 		clearTimeout(timer);
 
 		const current = query.trim();
@@ -112,9 +122,11 @@
 	{#if type === 'album' && showArtistPicker && selected?.artists && selected.artists.length > 1}
 		<div class="mt-3">
 			<FloatingField label="Attribute album to">
-				<select class="select w-full" bind:value={selectedArtistId}>
+				<select name="selectedArtistId" class="select w-full" bind:value={selectedArtistId}>
 					{#each selected.artists as artist}
-						<option value={artist.id}>{artist.name}</option>
+						<option value={artist.id}>
+							{artist.name}
+						</option>
 					{/each}
 				</select>
 			</FloatingField>

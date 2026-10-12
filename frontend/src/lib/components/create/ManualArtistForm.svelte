@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
+	import { previewContext, type PreviewContext } from '$lib/components/preview/context';
+	const preview = getContext<PreviewContext | undefined>(previewContext);
 	import { online } from 'svelte/reactivity/window';
 	import FloatingField from '../common/FloatingField.svelte';
 	import MediaThumbnail from '../common/MediaThumbnail.svelte';
@@ -10,6 +13,7 @@
 		spotifyId = '',
 		showSpotifyRefresh = false,
 		refreshing = false,
+		refreshed = false,
 		onrefresh,
 	}: {
 		name?: string;
@@ -17,13 +21,14 @@
 		spotifyId?: string;
 		showSpotifyRefresh?: boolean;
 		refreshing?: boolean;
+		refreshed?: boolean;
 		onrefresh?: () => void;
 	} = $props();
 </script>
 
 <div class="flex flex-col gap-3">
 	<FloatingField label="Artist Name">
-		<input type="text" class="input w-full" placeholder="e.g. J. Cole" bind:value={name} />
+		<input name="artist-name" type="text" class="input w-full" placeholder="e.g. J. Cole" bind:value={name} />
 	</FloatingField>
 
 	<div class={showSpotifyRefresh ? 'grid grid-cols-2 gap-4' : 'flex justify-center'}>
@@ -41,17 +46,25 @@
 			<button
 				type="button"
 				class="btn btn-soft hover-lift aspect-square h-auto w-full flex-col gap-3 whitespace-normal"
-				disabled={refreshing || !spotifyId || online.current === false}
+				disabled={refreshing || !spotifyId || (preview?.online ?? online.current) === false}
 				aria-label={refreshing ? 'Refreshing artist data from Spotify' : 'Refresh artist data from Spotify'}
 				title={spotifyId ? 'Refresh artist data from Spotify' : 'This artist is not linked to Spotify'}
 				onclick={onrefresh}
 			>
 				{#if refreshing}
-					<span class="loading loading-xs" aria-hidden="true"></span>
+					<span class="loading loading-xs" aria-hidden="true">
+					</span>
 				{:else}
+
 					<SpotifyIcon class="size-5 text-[#1ed760]" />
 				{/if}
-				{refreshing ? 'Refreshing from Spotify...' : 'Refresh from Spotify'}
+
+				<span role={refreshed ? 'status' : undefined}
+				>
+					{refreshing ? 'Refreshing from Spotify...'
+					: refreshed ? 'Updated · Save to apply'
+					: 'Refresh from Spotify'}
+				</span>
 			</button>
 		{/if}
 	</div>

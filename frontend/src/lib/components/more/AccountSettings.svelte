@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { online } from 'svelte/reactivity/window';
 	import AccountSettingRow from './AccountSettingRow.svelte';
 	import AccountActionDialog from './AccountActionDialog.svelte';
 	import DeleteIcon from '$lib/components/icons/DeleteIcon.svelte';
@@ -13,6 +14,7 @@
 	let loadError = $state('');
 	let actionDialog = $state<AccountActionDialog>();
 	let loggingOut = $state(false);
+	let actionsDisabled = $derived(!accountEmail || online.current !== true);
 
 	onMount(async () => {
 		try {
@@ -24,6 +26,7 @@
 	});
 
 	async function signOut() {
+		if (actionsDisabled || loggingOut) return;
 		loggingOut = true;
 		await logout();
 		location.assign('/login');
@@ -46,32 +49,37 @@
 			description={loadError || accountEmail || 'Loading...'}
 			actionLabel="Change"
 			icon={EmailIcon}
-			disabled={!accountEmail}
+			disabled={actionsDisabled}
 			onclick={() => actionDialog?.open('email', accountEmail)}
 		/>
+
 		<AccountSettingRow
 			title="Password"
 			description="Change your account password"
 			actionLabel="Change"
 			icon={LockIcon}
 			tone="secondary"
+			disabled={actionsDisabled}
 			onclick={() => actionDialog?.open('password')}
 		/>
+
 		<AccountSettingRow
 			title="Sign out"
 			description="Sign out of Better Music on this device"
 			actionLabel={loggingOut ? 'Signing out...' : 'Sign out'}
 			icon={LogoutIcon}
 			tone="accent"
-			disabled={loggingOut}
+			disabled={actionsDisabled || loggingOut}
 			onclick={signOut}
 		/>
+
 		<AccountSettingRow
 			title="Delete account"
 			description="Permanently remove your library and account"
 			actionLabel="Delete"
 			icon={DeleteIcon}
 			tone="error"
+			disabled={actionsDisabled}
 			onclick={() => actionDialog?.open('delete')}
 		/>
 	</div>

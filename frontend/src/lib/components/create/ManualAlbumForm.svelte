@@ -27,10 +27,15 @@
 
 <div class="flex flex-col gap-3">
 	<FloatingField label="Artist">
-		<select class="select w-full" disabled={lockArtist} bind:value={artistId}>
-			<option value="">Select artist</option>
+		<select name="artistId" class="select w-full" disabled={lockArtist} bind:value={artistId}>
+			<option value="">
+				Select artist
+			</option>
+
 			{#each artists as artist}
-				<option value={artist.id.toString()}>{artist.name}</option>
+				<option value={artist.id.toString()}>
+					{artist.name}
+				</option>
 			{/each}
 		</select>
 	</FloatingField>
@@ -48,7 +53,13 @@
 
 		<div class="flex min-w-0 flex-1 flex-col gap-3">
 			<FloatingField label="Album Title">
-				<input type="text" class="input w-full" placeholder="e.g. 2014 Forest Hills Drive" bind:value={name} />
+				<input
+					name="album-title"
+					type="text"
+					class="input w-full"
+					placeholder="e.g. 2014 Forest Hills Drive"
+					bind:value={name}
+				/>
 			</FloatingField>
 
 			<YearField bind:value={year} bind:valid={yearValid} />
@@ -56,6 +67,7 @@
 	</div>
 
 	<FloatingField label="Comment">
-		<textarea class="textarea w-full" placeholder="Classic album" bind:value={comment}></textarea>
+		<textarea name="comment" class="textarea w-full" placeholder="Classic album" bind:value={comment}>
+		</textarea>
 	</FloatingField>
 </div>

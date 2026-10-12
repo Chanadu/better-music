@@ -1,5 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { getContext, type Snippet } from 'svelte';
+	import { previewContext, type PreviewContext } from '$lib/components/preview/context';
+	const preview = getContext<PreviewContext | undefined>(previewContext);
 
 	let {
 		dialog = $bindable(),
@@ -18,12 +20,24 @@
 	} = $props();
 </script>
 
-<dialog class="modal" bind:this={dialog} {onclose} {oncancel}>
+{#snippet box()}
 	<div class={`modal-box max-h-[calc(100dvh-2rem)] ${className}`}>
 		{@render children()}
 	</div>
+{/snippet}
 
-	<form method="dialog" class="modal-backdrop">
-		<button disabled={backdropDisabled}>close</button>
-	</form>
-</dialog>
+{#if preview?.inlineDialogs}
+	<div class="preview-inline-dialog">
+		{@render box()}
+	</div>
+{:else}
+
+	<dialog class="modal" bind:this={dialog} {onclose} {oncancel}>
+		{@render box()}
+		<form method="dialog" class="modal-backdrop">
+			<button disabled={backdropDisabled}>
+				close
+			</button>
+		</form>
+	</dialog>
+{/if}

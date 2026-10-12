@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
+	import { previewContext, type PreviewContext } from '$lib/components/preview/context';
+	const preview = getContext<PreviewContext | undefined>(previewContext);
 	import RecordSyncBadge from '$lib/components/common/RecordSyncBadge.svelte';
 	import { ratingColor } from '$lib/scripts/rating-colors';
 	import { page } from '$app/state';
@@ -40,15 +43,20 @@
 				<span style:color={ratingColor(album.rating)}>
 					<StarIcon class="size-3.5" filled />
 				</span>
-				<span class="text-sm leading-5 font-bold tabular-nums">{album.rating}</span>
+
+				<span class="text-sm leading-5 font-bold tabular-nums">
+					{album.rating}
+				</span>
 			</div>
 		{/if}
-		{#if $newlyAdded.albumIds.has(album.id)}
+
+		{#if preview?.newlyAdded ?? $newlyAdded.albumIds.has(album.id)}
 			<span
 				class="status status-success status-lg indicator-item indicator-start"
 				aria-label="Newly added"
 				title="Newly added"
-			></span>
+			>
+			</span>
 		{/if}
 	</div>
 
@@ -58,8 +66,11 @@
 		:	'mt-2 flex items-center gap-2 font-semibold'}
 		title={album.title}
 	>
-		<span class={compact ? 'min-w-0 text-wrap wrap-break-word' : 'min-w-0 truncate'}>{album.title}</span>
-		<RecordSyncBadge entity="album" id={album.id} variant="dot" />
+		<span class={compact ? 'min-w-0 text-wrap wrap-break-word' : 'min-w-0 truncate'}>
+			{album.title}
+		</span>
+
+		<RecordSyncBadge entity="album" id={album.id} />
 	</h3>
 
 	<p

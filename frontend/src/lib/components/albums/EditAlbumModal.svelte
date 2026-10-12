@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
+	import { previewContext, type PreviewContext } from '$lib/components/preview/context';
+	const preview = getContext<PreviewContext | undefined>(previewContext);
+	const instanceId = $props.id();
 	import { online } from 'svelte/reactivity/window';
 	import SpotifyIcon from '$lib/components/icons/SpotifyIcon.svelte';
 	import ListenedFields from '$lib/components/create/ListenedFields.svelte';
@@ -6,19 +10,24 @@
 	import FormModalShell from '$lib/components/create/FormModalShell.svelte';
 	import SpotifySearch from '$lib/components/create/SpotifySearch.svelte';
 	import { spotifyApi } from '$lib/scripts/api';
-	import { albumsLibrary } from '$lib/scripts/database';
-	import type { Album, Artist, SpotifyRow as Row } from '$lib/scripts/types';
+	import type { Album, Artist, SpotifyRow as Row, UpdateAlbumMutationPayload } from '$lib/scripts/types';
 
 	let {
 		album,
 		artist,
 		dialog = $bindable(),
 		onupdated,
+		onsave,
+		mode = 'edit',
+		recoveryMessages = [],
 	}: {
 		album: Album;
 		artist: Artist;
 		dialog?: HTMLDialogElement;
 		onupdated?: (album: Album) => void;
+		onsave: (payload: UpdateAlbumMutationPayload) => Promise<Album>;
+		mode?: 'edit' | 'correct';
+		recoveryMessages?: string[];
 	} = $props();
 
 	let title = $state('');
@@ -30,7 +39,7 @@
 	let listenedAt = $state('');
 	let rating = $state(5);
 	let error = $state('');
-	let refreshMessage = $state('');
+	let refreshed = $state(false);
 	let saving = $state(false);
 	let refreshing = $state(false);
 	let tab = $state<'details' | 'spotify'>('details');
@@ -56,7 +65,7 @@
 			(listened && listenedAt !== dateInputValue(album.listened_at)),
 	);
 	$effect(() => {
-		if (online.current === false && tab === 'spotify') tab = 'details';
+		if ((preview?.online ?? online.current) === false && tab === 'spotify') tab = 'details';
 	});
 
 	let canSave = $derived(
@@ -65,7 +74,8 @@
 			(tab === 'spotify' ? Boolean(selected) : Boolean(title.trim()) && yearValid && changed),
 	);
 
-	function loadAlbum(current: Album) {
+	function loadAlbum(current: Album | null | undefined) {
+		if (!current) return;
 		title = current.title;
 		coverUrl = current.cover_url ?? '';
 		spotifyId = current.spotify_id ?? '';
@@ -79,7 +89,7 @@
 	$effect(() => {
 		loadAlbum(album);
 		error = '';
-		refreshMessage = '';
+		refreshed = false;
 		tab = 'details';
 		selected = undefined;
 	});
@@ -92,7 +102,7 @@
 	function reset() {
 		loadAlbum(album);
 		error = '';
-		refreshMessage = '';
+		refreshed = false;
 		tab = 'details';
 		selected = undefined;
 		spotify?.reset();
@@ -111,13 +121,13 @@
 
 		refreshing = true;
 		error = '';
-		refreshMessage = '';
+		refreshed = false;
 		try {
 			const spotifyAlbum = await spotifyApi.getAlbum(spotifyId.trim());
 			title = spotifyAlbum.name;
 			coverUrl = spotifyAlbum.images[0]?.url ?? '';
 			year = spotifyAlbum.release_date.split('-')[0];
-			refreshMessage = 'Latest album data loaded from Spotify. Save to apply it.';
+			refreshed = true;
 		} catch (e) {
 			error = formatError(e, 'Failed to refresh album from Spotify');
 		} finally {
@@ -134,7 +144,7 @@
 			const selectedAlbum = tab === 'spotify' ? selected : undefined;
 			const selectedYear = selectedAlbum?.releaseYear;
 
-			const updated = await albumsLibrary.update(album.id, {
+			const payload: UpdateAlbumMutationPayload = {
 				artist_id: album.artist_id,
 				title: selectedAlbum?.name ?? title.trim(),
 				cover_url: selectedAlbum?.imageUrl ?? (coverUrl.trim() || null),
@@ -147,10 +157,12 @@
 				listened,
 				rating: listened ? rating : undefined,
 				listened_at: listened ? listenedAt || null : undefined,
-			});
+			};
 
-			onupdated?.(updated);
+			const updated = await onsave(payload);
+
 			dialog?.close();
+			onupdated?.(updated);
 		} catch (e) {
 			error = formatError(e, 'Failed to save album');
 		} finally {
@@ -162,24 +174,37 @@
 <FormModalShell
 	bind:dialog
 	title="Album"
-	headingPrefix="Edit"
-	saveLabel="Save changes"
+	headingPrefix={mode === 'correct' ? 'Correct' : 'Edit'}
+	saveLabel={mode === 'correct' ? 'Save correction' : 'Save changes'}
 	{error}
 	{saving}
 	{canSave}
 	onsave={save}
 	onclose={reset}
 >
+	{#if recoveryMessages.length}
+		<div class="alert alert-warning alert-soft my-4">
+			<ul class="list-disc pl-4">
+				{#each recoveryMessages as message}
+					<li>
+						{message}
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
+
 	<div role="tablist" class="tabs tabs-border">
 		<input
 			type="radio"
-			name="edit_album_modal_tabs"
+			name={preview ? `edit_album_modal_tabs-${instanceId}` : 'edit_album_modal_tabs'}
 			role="tab"
 			class="tab hover-lift flex-1"
 			aria-label="Details"
 			value="details"
 			bind:group={tab}
 		/>
+
 		<div role="tabpanel" class="tab-content px-2 pt-4">
 			<ManualAlbumForm
 				artists={[artist]}
@@ -196,28 +221,28 @@
 				<button
 					type="button"
 					class="btn btn-soft hover-lift mt-4 w-full"
-					disabled={refreshing || online.current === false}
+					disabled={refreshing || (preview?.online ?? online.current) === false}
 					onclick={refreshFromSpotify}
 				>
 					<SpotifyIcon class="size-5" />
-					{refreshing ? 'Refreshing from Spotify...' : 'Refresh from Spotify'}
-				</button>
-			{/if}
 
-			{#if refreshMessage}
-				<div class="alert alert-success alert-soft mt-4 justify-center text-center" role="status">
-					<span>{refreshMessage}</span>
-				</div>
+					<span role={refreshed ? 'status' : undefined}
+					>
+						{refreshing ? 'Refreshing from Spotify...'
+						: refreshed ? 'Updated · Save to apply'
+						: 'Refresh from Spotify'}
+					</span>
+				</button>
 			{/if}
 		</div>
 
 		<input
 			type="radio"
-			name="edit_album_modal_tabs"
+			name={preview ? `edit_album_modal_tabs-${instanceId}` : 'edit_album_modal_tabs'}
 			role="tab"
 			class="tab hover-lift flex-1"
 			aria-label={album.spotify_id ? 'Change Spotify' : 'Link Spotify'}
-			disabled={online.current === false}
+			disabled={(preview?.online ?? online.current) === false}
 			value="spotify"
 			bind:group={tab}
 		/>

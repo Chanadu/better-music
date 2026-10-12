@@ -1,4 +1,4 @@
-import { recoverInterruptedMutations } from './database-cache';
+import { recoverInterruptedMutations, getSyncMetadata, setSyncActivity } from './database-cache';
 import { notifySyncChange } from './sync-events';
 import { syncConfig } from './sync-config';
 
@@ -38,20 +38,37 @@ export const withSyncOwnership = async <T extends { paused: boolean }>(
 			notifySyncChange({ userId, type: 'processor', state, ownerId });
 
 		let state: 'idle' | 'paused' = 'paused';
+		let pauseReason: string | undefined;
+		const { generation } = await getSyncMetadata(userId);
 
 		try {
 			check();
 
 			await recoverInterruptedMutations(userId, check);
 
+			await setSyncActivity(userId, generation, 'syncing');
 			notify('syncing');
 
 			const result = await work({ signal: controller.signal, check });
 			state = result.paused ? 'paused' : 'idle';
 
+			pauseReason = (result as T & { pauseReason?: string }).pauseReason;
 			return result;
+		} catch (error) {
+			pauseReason =
+				!navigator.onLine ? 'Offline. Reconnect to resume synchronization.'
+				: error instanceof Error ? error.message
+				: 'Synchronization was interrupted.';
+			throw error;
 		} finally {
 			controller.abort();
+			await setSyncActivity(
+				userId,
+				generation,
+				state,
+				pauseReason,
+				state === 'paused' ? pauseReason : undefined,
+			).catch(console.error);
 			notify(state);
 		}
 	};

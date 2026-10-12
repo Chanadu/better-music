@@ -63,26 +63,36 @@
 </script>
 
 <svelte:head>
-	<title>{artist ? `${artist.name} · Better Music` : 'Artist · Better Music'}</title>
+	<title>
+		{artist ? `${artist.name} · Better Music` : 'Artist · Better Music'}
+	</title>
 </svelte:head>
 
 {#if status}
 	<div class="flex min-h-72 items-center justify-center">
 		{#if status === 'Loading artist...'}
-			<span class="loading loading-lg text-base-content" aria-label={status}></span>
+			<span class="loading loading-lg text-base-content" aria-label={status}>
+			</span>
 		{:else}
+
 			<div class="text-center">
 				<div class="bg-base-200 mx-auto mb-4 flex size-14 items-center justify-center rounded-full">
 					<SadFaceIcon class="text-base-content/50 size-6" />
 				</div>
 
-				<p class="text-base-content/60">{status}</p>
-				<a class="btn hover-lift btn-ghost btn-sm mt-3" href="/artists">Back to artists</a>
+				<p class="text-base-content/60">
+					{status}
+				</p>
+
+				<a class="btn hover-lift btn-ghost btn-sm mt-3" href="/artists">
+					Back to artists
+				</a>
 			</div>
 		{/if}
 	</div>
 {:else if artist}
-	<MediaHero
+
+		<MediaHero
 		title={artist.name}
 		imageUrl={artist.cover_url}
 		imageAlt={`${artist.name} artist portrait`}
@@ -94,48 +104,55 @@
 		{backHref}
 		ondelete={() => deleteDialog?.showModal()}
 		onedit={() => editDialog?.showModal()}
-	>
-		{#snippet titleSuffix()}
-			<RecordSyncBadge entity="artist" id={artist.id} variant="dot" />
-		{/snippet}
-	</MediaHero>
+		>
+			{#snippet titleSuffix()}
+				<RecordSyncBadge entity="artist" id={artist.id} />
+			{/snippet}
+		</MediaHero>
 
-	<EditArtistModal bind:dialog={editDialog} {artist} />
+		<EditArtistModal
+		bind:dialog={editDialog}
+		{artist}
+		onsave={(payload) => artistsLibrary.update(artist.id, payload)}
+		/>
 
-	<DeleteConfirmationDialog
+		<DeleteConfirmationDialog
 		bind:dialog={deleteDialog}
 		title={`Delete artist (${artist.name})?`}
 		description={`${artist.name} will be permanently removed from your library.`}
 		confirmLabel="Delete artist"
 		disabledReason={deleteBlockedReason}
 		onconfirm={deleteArtist}
-	/>
+		/>
 
-	<section class="mt-7 grid grid-cols-2 grid-rows-2 gap-3 sm:grid-cols-3 sm:grid-rows-1" aria-label="Artist stats">
-		<StatCard
+		<section class="mt-7 grid grid-cols-2 grid-rows-2 gap-3 sm:grid-cols-3 sm:grid-rows-1" aria-label="Artist stats">
+			<StatCard
 			value={albums.length}
 			label="Albums"
 			icon={AlbumIcon}
 			class="col-start-1 row-start-1 h-full sm:col-auto sm:row-auto"
-		/>
-		<StatCard
+			/>
+
+			<StatCard
 			value={addedDate}
 			label="Added"
 			icon={CalendarIcon}
 			tone="secondary"
 			valueClass="text-xl"
 			class="col-start-1 row-start-2 h-full sm:col-auto sm:row-auto"
-		/>
-		<StatCard
+			/>
+
+			<StatCard
 			value={averageRating === null ? '—' : averageRating.toFixed(1)}
 			label="Avg. rating"
 			color={ratingColor(averageRating)}
 			icon={StarIcon}
 			tone="accent"
 			class="col-start-2 row-span-2 row-start-1 h-full flex-col justify-center text-center sm:col-auto sm:row-span-1 sm:row-start-auto sm:flex-row sm:justify-start sm:text-left"
-		/>
-	</section>
+			/>
+		</section>
 
-	<DiscographySection {albums} onadd={() => albumDialog?.showModal()} />
-	<CreateAlbumModal bind:dialog={albumDialog} initialArtistId={artist.id} />
-{/if}
+		<DiscographySection {albums} onadd={() => albumDialog?.showModal()} />
+
+		<CreateAlbumModal bind:dialog={albumDialog} initialArtistId={artist.id} />
+	{/if}

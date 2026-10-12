@@ -38,14 +38,19 @@
 		<h2 id="settings-heading" class="text-base-content text-lg font-bold tracking-[0.14em] uppercase sm:text-xl">
 			Settings
 		</h2>
-		<p class="text-base-content/55 mt-1 text-sm">Preferences are saved on this device.</p>
+
+		<p class="text-base-content/55 mt-1 text-sm">
+			Preferences are saved on this device.
+		</p>
 	</div>
 
 	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
 		<ThemeSetting />
+
 		{#each unavailableSettings as setting}
 			<SettingRow {...setting} />
 		{/each}
+
 		<SettingRow
 			title="Rating labels and colors"
 			description="Personalize rating names and colors while keeping scores numeric."
@@ -60,6 +65,7 @@
 				Customize
 			</button>
 		</SettingRow>
+
 		<SettingRow
 			title="Dropdown menu style"
 			description="Choose native controls or custom-styled menus."
@@ -69,9 +75,13 @@
 				<span
 					class={`text-sm font-bold transition-colors ${
 						appSettings.values.useNativeDropdowns ? 'text-base-content/40' : 'text-base-content'
-					}`}>Custom</span
+					}`}
 				>
+					Custom
+				</span>
+
 				<input
+					name="native-dropdowns"
 					type="checkbox"
 					class="toggle toggle-lg"
 					style:--input-color={'var(--color-primary)'}
@@ -79,19 +89,27 @@
 					onchange={setDropdownStyle}
 					aria-label="Use native dropdown menus"
 				/>
+
 				<span
 					class={`text-sm font-bold transition-colors ${
 						appSettings.values.useNativeDropdowns ? 'text-base-content' : 'text-base-content/40'
-					}`}>Native</span
+					}`}
 				>
+					Native
+				</span>
 			</label>
 		</SettingRow>
 	</div>
 
-	<h3 class="text-base-content/45 mt-7 mb-3 px-1 text-xs font-bold tracking-[0.14em] uppercase">Data & support</h3>
+	<h3 class="text-base-content/45 mt-7 mb-3 px-1 text-xs font-bold tracking-[0.14em] uppercase">
+		Data & support
+	</h3>
+
 	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
 		<ExportLibrarySetting />
+
 		<SyncStatusSetting />
+
 		{#each unavailableTools as setting}
 			<SettingRow {...setting} tone="accent" />
 		{/each}

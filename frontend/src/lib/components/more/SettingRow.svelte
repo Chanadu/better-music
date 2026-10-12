@@ -4,12 +4,14 @@
 	let {
 		title,
 		description,
+		descriptionContent,
 		icon: Icon,
 		tone = 'primary',
 		children,
 	}: {
 		title: string;
 		description: string;
+		descriptionContent?: Snippet;
 		icon: Component<{ class?: string }>;
 		tone?: 'primary' | 'accent';
 		children?: Snippet;
@@ -25,13 +27,25 @@
 	<div class={`${tones[tone]} flex size-11 shrink-0 items-center justify-center rounded-full`}>
 		<Icon class="size-5" />
 	</div>
+
 	<div class="min-w-0 flex-1">
-		<h3 class="font-bold">{title}</h3>
-		<p class="text-base-content/55 text-sm">{description}</p>
+		<h3 class="font-bold">
+			{title}
+		</h3>
+
+		<p class="text-base-content/55 text-sm">
+			{#if descriptionContent}{@render descriptionContent()}{:else}
+			{description}
+			{/if}
+		</p>
 	</div>
+
 	{#if children}
 		{@render children()}
 	{:else}
-		<span class="badge badge-ghost shrink-0">Coming soon</span>
+
+		<span class="badge badge-ghost shrink-0">
+			Coming soon
+		</span>
 	{/if}
 </div>
