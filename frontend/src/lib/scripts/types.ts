@@ -31,6 +31,7 @@ export type LocalAlbum = Omit<ServerAlbum, 'id' | 'artist_id' | 'version'> &
 	};
 
 export type LocalDatabaseData = {
+	revision?: number;
 	artists: LocalArtist[];
 	albums: LocalAlbum[];
 	loadedAt: number;
@@ -69,7 +70,6 @@ type PendingMutationBase<Entity extends MutationEntity, Operation extends Mutati
 	sequence?: number;
 	attempts: number;
 	status: MutationStatus;
-	// Separate server failure budget from sends interrupted by connectivity or authentication.
 	retryFailures?: number;
 	nextAttemptAt?: number;
 	failure?: {

@@ -7,6 +7,7 @@ const keys = {
 	refresh: 'betterMusicRefreshToken',
 	expires: 'betterMusicAccessTokenExpiresAt',
 	userId: 'betterMusicUserId',
+	generation: 'betterMusicSessionGeneration',
 };
 let refreshRequest: Promise<string | null> | null = null;
 
@@ -23,7 +24,12 @@ export const getCurrentUserId = () => {
 	return Number.isInteger(userId) && userId > 0 ? userId : null;
 };
 
+export const getSessionGeneration = () => persistentStorage.get(keys.generation);
+
 export const saveTokens = (tokens: TokenResponse) => {
+	if (getCurrentUserId() !== tokens.user_id || !getSessionGeneration())
+		persistentStorage.set(keys.generation, crypto.randomUUID());
+
 	persistentStorage.set(keys.access, tokens.access_token);
 	persistentStorage.set(keys.refresh, tokens.refresh_token);
 	persistentStorage.set(keys.expires, String(Date.now() + tokens.expires_in * 1000));
@@ -67,8 +73,6 @@ const performRefresh = async () => {
 
 		return tokens.access_token;
 	} catch {
-		// A connection failure or temporary server problem is not a logout.
-		// Preserve the session so its cached library can still be opened.
 		return null;
 	}
 };
@@ -96,7 +100,17 @@ export const getValidAccessToken = async () => {
 };
 
 export const authenticatedFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+	const userId = getCurrentUserId();
+	const generation = getSessionGeneration();
+
+	const checkAccount = () => {
+		if (getCurrentUserId() !== userId || getSessionGeneration() !== generation)
+			throw new AuthenticationError('Account changed before the request was sent');
+	};
+
 	let token = await getValidAccessToken();
+	checkAccount();
+
 	if (!token) throw new AuthenticationError('Not authenticated');
 
 	const headers = new Headers(init.headers);
@@ -106,6 +120,8 @@ export const authenticatedFetch = async (input: RequestInfo | URL, init: Request
 	if (response.status !== 401) return response;
 
 	token = await requestRefresh();
+	checkAccount();
+
 	if (!token) {
 		if (!hasStoredSession()) return response;
 		throw new AuthenticationError('Authentication is temporarily unavailable');

@@ -99,7 +99,7 @@ export const accountApi = {
 };
 
 export const artistsApi = {
-	list: () => secureJson<Artist[]>('/api/artists'),
+	list: (signal?: AbortSignal) => secureJson<Artist[]>('/api/artists', { signal }),
 	get: (id: number) => secureJson<Artist>(`/api/artists/${id}`),
 	create: (body: CreateArtistRequest, options: MutationOptions) =>
 		secureJson<Artist>('/api/artists', {
@@ -124,7 +124,7 @@ export const artistsApi = {
 };
 
 export const albumsApi = {
-	list: () => secureJson<Album[]>('/api/albums'),
+	list: (signal?: AbortSignal) => secureJson<Album[]>('/api/albums', { signal }),
 	get: (id: number, artistId: number) => secureJson<Album>(`/api/albums/${id}${query({ artist_id: artistId })}`),
 	create: (body: CreateAlbumRequest, options: MutationOptions) =>
 		secureJson<Album>('/api/albums', {

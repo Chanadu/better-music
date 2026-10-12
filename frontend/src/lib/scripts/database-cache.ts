@@ -14,6 +14,7 @@ const databaseVersion = 5;
 const libraryStore = 'library-snapshots';
 const outboxStore = 'mutation-outbox';
 const userIndex = 'user-id';
+
 const openDatabase = () =>
 	new Promise<IDBDatabase>((resolve, reject) => {
 		if (!globalThis.indexedDB) {
@@ -98,7 +99,6 @@ const runTransaction = async <T>(
 const readMutations = (transaction: IDBTransaction, userId: number) =>
 	readRequest<PendingMutation[]>(transaction.objectStore(outboxStore).index(userIndex).getAll(userId));
 
-// Call only while holding the account's Web Lock. Preserve uncertain request identities.
 export const recoverInterruptedMutations = async (userId: number, checkOwnership: () => void) => {
 	await updateLibraryAndOutbox(
 		userId,
@@ -160,6 +160,8 @@ export const reconcileSuccessfulMutation = async (
 		checkOwnership?.();
 
 		for (const item of updated.mutations) outbox.put(item);
+		updated.library = { ...updated.library, revision: (library?.revision ?? 0) + 1 };
+
 		snapshots.put(updated.library, userId);
 		outbox.delete(mutationId);
 
@@ -195,7 +197,9 @@ export const updateLibraryAndOutbox = async (
 		for (const mutation of mutations) outbox.delete(mutation.mutationId);
 		for (const mutation of updated.mutations) outbox.add(mutation);
 
+		updated.library = { ...updated.library, revision: (library?.revision ?? 0) + 1 };
 		snapshots.put(updated.library, userId);
+
 		return updated;
 	});
 
@@ -220,6 +224,7 @@ export const applyOptimisticMutation = async (
 		],
 	}));
 
+	notifySyncChange({ userId, type: 'queue' });
 	return result;
 };
 
@@ -262,7 +267,9 @@ export const deleteStoredLibrary = async (userId: number): Promise<void> => {
 		}
 
 		transaction.objectStore(libraryStore).delete(userId);
+		transaction.objectStore(libraryStore).put({ generation: crypto.randomUUID() }, `sync:${userId}`);
 	});
+
 	notifySyncChange({ userId, type: 'library' });
 };
 
@@ -284,9 +291,119 @@ export const setStoredDatabaseCache = async (userId: number, value: ServerDataba
 		const pending = await readRequest(transaction.objectStore(outboxStore).index(userIndex).count(userId));
 		if (pending) return false;
 
-		transaction.objectStore(libraryStore).put(value, userId);
+		const store = transaction.objectStore(libraryStore);
+		const previous = await readRequest<LocalDatabaseData | undefined>(store.get(userId));
+		store.put({ ...value, revision: (previous?.revision ?? 0) + 1 }, userId);
 		return true;
 	});
+
 	if (saved) notifySyncChange({ userId, type: 'library' });
 	return saved;
 };
+
+export type SyncMetadata = {
+	generation: string;
+	lastQueueCompletedAt?: number;
+	lastLibraryRefreshedAt?: number;
+	lastSyncedAt?: number;
+};
+
+export const getSyncMetadata = (userId: number): Promise<SyncMetadata> =>
+	runTransaction('readwrite', async (transaction) => {
+		const store = transaction.objectStore(libraryStore);
+		const key = `sync:${userId}`;
+		const existing = await readRequest<SyncMetadata | undefined>(store.get(key));
+		const value = existing ?? { generation: crypto.randomUUID() };
+
+		if (!existing) store.put(value, key);
+		return value;
+	});
+
+export const markQueueCompletion = (userId: number, generation: string, check: () => void) =>
+	runTransaction('readwrite', async (transaction) => {
+		const store = transaction.objectStore(libraryStore);
+		const [metadata, queue] = await Promise.all([
+			readRequest<SyncMetadata | undefined>(store.get(`sync:${userId}`)),
+			readMutations(transaction, userId),
+		]);
+
+		check();
+
+		if (metadata?.generation !== generation) throw new Error('Library cache changed');
+		if (!queue.some((item) => item.status === 'pending' || item.status === 'syncing'))
+			store.put({ ...metadata, lastQueueCompletedAt: Date.now() }, `sync:${userId}`);
+	});
+
+export const mergeLibraryRefresh = (
+	userId: number,
+	value: ServerDatabaseData,
+	baseline: LocalDatabaseData | null,
+	generation: string,
+	check: () => void,
+): Promise<LibraryUpdate> =>
+	runTransaction('readwrite', async (transaction) => {
+		const store = transaction.objectStore(libraryStore);
+		const [library, mutations, metadata] = await Promise.all([
+			readRequest<LocalDatabaseData | undefined>(store.get(userId)),
+			readMutations(transaction, userId),
+			readRequest<SyncMetadata | undefined>(store.get(`sync:${userId}`)),
+		]);
+
+		check();
+
+		if (metadata?.generation !== generation) throw new Error('Library cache changed during refresh');
+
+		const local = library ?? { artists: [], albums: [], loadedAt: 0 };
+		const protectedArtists = new Set(
+			mutations.filter((item) => item.entity === 'artist').map((item) => item.entityId),
+		);
+
+		const protectedAlbums = new Set(
+			mutations.filter((item) => item.entity === 'album').map((item) => item.entityId),
+		);
+
+		for (const item of mutations) if (item.entity === 'album') protectedArtists.add(item.payload.artist_id);
+
+		const merge = <T extends { id: number | string }>(
+			server: T[],
+			current: T[],
+			protectedIds: Set<number | string>,
+		): T[] => {
+			return [
+				...server.filter((item) => !protectedIds.has(item.id)),
+				...current.filter((item) => protectedIds.has(item.id)),
+			];
+		};
+
+		// Every local write increments the revision, including edits later reverted.
+		if ((local.revision ?? 0) !== (baseline?.revision ?? 0)) {
+			for (const item of [...local.artists, ...(baseline?.artists ?? [])]) protectedArtists.add(item.id);
+			for (const item of [...local.albums, ...(baseline?.albums ?? [])]) protectedAlbums.add(item.id);
+		}
+
+		const merged = {
+			revision: (local.revision ?? 0) + 1,
+			artists: merge(value.artists, local.artists, protectedArtists),
+			albums: merge(value.albums, local.albums, protectedAlbums),
+			loadedAt: value.loadedAt,
+		};
+
+		check();
+
+		store.put(merged, userId);
+		store.put(
+			{
+				...metadata,
+				lastLibraryRefreshedAt: value.loadedAt,
+				...(!mutations.some((item) => item.status === 'pending' || item.status === 'syncing') ?
+					{ lastSyncedAt: value.loadedAt }
+				:	{}),
+			},
+			`sync:${userId}`,
+		);
+
+		return { library: merged, mutations };
+	}).then((result) => {
+		notifySyncChange({ userId, type: 'library' });
+		return result;
+	});

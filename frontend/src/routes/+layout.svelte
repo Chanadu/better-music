@@ -23,7 +23,7 @@
 			if (document.visibilityState === 'visible') void refreshDatabaseSafely();
 		};
 		const focus = () => void refreshDatabaseSafely();
-		const reconnect = () => void refreshDatabaseSafely(true);
+		const reconnect = () => void refreshDatabaseSafely();
 
 		void (async () => {
 			if (authPage) {
@@ -45,7 +45,7 @@
 
 			ready = true;
 			await tick();
-			if (token) void refreshDatabaseSafely(true);
+			if (token) void refreshDatabaseSafely();
 
 			document.addEventListener('visibilitychange', visibility);
 			window.addEventListener('focus', focus);

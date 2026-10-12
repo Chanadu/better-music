@@ -155,6 +155,22 @@ const blocked = (mutation: PendingMutation, queue: PendingMutation[]) =>
 		return typeof mutation.payload.artist_id !== 'number' || other.status !== 'pending' || earlier;
 	});
 
+// Sending and retry scheduling use the same dependency and rate-limit rules.
+export const getQueueWork = (queue: PendingMutation[], now = Date.now()) => {
+	const rateLimit = queue.reduce(
+		(deadline, item) =>
+			item.failure?.status === syncConfig.http.rateLimit ? Math.max(deadline, item.nextAttemptAt ?? 0) : deadline,
+		0,
+	);
+	const eligible = queue.filter((item) => item.status === 'pending' && !blocked(item, queue));
+	const attemptAt = (item: PendingMutation) => Math.max(item.nextAttemptAt ?? 0, rateLimit);
+	const retries = eligible.filter((item) => item.nextAttemptAt !== undefined || rateLimit > now);
+	return {
+		ready: eligible.find((item) => attemptAt(item) <= now),
+		retryAt: retries.length ? Math.min(...retries.map(attemptAt)) : null,
+	};
+};
+
 const missingDependency = (mutation: PendingMutation) =>
 	(mutation.operation !== 'create' && (typeof mutation.entityId !== 'number' || !mutation.baseVersion)) ||
 	(mutation.entity === 'album' && typeof mutation.payload.artist_id !== 'number');
@@ -184,7 +200,7 @@ const withFailure = (mutation: PendingMutation, failure: Failure): PendingMutati
 export const createQueueProcessor = (dependencies: ProcessorDependencies) => {
 	let running: Promise<QueueResult> | null = null;
 
-	const run = async (): Promise<QueueResult> => {
+	const run = async (existingOwnership?: QueueOwnership): Promise<QueueResult> => {
 		const userId = dependencies.account();
 		const result: QueueResult = { completed: 0, remaining: 0, paused: false };
 		const pause = (pauseReason: NonNullable<QueueResult['pauseReason']>): QueueResult => ({
@@ -210,30 +226,9 @@ export const createQueueProcessor = (dependencies: ProcessorDependencies) => {
 				result.remaining = queue.length;
 				const pauseReason = interrupted();
 				if (pauseReason) return pause(pauseReason);
-				const now = Date.now();
+				const { ready: mutation } = getQueueWork(queue);
 
-				const rateLimit = queue.reduce(
-					(deadline, item) =>
-						item.failure?.status === syncConfig.http.rateLimit ?
-							Math.max(deadline, item.nextAttemptAt ?? 0)
-						:	deadline,
-					0,
-				);
-
-				const eligible = queue.filter((item) => item.status === 'pending' && !blocked(item, queue));
-				const mutation = eligible.find((item) => (item.nextAttemptAt ?? 0) <= now && rateLimit <= now);
-
-				if (!mutation) {
-					if (!eligible.length) return result;
-
-					const next = Math.max(rateLimit, Math.min(...eligible.map((item) => item.nextAttemptAt ?? now)));
-
-					await new Promise<void>((resolve) =>
-						setTimeout(resolve, Math.min(syncConfig.interruptCheckIntervalMs, Math.max(1, next - now))),
-					);
-
-					continue;
-				}
+				if (!mutation) return result;
 
 				const unresolved = missingDependency(mutation);
 				if (unresolved || (mutation.retryFailures ?? 0) >= syncConfig.maximumFailures) {
@@ -316,18 +311,21 @@ export const createQueueProcessor = (dependencies: ProcessorDependencies) => {
 			}
 		};
 		try {
+			if (existingOwnership) return await runOwned(existingOwnership);
+
 			return (
 				(await withSyncOwnership(userId, () => interrupted() === undefined, runOwned)) ??
 				pause(interrupted() ?? 'coordination')
 			);
 		} catch (error) {
 			if (error instanceof SyncOwnershipLostError) return pause(interrupted() ?? 'coordination');
+
 			throw error;
 		}
 	};
-	return () => {
+	return (ownership?: QueueOwnership) => {
 		if (!running)
-			running = run().finally(() => {
+			running = run(ownership).finally(() => {
 				running = null;
 			});
 
