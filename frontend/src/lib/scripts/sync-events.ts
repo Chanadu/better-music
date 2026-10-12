@@ -13,38 +13,45 @@ let initialized = false;
 
 const receive = (value: unknown) => {
 	if (!value || typeof value !== 'object') return;
+
 	const change = value as SyncChange;
+
 	if (!Number.isSafeInteger(change.userId) || change.userId <= 0) return;
 	if (change.type !== 'library' && change.type !== 'processor') return;
+
 	for (const listener of listeners) listener(change);
 };
 
 const initialize = () => {
 	if (initialized || typeof window === 'undefined') return;
+
 	initialized = true;
+
 	try {
 		channel = new BroadcastChannel(syncConfig.changeChannel);
 		channel.onmessage = (event) => receive(event.data);
-	} catch {
-		// Storage events provide notifications when BroadcastChannel is unavailable.
-	}
+	} catch { }
+
 	window.addEventListener('storage', (event) => {
 		if (event.key !== syncConfig.changeStorageKey || !event.newValue) return;
+
 		try {
 			receive(JSON.parse(event.newValue));
-		} catch {}
+		} catch { }
 	});
 };
 
 export const subscribeSyncChanges = (listener: (change: SyncChange) => void) => {
 	initialize();
 	listeners.add(listener);
+
 	return () => listeners.delete(listener);
 };
 
 export const notifySyncChange = (change: SyncChange) => {
 	initialize();
 	receive(change);
+
 	try {
 		if (channel) channel.postMessage(change);
 		else if (typeof localStorage !== 'undefined') {
@@ -53,7 +60,5 @@ export const notifySyncChange = (change: SyncChange) => {
 				JSON.stringify({ ...change, nonce: crypto.randomUUID() }),
 			);
 		}
-	} catch {
-		// Notifications are best effort; IndexedDB remains the authoritative state.
-	}
+	} catch { }
 };
