@@ -6,9 +6,11 @@ import {
 	applyOptimisticMutation,
 	getPendingMutations,
 	getStoredDatabaseCache,
+	getStoredLibraryUpdate,
 	reconcileSuccessfulMutation,
 	setStoredDatabaseCache,
 } from './database-cache';
+import { subscribeSyncChanges, type SyncChange } from './sync-events';
 import type {
 	DatabaseData,
 	EntityId,
@@ -35,6 +37,7 @@ export type SyncStatus = {
 export const database = writable<DatabaseData | null>(null);
 export const pendingMutations = writable<PendingMutation[]>([]);
 export const syncStatus = writable<SyncStatus>({ state: 'connecting', lastSyncedAt: null });
+export const queueProcessorStatus = writable<SyncChange | null>(null);
 let current: { userId: number; data: DatabaseData } | null = null;
 let request: { userId: number; promise: Promise<DatabaseData> } | null = null;
 let lastRefreshStartedAt = 0;
@@ -62,6 +65,47 @@ const publishCached = (userId: number, data: DatabaseData, hasPending = false) =
 
 	return data;
 };
+
+// Read committed snapshots after notifications; never copy another tab's records from a message.
+let reloadingLocalState = false;
+let localStateChanged = false;
+const reloadLocalState = async () => {
+	localStateChanged = true;
+	if (reloadingLocalState) return;
+	reloadingLocalState = true;
+	try {
+		while (localStateChanged) {
+			localStateChanged = false;
+			const userId = getCurrentUserId();
+			if (userId === null) continue;
+			const stored = await getStoredLibraryUpdate(userId);
+			if (getCurrentUserId() !== userId) continue;
+			pendingMutations.set(stored?.mutations ?? []);
+			if (stored) {
+				current = { userId, data: stored.library };
+				database.set(stored.library);
+				cacheLibraryArtwork(stored.library);
+				if (stored.mutations.length > 0) setSyncState(navigator.onLine ? 'pending' : 'offline');
+			} else {
+				current = null;
+				database.set(null);
+			}
+		}
+	} finally {
+		reloadingLocalState = false;
+	}
+};
+
+subscribeSyncChanges((change) => {
+	if (change.userId !== getCurrentUserId()) return;
+	if (change.type === 'processor') {
+		queueProcessorStatus.update((current) => {
+			if (change.state !== 'syncing' && current?.ownerId && current.ownerId !== change.ownerId) return current;
+			return change;
+		});
+	}
+	void reloadLocalState().catch((error) => console.warn('Could not reload changed local library', error));
+});
 
 const publishFresh = async (userId: number, data: ServerDatabaseData) => {
 	if (getCurrentUserId() !== userId) return data;
@@ -213,8 +257,9 @@ export const reconcileMutationResponse = async (
 	userId: number,
 	mutationId: string,
 	response: SuccessfulMutationResponse,
+	checkOwnership?: () => void,
 ) => {
-	const result = await reconcileSuccessfulMutation(userId, mutationId, response);
+	const result = await reconcileSuccessfulMutation(userId, mutationId, response, checkOwnership);
 	if (result && getCurrentUserId() === userId) {
 		pendingMutations.set(
 			[...result.mutations].sort(

@@ -31,7 +31,7 @@ export class ApiError extends Error {
 
 type JsonInit = Omit<RequestInit, 'body'> & { body?: unknown };
 
-export type MutationOptions = { mutationId: string };
+export type MutationOptions = { mutationId: string; signal?: AbortSignal };
 export type VersionedMutationOptions = MutationOptions & { baseVersion: number };
 
 const mutationHeaders = (options: MutationOptions): Headers => {
@@ -102,13 +102,24 @@ export const artistsApi = {
 	list: () => secureJson<Artist[]>('/api/artists'),
 	get: (id: number) => secureJson<Artist>(`/api/artists/${id}`),
 	create: (body: CreateArtistRequest, options: MutationOptions) =>
-		secureJson<Artist>('/api/artists', { method: 'POST', body, headers: mutationHeaders(options) }),
+		secureJson<Artist>('/api/artists', {
+			method: 'POST',
+			body,
+			headers: mutationHeaders(options),
+			signal: options.signal,
+		}),
 	update: (id: number, body: UpdateArtistRequest, options: VersionedMutationOptions) =>
-		secureJson<Artist>(`/api/artists/${id}`, { method: 'PUT', body, headers: versionedMutationHeaders(options) }),
+		secureJson<Artist>(`/api/artists/${id}`, {
+			method: 'PUT',
+			body,
+			headers: versionedMutationHeaders(options),
+			signal: options.signal,
+		}),
 	delete: (id: number, options: VersionedMutationOptions) =>
 		secureJson<MessageResponse>(`/api/artists/${id}`, {
 			method: 'DELETE',
 			headers: versionedMutationHeaders(options),
+			signal: options.signal,
 		}),
 };
 
@@ -116,14 +127,25 @@ export const albumsApi = {
 	list: () => secureJson<Album[]>('/api/albums'),
 	get: (id: number, artistId: number) => secureJson<Album>(`/api/albums/${id}${query({ artist_id: artistId })}`),
 	create: (body: CreateAlbumRequest, options: MutationOptions) =>
-		secureJson<Album>('/api/albums', { method: 'POST', body, headers: mutationHeaders(options) }),
+		secureJson<Album>('/api/albums', {
+			method: 'POST',
+			body,
+			headers: mutationHeaders(options),
+			signal: options.signal,
+		}),
 	update: (id: number, body: UpdateAlbumRequest, options: VersionedMutationOptions) =>
-		secureJson<Album>(`/api/albums/${id}`, { method: 'PUT', body, headers: versionedMutationHeaders(options) }),
+		secureJson<Album>(`/api/albums/${id}`, {
+			method: 'PUT',
+			body,
+			headers: versionedMutationHeaders(options),
+			signal: options.signal,
+		}),
 	delete: (id: number, artistId: number, options: VersionedMutationOptions) =>
 		secureJson<MessageResponse>(`/api/albums/${id}`, {
 			method: 'DELETE',
 			body: { artist_id: artistId },
 			headers: versionedMutationHeaders(options),
+			signal: options.signal,
 		}),
 };
 

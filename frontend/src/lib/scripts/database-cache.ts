@@ -7,13 +7,13 @@ import type {
 	SuccessfulMutationResponse,
 } from './types';
 import { compareMutationOrder, reconcileLibraryUpdate } from './database-reconciliation';
+import { notifySyncChange } from './sync-events';
 
 const databaseName = 'better-music';
-const databaseVersion = 3;
+const databaseVersion = 5;
 const libraryStore = 'library-snapshots';
 const outboxStore = 'mutation-outbox';
 const userIndex = 'user-id';
-
 const openDatabase = () =>
 	new Promise<IDBDatabase>((resolve, reject) => {
 		if (!globalThis.indexedDB) {
@@ -28,11 +28,12 @@ const openDatabase = () =>
 			const database = request.result;
 
 			if (!database.objectStoreNames.contains(libraryStore)) database.createObjectStore(libraryStore);
+			if (database.objectStoreNames.contains('sync-leases')) database.deleteObjectStore('sync-leases');
 
 			const outbox =
 				database.objectStoreNames.contains(outboxStore) ?
 					request.transaction!.objectStore(outboxStore)
-					: database.createObjectStore(outboxStore, { keyPath: 'mutationId' });
+				:	database.createObjectStore(outboxStore, { keyPath: 'mutationId' });
 
 			if (!outbox.indexNames.contains(userIndex)) outbox.createIndex(userIndex, 'userId');
 		};
@@ -50,7 +51,6 @@ const openDatabase = () =>
 			database.onversionchange = () => database.close();
 
 			if (blocked) database.close();
-
 			else resolve(database);
 		};
 	});
@@ -85,7 +85,7 @@ const runTransaction = async <T>(
 		} catch (error) {
 			try {
 				transaction.abort();
-			} catch { }
+			} catch {}
 			await completed.catch(() => undefined);
 
 			throw error;
@@ -97,6 +97,29 @@ const runTransaction = async <T>(
 
 const readMutations = (transaction: IDBTransaction, userId: number) =>
 	readRequest<PendingMutation[]>(transaction.objectStore(outboxStore).index(userIndex).getAll(userId));
+
+// Call only while holding the account's Web Lock. Preserve uncertain request identities.
+export const recoverInterruptedMutations = async (userId: number, checkOwnership: () => void) => {
+	await updateLibraryAndOutbox(
+		userId,
+		(current) => ({
+			...current,
+			mutations: current.mutations.map((mutation) =>
+				mutation.status === 'syncing' ? { ...mutation, status: 'pending' } : mutation,
+			),
+		}),
+		checkOwnership,
+	);
+};
+
+export const getStoredLibraryUpdate = (userId: number): Promise<LibraryUpdate | null> =>
+	runTransaction('readonly', async (transaction) => {
+		const [library, mutations] = await Promise.all([
+			readRequest<LocalDatabaseData | undefined>(transaction.objectStore(libraryStore).get(userId)),
+			readMutations(transaction, userId),
+		]);
+		return library ? { library, mutations: mutations.sort(compareMutationOrder) } : null;
+	});
 
 export const getStoredLibrary = (userId: number): Promise<LocalDatabaseData | null> =>
 	runTransaction(
@@ -112,12 +135,14 @@ export const getPendingMutations = async (userId: number): Promise<PendingMutati
 	return mutations.sort(compareMutationOrder);
 };
 
-export const reconcileSuccessfulMutation = (
+export const reconcileSuccessfulMutation = async (
 	userId: number,
 	mutationId: string,
 	response: SuccessfulMutationResponse,
-): Promise<LibraryUpdate | null> =>
-	runTransaction('readwrite', async (transaction) => {
+	checkOwnership?: () => void,
+): Promise<LibraryUpdate | null> => {
+	const result = await runTransaction('readwrite', async (transaction) => {
+		checkOwnership?.();
 		const snapshots = transaction.objectStore(libraryStore);
 		const outbox = transaction.objectStore(outboxStore);
 
@@ -132,6 +157,7 @@ export const reconcileSuccessfulMutation = (
 		if (!library) throw new Error('Cannot reconcile a mutation without its library');
 
 		const updated = reconcileLibraryUpdate({ library, mutations }, mutation, response);
+		checkOwnership?.();
 
 		for (const item of updated.mutations) outbox.put(item);
 		snapshots.put(updated.library, userId);
@@ -139,12 +165,17 @@ export const reconcileSuccessfulMutation = (
 
 		return updated;
 	});
+	notifySyncChange({ userId, type: 'library' });
+	return result;
+};
 
-export const updateLibraryAndOutbox = (
+export const updateLibraryAndOutbox = async (
 	userId: number,
 	update: (current: LibraryUpdate) => LibraryUpdate,
-): Promise<LibraryUpdate> =>
-	runTransaction('readwrite', async (transaction) => {
+	checkOwnership?: () => void,
+): Promise<LibraryUpdate> => {
+	const result = await runTransaction('readwrite', async (transaction) => {
+		checkOwnership?.();
 		const snapshots = transaction.objectStore(libraryStore);
 
 		const [library, mutations] = await Promise.all([
@@ -158,6 +189,7 @@ export const updateLibraryAndOutbox = (
 			throw new Error('Mutation user does not match the library owner');
 		}
 
+		checkOwnership?.();
 		const outbox = transaction.objectStore(outboxStore);
 
 		for (const mutation of mutations) outbox.delete(mutation.mutationId);
@@ -166,6 +198,11 @@ export const updateLibraryAndOutbox = (
 		snapshots.put(updated.library, userId);
 		return updated;
 	});
+
+	notifySyncChange({ userId, type: 'library' });
+
+	return result;
+};
 
 export const applyOptimisticMutation = async (
 	userId: number,
@@ -190,16 +227,21 @@ export const updatePendingMutation = async (
 	userId: number,
 	mutationId: string,
 	update: (mutation: PendingMutation) => PendingMutation,
+	checkOwnership?: () => void,
 ): Promise<PendingMutation | null> => {
-	const result = await updateLibraryAndOutbox(userId, ({ library, mutations }) => ({
-		library,
-		mutations: mutations.map((mutation) => {
-			if (mutation.mutationId !== mutationId) return mutation;
-			const updated = update(mutation);
-			if (updated.mutationId !== mutationId) throw new Error('Cannot change a mutation ID');
-			return updated;
+	const result = await updateLibraryAndOutbox(
+		userId,
+		({ library, mutations }) => ({
+			library,
+			mutations: mutations.map((mutation) => {
+				if (mutation.mutationId !== mutationId) return mutation;
+				const updated = update(mutation);
+				if (updated.mutationId !== mutationId) throw new Error('Cannot change a mutation ID');
+				return updated;
+			}),
 		}),
-	}));
+		checkOwnership,
+	);
 
 	return result.mutations.find((mutation) => mutation.mutationId === mutationId) ?? null;
 };
@@ -211,8 +253,8 @@ export const removePendingMutation = async (userId: number, mutationId: string):
 	}));
 };
 
-export const deleteStoredLibrary = (userId: number): Promise<void> =>
-	runTransaction('readwrite', async (transaction) => {
+export const deleteStoredLibrary = async (userId: number): Promise<void> => {
+	await runTransaction('readwrite', async (transaction) => {
 		const mutations = await readMutations(transaction, userId);
 
 		for (const mutation of mutations) {
@@ -221,6 +263,8 @@ export const deleteStoredLibrary = (userId: number): Promise<void> =>
 
 		transaction.objectStore(libraryStore).delete(userId);
 	});
+	notifySyncChange({ userId, type: 'library' });
+};
 
 export const getStoredDatabaseCache = async (userId: number): Promise<DatabaseData | null> => {
 	try {
@@ -235,11 +279,14 @@ export const getStoredDatabaseCache = async (userId: number): Promise<DatabaseDa
 	}
 };
 
-export const setStoredDatabaseCache = (userId: number, value: ServerDatabaseData): Promise<boolean> =>
-	runTransaction('readwrite', async (transaction) => {
+export const setStoredDatabaseCache = async (userId: number, value: ServerDatabaseData): Promise<boolean> => {
+	const saved = await runTransaction('readwrite', async (transaction) => {
 		const pending = await readRequest(transaction.objectStore(outboxStore).index(userIndex).count(userId));
 		if (pending) return false;
 
 		transaction.objectStore(libraryStore).put(value, userId);
 		return true;
 	});
+	if (saved) notifySyncChange({ userId, type: 'library' });
+	return saved;
+};

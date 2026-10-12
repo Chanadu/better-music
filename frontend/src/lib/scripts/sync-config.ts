@@ -2,6 +2,10 @@ export const syncConfig = {
 	maximumFailures: 4,
 	retryDelaysMs: [1000, 2000, 4000],
 	interruptCheckIntervalMs: 1000,
+	requestTimeoutMs: 30000,
+	lockPrefix: 'better-music-sync:',
+	changeChannel: 'better-music-sync',
+	changeStorageKey: 'betterMusicSyncChange',
 	millisecondsPerSecond: 1000,
 	http: {
 		authentication: 401,

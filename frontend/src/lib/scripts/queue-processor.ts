@@ -1,6 +1,7 @@
 import { albumsApi, ApiError, artistsApi } from './api';
 import { AuthenticationError, getCurrentUserId } from './auth';
 import { getPendingMutations, updatePendingMutation } from './database-cache';
+import { withSyncOwnership, sendWithTimeout, SyncOwnershipLostError, type QueueOwnership } from './sync-coordination';
 import { reconcileMutationResponse } from './database';
 import { compareMutationOrder } from './database-reconciliation';
 import type { PendingMutation, SuccessfulMutationResponse } from './types';
@@ -11,15 +12,15 @@ type ProcessorDependencies = {
 	online: () => boolean;
 	read: typeof getPendingMutations;
 	update: typeof updatePendingMutation;
-	send: (mutation: PendingMutation) => Promise<SuccessfulMutationResponse>;
-	reconcile: (userId: number, mutationId: string, response: SuccessfulMutationResponse) => Promise<unknown>;
+	send: (mutation: PendingMutation, signal?: AbortSignal) => Promise<SuccessfulMutationResponse>;
+	reconcile: typeof reconcileMutationResponse;
 };
 
 export type QueueResult = {
 	completed: number;
 	remaining: number;
 	paused: boolean;
-	pauseReason?: 'connection' | 'authentication' | 'storage' | 'account';
+	pauseReason?: 'connection' | 'authentication' | 'storage' | 'account' | 'coordination';
 };
 
 export const retryAfterDeadline = (value: string | null, now: number): number | undefined => {
@@ -56,10 +57,10 @@ const classifyFailure = (error: unknown): Failure => {
 	if (error instanceof ApiError) {
 		const kind: Failure['kind'] =
 			error.status === syncConfig.http.authentication ? 'authentication'
-				: error.status === syncConfig.http.conflict ? 'conflict'
-					: syncConfig.http.retryable.includes(error.status) ? 'retryable'
-						: syncConfig.http.invalidData.includes(error.status) ? 'invalid-data'
-							: 'permanent';
+			: error.status === syncConfig.http.conflict ? 'conflict'
+			: syncConfig.http.retryable.includes(error.status) ? 'retryable'
+			: syncConfig.http.invalidData.includes(error.status) ? 'invalid-data'
+			: 'permanent';
 
 		return {
 			kind,
@@ -77,8 +78,11 @@ const classifyFailure = (error: unknown): Failure => {
 	return { kind: 'permanent', message };
 };
 
-export const sendQueuedMutation = async (mutation: PendingMutation): Promise<SuccessfulMutationResponse> => {
-	const options = { mutationId: mutation.mutationId };
+export const sendQueuedMutation = async (
+	mutation: PendingMutation,
+	signal?: AbortSignal,
+): Promise<SuccessfulMutationResponse> => {
+	const options = { mutationId: mutation.mutationId, signal };
 
 	if (mutation.entity === 'artist' && mutation.operation === 'create') {
 		return { entity: 'artist', operation: 'create', record: await artistsApi.create(mutation.payload, options) };
@@ -193,106 +197,132 @@ export const createQueueProcessor = (dependencies: ProcessorDependencies) => {
 
 		const interrupted = (): QueueResult['pauseReason'] =>
 			dependencies.account() !== userId ? 'account'
-				: !dependencies.online() ? 'connection'
-					: undefined;
+			: !dependencies.online() ? 'connection'
+			: undefined;
 
-		while (true) {
-			const queue = (await dependencies.read(userId)).sort(compareMutationOrder);
-			result.remaining = queue.length;
-			const pauseReason = interrupted();
-			if (pauseReason) return pause(pauseReason);
-			const now = Date.now();
+		const runOwned = async (ownership: QueueOwnership): Promise<QueueResult> => {
+			const update = (key: string, change: Parameters<typeof dependencies.update>[2]) =>
+				dependencies.update(userId, key, change, ownership.check);
 
-			const rateLimit = queue.reduce(
-				(deadline, item) =>
-					item.failure?.status === syncConfig.http.rateLimit ?
-						Math.max(deadline, item.nextAttemptAt ?? 0)
-						: deadline,
-				0,
-			);
+			while (true) {
+				if (ownership.signal.aborted) throw new SyncOwnershipLostError();
+				const queue = (await dependencies.read(userId)).sort(compareMutationOrder);
+				result.remaining = queue.length;
+				const pauseReason = interrupted();
+				if (pauseReason) return pause(pauseReason);
+				const now = Date.now();
 
-			const eligible = queue.filter((item) => item.status === 'pending' && !blocked(item, queue));
-			const mutation = eligible.find((item) => (item.nextAttemptAt ?? 0) <= now && rateLimit <= now);
-
-			if (!mutation) {
-				if (!eligible.length) return result;
-
-				const next = Math.max(rateLimit, Math.min(...eligible.map((item) => item.nextAttemptAt ?? now)));
-
-				await new Promise<void>((resolve) =>
-					setTimeout(resolve, Math.min(syncConfig.interruptCheckIntervalMs, Math.max(1, next - now))),
+				const rateLimit = queue.reduce(
+					(deadline, item) =>
+						item.failure?.status === syncConfig.http.rateLimit ?
+							Math.max(deadline, item.nextAttemptAt ?? 0)
+						:	deadline,
+					0,
 				);
 
-				continue;
+				const eligible = queue.filter((item) => item.status === 'pending' && !blocked(item, queue));
+				const mutation = eligible.find((item) => (item.nextAttemptAt ?? 0) <= now && rateLimit <= now);
+
+				if (!mutation) {
+					if (!eligible.length) return result;
+
+					const next = Math.max(rateLimit, Math.min(...eligible.map((item) => item.nextAttemptAt ?? now)));
+
+					await new Promise<void>((resolve) =>
+						setTimeout(resolve, Math.min(syncConfig.interruptCheckIntervalMs, Math.max(1, next - now))),
+					);
+
+					continue;
+				}
+
+				const unresolved = missingDependency(mutation);
+				if (unresolved || (mutation.retryFailures ?? 0) >= syncConfig.maximumFailures) {
+					await update(mutation.mutationId, (item) => ({
+						...item,
+						status: 'failed',
+						failure:
+							unresolved ?
+								{
+									kind: 'invalid-data',
+									message: 'Missing server record or artist dependency',
+								}
+							:	item.failure,
+					}));
+
+					continue;
+				}
+
+				let didClaim = false;
+
+				const claimed = await update(mutation.mutationId, (item) => {
+					if (item.status !== 'pending' || (item.nextAttemptAt ?? 0) > Date.now()) return item;
+					didClaim = true;
+					return { ...item, status: 'syncing', attempts: item.attempts + 1 };
+				});
+
+				if (!didClaim || !claimed) continue;
+
+				const beforeSend = interrupted();
+				if (beforeSend) {
+					await update(claimed.mutationId, (item) => ({
+						...item,
+						status: 'pending',
+						attempts: item.attempts - 1,
+					}));
+
+					return pause(beforeSend);
+				}
+
+				let response: SuccessfulMutationResponse;
+
+				try {
+					response = await sendWithTimeout(ownership, (signal) => dependencies.send(claimed, signal));
+				} catch (error) {
+					if (error instanceof SyncOwnershipLostError || ownership.signal.aborted)
+						throw new SyncOwnershipLostError();
+					const failure = classifyFailure(error);
+
+					await update(claimed.mutationId, (item) => withFailure(item, failure));
+
+					const pauseReason = failurePauseReason(failure);
+
+					if (pauseReason) return pause(pauseReason);
+
+					continue;
+				}
+
+				if (dependencies.account() !== userId) return pause('account');
+
+				try {
+					ownership.check();
+					await dependencies.reconcile(userId, claimed.mutationId, response, ownership.check);
+
+					result.completed++;
+				} catch (error) {
+					if (error instanceof SyncOwnershipLostError || ownership.signal.aborted)
+						throw new SyncOwnershipLostError();
+					await update(claimed.mutationId, (item) => ({
+						...item,
+						status: 'pending',
+						nextAttemptAt: undefined,
+						failure: {
+							kind: 'storage',
+							message: error instanceof Error ? error.message : String(error),
+						},
+					}));
+
+					return pause('storage');
+				}
 			}
-
-			const unresolved = missingDependency(mutation);
-			if (unresolved || (mutation.retryFailures ?? 0) >= syncConfig.maximumFailures) {
-				await dependencies.update(userId, mutation.mutationId, (item) => ({
-					...item,
-					status: 'failed',
-					failure:
-						unresolved ?
-							{ kind: 'invalid-data', message: 'Missing server record or artist dependency' }
-							: item.failure,
-				}));
-
-				continue;
-			}
-
-			let didClaim = false;
-
-			const claimed = await dependencies.update(userId, mutation.mutationId, (item) => {
-				if (item.status !== 'pending' || (item.nextAttemptAt ?? 0) > Date.now()) return item;
-				didClaim = true;
-				return { ...item, status: 'syncing', attempts: item.attempts + 1 };
-			});
-
-			if (!didClaim || !claimed) continue;
-
-			const beforeSend = interrupted();
-			if (beforeSend) {
-				await dependencies.update(userId, claimed.mutationId, (item) => ({
-					...item,
-					status: 'pending',
-					attempts: item.attempts - 1,
-				}));
-
-				return pause(beforeSend);
-			}
-
-			let response: SuccessfulMutationResponse;
-
-			try {
-				response = await dependencies.send(claimed);
-			} catch (error) {
-				const failure = classifyFailure(error);
-
-				await dependencies.update(userId, claimed.mutationId, (item) => withFailure(item, failure));
-
-				const pauseReason = failurePauseReason(failure);
-
-				if (pauseReason) return pause(pauseReason);
-
-				continue;
-			}
-
-			if (dependencies.account() !== userId) return pause('account');
-
-			try {
-				await dependencies.reconcile(userId, claimed.mutationId, response);
-
-				result.completed++;
-			} catch (error) {
-				await dependencies.update(userId, claimed.mutationId, (item) => ({
-					...item,
-					status: 'pending',
-					nextAttemptAt: undefined,
-					failure: { kind: 'storage', message: error instanceof Error ? error.message : String(error) },
-				}));
-
-				return pause('storage');
-			}
+		};
+		try {
+			return (
+				(await withSyncOwnership(userId, () => interrupted() === undefined, runOwned)) ??
+				pause(interrupted() ?? 'coordination')
+			);
+		} catch (error) {
+			if (error instanceof SyncOwnershipLostError) return pause(interrupted() ?? 'coordination');
+			throw error;
 		}
 	};
 	return () => {
