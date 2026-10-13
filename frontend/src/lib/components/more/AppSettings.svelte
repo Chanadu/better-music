@@ -5,12 +5,14 @@
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
 	import ExportLibrarySetting from './ExportLibrarySetting.svelte';
+	import AppInformationDialog from './AppInformationDialog.svelte';
 	import RatingSettingsDialog from './RatingSettingsDialog.svelte';
 	import SettingRow from './SettingRow.svelte';
 	import SyncStatusSetting from './SyncStatusSetting.svelte';
 	import ThemeSetting from './ThemeSetting.svelte';
 
 	let ratingSettingsDialog: RatingSettingsDialog;
+	let appInformationDialog: AppInformationDialog;
 
 	function setDropdownStyle(event: Event) {
 		appSettings.set('useNativeDropdowns', (event.currentTarget as HTMLInputElement).checked);
@@ -23,14 +25,6 @@
 	// 		icon: GridIcon,
 	// 	},
 	// ] as const;
-
-	const unavailableTools = [
-		{
-			title: 'Help, shortcuts, and app information',
-			description: 'Learn how Better Music works and find app details.',
-			icon: MoreIcon,
-		},
-	] as const;
 </script>
 
 <section aria-labelledby="settings-heading">
@@ -108,10 +102,22 @@
 
 		<SyncStatusSetting />
 
-		{#each unavailableTools as setting}
-			<SettingRow {...setting} tone="accent" />
-		{/each}
+		<SettingRow
+			title="App information"
+			description="About Better Music and its GitHub project."
+			icon={MoreIcon}
+			tone="accent"
+		>
+			<button
+				type="button"
+				class="btn hover-lift btn-accent btn-md rounded-full shadow-sm"
+				onclick={() => appInformationDialog.open()}
+			>
+				About
+			</button>
+		</SettingRow>
 	</div>
 </section>
 
 <RatingSettingsDialog bind:this={ratingSettingsDialog} />
+<AppInformationDialog bind:this={appInformationDialog} />
