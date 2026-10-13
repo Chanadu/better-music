@@ -1,5 +1,5 @@
 import { albumsApi, ApiError, artistsApi } from './api';
-import { AuthenticationError, getCurrentUserId } from './auth';
+import { AuthenticationError, getCurrentUserId, getSessionGeneration } from './auth';
 import { getPendingMutations, updatePendingMutation } from './database-cache';
 import { withSyncOwnership, sendWithTimeout, SyncOwnershipLostError, type QueueOwnership } from './sync-coordination';
 import { reconcileMutationResponse } from './database';
@@ -191,6 +191,7 @@ export const createQueueProcessor = (dependencies: ProcessorDependencies) => {
 
 	const run = async (existingOwnership?: QueueOwnership): Promise<QueueResult> => {
 		const userId = dependencies.account();
+		const session = getSessionGeneration();
 		const result: QueueResult = { completed: 0, remaining: 0, paused: false };
 		const pause = (pauseReason: NonNullable<QueueResult['pauseReason']>): QueueResult => ({
 			...result,
@@ -201,7 +202,7 @@ export const createQueueProcessor = (dependencies: ProcessorDependencies) => {
 		if (userId === null) return pause('authentication');
 
 		const interrupted = (): QueueResult['pauseReason'] =>
-			dependencies.account() !== userId ? 'account'
+			dependencies.account() !== userId || getSessionGeneration() !== session ? 'account'
 			: !dependencies.online() ? 'connection'
 			: undefined;
 

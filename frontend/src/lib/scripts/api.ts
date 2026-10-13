@@ -1,4 +1,4 @@
-import { authenticatedFetch } from './auth';
+import { authenticatedFetch, sessionGuard } from './auth';
 import type {
 	Album,
 	AccountResponse,
@@ -77,7 +77,12 @@ const json = async <T>(path: string, init: JsonInit = {}, fetcher: typeof fetch 
 	return body as T;
 };
 
-const secureJson = <T>(path: string, init: JsonInit = {}) => json<T>(path, init, authenticatedFetch);
+const secureJson = async <T>(path: string, init: JsonInit = {}) => {
+	const checkSession = sessionGuard();
+	const result = await json<T>(path, init, authenticatedFetch);
+	checkSession();
+	return result;
+};
 const query = (values: Record<string, string | number | undefined>) => {
 	const params = new URLSearchParams();
 	Object.entries(values).forEach(([key, value]) => value !== undefined && params.set(key, String(value)));

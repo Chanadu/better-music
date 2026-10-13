@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 import { albumsApi, ApiError, artistsApi } from './api';
 import { cacheLibraryArtwork } from './artwork-cache';
 import {
+	subscribeSessionChanges,
 	getCurrentUserId,
 	getSessionGeneration,
 	getValidAccessToken,
@@ -60,6 +61,16 @@ type SyncRun = { userId: number; session: string | null; rerunRequested: boolean
 let request: { run: SyncRun; promise: Promise<DatabaseData> } | null = null;
 let retryTimer: ReturnType<typeof setTimeout> | undefined;
 let schedulingRevision = 0;
+
+subscribeSessionChanges(() => {
+	current = null;
+	database.set(null);
+	pendingMutations.set([]);
+	queueProcessorStatus.set(null);
+	clearTimeout(retryTimer);
+	schedulingRevision++;
+	syncStatus.set({ state: 'error', lastSyncedAt: null });
+});
 
 const setSyncState = (state: SyncStatus['state']) => syncStatus.update((status) => ({ ...status, state }));
 
@@ -407,8 +418,10 @@ const definedFields = <T extends object>(value: T): T =>
 	Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
 
 const queueMutation = async (mutation: PendingMutation) => {
+	const session = getSessionGeneration();
 	const result = await applyOptimisticMutation(mutation.userId, mutation, (library) => {
-		if (getCurrentUserId() !== mutation.userId) throw new Error('Account changed before the change was saved');
+		if (getCurrentUserId() !== mutation.userId || getSessionGeneration() !== session)
+			throw new Error('Account changed before the change was saved');
 
 		if (mutation.entity === 'artist') {
 			const existing = library.artists.find((item) => item.id === mutation.entityId);

@@ -41,9 +41,14 @@
 	</div>
 	<div class="min-w-0 flex-1">
 		<h3 class="font-bold">{title}</h3>
-		<p class="text-base-content/55 truncate text-sm">{description}</p>
+		<p class="text-base-content/55 text-sm wrap-anywhere">{description}</p>
 	</div>
-	<button type="button" class={`btn hover-lift btn-md gap-2 rounded-full shadow-sm ${buttonClasses[tone]}`} {disabled} {onclick}>
+	<button
+		type="button"
+		class={`btn hover-lift btn-md gap-2 rounded-full shadow-sm ${buttonClasses[tone]}`}
+		{disabled}
+		{onclick}
+	>
 		<Icon class="size-4" />
 		{actionLabel}
 	</button>

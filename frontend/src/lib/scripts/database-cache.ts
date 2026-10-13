@@ -303,9 +303,10 @@ export const removePendingMutation = async (userId: number, mutationId: string):
 	}));
 };
 
-export const deleteStoredLibrary = async (userId: number): Promise<void> => {
+export const deleteStoredLibrary = async (userId: number, check?: () => void): Promise<void> => {
 	await runTransaction('readwrite', async (transaction) => {
 		const mutations = await readMutations(transaction, userId);
+		check?.();
 
 		for (const mutation of mutations) {
 			transaction.objectStore(outboxStore).delete(mutation.mutationId);

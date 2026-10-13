@@ -8,13 +8,43 @@
 	import LockIcon from '$lib/components/icons/LockIcon.svelte';
 	import LogoutIcon from '$lib/components/icons/LogoutIcon.svelte';
 	import { accountApi } from '$lib/scripts/api';
-	import { logout } from '$lib/scripts/auth';
+	import { canLogout, logout } from '$lib/scripts/auth';
+	import { subscribeSyncChanges } from '$lib/scripts/sync-events';
 
 	let accountEmail = $state('');
 	let loadError = $state('');
 	let actionDialog = $state<AccountActionDialog>();
+	let logoutError = $state('');
 	let loggingOut = $state(false);
+	let logoutAllowed = $state(false);
 	let actionsDisabled = $derived(!accountEmail || online.current !== true);
+	let logoutDisabled = $derived(actionsDisabled || loggingOut || !logoutAllowed);
+
+	onMount(() => {
+		let mounted = true;
+		let checking = false;
+		const checkLogout = async () => {
+			if (checking) return;
+			checking = true;
+			try {
+				const allowed = await canLogout();
+				if (mounted) logoutAllowed = allowed;
+			} catch {
+				if (mounted) logoutAllowed = false;
+			} finally {
+				checking = false;
+			}
+		};
+		void checkLogout();
+		const unsubscribe = subscribeSyncChanges(() => void checkLogout());
+		// Locks can also belong to requests or tabs that do not publish sync events.
+		const timer = setInterval(() => void checkLogout(), 500);
+		return () => {
+			mounted = false;
+			clearInterval(timer);
+			unsubscribe();
+		};
+	});
 
 	onMount(async () => {
 		if (online.current !== true) return;
@@ -28,10 +58,22 @@
 	});
 
 	async function signOut() {
-		if (actionsDisabled || loggingOut) return;
+		if (logoutDisabled) return;
 		loggingOut = true;
-		await logout();
-		location.assign('/login');
+		logoutError = '';
+		try {
+			await logout();
+			location.assign('/login');
+		} catch (error) {
+			try {
+				logoutAllowed = await canLogout();
+			} catch {
+				logoutAllowed = false;
+			}
+			if (logoutAllowed) logoutError = error instanceof Error ? error.message : 'Could not sign out. Try again.';
+		} finally {
+			loggingOut = false;
+		}
 	}
 </script>
 
@@ -67,11 +109,11 @@
 
 		<AccountSettingRow
 			title="Sign out"
-			description="Sign out of Better Music on this device"
+			description={logoutError || 'Sign out of Better Music on this device'}
 			actionLabel={loggingOut ? 'Signing out...' : 'Sign out'}
 			icon={LogoutIcon}
 			tone="accent"
-			disabled={actionsDisabled || loggingOut}
+			disabled={logoutDisabled}
 			onclick={signOut}
 		/>
 

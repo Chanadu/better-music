@@ -6,7 +6,7 @@
 	import StorageErrorAlert from '$lib/components/common/StorageErrorAlert.svelte';
 	import BottomNav from '$lib/components/navigation/BottomNav.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
-	import { getValidAccessToken, hasStoredSession } from '$lib/scripts/auth';
+	import { getValidAccessToken, hasStoredSession, subscribeSessionChanges } from '$lib/scripts/auth';
 	import {
 		getDatabaseData,
 		markOffline,
@@ -45,6 +45,9 @@
 	});
 
 	onMount(() => {
+		const unsubscribeSession = subscribeSessionChanges(() => {
+			if (!authPage && !previewPage) location.assign(hasStoredSession() ? '/' : '/login');
+		});
 		appSettings.load();
 		void preloadLibraryPages();
 
@@ -86,6 +89,7 @@
 		})();
 
 		return () => {
+			unsubscribeSession();
 			document.removeEventListener('visibilitychange', visibility);
 			window.removeEventListener('focus', focus);
 			window.removeEventListener('online', reconnect);
@@ -95,16 +99,13 @@
 </script>
 
 <svelte:head>
-	<title>
-		Better Music
-	</title>
+	<title>Better Music</title>
 </svelte:head>
 
 {#if ready}
 	{#if authPage || previewPage}
 		{@render children()}
 	{:else}
-
 		<main
 			class="px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-[calc(6rem+env(safe-area-inset-bottom))]"
 		>
