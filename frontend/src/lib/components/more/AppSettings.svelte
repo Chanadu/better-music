@@ -1,6 +1,6 @@
 <script lang="ts">
 	import EditIcon from '$lib/components/icons/EditIcon.svelte';
-	import GridIcon from '$lib/components/icons/GridIcon.svelte';
+	// import GridIcon from '$lib/components/icons/GridIcon.svelte';
 	import MoreIcon from '$lib/components/icons/MoreIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
@@ -16,13 +16,13 @@
 		appSettings.set('useNativeDropdowns', (event.currentTarget as HTMLInputElement).checked);
 	}
 
-	const unavailableSettings = [
-		{
-			title: 'Default library layout',
-			description: 'Choose grid or compact list views for albums and artists.',
-			icon: GridIcon,
-		},
-	] as const;
+	// const unavailableSettings = [
+	// 	{
+	// 		title: 'Default library layout',
+	// 		description: 'Choose grid or compact list views for albums and artists.',
+	// 		icon: GridIcon,
+	// 	},
+	// ] as const;
 
 	const unavailableTools = [
 		{
@@ -45,9 +45,11 @@
 	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
 		<ThemeSetting />
 
+		<!-- Temporarily hidden: default library layout setting.
 		{#each unavailableSettings as setting}
 			<SettingRow {...setting} />
 		{/each}
+		-->
 
 		<SettingRow
 			title="Rating labels and colors"
