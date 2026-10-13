@@ -40,6 +40,7 @@
 	import RatingDistributionChart from '$lib/components/more/RatingDistributionChart.svelte';
 	import StorageErrorAlert from '$lib/components/common/StorageErrorAlert.svelte';
 	import SyncQueueList from '$lib/components/more/SyncQueueList.svelte';
+	import ConflictMutationModal from '$lib/components/more/ConflictMutationModal.svelte';
 	import DiscardMutationModal from '$lib/components/more/DiscardMutationModal.svelte';
 	import BottomNav from '$lib/components/navigation/BottomNav.svelte';
 	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
@@ -131,7 +132,6 @@
 		revision: 0,
 		mutation: queue[2],
 		baseline: artist,
-		removeIds: [queue[2].mutationId],
 		messages: ['Your local edit will be removed.', 'Later edits will be preserved.'],
 		action: 'discard',
 	};
@@ -140,6 +140,8 @@
 	).map(([path, module]) => ({ name: path.split('/').pop()!.replace('Icon.svelte', ''), component: module.default }));
 	function guard(node: HTMLElement) {
 		const prevent = (e: Event) => {
+			if (e.type === 'click' && (e.target as HTMLElement).closest('.source-select, .field-option')) return;
+
 			if (e.type === 'submit' || (e.target as HTMLElement).closest('button,a,summary')) {
 				e.preventDefault();
 				e.stopPropagation();
@@ -745,6 +747,81 @@
 						</Specimen>
 					{/each}
 				</div>
+
+				<Specimen label="Conflict · changed server record">
+					<ConflictMutationModal
+						plan={{
+							...plan,
+							action: 'server',
+							mutation: queue[2],
+							baseline: { ...artist, name: 'Server artist', version: 3 },
+							messages: ['Later edits are preserved. Review both versions before choosing.'],
+						}}
+						busy={false}
+						error=""
+						onresolve={noop}
+					/>
+				</Specimen>
+
+				<Specimen label="Conflict · server deleted">
+					<ConflictMutationModal
+						plan={{
+							...plan,
+							action: 'server',
+							baseline: null,
+							messages: [
+								'Recreating this record uses a new ID. Dependent changes are remapped or blocked.',
+							],
+						}}
+						busy={false}
+						error=""
+						onresolve={noop}
+					/>
+				</Specimen>
+
+				<Specimen label="Conflict · album">
+					<ConflictMutationModal
+						plan={{
+							...plan,
+							action: 'server',
+							baseline: album,
+							mutation: {
+								...queue[2],
+								entity: 'album',
+								operation: 'update',
+								entityId: album.id,
+								payload: { artist_id: album.artist_id, title: 'Local album' },
+								before: album,
+								after: { ...album, title: 'Local album' },
+							},
+						}}
+						busy={false}
+						error=""
+						onresolve={noop}
+					/>
+				</Specimen>
+
+				<Specimen label="Conflict · deleted album">
+					<ConflictMutationModal
+						plan={{
+							...plan,
+							action: 'server',
+							baseline: null,
+							mutation: {
+								...queue[2],
+								entity: 'album',
+								operation: 'update',
+								entityId: album.id,
+								payload: { artist_id: album.artist_id, title: 'Local album' },
+								before: album,
+								after: { ...album, title: 'Local album' },
+							},
+						}}
+						busy={false}
+						error=""
+						onresolve={noop}
+					/>
+				</Specimen>
 
 				<Specimen label="Sync queue · online">
 					<p class="text-sm">
