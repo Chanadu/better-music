@@ -17,6 +17,8 @@
 	let actionsDisabled = $derived(!accountEmail || online.current !== true);
 
 	onMount(async () => {
+		if (online.current !== true) return;
+
 		try {
 			accountEmail = (await accountApi.get()).email;
 		} catch (value) {

@@ -5,6 +5,7 @@
 	import EditArtistModal from '$lib/components/artists/EditArtistModal.svelte';
 	import EditAlbumModal from '$lib/components/albums/EditAlbumModal.svelte';
 	import SyncQueueList from './SyncQueueList.svelte';
+	import ConflictMutationModal from './ConflictMutationModal.svelte';
 	import DiscardMutationModal from './DiscardMutationModal.svelte';
 	import { database, pendingMutations, refreshDatabaseData, syncStatus, storageProblem } from '$lib/scripts/database';
 	import { getChangesNeedingAttention } from '$lib/scripts/queue-state';
@@ -36,6 +37,8 @@
 			$storageProblem ||
 			($syncStatus.state !== 'offline' ? $syncStatus.pauseReason || $syncStatus.error : undefined),
 	);
+	let conflictPlan = $state.raw<RecoveryPlan | null>(null);
+	let conflictDialog = $state<HTMLDialogElement>();
 	let discardPlan = $state.raw<RecoveryPlan | null>(null);
 	let correctionPlan = $state.raw<RecoveryPlan | null>(null);
 	let discardDialog = $state<HTMLDialogElement>();
@@ -114,8 +117,7 @@
 <div>
 	<SettingRow title="Library sync" {description} icon={CheckIcon} tone="accent">
 		{#snippet descriptionContent()}
-			<span class:text-error={Boolean(syncMessage)} role={syncMessage ? 'alert' : undefined}
-			>
+			<span class:text-error={Boolean(syncMessage)} role={syncMessage ? 'alert' : undefined}>
 				{statusDescription}
 			</span>
 			· Last synced: {$syncStatus.lastSyncedAt ? formatter.format($syncStatus.lastSyncedAt) : 'Not yet'}
@@ -128,8 +130,7 @@
 			onclick={() => perform(() => refreshDatabaseData())}
 		>
 			{#if $syncStatus.state === 'connecting'}
-				<span class="loading loading-sm" aria-hidden="true">
-				</span>
+				<span class="loading loading-sm" aria-hidden="true"> </span>
 			{:else}
 				<SyncIcon class="size-4" />
 			{/if}
@@ -152,6 +153,13 @@
 				{sendingDisabled}
 				onretry={(item) => perform(() => retryFailedMutation(item.mutationId))}
 				onreconcile={(item) => perform(() => reconcileUnknownMutation(item.mutationId))}
+				onresolve={(item) =>
+					perform(async () => {
+						conflictPlan = await prepareRecovery(item.mutationId, 'server');
+
+						await tick();
+						conflictDialog?.showModal();
+					})}
 				oncorrect={openCorrection}
 				ondiscard={openDiscard}
 			/>
@@ -184,8 +192,7 @@
 			onupdated={() => (correctionPlan = null)}
 		/>
 	{:else if artistForAlbum}
-
-			<EditAlbumModal
+		<EditAlbumModal
 			album={editedRecord as Album}
 			artist={artistForAlbum}
 			bind:dialog={editDialog}
@@ -193,6 +200,23 @@
 			recoveryMessages={correctionPlan.messages}
 			onsave={async (payload) => (await saveCorrection(payload)) as Album}
 			onupdated={() => (correctionPlan = null)}
-			/>
-		{/if}
+		/>
+	{/if}
 {/if}
+
+<ConflictMutationModal
+	bind:dialog={conflictDialog}
+	plan={conflictPlan}
+	{busy}
+	{error}
+	onresolve={(choice, payload) =>
+		perform(async () => {
+			if (!conflictPlan) return;
+
+			await applyRecovery({ ...conflictPlan, action: choice }, payload);
+
+			conflictDialog?.close();
+			conflictPlan = null;
+			notice = 'Resolution saved on this device. Sync now to send queued changes.';
+		})}
+/>

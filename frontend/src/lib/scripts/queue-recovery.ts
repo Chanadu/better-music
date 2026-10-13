@@ -5,9 +5,18 @@ import { compareMutationOrder } from './database-reconciliation';
 import { getBlockingMutations, hasUnknownOutcome } from './queue-state';
 import { withSyncOwnership, sendWithTimeout, type QueueOwnership } from './sync-coordination';
 import { notifySyncChange } from './sync-events';
-import type { Artist, Album, PendingMutation, UpdateArtistRequest, UpdateAlbumMutationPayload } from './types';
+import type {
+	Artist,
+	Album,
+	PendingMutation,
+	UpdateArtistRequest,
+	UpdateAlbumMutationPayload,
+	LibraryUpdate,
+	TemporaryId,
+} from './types';
 
 type Record = Artist | Album;
+
 export type RecoveryPlan = {
 	userId: number;
 	session: string | null;
@@ -15,9 +24,8 @@ export type RecoveryPlan = {
 	revision: number;
 	mutation: PendingMutation;
 	baseline: Record | null;
-	removeIds: string[];
 	messages: string[];
-	action: 'discard' | 'correct';
+	action: 'discard' | 'correct' | 'server' | 'local' | 'merge';
 };
 
 export const mutationLabel = (item: PendingMutation) => {
@@ -32,19 +40,45 @@ export const mutationLabel = (item: PendingMutation) => {
 
 const sameRecord = (left: PendingMutation, right: PendingMutation) =>
 	left.entity === right.entity && left.entityId === right.entityId;
+
 const laterEdits = (item: PendingMutation, queue: PendingMutation[]) =>
 	queue.filter((other) => sameRecord(item, other) && compareMutationOrder(other, item) > 0);
+
 const removedByDiscard = (item: PendingMutation, queue: PendingMutation[]) => {
 	if (item.operation !== 'create') return [item];
+
 	const same = queue.filter((other) => sameRecord(item, other));
 	if (item.entity === 'album') return same;
+
 	return [...same, ...queue.filter((other) => other.entity === 'album' && other.payload.artist_id === item.entityId)];
 };
 
+const dependsOnArtist = (item: PendingMutation, artist: PendingMutation) =>
+	artist.entity === 'artist' && item.entity === 'album' && item.payload.artist_id === artist.entityId;
+
 const affectedByRecovery = (item: PendingMutation, queue: PendingMutation[], action: RecoveryPlan['action']) =>
-	action === 'discard' && item.operation === 'create' ?
-		removedByDiscard(item, queue)
-	:	[item, ...laterEdits(item, queue)];
+	queue.filter(
+		(other) =>
+			(sameRecord(item, other) &&
+				((action === 'discard' && item.operation === 'create') || compareMutationOrder(other, item) >= 0)) ||
+			dependsOnArtist(other, item),
+	);
+
+const isResolution = (action: RecoveryPlan['action']) =>
+	action === 'server' || action === 'local' || action === 'merge';
+
+const removedByRecovery = (
+	item: PendingMutation,
+	queue: PendingMutation[],
+	action: RecoveryPlan['action'],
+	baseline: Record | null,
+) => {
+	if (action === 'discard') return removedByDiscard(item, queue);
+
+	if (action === 'server' || (action === 'local' && !baseline && item.operation === 'delete')) return [item];
+
+	return [];
+};
 
 const requireUser = () => {
 	const userId = getCurrentUserId();
@@ -85,7 +119,7 @@ const reconcileAffected = async (userId: number, affected: PendingMutation[], ow
 };
 
 const readBaseline = async (item: PendingMutation, ownership: QueueOwnership): Promise<Record | null> => {
-	if (item.operation === 'create') return null;
+	if (item.operation === 'create' || item.failure?.status === 404) return null;
 	if (
 		item.status === 'conflict' &&
 		item.failure?.body &&
@@ -100,7 +134,7 @@ const readBaseline = async (item: PendingMutation, ownership: QueueOwnership): P
 		return await sendWithTimeout<Record>(ownership, (signal) =>
 			item.entity === 'artist' ?
 				artistsApi.get(item.entityId as number, signal)
-			:	albumsApi.get(item.entityId as number, (item.payload as { artist_id: number }).artist_id, signal),
+				: albumsApi.get(item.entityId as number, (item.payload as { artist_id: number }).artist_id, signal),
 		);
 	} catch (error) {
 		if (error instanceof ApiError && error.status === 404) return null;
@@ -111,65 +145,100 @@ const readBaseline = async (item: PendingMutation, ownership: QueueOwnership): P
 export const prepareRecovery = async (mutationId: string, action: RecoveryPlan['action']): Promise<RecoveryPlan> => {
 	const userId = requireUser();
 	const session = getSessionGeneration();
+
 	return withRecovery(userId, session, async (ownership) => {
 		let state = await getStoredSyncState(userId);
 		let item = state.mutations.find((item) => item.mutationId === mutationId);
+
 		if (!item) throw new Error('This change has already completed or was removed.');
+
 		const affected = affectedByRecovery(item, state.mutations, action);
 		await reconcileAffected(userId, [...affected, ...getBlockingMutations(item, state.mutations)], ownership);
+
 		state = await getStoredSyncState(userId);
 		item = state.mutations.find((item) => item.mutationId === mutationId);
+
 		if (!item)
 			throw new Error(
 				'The original request completed on the server. Review the remaining changes before choosing recovery.',
 			);
+
 		if (action === 'correct' && (item.status !== 'failed' || item.operation === 'delete'))
 			throw new Error(
 				'Only a failed create or update can be corrected here. Conflicts have their own resolution workflow.',
 			);
+
 		const revision = state.library?.revision ?? 0;
 		const baseline = await readBaseline(item, ownership);
+
 		if (action === 'correct' && item.operation === 'update' && !baseline)
 			throw new Error(
 				'The original server record is unavailable. Resolve its deletion or discard this edit before correcting it.',
 			);
+
 		const latest = await getStoredSyncState(userId);
+
 		if ((latest.library?.revision ?? 0) !== revision)
 			throw new Error(
 				'Changes were saved while preparing recovery. Open the action again to review the latest consequences.',
 			);
-		const removed = action === 'discard' ? removedByDiscard(item, state.mutations) : [];
+
+		const resolving = isResolution(action);
+
+		if (resolving && item.status !== 'conflict' && item.failure?.status !== 404)
+			throw new Error('This change no longer needs conflict resolution.');
+
+		const removed = removedByRecovery(item, state.mutations, action, baseline);
 		const later = laterEdits(item, state.mutations);
-		const messages = [
-			action === 'correct' ?
-				'Corrected data is submitted as a new change. Unchanged retries resend the original request.'
-			:	`Remove this ${item.operation} from the queue.`,
-		];
-		if (action === 'discard' && item.operation === 'create') {
-			messages.push(
-				`Remove ${removed.length} queued operation${removed.length === 1 ? '' : 's'}, including this record’s later edits and deletions${item.entity === 'artist' ? ' and its dependent album changes' : ''}. The local record${item.entity === 'artist' ? ' and dependent local albums' : ''} will be removed.`,
-			);
-			for (const other of removed.filter((other) => other.mutationId !== item!.mutationId))
-				messages.push(`Remove ${other.operation}: ${mutationLabel(other)}.`);
+
+		let messages: string[];
+
+		if (resolving) {
+			messages = [
+				`Preserve ${later.length} later edit${later.length === 1 ? '' : 's'} and replay them over the chosen version. Dependent queued changes remain recoverable.`,
+				baseline ?
+					'The resolution uses the server version shown here. If it changes again, review the new conflict.'
+					: 'The server record was deleted. Keep server removes it from this device and blocks updates that still need it. Use local or Manual merge recreates it with a new ID, unless your choice deletes it. Dependent album updates and deletions stay blocked because their original albums were deleted too; discard them and recreate any albums you want to keep.',
+			];
 		} else {
-			messages.push(
-				later.length ?
-					`Preserve ${later.length} later edit${later.length === 1 ? '' : 's'} and replay them over the ${action === 'correct' ? 'corrected' : 'restored'} record.`
-				:	'No later edits to this record will be removed.',
-			);
-			if (!baseline && item.operation !== 'create')
+			messages = [
+				action === 'correct' ?
+					'Corrected data is submitted as a new change. Unchanged retries resend the original request.'
+					: `Remove this ${item.operation} from the queue.`,
+			];
+
+			if (action === 'discard' && item.operation === 'create') {
 				messages.push(
-					'The original record is unavailable. Later updates will stay blocked; later deletions can still be retried.',
+					`Remove ${removed.length} queued operation${removed.length === 1 ? '' : 's'}, including this record’s later edits and deletions${item.entity === 'artist' ? ' and its dependent album changes' : ''}. The local record${item.entity === 'artist' ? ' and dependent local albums' : ''} will be removed.`,
 				);
-			messages.push(
-				'Dependent records are preserved. If their required parent is unavailable, their requests remain blocked.',
-			);
+
+				for (const other of removed.filter((other) => other.mutationId !== item!.mutationId))
+					messages.push(`Remove ${other.operation}: ${mutationLabel(other)}.`);
+			} else {
+				messages.push(
+					later.length ?
+						`Preserve ${later.length} later edit${later.length === 1 ? '' : 's'} and replay them over the ${action === 'correct' ? 'corrected' : 'restored'} record.`
+						: 'No later edits to this record will be removed.',
+				);
+
+				if (!baseline && item.operation !== 'create')
+					messages.push(
+						'The original record is unavailable. Later updates will stay blocked; later deletions can still be retried.',
+					);
+
+				messages.push(
+					'Dependent records are preserved. If their required parent is unavailable, their requests remain blocked.',
+				);
+			}
+
+			if (later.some((item) => item.attempts > 0))
+				messages.push(
+					'Previously attempted later requests with known outcomes receive new IDs when rebased. Their failures remain visible until retried.',
+				);
 		}
-		if (later.some((item) => item.attempts > 0))
-			messages.push(
-				'Previously attempted later requests with known outcomes receive new IDs when rebased. Their failures remain visible until retried.',
-			);
+
 		ownership.check();
+
 		return {
 			userId,
 			session,
@@ -177,7 +246,6 @@ export const prepareRecovery = async (mutationId: string, action: RecoveryPlan['
 			revision,
 			mutation: item,
 			baseline,
-			removeIds: removed.map((item) => item.mutationId),
 			messages,
 			action,
 		};
@@ -186,6 +254,7 @@ export const prepareRecovery = async (mutationId: string, action: RecoveryPlan['
 
 const applyRecordMutation = (record: Record | null, item: PendingMutation): Record | null => {
 	if (item.operation === 'delete') return null;
+
 	if (item.operation === 'create')
 		return {
 			...item.payload,
@@ -194,10 +263,14 @@ const applyRecordMutation = (record: Record | null, item: PendingMutation): Reco
 			created_at: new Date(item.createdAt).toISOString(),
 			...(item.entity === 'album' ? { listened: item.payload.listened ?? false } : {}),
 		} as Record;
+
 	if (!record) return null;
+
 	const updated = { ...record, ...item.payload } as Record;
+
 	if (item.entity === 'album' && item.payload.listened === false)
 		Object.assign(updated, { rating: null, listened_at: null });
+
 	return updated;
 };
 
@@ -223,11 +296,14 @@ const rebaseMutation = (item: PendingMutation, record: Record | null, targetId: 
 		failure: item.failure,
 		before: record,
 	};
+
 	if (record?.version && item.operation !== 'create') rebased.baseVersion = record.version;
+
 	if (!record && item.operation === 'update') {
 		rebased.status = 'blocked';
 		rebased.blockedReason = 'The original record is unavailable. Resolve the missing record or discard this edit.';
 	}
+
 	return rebased;
 };
 
@@ -235,24 +311,87 @@ const validateCorrection = (item: PendingMutation, payload: UpdateArtistRequest 
 	const text =
 		item.entity === 'artist' ?
 			(payload as UpdateArtistRequest).name
-		:	(payload as UpdateAlbumMutationPayload).title;
+			: (payload as UpdateAlbumMutationPayload).title;
+
 	if (!text?.trim()) throw new Error(`${item.entity === 'artist' ? 'Name' : 'Title'} is required.`);
+
 	if (item.entity === 'album') {
 		const album = payload as UpdateAlbumMutationPayload;
+
 		if (album.artist_id !== item.payload.artist_id)
 			throw new Error('An album’s artist cannot be changed during recovery.');
+
 		if (album.year != null && !Number.isInteger(album.year)) throw new Error('Year must be an integer.');
+
 		if (album.rating != null && (!Number.isInteger(album.rating) || album.rating < 1 || album.rating > 10))
 			throw new Error('Rating must be between 1 and 10.');
 	}
 };
 
+const remapArtistSnapshot = (snapshot: Record | null | undefined, artistId: TemporaryId) =>
+	snapshot && 'artist_id' in snapshot ? { ...snapshot, artist_id: artistId } : snapshot;
+
+const remapRecreatedRecord = (current: LibraryUpdate, target: PendingMutation, newId: TemporaryId): LibraryUpdate => {
+	const mutations = current.mutations.map((item): PendingMutation => {
+		if (sameRecord(target, item) && item.mutationId !== target.mutationId)
+			return { ...resetRequest(item, item.attempts > 0), entityId: newId, baseVersion: undefined };
+
+		if (!dependsOnArtist(item, target) || item.entity !== 'album') return item;
+
+		return {
+			...resetRequest(item, item.attempts > 0),
+			payload: { ...item.payload, artist_id: newId },
+			before: remapArtistSnapshot(item.before, newId),
+			after: remapArtistSnapshot(item.after, newId),
+			...(item.operation !== 'create' ?
+				{
+					status: 'blocked',
+					blockedReason:
+						'The original album was deleted with its artist. Discard this change and recreate the album.',
+				}
+				: {}),
+		} as PendingMutation;
+	});
+	const albums = current.library.albums.map((album) =>
+		target.entity === 'artist' && album.artist_id === target.entityId ? { ...album, artist_id: newId } : album,
+	);
+	return { library: { ...current.library, albums }, mutations };
+};
+
+const replacementRequest = (
+	target: PendingMutation,
+	action: RecoveryPlan['action'],
+	payload?: UpdateArtistRequest | UpdateAlbumMutationPayload,
+) => {
+	if (!payload && target.operation !== 'delete') throw new Error('Resolved fields are required.');
+
+	if (payload) validateCorrection(target, payload);
+
+	let replacement = {
+		...resetRequest(target, true),
+		payload: target.operation === 'delete' ? target.payload : { ...target.payload, ...payload },
+	} as PendingMutation;
+
+	if (action === 'merge' && target.operation === 'delete')
+		replacement = { ...replacement, operation: 'update', payload } as PendingMutation;
+
+	if (replacement.operation !== 'delete') {
+		if (replacement.entity === 'artist') replacement.payload.name = replacement.payload.name!.trim();
+		else replacement.payload.title = replacement.payload.title!.trim();
+	}
+
+	return replacement;
+};
+
 export const applyRecovery = async (plan: RecoveryPlan, payload?: UpdateArtistRequest | UpdateAlbumMutationPayload) =>
 	withRecovery(plan.userId, plan.session, async (ownership) => {
 		const state = await getStoredSyncState(plan.userId);
+
 		if (state.metadata?.generation !== plan.generation)
 			throw new Error('The local cache changed. Open recovery again.');
+
 		let corrected: Record | null = null;
+
 		const result = await updateLibraryAndOutbox(
 			plan.userId,
 			(current) => {
@@ -260,48 +399,80 @@ export const applyRecovery = async (plan: RecoveryPlan, payload?: UpdateArtistRe
 					throw new Error(
 						'New changes were saved. Open recovery again to review what will be preserved or removed.',
 					);
+
 				const target = current.mutations.find((item) => item.mutationId === plan.mutation.mutationId);
+
 				if (!target) throw new Error('The change has already completed or was removed.');
+
 				const affected = affectedByRecovery(target, current.mutations, plan.action);
+
 				if (affected.some(hasUnknownOutcome))
 					throw new Error('Reconcile all affected requests with unknown outcomes before recovery.');
-				let mutations = current.mutations.filter((item) => !plan.removeIds.includes(item.mutationId));
+
+				const removed = new Set(
+					removedByRecovery(target, current.mutations, plan.action, plan.baseline).map(
+						(item) => item.mutationId,
+					),
+				);
+
+				let mutations = current.mutations.filter((item) => !removed.has(item.mutationId));
 				let library = { ...current.library };
+				let resolvedTarget = target;
+
 				if (plan.action === 'discard' && target.operation === 'create') {
 					library.artists = library.artists.filter(
 						(item) => target.entity !== 'artist' || item.id !== target.entityId,
 					);
+
 					library.albums = library.albums.filter((item) =>
 						target.entity === 'artist' ? item.artist_id !== target.entityId : item.id !== target.entityId,
 					);
+
 					return { library, mutations };
 				}
-				if (plan.action === 'correct') {
-					if (!payload) throw new Error('Corrected fields are required.');
-					validateCorrection(target, payload);
-					const replacement = {
-						...resetRequest(target, true),
-						payload: { ...target.payload, ...payload },
-					} as PendingMutation;
-					if (replacement.operation !== 'delete') {
-						if (replacement.entity === 'artist')
-							replacement.payload.name = replacement.payload.name!.trim();
-						else replacement.payload.title = replacement.payload.title!.trim();
+
+				if (
+					['correct', 'local', 'merge'].includes(plan.action) &&
+					!(target.operation === 'delete' && !plan.baseline && plan.action !== 'merge')
+				) {
+					let replacement = replacementRequest(target, plan.action, payload);
+
+					if (!plan.baseline && target.operation !== 'create' && replacement.operation !== 'delete') {
+						const newId = `local:${crypto.randomUUID()}` as const;
+
+						replacement = {
+							...replacement,
+							operation: 'create',
+							entityId: newId,
+							baseVersion: undefined,
+							before: null,
+						} as PendingMutation;
+
+						({ library, mutations } = remapRecreatedRecord({ library, mutations }, target, newId));
 					}
+
+					resolvedTarget = replacement;
 					mutations = mutations.map((item) => (item.mutationId === target.mutationId ? replacement : item));
 				}
+
 				let record = plan.baseline;
+
 				for (const item of [...mutations].sort(compareMutationOrder)) {
-					if (!sameRecord(target, item) || compareMutationOrder(item, target) < 0) continue;
-					const index = mutations.findIndex((other) => other.mutationId === item.mutationId);
-					const rebased = rebaseMutation(item, record, target.mutationId);
+					if (!sameRecord(resolvedTarget, item) || compareMutationOrder(item, target) < 0) continue;
+
+					const rebased = rebaseMutation(item, record, resolvedTarget.mutationId);
 					record = applyRecordMutation(record, rebased);
+
+					const index = mutations.findIndex((other) => other.mutationId === item.mutationId);
+
 					mutations[index] = {
 						...rebased,
 						after: item.operation === 'delete' ? null : (record ?? item.after),
 					};
+
 					if (plan.action === 'correct' && compareMutationOrder(item, target) === 0) corrected = record;
 				}
+
 				if (target.entity === 'artist')
 					library.artists = [
 						...library.artists.filter((item) => item.id !== target.entityId),
@@ -312,7 +483,10 @@ export const applyRecovery = async (plan: RecoveryPlan, payload?: UpdateArtistRe
 						...library.albums.filter((item) => item.id !== target.entityId),
 						...(record ? [record as Album] : []),
 					];
-				if (target.entity === 'artist' && !plan.baseline && target.operation !== 'create')
+
+				if (target.entity === 'artist' && !record && !plan.baseline && target.operation !== 'create') {
+					library.albums = library.albums.filter((album) => album.artist_id !== target.entityId);
+
 					mutations = mutations.map((item) =>
 						(
 							item.entity === 'album' &&
@@ -325,13 +499,15 @@ export const applyRecovery = async (plan: RecoveryPlan, payload?: UpdateArtistRe
 								blockedReason:
 									'The required artist is unavailable. Restore the artist or discard this album change.',
 							}
-						:	item,
+							: item,
 					);
+				}
 				return { library, mutations };
 			},
 			ownership.check,
 			plan.generation,
 		);
+
 		notifySyncChange({ userId: plan.userId, type: 'queue' });
 		return { ...result, corrected: corrected as Record | null };
 	});
@@ -339,10 +515,13 @@ export const applyRecovery = async (plan: RecoveryPlan, payload?: UpdateArtistRe
 export const retryFailedMutation = async (mutationId: string) => {
 	const userId = requireUser();
 	const session = getSessionGeneration();
+
 	await withRecovery(userId, session, async (ownership) => {
 		const state = await getStoredSyncState(userId);
 		const item = state.mutations.find((item) => item.mutationId === mutationId);
+
 		if (!item) return;
+
 		await reconcileAffected(userId, [item], ownership);
 		await updatePendingMutation(
 			userId,
@@ -358,15 +537,18 @@ export const retryFailedMutation = async (mutationId: string) => {
 			ownership.check,
 		);
 	});
+
 	notifySyncChange({ userId, type: 'queue' });
 };
 
 export const reconcileUnknownMutation = async (mutationId: string) => {
 	const userId = requireUser();
+
 	await withRecovery(userId, getSessionGeneration(), async (ownership) => {
 		const state = await getStoredSyncState(userId);
 		const item = state.mutations.find((item) => item.mutationId === mutationId);
 		if (item) await reconcileAffected(userId, [...getBlockingMutations(item, state.mutations), item], ownership);
 	});
+
 	notifySyncChange({ userId, type: 'queue' });
 };
