@@ -114,38 +114,26 @@
 			</div>
 		</div>
 	{:else if error}
+		<div role="alert" class="py-10 text-center">
+			<p>
+				{error}
+			</p>
 
-			<div role="alert" class="py-10 text-center">
-				<p>
-					{error}
-				</p>
-
-				<button class="btn btn-soft hover-lift mt-4" onclick={load}>
-					Try again
-				</button>
-			</div>
+			<button class="btn btn-soft hover-lift mt-4" onclick={load}> Try again </button>
+		</div>
 	{:else if !library}
-
-				<div class="flex min-h-64 items-center justify-center" role="status">
-					<span class="loading text-base-content" aria-label="Loading your next album">
-					</span>
-				</div>
+		<div class="flex min-h-64 items-center justify-center" role="status">
+			<span class="loading text-base-content" aria-label="Loading your next album"> </span>
+		</div>
 	{:else if !unlistened.length}
+		<div class="py-12 text-center">
+			<h3 class="text-xl font-semibold">Your queue is all caught up</h3>
 
-					<div class="py-12 text-center">
-						<h3 class="text-xl font-semibold">
-							Your queue is all caught up
-						</h3>
+			<p class="text-base-content/60 mt-2">Add an album to find your next listen.</p>
 
-						<p class="text-base-content/60 mt-2">
-							Add an album to find your next listen.
-						</p>
-
-						<a href="/listen" class="btn btn-primary hover-lift mt-5">
-							Add an album
-						</a>
-					</div>
-				{/if}
+			<a href="/listen" class="btn btn-primary hover-lift mt-5"> Add an album </a>
+		</div>
+	{/if}
 </section>
 
 {#if !preview && album && artist}

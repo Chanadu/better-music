@@ -19,9 +19,7 @@
 <div class="border-error/20 bg-error/5 rounded-xl border p-4" role="alert">
 	<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<div class="min-w-0">
-			<p class="text-error text-sm font-semibold">
-				Unable to save on this device
-			</p>
+			<p class="text-error text-sm font-semibold">Unable to save on this device</p>
 
 			<p class="text-base-content/70 mt-1 text-sm leading-relaxed break-words">
 				{retryError || message}
@@ -35,8 +33,7 @@
 			onclick={retry}
 		>
 			{#if retrying}
-				<span class="loading loading-xs" aria-hidden="true">
-				</span>
+				<span class="loading loading-xs" aria-hidden="true"> </span>
 			{/if}
 			{retrying ? 'Trying…' : 'Try again'}
 		</button>

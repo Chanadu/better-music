@@ -39,6 +39,8 @@
 	</div>
 
 	<div class="modal-action">
-		<button type="button" class="btn hover-lift btn-error cursor-pointer" onclick={() => dialog?.close()}>Cancel</button>
+		<button type="button" class="btn hover-lift btn-error cursor-pointer" onclick={() => dialog?.close()}
+			>Cancel</button
+		>
 	</div>
 </ModalShell>

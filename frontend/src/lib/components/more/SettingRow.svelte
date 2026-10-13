@@ -35,7 +35,7 @@
 
 		<p class="text-base-content/55 text-sm">
 			{#if descriptionContent}{@render descriptionContent()}{:else}
-			{description}
+				{description}
 			{/if}
 		</p>
 	</div>
@@ -43,9 +43,6 @@
 	{#if children}
 		{@render children()}
 	{:else}
-
-		<span class="badge badge-ghost shrink-0">
-			Coming soon
-		</span>
+		<span class="badge badge-ghost shrink-0"> Coming soon </span>
 	{/if}
 </div>

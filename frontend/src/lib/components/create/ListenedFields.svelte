@@ -31,9 +31,7 @@
 				<CheckIcon class="text-primary-content" label="enabled" />
 			</span>
 
-			<span class="text-base-content">
-				Listened
-			</span>
+			<span class="text-base-content"> Listened </span>
 		</span>
 	</label>
 

@@ -16,15 +16,10 @@
 	"jsxSingleQuote": true,
 	"printWidth": 120,
 	"proseWrap": "preserve",
-	"plugins": [
-		"prettier-plugin-svelte",
-		"prettier-plugin-tailwindcss"
-	],
+	"plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
 	"overrides": [
 		{
-			"files": [
-				"*.svelte"
-			],
+			"files": ["*.svelte"],
 			"options": {
 				"parser": "svelte"
 			}

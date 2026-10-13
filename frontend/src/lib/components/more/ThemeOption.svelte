@@ -18,7 +18,7 @@
 
 <button
 	type="button"
-	class="focus-visible:outline-base-content relative cursor-pointer rounded-xl text-left hover-lift focus-visible:outline-2 focus-visible:outline-offset-2"
+	class="focus-visible:outline-base-content hover-lift relative cursor-pointer rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-2"
 	{onclick}
 	aria-pressed={selected}
 >

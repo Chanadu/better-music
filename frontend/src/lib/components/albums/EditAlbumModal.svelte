@@ -226,8 +226,7 @@
 				>
 					<SpotifyIcon class="size-5" />
 
-					<span role={refreshed ? 'status' : undefined}
-					>
+					<span role={refreshed ? 'status' : undefined}>
 						{refreshing ? 'Refreshing from Spotify...'
 						: refreshed ? 'Updated · Save to apply'
 						: 'Refresh from Spotify'}

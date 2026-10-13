@@ -14,7 +14,8 @@
 		"api:types": "node scripts/generate-api-types.mjs",
 		"api:types:check": "npm run api:types -- --check",
 		"format": "prettier --write .",
-		"format:check": "prettier --check ."
+		"format:check": "prettier --check .",
+		"verify:sync": "node verification/serve.mjs"
 	},
 	"dependencies": {
 		"@tailwindcss/vite": "4.2.4",
@@ -26,6 +27,7 @@
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.48.5",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"esbuild": "0.28.2",
 		"prettier": "^3.8.3",
 		"prettier-plugin-svelte": "^3.4.1",
 		"prettier-plugin-tailwindcss": "^0.7.2",

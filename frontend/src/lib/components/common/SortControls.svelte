@@ -47,7 +47,6 @@
 			{/each}
 		</select>
 	{:else}
-
 		<details open={preview ? true : undefined} class="dropdown" class:flex-1={fullWidth} class:min-w-0={fullWidth}>
 			<summary
 				class="btn btn-secondary join-item hover-lift justify-between shadow-none"
@@ -82,12 +81,8 @@
 	<label class="join-item btn btn-square btn-secondary swap swap-rotate hover-lift shadow-none">
 		<input name="reversed" type="checkbox" bind:checked={reversed} aria-label="Reverse sort order" />
 
-		<span class="swap-on" aria-hidden="true">
-			↑
-		</span>
+		<span class="swap-on" aria-hidden="true"> ↑ </span>
 
-		<span class="swap-off" aria-hidden="true">
-			↓
-		</span>
+		<span class="swap-off" aria-hidden="true"> ↓ </span>
 	</label>
 </div>

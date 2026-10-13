@@ -72,9 +72,7 @@
 
 	<div class="modal-action grid grid-cols-2 gap-3">
 		<form method="dialog">
-			<button class="btn hover-lift btn-error w-full" disabled={busy}>
-				Cancel
-			</button>
+			<button class="btn hover-lift btn-error w-full" disabled={busy}> Cancel </button>
 		</form>
 
 		<button
@@ -84,8 +82,7 @@
 			onclick={onconfirm}
 		>
 			{#if busy}
-				<span class="loading loading-sm">
-				</span>
+				<span class="loading loading-sm"> </span>
 			{/if}
 			{busy ? busyLabel : confirmLabel}
 		</button>

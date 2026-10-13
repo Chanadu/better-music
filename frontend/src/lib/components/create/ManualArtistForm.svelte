@@ -52,15 +52,12 @@
 				onclick={onrefresh}
 			>
 				{#if refreshing}
-					<span class="loading loading-xs" aria-hidden="true">
-					</span>
+					<span class="loading loading-xs" aria-hidden="true"> </span>
 				{:else}
-
 					<SpotifyIcon class="size-5 text-[#1ed760]" />
 				{/if}
 
-				<span role={refreshed ? 'status' : undefined}
-				>
+				<span role={refreshed ? 'status' : undefined}>
 					{refreshing ? 'Refreshing from Spotify...'
 					: refreshed ? 'Updated · Save to apply'
 					: 'Refresh from Spotify'}

@@ -39,9 +39,7 @@
 			Settings
 		</h2>
 
-		<p class="text-base-content/55 mt-1 text-sm">
-			Preferences are saved on this device.
-		</p>
+		<p class="text-base-content/55 mt-1 text-sm">Preferences are saved on this device.</p>
 	</div>
 
 	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
@@ -101,9 +99,7 @@
 		</SettingRow>
 	</div>
 
-	<h3 class="text-base-content/45 mt-7 mb-3 px-1 text-xs font-bold tracking-[0.14em] uppercase">
-		Data & support
-	</h3>
+	<h3 class="text-base-content/45 mt-7 mb-3 px-1 text-xs font-bold tracking-[0.14em] uppercase">Data & support</h3>
 
 	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
 		<ExportLibrarySetting />

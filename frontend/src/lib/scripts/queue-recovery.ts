@@ -134,7 +134,7 @@ const readBaseline = async (item: PendingMutation, ownership: QueueOwnership): P
 		return await sendWithTimeout<Record>(ownership, (signal) =>
 			item.entity === 'artist' ?
 				artistsApi.get(item.entityId as number, signal)
-				: albumsApi.get(item.entityId as number, (item.payload as { artist_id: number }).artist_id, signal),
+			:	albumsApi.get(item.entityId as number, (item.payload as { artist_id: number }).artist_id, signal),
 		);
 	} catch (error) {
 		if (error instanceof ApiError && error.status === 404) return null;
@@ -198,13 +198,13 @@ export const prepareRecovery = async (mutationId: string, action: RecoveryPlan['
 				`Preserve ${later.length} later edit${later.length === 1 ? '' : 's'} and replay them over the chosen version. Dependent queued changes remain recoverable.`,
 				baseline ?
 					'The resolution uses the server version shown here. If it changes again, review the new conflict.'
-					: 'The server record was deleted. Keep server removes it from this device and blocks updates that still need it. Use local or Manual merge recreates it with a new ID, unless your choice deletes it. Dependent album updates and deletions stay blocked because their original albums were deleted too; discard them and recreate any albums you want to keep.',
+				:	'The server record was deleted. Keep server removes it from this device and blocks updates that still need it. Use local or Manual merge recreates it with a new ID, unless your choice deletes it. Dependent album updates and deletions stay blocked because their original albums were deleted too; discard them and recreate any albums you want to keep.',
 			];
 		} else {
 			messages = [
 				action === 'correct' ?
 					'Corrected data is submitted as a new change. Unchanged retries resend the original request.'
-					: `Remove this ${item.operation} from the queue.`,
+				:	`Remove this ${item.operation} from the queue.`,
 			];
 
 			if (action === 'discard' && item.operation === 'create') {
@@ -218,7 +218,7 @@ export const prepareRecovery = async (mutationId: string, action: RecoveryPlan['
 				messages.push(
 					later.length ?
 						`Preserve ${later.length} later edit${later.length === 1 ? '' : 's'} and replay them over the ${action === 'correct' ? 'corrected' : 'restored'} record.`
-						: 'No later edits to this record will be removed.',
+					:	'No later edits to this record will be removed.',
 				);
 
 				if (!baseline && item.operation !== 'create')
@@ -311,7 +311,7 @@ const validateCorrection = (item: PendingMutation, payload: UpdateArtistRequest 
 	const text =
 		item.entity === 'artist' ?
 			(payload as UpdateArtistRequest).name
-			: (payload as UpdateAlbumMutationPayload).title;
+		:	(payload as UpdateAlbumMutationPayload).title;
 
 	if (!text?.trim()) throw new Error(`${item.entity === 'artist' ? 'Name' : 'Title'} is required.`);
 
@@ -349,7 +349,7 @@ const remapRecreatedRecord = (current: LibraryUpdate, target: PendingMutation, n
 					blockedReason:
 						'The original album was deleted with its artist. Discard this change and recreate the album.',
 				}
-				: {}),
+			:	{}),
 		} as PendingMutation;
 	});
 	const albums = current.library.albums.map((album) =>
@@ -499,7 +499,7 @@ export const applyRecovery = async (plan: RecoveryPlan, payload?: UpdateArtistRe
 								blockedReason:
 									'The required artist is unavailable. Restore the artist or discard this album change.',
 							}
-							: item,
+						:	item,
 					);
 				}
 				return { library, mutations };

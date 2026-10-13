@@ -69,10 +69,8 @@
 {#if status}
 	<div class="flex min-h-72 items-center justify-center">
 		{#if status === 'Loading album...'}
-			<span class="loading loading-lg text-base-content" aria-label={status}>
-			</span>
+			<span class="loading loading-lg text-base-content" aria-label={status}> </span>
 		{:else}
-
 			<div class="text-center">
 				<div class="bg-base-200 mx-auto mb-4 flex size-14 items-center justify-center rounded-full">
 					<SadFaceIcon class="text-base-content/50 size-6" />
@@ -82,15 +80,12 @@
 					{status}
 				</p>
 
-				<a class="btn hover-lift btn-ghost btn-sm mt-3" href="/albums">
-					Back to albums
-				</a>
+				<a class="btn hover-lift btn-ghost btn-sm mt-3" href="/albums"> Back to albums </a>
 			</div>
 		{/if}
 	</div>
 {:else if album && artist}
-
-		<MediaHero
+	<MediaHero
 		title={album.title}
 		subtitle={album.year}
 		imageUrl={album.cover_url}
@@ -103,35 +98,35 @@
 		{backHref}
 		ondelete={() => deleteDialog?.showModal()}
 		onedit={() => editDialog?.showModal()}
-		>
-			{#snippet titleSuffix()}
-				<RecordSyncBadge entity="album" id={album.id} />
-			{/snippet}
-		</MediaHero>
+	>
+		{#snippet titleSuffix()}
+			<RecordSyncBadge entity="album" id={album.id} />
+		{/snippet}
+	</MediaHero>
 
-		<EditAlbumModal
+	<EditAlbumModal
 		bind:this={editModal}
 		bind:dialog={editDialog}
 		{album}
 		{artist}
 		onsave={(payload) => albumsLibrary.update(album.id, payload)}
-		/>
+	/>
 
-		<DeleteConfirmationDialog
+	<DeleteConfirmationDialog
 		bind:dialog={deleteDialog}
 		title={`Delete album (${album.title})?`}
 		description={`“${album.title}” will be permanently removed from your library.`}
 		confirmLabel="Delete album"
 		onconfirm={deleteAlbum}
-		/>
+	/>
 
-		<div>
-			<div class="mt-7 grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.6fr)]">
-				<AlbumStats {album} {addedDate} {listenedDate} onaddrating={() => editModal?.markListened()} />
+	<div>
+		<div class="mt-7 grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.6fr)]">
+			<AlbumStats {album} {addedDate} {listenedDate} onaddrating={() => editModal?.markListened()} />
 
-				<AlbumArtistCard {artist} />
-			</div>
-
-			<AlbumNotes comment={album.comment} />
+			<AlbumArtistCard {artist} />
 		</div>
-	{/if}
+
+		<AlbumNotes comment={album.comment} />
+	</div>
+{/if}

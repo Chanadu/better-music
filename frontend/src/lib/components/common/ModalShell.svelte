@@ -31,13 +31,10 @@
 		{@render box()}
 	</div>
 {:else}
-
 	<dialog class="modal" bind:this={dialog} {onclose} {oncancel}>
 		{@render box()}
 		<form method="dialog" class="modal-backdrop">
-			<button disabled={backdropDisabled}>
-				close
-			</button>
+			<button disabled={backdropDisabled}> close </button>
 		</form>
 	</dialog>
 {/if}

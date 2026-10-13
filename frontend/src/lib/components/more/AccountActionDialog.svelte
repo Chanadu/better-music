@@ -75,30 +75,23 @@
 			<DeleteIcon class="size-7" />
 		</div>
 
-		<h2 class="text-center text-xl font-bold">
-			Delete your account?
-		</h2>
+		<h2 class="text-center text-xl font-bold">Delete your account?</h2>
 
 		<p class="text-base-content/65 mt-2 text-center text-sm">
 			This permanently deletes your library and account. This cannot be undone.
 		</p>
 	{:else}
-
 		<h2 class="text-xl font-bold">
 			Change {action}
 		</h2>
 
-		<p class="text-base-content/60 mt-1 text-sm">
-			You’ll be signed out after this change.
-		</p>
+		<p class="text-base-content/60 mt-1 text-sm">You’ll be signed out after this change.</p>
 	{/if}
 
 	<form class="mt-5 flex flex-col gap-4" onsubmit={submit}>
 		{#if action === 'email'}
 			<div class="fieldset">
-				<span class="label">
-					New email
-				</span>
+				<span class="label"> New email </span>
 
 				<label class="input w-full">
 					<EmailIcon class="h-[1em] opacity-50" />
@@ -109,26 +102,20 @@
 		{/if}
 
 		<div class="fieldset">
-			<span class="label">
-				Current password
-			</span>
+			<span class="label"> Current password </span>
 
 			<PasswordField bind:value={currentPassword} bind:shown={shown.current} validate={action === 'delete'} />
 		</div>
 
 		{#if action === 'password'}
 			<div class="fieldset">
-				<span class="label">
-					New password
-				</span>
+				<span class="label"> New password </span>
 
 				<PasswordField bind:value={newPassword} bind:shown={shown.new} autocomplete="new-password" />
 			</div>
 
 			<div class="fieldset">
-				<span class="label">
-					Confirm new password
-				</span>
+				<span class="label"> Confirm new password </span>
 
 				<PasswordField
 					bind:value={confirmPassword}
@@ -152,8 +139,7 @@
 			class:grid-cols-2={action === 'delete'}
 			class:gap-3={action === 'delete'}
 		>
-			<button type="button" class="btn hover-lift btn-error" disabled={busy} onclick={() => dialog?.close()}
-			>
+			<button type="button" class="btn hover-lift btn-error" disabled={busy} onclick={() => dialog?.close()}>
 				Cancel
 			</button>
 
@@ -167,8 +153,7 @@
 				disabled={!canSubmit}
 			>
 				{#if busy}
-					<span class="loading loading-sm">
-					</span>
+					<span class="loading loading-sm"> </span>
 				{/if}
 				{action === 'delete' ? 'Delete account' : 'Save'}
 			</button>

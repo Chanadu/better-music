@@ -28,9 +28,7 @@
 <div class="flex flex-col gap-3">
 	<FloatingField label="Artist">
 		<select name="artistId" class="select w-full" disabled={lockArtist} bind:value={artistId}>
-			<option value="">
-				Select artist
-			</option>
+			<option value=""> Select artist </option>
 
 			{#each artists as artist}
 				<option value={artist.id.toString()}>
@@ -67,7 +65,6 @@
 	</div>
 
 	<FloatingField label="Comment">
-		<textarea name="comment" class="textarea w-full" placeholder="Classic album" bind:value={comment}>
-		</textarea>
+		<textarea name="comment" class="textarea w-full" placeholder="Classic album" bind:value={comment}> </textarea>
 	</FloatingField>
 </div>

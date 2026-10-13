@@ -31,13 +31,9 @@
 </script>
 
 <ModalShell bind:dialog>
-	<h2 class="text-xl font-bold">
-		Rating labels and colors
-	</h2>
+	<h2 class="text-xl font-bold">Rating labels and colors</h2>
 
-	<p class="text-base-content/60 mt-1 text-sm">
-		Customize how each score appears on this device.
-	</p>
+	<p class="text-base-content/60 mt-1 text-sm">Customize how each score appears on this device.</p>
 
 	<form
 		class="mt-5"
@@ -47,17 +43,11 @@
 		}}
 	>
 		<div class="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-2">
-			<span class="text-base-content/45 text-xs font-bold tracking-wider uppercase">
-				Score
-			</span>
+			<span class="text-base-content/45 text-xs font-bold tracking-wider uppercase"> Score </span>
 
-			<span class="text-base-content/45 text-xs font-bold tracking-wider uppercase">
-				Label
-			</span>
+			<span class="text-base-content/45 text-xs font-bold tracking-wider uppercase"> Label </span>
 
-			<span class="text-base-content/45 text-xs font-bold tracking-wider uppercase">
-				Color
-			</span>
+			<span class="text-base-content/45 text-xs font-bold tracking-wider uppercase"> Color </span>
 
 			{#each labels as _, index}
 				<label class="text-center font-bold tabular-nums" for={`rating-label-${index + 1}`}>
@@ -90,19 +80,15 @@
 		</div>
 
 		<div class="modal-action flex-wrap items-center">
-			<button type="button" class="btn hover-lift btn-ghost w-full sm:mr-auto sm:w-auto" onclick={reset}
-			>
+			<button type="button" class="btn hover-lift btn-ghost w-full sm:mr-auto sm:w-auto" onclick={reset}>
 				Reset defaults
 			</button>
 
-			<button type="button" class="btn hover-lift btn-error flex-1 sm:flex-none" onclick={() => dialog?.close()}
-			>
+			<button type="button" class="btn hover-lift btn-error flex-1 sm:flex-none" onclick={() => dialog?.close()}>
 				Cancel
 			</button>
 
-			<button type="submit" class="btn hover-lift btn-primary flex-1 sm:flex-none">
-				Save
-			</button>
+			<button type="submit" class="btn hover-lift btn-primary flex-1 sm:flex-none"> Save </button>
 		</div>
 	</form>
 </ModalShell>

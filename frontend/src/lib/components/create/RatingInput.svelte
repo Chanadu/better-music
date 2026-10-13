@@ -13,9 +13,7 @@
 </script>
 
 <fieldset class="fieldset">
-	<legend class="fieldset-legend">
-		Rating
-	</legend>
+	<legend class="fieldset-legend"> Rating </legend>
 
 	<div class="w-full">
 		<input
