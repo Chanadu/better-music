@@ -13,12 +13,13 @@
 </script>
 
 <div
-	class="fab pb-[calc(3.5rem+env(safe-area-inset-bottom))] sm:pb-[calc(4.5rem+env(safe-area-inset-bottom))]"
+	data-create-fab
+	class="pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-[999] flex justify-end px-4 sm:bottom-[calc(5.5rem+env(safe-area-inset-bottom))]"
 	class:hidden={modalOpen}
 >
 	<button
 		type="button"
-		class="btn btn-lg btn-circle btn-accent hover-lift"
+		class="btn btn-lg btn-circle btn-accent hover-lift pointer-events-auto"
 		aria-label={`Create ${type}`}
 		onclick={openModal}
 	>

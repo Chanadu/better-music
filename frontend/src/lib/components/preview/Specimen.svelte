@@ -88,7 +88,7 @@
 		display: none;
 	}
 	.specimen :global(.dock),
-	.specimen :global(.fab) {
+	.specimen :global([data-create-fab]) {
 		position: relative;
 		inset: auto;
 	}

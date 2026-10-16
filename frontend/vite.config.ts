@@ -64,5 +64,8 @@ export default defineConfig({
 			},
 		}),
 	],
-	server: { proxy: { '/api': 'http://localhost:8080' } },
+	server: {
+		allowedHosts: ['chanadu-laptop-linux.tail559d08.ts.net', 'web-pi.tail559d08.ts.net'],
+		proxy: { '/api': 'http://localhost:8080' },
+	},
 });
