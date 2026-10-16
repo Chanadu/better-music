@@ -13,7 +13,7 @@
 		if (exportState === 'exporting') return;
 
 		exportState = 'exporting';
-		feedback = 'Preparing your library, including queued changes…';
+		feedback = 'Preparing your library, including queued changes...';
 
 		try {
 			const filename = await downloadLibraryExport();
@@ -59,6 +59,6 @@
 		{:else}
 			<DownloadIcon class="size-4" />
 		{/if}
-		{exportState === 'exporting' ? 'Preparing…' : 'Export JSON'}
+		{exportState === 'exporting' ? 'Preparing...' : 'Export JSON'}
 	</button>
 </div>

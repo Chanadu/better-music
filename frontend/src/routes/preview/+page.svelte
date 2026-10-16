@@ -720,12 +720,12 @@
 			<div class="grid gap-6 md:grid-cols-2">
 				<Specimen label="Library sync states">
 					<div class="space-y-2">
-						{#each ['Your library is up to date', 'Offline', 'Syncing your library…', '2 changes waiting to sync', '2 changes need attention', 'Sync paused · Sign in to continue'] as description, i}
+						{#each ['Your library is up to date', 'Offline', 'Syncing your library...', '2 changes waiting to sync', '2 changes need attention', 'Sync paused · Sign in to continue'] as description, i}
 							<SettingRow title="Library sync" {description} icon={AlbumIcon} tone="accent">
 								<button class="btn btn-accent hover-lift rounded-full" disabled={i === 1 || i === 2}>
 									{#if i === 2}
 										<span class="loading loading-sm"> </span>
-									{/if}{i === 2 ? 'Syncing…' : 'Sync now'}
+									{/if}{i === 2 ? 'Syncing...' : 'Sync now'}
 								</button>
 							</SettingRow>
 						{/each}
@@ -1041,10 +1041,10 @@
 
 					<div class="mt-4 space-y-3">
 						<button class="btn btn-accent hover-lift rounded-full" disabled>
-							<span class="loading loading-sm"> </span>Preparing…
+							<span class="loading loading-sm"> </span>Preparing...
 						</button>
 
-						<p class="text-base-content/55">Preparing your library, including queued changes…</p>
+						<p class="text-base-content/55">Preparing your library, including queued changes...</p>
 
 						<p class="text-base-content/55">Downloaded better-music-library.json</p>
 

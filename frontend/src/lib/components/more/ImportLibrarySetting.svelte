@@ -62,7 +62,7 @@
 		onclick={() => fileInput.click()}
 	>
 		{#if importing}<span class="loading loading-sm" aria-hidden="true"></span>{/if}
-		{#if importing}Importing…{:else}Import JSON{/if}
+		{#if importing}Importing...{:else}Import JSON{/if}
 	</button>
 </SettingRow>
 {#if feedback}

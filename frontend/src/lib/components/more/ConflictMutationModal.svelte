@@ -261,7 +261,7 @@
 					<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
 				{/if}
 
-				{busy ? 'Saving…'
+				{busy ? 'Saving...'
 				: choice === 'server' ? 'Keep server'
 				: choice === 'local' ? 'Use local'
 				: 'Save selection'}

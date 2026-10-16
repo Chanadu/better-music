@@ -55,7 +55,7 @@
 	);
 	let needsAttention = $derived(attention.length > 0);
 	let statusDescription = $derived(
-		$syncStatus.state === 'connecting' ? 'Syncing your library…'
+		$syncStatus.state === 'connecting' ? 'Syncing your library...'
 		: syncMessage ? `Sync paused · ${syncMessage}`
 		: $syncStatus.state === 'offline' ? 'Offline'
 		: needsAttention ?
@@ -134,7 +134,7 @@
 			{:else}
 				<SyncIcon class="size-4" />
 			{/if}
-			{$syncStatus.state === 'connecting' ? 'Syncing…' : 'Sync now'}
+			{$syncStatus.state === 'connecting' ? 'Syncing...' : 'Sync now'}
 		</button>
 	</SettingRow>
 

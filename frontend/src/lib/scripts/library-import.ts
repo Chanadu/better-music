@@ -22,6 +22,7 @@ export function parseLibraryImport(text: string): ImportedLibrary {
 		if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
 			return value as Record<string, unknown>;
 		}
+
 		return fail('Invalid library record.');
 	};
 

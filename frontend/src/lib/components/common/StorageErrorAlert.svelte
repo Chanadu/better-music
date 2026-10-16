@@ -21,7 +21,7 @@
 		<div class="min-w-0">
 			<p class="text-error text-sm font-semibold">Unable to save on this device</p>
 
-			<p class="text-base-content/70 mt-1 text-sm leading-relaxed break-words">
+			<p class="text-base-content/70 mt-1 text-sm leading-relaxed wrap-break-word">
 				{retryError || message}
 			</p>
 		</div>
@@ -35,7 +35,7 @@
 			{#if retrying}
 				<span class="loading loading-xs" aria-hidden="true"> </span>
 			{/if}
-			{retrying ? 'Trying…' : 'Try again'}
+			{retrying ? 'Trying...' : 'Try again'}
 		</button>
 	</div>
 </div>
