@@ -243,10 +243,10 @@ Keep regular PostgreSQL backups for the server library. The in-app JSON export i
 
 ## Roadmap
 
+- [ ] Import from Spotify
 - [ ] Spotify shuffle
-- [ ] List <-> Grid Options for the pages
 - [ ] fancy hexagon background pattern
-- [ ] app info page
+- [ ] List <-> Grid Options for the pages
 ## License
 
 [MIT](LICENSE)
