@@ -5,7 +5,7 @@ After=network-online.target postgresql.service
 [Service]
 User=pi
 WorkingDirectory=/home/pi/better-music/backend
-ExecStart=/usr/local/go/bin/go run .
+ExecStart=/home/pi/better-music/backend/build/better-music-backend
 Restart=always
 RestartSec=3
 
