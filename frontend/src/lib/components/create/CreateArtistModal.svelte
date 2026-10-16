@@ -9,7 +9,7 @@
 
 	let { dialog = $bindable(), onclose }: { dialog?: HTMLDialogElement; onclose?: () => void } = $props();
 
-	let tab = $state<'manual' | 'spotify'>('manual');
+	let tab = $state<'manual' | 'spotify'>(online.current === false ? 'manual' : 'spotify');
 	let name = $state('');
 	let selected = $state<Row | undefined>();
 	let error = $state('');
@@ -27,7 +27,7 @@
 	}
 
 	function reset() {
-		tab = 'manual';
+		tab = online.current === false ? 'manual' : 'spotify';
 		name = '';
 		selected = undefined;
 		error = '';
