@@ -225,7 +225,7 @@ See Swagger UI for request bodies, parameters, response schemas, and mutation ve
 
 Build the frontend with `npm run build` in `frontend/` and the backend with `go build -o build/better-music-backend .` in `backend/`. Run the backend with `backend/` as its working directory and provide its environment configuration and database access.
 
-Serve `frontend/build/` with a web server, proxy `/api/*` to the backend, and fall back to `index.html` for client-side routes. Use HTTPS for browser synchronization outside localhost. Proxy `/swagger/*` too if you want to expose API documentation; the Swagger document URL currently uses the host and port configured in `backend/main.go`.
+Serve `frontend/build/` with a web server, proxy `/api/*` to the backend, and fall back to `200.html` for client-side routes. Use HTTPS for browser synchronization outside localhost. Proxy `/swagger/*` too if you want to expose API documentation; the Swagger document URL currently uses the host and port configured in `backend/main.go`.
 
 <details>
 <summary>Using the included Raspberry Pi deployment examples</summary>
@@ -233,7 +233,7 @@ Serve `frontend/build/` with a web server, proxy `/api/*` to the backend, and fa
 The files in [`deploy/`](deploy/) are Raspberry Pi examples and need adjustment before use:
 
 - Paths and the systemd user assume `/home/pi/better-music` and user `pi`.
-- The Caddyfile listens on `:8081`, points to `frontend/dist`, and has no SPA route fallback. Update its root to `frontend/build`, add the `index.html` fallback for frontend routes, and configure HTTPS for your hostname.
+- The Caddyfile listens on `:8081`, serves `frontend/build`, and falls back to `200.html` for frontend routes. Configure HTTPS for your hostname.
 - The systemd unit runs `go run .`, even though the deployment script builds a binary. Update `ExecStart` to use the built binary if that is how you intend to run the service.
 - `deploy.sh` resets the checkout to `origin/main`, installs dependencies, rebuilds, and restarts services. It overwrites local tracked changes.
 

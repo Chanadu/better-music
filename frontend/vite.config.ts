@@ -47,7 +47,9 @@ export default defineConfig({
 			manifest,
 			workbox: {
 				globPatterns: ['**/*.{css,js,html,svg,png,ico,webmanifest}'],
-				navigateFallback: '/index.html',
+				// The static adapter writes the fallback after Workbox scans the client output.
+				additionalManifestEntries: [{ url: '/200.html', revision: Date.now().toString() }],
+				navigateFallback: '/200.html',
 				runtimeCaching: [
 					{
 						urlPattern: /^https:\/\/i\.scdn\.co\/image\//,
