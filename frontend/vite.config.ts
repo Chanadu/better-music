@@ -7,7 +7,7 @@ const manifest: Partial<ManifestOptions> = {
 	name: 'Better Music',
 	short_name: 'Better Music',
 	description: 'Track artists, albums, and listening history.',
-	start_url: '/listen',
+	start_url: '/',
 	scope: '/',
 	display: 'standalone',
 	background_color: '#0f172a',
