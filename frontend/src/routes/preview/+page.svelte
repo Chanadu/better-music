@@ -244,7 +244,7 @@
 						<button class="btn btn-primary hover-lift" disabled> Disabled </button>
 
 						<button class="btn btn-primary hover-lift" disabled>
-							<span class="loading loading-sm"> </span>Saving…
+							<span class="loading loading-sm"> </span>Saving...
 						</button>
 					</div>
 				</Specimen>
@@ -272,7 +272,7 @@
 
 			<div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
 				<Specimen label="Search / expanded custom sort">
-					<SearchBar placeholder="Search albums…" />
+					<SearchBar placeholder="Search albums..." />
 
 					<div class="mt-4">
 						<SortControls

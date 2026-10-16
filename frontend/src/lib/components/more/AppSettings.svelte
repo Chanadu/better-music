@@ -5,6 +5,7 @@
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
 	import ExportLibrarySetting from './ExportLibrarySetting.svelte';
+	import ImportLibrarySetting from './ImportLibrarySetting.svelte';
 	import AppInformationDialog from './AppInformationDialog.svelte';
 	import RatingSettingsDialog from './RatingSettingsDialog.svelte';
 	import SettingRow from './SettingRow.svelte';
@@ -99,6 +100,8 @@
 
 	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
 		<ExportLibrarySetting />
+
+		<ImportLibrarySetting />
 
 		<SyncStatusSetting />
 
