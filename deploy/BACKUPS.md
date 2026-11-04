@@ -23,7 +23,7 @@ Run from the repository root on the Pi. Confirm the database name from the
 backend's `POSTGRES_URL` first; do not paste credentials into logs or commands.
 
 ```sh
-sudo install -m 0755 deploy/backup.sh /usr/local/bin/better-music-backup
+sudo install -m 0755 deploy/backup.py /usr/local/bin/better-music-backup
 sudo install -m 0644 deploy/better-music-backup.service deploy/better-music-backup.timer /etc/systemd/system/
 ```
 
@@ -39,6 +39,9 @@ MIN_FREE_MB=10240
 
 Size settings use MiB (1,048,576 bytes). These files assume a local
 PostgreSQL server with the usual postgres peer authentication and socket path.
+The script uses Python 3.9+ and its standard library; no pip packages are needed.
+If replacing the Bash version, repeat the script install command above. The
+installed path, systemd timer, and existing configuration remain the same.
 
 ```sh
 sudo systemctl daemon-reload
