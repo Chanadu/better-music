@@ -100,7 +100,7 @@ func (h *Handler) getSpotifyAccessToken(ctx context.Context) (string, error) {
 	}
 
 	basicAuth := base64.StdEncoding.EncodeToString(
-		[]byte(fmt.Sprintf("%s:%s", h.Config.Spotify.ClientID, h.Config.Spotify.ClientSecret)),
+		fmt.Appendf(nil, "%s:%s", h.Config.Spotify.ClientID, h.Config.Spotify.ClientSecret),
 	)
 	req.Header.Set("Authorization", "Basic "+basicAuth)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -109,6 +109,7 @@ func (h *Handler) getSpotifyAccessToken(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
@@ -251,23 +252,10 @@ func writeSpotifyError(w http.ResponseWriter, message string, status int, err er
 	if err != nil {
 		slog.Warn("spotify proxy request failed", "status", status, "error", err)
 	}
+
 	writeJSON(w, status, apiError(message))
 }
 
-// SearchSpotifyArtists godoc
-// @Summary Search Spotify artists
-// @Description Search Spotify for artists and return trimmed results for the authenticated user
-// @Tags spotify
-// @Produce json
-// @Security Bearer
-// @Param q query string true "Search query"
-// @Param limit query int false "Max results (1-10)"
-// @Success 200 {array} handlers.SpotifyArtistSearchResult
-// @Failure 400 {object} ApiErrorResponse "Missing or invalid query parameters"
-// @Failure 401 {object} ApiErrorResponse "Unauthorized"
-// @Failure 502 {object} ApiErrorResponse "Spotify request failed"
-// @Failure 503 {object} ApiErrorResponse "Spotify is not configured"
-// @Router /api/spotify/search/artists [get]
 func (h *Handler) SearchSpotifyArtists(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/spotify/search/artists", "method", r.Method, "path", r.URL.Path)
 	if _, ok := getUserID(w, r); !ok {
@@ -300,19 +288,6 @@ func (h *Handler) SearchSpotifyArtists(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, results)
 }
 
-// GetSpotifyArtist godoc
-// @Summary Get a Spotify artist
-// @Description Get current Spotify metadata for an artist by Spotify ID
-// @Tags spotify
-// @Produce json
-// @Security Bearer
-// @Param id path string true "Spotify artist ID"
-// @Success 200 {object} SpotifyArtistSearchResult
-// @Failure 400 {object} ApiErrorResponse "Missing Spotify artist ID"
-// @Failure 401 {object} ApiErrorResponse "Unauthorized"
-// @Failure 502 {object} ApiErrorResponse "Spotify request failed"
-// @Failure 503 {object} ApiErrorResponse "Spotify is not configured"
-// @Router /api/spotify/artists/{id} [get]
 func (h *Handler) GetSpotifyArtist(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/spotify/artists/{id}", "method", r.Method, "path", r.URL.Path)
 	if _, ok := getUserID(w, r); !ok {
@@ -339,19 +314,6 @@ func (h *Handler) GetSpotifyArtist(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, artist)
 }
 
-// GetSpotifyAlbum godoc
-// @Summary Get a Spotify album
-// @Description Get current Spotify metadata for an album by Spotify ID
-// @Tags spotify
-// @Produce json
-// @Security Bearer
-// @Param id path string true "Spotify album ID"
-// @Success 200 {object} SpotifyAlbumSearchResult
-// @Failure 400 {object} ApiErrorResponse "Missing Spotify album ID"
-// @Failure 401 {object} ApiErrorResponse "Unauthorized"
-// @Failure 502 {object} ApiErrorResponse "Spotify request failed"
-// @Failure 503 {object} ApiErrorResponse "Spotify is not configured"
-// @Router /api/spotify/albums/{id} [get]
 func (h *Handler) GetSpotifyAlbum(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/spotify/albums/{id}", "method", r.Method, "path", r.URL.Path)
 	if _, ok := getUserID(w, r); !ok {
@@ -378,20 +340,6 @@ func (h *Handler) GetSpotifyAlbum(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, album)
 }
 
-// SearchSpotifyAlbums godoc
-// @Summary Search Spotify albums
-// @Description Search Spotify for albums and return trimmed results for the authenticated user
-// @Tags spotify
-// @Produce json
-// @Security Bearer
-// @Param q query string true "Search query"
-// @Param limit query int false "Max results (1-10)"
-// @Success 200 {array} handlers.SpotifyAlbumSearchResult
-// @Failure 400 {object} ApiErrorResponse "Missing or invalid query parameters"
-// @Failure 401 {object} ApiErrorResponse "Unauthorized"
-// @Failure 502 {object} ApiErrorResponse "Spotify request failed"
-// @Failure 503 {object} ApiErrorResponse "Spotify is not configured"
-// @Router /api/spotify/search/albums [get]
 func (h *Handler) SearchSpotifyAlbums(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "GET /api/spotify/search/albums", "method", r.Method, "path", r.URL.Path)
 	if _, ok := getUserID(w, r); !ok {

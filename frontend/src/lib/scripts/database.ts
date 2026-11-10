@@ -1,609 +1,734 @@
 import { writable } from 'svelte/store';
-import { albumsApi, ApiError, artistsApi } from './api';
-import { cacheLibraryArtwork } from './artwork-cache';
 import {
-	subscribeSessionChanges,
 	getCurrentUserId,
 	getSessionGeneration,
-	getValidAccessToken,
-	hasStoredSession,
-	invalidateSession,
+	sessionGuard,
+	subscribeSessionChanges,
+	authenticatedFetch,
 } from './auth';
-import {
-	applyOptimisticMutation,
-	getPendingMutations,
-	getStoredLibrary,
-	reconcileSuccessfulMutation,
-	getSyncMetadata,
-	markQueueCompletion,
-	mergeLibraryRefresh,
-	getStoredSyncState,
-	LocalStorageError,
-} from './database-cache';
-import { withSyncOwnership, sendWithTimeout, type QueueOwnership } from './sync-coordination';
-import { getMutationStatus, hasActiveQueueWork, hasUnknownOutcome } from './queue-state';
-import { syncConfig } from './sync-config';
-import { subscribeSyncChanges, type SyncChange } from './sync-events';
+import { cacheLibraryArtwork } from './artwork-cache';
+import type { RxDatabase, RxCollection } from 'rxdb/plugins/core';
+import type { RxReplicationState } from 'rxdb/plugins/replication';
 import type {
+	Album,
+	Artist,
 	DatabaseData,
 	EntityId,
-	MutationEntity,
-	PendingMutation,
+	LibraryEntity,
 	RecordSyncStatus,
-	TemporaryId,
-	Artist,
-	Album,
 	CreateArtistRequest,
 	UpdateArtistRequest,
-	CreateAlbumMutationPayload,
-	UpdateAlbumMutationPayload,
-	SuccessfulMutationResponse,
+	CreateAlbumRequest,
+	UpdateAlbumRequest,
 } from './types';
 
 export type { DatabaseData } from './types';
+
+type Doc = Artist | Album;
+
+type Kind = 'artists' | 'albums';
+
+type Checkpoint = { epoch: string; sequence: string };
+
+export type SyncProblem = { id: string; kind: Kind; label: string; message: string; deleted: boolean; href: string };
+
+type Dirty = { id: string; kind: Kind; recordId: string; token: string };
+
+type Collections = {
+	artists: RxCollection<Artist>;
+	albums: RxCollection<Album>;
+	dirty: RxCollection<Dirty>;
+	syncstate: RxCollection<{ id: string; epoch: string }>;
+};
+
+type Context = {
+	userId: number;
+	generation: string | null;
+	db: RxDatabase<Collections>;
+	replications: RxReplicationState<any, Checkpoint>[];
+	subscriptions: { unsubscribe(): void }[];
+	active: number;
+	activeKinds: Set<Kind>;
+	lastError: string | null;
+	closed: boolean;
+	timer?: ReturnType<typeof setInterval>;
+};
+
 export type SyncStatus = {
 	state: 'connecting' | 'synced' | 'pending' | 'offline' | 'error';
 	lastSyncedAt: number | null;
-	lastQueueCompletedAt?: number | null;
-	lastLibraryRefreshedAt?: number | null;
-	pauseReason?: string;
 	error?: string;
 };
 
 export const database = writable<DatabaseData | null>(null);
-export const pendingMutations = writable<PendingMutation[]>([]);
 export const syncStatus = writable<SyncStatus>({ state: 'connecting', lastSyncedAt: null });
 export const storageProblem = writable<string | null>(null);
-export const queueProcessorStatus = writable<SyncChange | null>(null);
+export const pendingRecords = writable<Dirty[]>([]);
+export const syncProblems = writable<SyncProblem[]>([]);
+let context: Context | null = null;
+let opening: Promise<Context> | null = null;
+let transition: Promise<void> = Promise.resolve();
+const isCurrent = (ctx: Context) =>
+	!ctx.closed && ctx.userId === getCurrentUserId() && ctx.generation === getSessionGeneration();
+const equal = (a: any, b: any) => JSON.stringify(sortObject(a)) === JSON.stringify(sortObject(b));
 
-let current: { userId: number; data: DatabaseData } | null = null;
-type SyncRun = { userId: number; session: string | null; rerunRequested: boolean };
-let request: { run: SyncRun; promise: Promise<DatabaseData> } | null = null;
-let retryTimer: ReturnType<typeof setTimeout> | undefined;
-let schedulingRevision = 0;
+function sortObject(value: any): any {
+	if (!value || typeof value !== 'object') return value;
 
-subscribeSessionChanges(() => {
-	current = null;
-	database.set(null);
-	pendingMutations.set([]);
-	queueProcessorStatus.set(null);
-	clearTimeout(retryTimer);
-	schedulingRevision++;
-	syncStatus.set({ state: 'error', lastSyncedAt: null });
-});
+	return Object.fromEntries(
+		Object.keys(value)
+			.filter((k) => !['_rev', '_meta', '_attachments'].includes(k))
+			.sort()
+			.map((k) => [k, value[k]]),
+	);
+}
 
-const setSyncState = (state: SyncStatus['state']) => syncStatus.update((status) => ({ ...status, state }));
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const parseEntityId = (value: string | null): EntityId | null => (value && uuid.test(value) ? value : null);
+export const markOffline = () => syncStatus.update((s) => ({ ...s, state: 'offline' }));
+export const markConnecting = () => syncStatus.update((s) => ({ ...s, state: 'connecting' }));
+export const markSyncError = (error = 'Sign in to the same account or retry synchronization.') =>
+	syncStatus.update((s) => ({ ...s, state: 'error', error }));
 
-export const markOffline = () => setSyncState('offline');
-export const markSyncError = (reason = 'Synchronization could not complete. Try Sync now.') =>
-	syncStatus.update((status) => ({ ...status, state: 'error', pauseReason: reason }));
-export const markConnecting = () => setSyncState('connecting');
+function storageError(error: unknown): Error {
+	const reason = error instanceof Error ? error.message : String(error);
+	const message = `Could not save or open your local library. ${reason}`;
+	storageProblem.set(message);
+	return new Error(message);
+}
 
-const publishCached = (userId: number, data: DatabaseData, hasPending = false) => {
-	if (getCurrentUserId() !== userId) return data;
+const lockName = (userId: number) => `better-music-local-library:${userId}`;
 
-	current = { userId, data };
+async function localLock<T>(ctx: Context, fn: () => Promise<T>): Promise<T> {
+	if (!navigator.locks) throw new Error('This browser needs Web Locks for safe local editing.');
+
+	return navigator.locks.request(lockName(ctx.userId), async () => {
+		if (!isCurrent(ctx)) throw new Error('Account changed');
+
+		return fn();
+	});
+}
+
+async function publish(ctx: Context) {
+	if (!isCurrent(ctx)) return;
+
+	const [artists, albums, dirty] = await Promise.all([
+		ctx.db.artists.find().exec(),
+		ctx.db.albums.find().exec(),
+		ctx.db.dirty.find().exec(),
+	]);
+	if (!isCurrent(ctx)) return;
+
+	const data: DatabaseData = {
+		artists: artists.map((d) => d.toJSON() as Artist),
+		albums: albums.map((d) => d.toJSON() as Album),
+		loadedAt: Date.now(),
+	};
+
 	database.set(data);
+	pendingRecords.set(dirty.map((d) => d.toJSON() as Dirty));
 	cacheLibraryArtwork(data);
-	syncStatus.update((previous) => ({
-		...previous,
-		state:
-			navigator.onLine ?
-				hasPending ? 'pending'
-				:	'connecting'
-			:	'offline',
-	}));
-
-	return data;
-};
-
-const publishStoredState = async (userId: number, stored: Awaited<ReturnType<typeof getStoredSyncState>>) => {
-	const session = getSessionGeneration();
-	const held = navigator.locks ? ((await navigator.locks.query()).held ?? []) : [];
-	if (getCurrentUserId() !== userId || getSessionGeneration() !== session) return;
-	const active =
-		stored.metadata?.activity === 'syncing' && held.some((lock) => lock.name === syncConfig.lockPrefix + userId);
-	const { library, mutations, metadata } = stored;
-	current = library ? { userId, data: library } : null;
-	database.set(library);
-	pendingMutations.set(mutations);
-	if (library) cacheLibraryArtwork(library);
-	const interrupted = metadata?.activity === 'syncing' && !active;
-	syncStatus.set({
+	syncStatus.update((s) => ({
+		...s,
 		state:
 			!navigator.onLine ? 'offline'
-			: active ? 'connecting'
-			: metadata?.activity === 'paused' || interrupted ? 'error'
-			: hasActiveQueueWork(mutations) ? 'pending'
-			: metadata?.lastLibraryRefreshedAt ? 'synced'
-			: 'pending',
-		lastSyncedAt: metadata?.lastSyncedAt ?? null,
-		lastQueueCompletedAt: metadata?.lastQueueCompletedAt ?? null,
-		lastLibraryRefreshedAt: metadata?.lastLibraryRefreshedAt ?? null,
-		pauseReason:
-			interrupted ?
-				'A previous sync was interrupted. Reconcile any unknown request outcomes before recovery.'
-			:	metadata?.pauseReason,
-		error: metadata?.error,
-	});
-};
+			: ctx.lastError ? 'error'
+			: ctx.active ? 'connecting'
+			: dirty.length ? 'pending'
+			: s.lastSyncedAt ? 'synced'
+			: 'connecting',
+		error: ctx.lastError ?? undefined,
+	}));
+}
 
-let reloadingLocalState = false;
-let localStateChanged = false;
-const reloadLocalState = async () => {
-	localStateChanged = true;
-	if (reloadingLocalState) return;
-	reloadingLocalState = true;
-	try {
-		while (localStateChanged) {
-			localStateChanged = false;
-			const userId = getCurrentUserId();
-			const session = getSessionGeneration();
-			if (userId === null) continue;
-			const stored = await getStoredSyncState(userId);
-			if (getCurrentUserId() === userId && getSessionGeneration() === session)
-				await publishStoredState(userId, stored);
-		}
-	} catch (error) {
-		if (error instanceof LocalStorageError) storageProblem.set(error.message);
-		throw error;
-	} finally {
-		reloadingLocalState = false;
-	}
-};
+async function closeContext(ctx: Context) {
+	ctx.closed = true;
+	clearInterval(ctx.timer);
+	ctx.subscriptions.forEach((s) => s.unsubscribe());
+	await Promise.allSettled(ctx.replications.map((r) => r.cancel()));
+	await ctx.db.close();
+}
 
-subscribeSyncChanges((change) => {
-	if (change.userId !== getCurrentUserId()) return;
-
-	if (change.type === 'processor') {
-		queueProcessorStatus.update((current) => {
-			if (change.state !== 'syncing' && current?.ownerId && current.ownerId !== change.ownerId) return current;
-			return change;
-		});
-	}
-
-	if (change.type === 'queue') void refreshDatabaseSafely();
-	if (change.type === 'library') void scheduleRetry().catch(console.error);
-
-	void reloadLocalState().catch((error) => console.warn('Could not reload changed local library', error));
+subscribeSessionChanges(() => {
+	const previous = context;
+	context = null;
+	database.set(null);
+	pendingRecords.set([]);
+	syncProblems.set([]);
+	storageProblem.set(null);
+	syncStatus.set({ state: 'connecting', lastSyncedAt: null });
+	if (previous) transition = transition.then(() => closeContext(previous)).catch(console.error);
 });
 
-export const getDatabaseData = async () => {
-	const userId = getCurrentUserId();
-	if (userId === null) {
-		current = null;
-		database.set(null);
-		pendingMutations.set([]);
-		syncStatus.set({ state: 'error', lastSyncedAt: null });
-		return null;
+const nullableString = { type: ['string', 'null'] };
+
+function schema(kind: Kind) {
+	const properties: Record<string, any> = {
+		id: { type: 'string', maxLength: 36 },
+		created_at: { type: 'string' },
+		edited_at: { type: 'string' },
+		cover_url: nullableString,
+		spotify_id: nullableString,
+	};
+
+	if (kind === 'artists') properties.name = { type: 'string' };
+	else
+		Object.assign(properties, {
+			artist_id: { type: 'string', maxLength: 36 },
+			title: { type: 'string' },
+			year: { type: ['integer', 'null'], minimum: -2147483648, maximum: 2147483647 },
+			listened: { type: 'boolean' },
+			rating: { type: ['integer', 'null'], minimum: 1, maximum: 10 },
+			comment: nullableString,
+			listened_at: nullableString,
+		});
+	return { version: 0, primaryKey: 'id', type: 'object', properties, required: Object.keys(properties) } as any;
+}
+
+async function syncJSON(ctx: Context, path: string, body: unknown): Promise<any> {
+	if (!isCurrent(ctx)) throw new Error('Account changed');
+
+	const check = sessionGuard();
+	const response = await authenticatedFetch(path, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(body),
+		signal: AbortSignal.timeout(30000),
+	});
+
+	check();
+	if (!isCurrent(ctx)) throw new Error('Account changed');
+
+	const result = await response.json();
+	if (!response.ok) {
+		const problems: SyncProblem[] = [];
+		const kind: Kind = path.includes('/artists/') ? 'artists' : 'albums';
+		for (const failure of result.failures ?? []) {
+			const raw = (await ctx.db[kind].storageInstance.findDocumentsById([failure.id], true))[0] as any;
+			const label = raw?.name ?? raw?.title ?? 'Library record';
+			problems.push({
+				id: failure.id,
+				kind,
+				label,
+				message: failure.error,
+				deleted: raw?._deleted ?? false,
+				href:
+					kind === 'artists' ?
+						`/artist?id=${failure.id}`
+					:	`/album?id=${failure.id}&artist_id=${raw?.artist_id ?? ''}`,
+			});
+		}
+
+		if (isCurrent(ctx))
+			syncProblems.update((previous) => [
+				...previous.filter((p) => !problems.some((n) => n.id === p.id && n.kind === p.kind)),
+				...problems,
+			]);
+		const details = problems.map((p) => `${p.label}: ${p.message}`).join(' ');
+		throw new Error(`${result.error ?? 'Synchronization failed'}${details ? ' ' + details : ''}`);
 	}
-	if (current?.userId === userId) return current.data;
+
+	return result;
+}
+
+async function openLibrary(): Promise<Context> {
+	const userId = getCurrentUserId();
+	if (userId === null) throw new Error('Not authenticated');
+
+	const generation = getSessionGeneration();
+	const check = sessionGuard();
+	if (context && isCurrent(context)) return context;
+
+	if (opening) {
+		await opening;
+		check();
+		return openLibrary();
+	}
+
+	const task = (async () => {
+		await transition;
+		check();
+
+		const [{ createRxDatabase }, { getRxStorageDexie }, { replicateRxCollection }] = await Promise.all([
+			import('rxdb/plugins/core'),
+			import('rxdb/plugins/storage-dexie'),
+			import('rxdb/plugins/replication'),
+		]);
+		check();
+		const db = await createRxDatabase<Collections>({
+			name: `bettermusicrxdb1user${userId}`,
+			storage: getRxStorageDexie(),
+			multiInstance: true,
+		});
+
+		try {
+			await db.addCollections({
+				artists: {
+					schema: schema('artists'),
+					conflictHandler: {
+						isEqual: equal,
+						resolve: async ({ realMasterState, newDocumentState }) =>
+							Date.parse(newDocumentState.edited_at) > Date.parse(realMasterState.edited_at) ?
+								newDocumentState
+							:	realMasterState,
+					},
+				},
+				albums: {
+					schema: schema('albums'),
+					conflictHandler: {
+						isEqual: equal,
+						resolve: async ({ realMasterState, newDocumentState }) =>
+							Date.parse(newDocumentState.edited_at) > Date.parse(realMasterState.edited_at) ?
+								newDocumentState
+							:	realMasterState,
+					},
+				},
+				dirty: {
+					schema: {
+						version: 0,
+						primaryKey: 'id',
+						type: 'object',
+						properties: {
+							id: { type: 'string', maxLength: 44 },
+							kind: { type: 'string' },
+							recordId: { type: 'string', maxLength: 36 },
+							token: { type: 'string' },
+						},
+						required: ['id', 'kind', 'recordId', 'token'],
+					},
+				},
+				syncstate: {
+					schema: {
+						version: 0,
+						primaryKey: 'id',
+						type: 'object',
+						properties: { id: { type: 'string', maxLength: 10 }, epoch: { type: 'string' } },
+						required: ['id', 'epoch'],
+					},
+				},
+			});
+
+			check();
+			const ctx: Context = {
+				userId,
+				generation,
+				db,
+				replications: [],
+				subscriptions: [],
+				active: 0,
+				activeKinds: new Set(),
+				lastError: null,
+				closed: false,
+			};
+
+			context = ctx;
+			for (const kind of ['artists', 'albums'] as const) {
+				let epoch: string | null = (await db.syncstate.findOne(kind).exec())?.epoch ?? null;
+				check();
+				if (!isCurrent(ctx)) throw new Error('Account changed');
+
+				const replication = replicateRxCollection<Doc, Checkpoint>({
+					collection: db[kind] as RxCollection<Doc>,
+					replicationIdentifier: `${location.origin}/api/sync/v1/${userId}/${kind}`,
+					live: true,
+					retryTime: 2000,
+					waitForLeadership: false,
+					pull: {
+						batchSize: 100,
+						handler: async (checkpoint, limit) => {
+							const page = await syncJSON(ctx, `/api/sync/${kind}/pull`, {
+								checkpoint: checkpoint ?? null,
+								limit,
+							});
+
+							if (epoch && epoch !== page.checkpoint.epoch)
+								throw new Error('Sync history changed. Export your local library before resetting.');
+							epoch = page.checkpoint.epoch;
+							await db.syncstate.upsert({ id: kind, epoch: epoch! });
+							return page;
+						},
+					},
+					push: {
+						batchSize: 100,
+						handler: async (rows) => {
+							if (!epoch) {
+								const page = await syncJSON(ctx, `/api/sync/${kind}/pull`, {
+									checkpoint: null,
+									limit: 1,
+								});
+
+								epoch = page.checkpoint.epoch;
+								await db.syncstate.upsert({ id: kind, epoch: epoch! });
+							}
+
+							// RxDB retries a failed batch before advancing to later local
+							// writes. Read newer corrections here so a rejected deletion
+							// or invalid field cannot trap the stream on an obsolete row.
+							const latestDocs = await db[kind].storageInstance.findDocumentsById(
+								rows.map((row) => row.newDocumentState.id),
+								true,
+							);
+							const latestById = new Map(latestDocs.map((doc) => [doc.id, doc]));
+							const outbound = rows.map((row) => {
+								const latest = latestById.get(row.newDocumentState.id);
+								return (
+										latest &&
+											Date.parse(latest.edited_at) > Date.parse(row.newDocumentState.edited_at)
+									) ?
+										{ ...row, newDocumentState: sortObject(latest) as Doc & { _deleted: boolean } }
+									:	row;
+							});
+
+							const conflicts: (Doc & { _deleted: boolean })[] = await syncJSON(
+								ctx,
+								`/api/sync/${kind}/push`,
+								{ epoch, rows: outbound },
+							);
+							const ids = new Set(conflicts.map((d) => d.id));
+							if (isCurrent(ctx))
+								syncProblems.update((problems) =>
+									problems.filter(
+										(p) => p.kind !== kind || !rows.some((row) => row.newDocumentState.id === p.id),
+									),
+								);
+							await localLock(ctx, async () => {
+								for (const row of outbound) {
+									if (ids.has(row.newDocumentState.id)) continue;
+									const latest = (
+										await db[kind].storageInstance.findDocumentsById(
+											[row.newDocumentState.id],
+											true,
+										)
+									)[0];
+									if (latest && equal(latest, row.newDocumentState)) {
+										const marker = await db.dirty
+											.findOne(`${kind}:${row.newDocumentState.id}`)
+											.exec();
+										if (marker) await marker.remove();
+									}
+								}
+							});
+
+							return conflicts;
+						},
+					},
+				});
+
+				ctx.replications.push(replication);
+				ctx.subscriptions.push(
+					replication.error$.subscribe((error) => {
+						if (!isCurrent(ctx)) return;
+
+						ctx.lastError =
+							(error.parameters.errors as { message?: string }[] | undefined)?.[0]?.message ??
+							'Synchronization failed. Your changes remain saved locally.';
+						void publish(ctx);
+					}),
+				);
+				ctx.subscriptions.push(
+					replication.active$.subscribe((active) => {
+						if (!isCurrent(ctx)) return;
+
+						if (active) ctx.activeKinds.add(kind);
+						else ctx.activeKinds.delete(kind);
+						ctx.active = ctx.activeKinds.size;
+						void publish(ctx);
+					}),
+				);
+			}
+
+			for (const collection of [db.artists, db.albums, db.dirty])
+				ctx.subscriptions.push(
+					(collection as RxCollection<any>).$.subscribe(() => void publish(ctx).catch(storageError)),
+				);
+			ctx.timer = setInterval(() => {
+				if (isCurrent(ctx) && navigator.onLine) void refreshDatabaseSafely();
+			}, 30000);
+			storageProblem.set(null);
+			await publish(ctx);
+			return ctx;
+		} catch (error) {
+			await db.close();
+			throw error;
+		}
+	})();
+	opening = task;
 	try {
-		const session = getSessionGeneration();
-		const stored = await getStoredSyncState(userId);
-		if (getCurrentUserId() !== userId || getSessionGeneration() !== session) return null;
-		await publishStoredState(userId, stored);
-		return stored.library;
+		return await task;
 	} catch (error) {
-		if (error instanceof LocalStorageError) storageProblem.set(error.message);
-		markSyncError();
+		check();
+		throw storageError(error);
+	} finally {
+		if (opening === task) opening = null;
+	}
+}
+
+export const getDatabaseData = async (): Promise<DatabaseData | null> => {
+	if (getCurrentUserId() === null) return null;
+
+	const check = sessionGuard();
+	try {
+		const ctx = await openLibrary();
+		await publish(ctx);
+		const [artists, albums] = await Promise.all([ctx.db.artists.find().exec(), ctx.db.albums.find().exec()]);
+		if (!isCurrent(ctx)) return null;
+
+		return {
+			artists: artists.map((d) => d.toJSON() as Artist),
+			albums: albums.map((d) => d.toJSON() as Album),
+			loadedAt: Date.now(),
+		};
+	} catch (error) {
+		try {
+			check();
+		} catch {
+			return null;
+		}
+
+		storageError(error);
 		return null;
 	}
 };
 
 export const retryLocalStorage = async () => {
-	await reloadLocalState();
+	await openLibrary();
 	storageProblem.set(null);
 };
 
-const scheduleRetry = async () => {
-	const revision = ++schedulingRevision;
-
-	clearTimeout(retryTimer);
-
-	const userId = getCurrentUserId();
-
-	if (userId === null || typeof navigator === 'undefined') return;
-
-	const { getQueueWork } = await import('./queue-processor');
-	const queue = await getPendingMutations(userId);
-
-	if (revision !== schedulingRevision || getCurrentUserId() !== userId) return;
-
-	const { retryAt } = getQueueWork(queue);
-	if (retryAt === null || !navigator.onLine) return;
-	const remaining = retryAt - Date.now();
-	const delay = remaining > 0 ? remaining : 1000;
-
-	retryTimer = setTimeout(() => void refreshDatabaseSafely(), Math.min(delay, 2_147_483_647));
-};
-
-const syncPass = async (userId: number, generation: string, ownership: QueueOwnership) => {
-	const { processMutationQueue } = await import('./queue-processor');
-	ownership.check();
-	if (!(await getValidAccessToken())) throw new Error('Authentication is unavailable');
-	ownership.check();
-	const queueResult = await processMutationQueue(ownership);
-	if (queueResult.paused)
-		throw new Error(
-			{
-				connection: 'Connection unavailable. Reconnect to resume.',
-				authentication: 'Authentication unavailable. Sign in to the same account to resume.',
-				storage:
-					'Local storage could not commit the server result. Fix storage, then reconcile the original request.',
-				account: 'The active account changed.',
-				coordination: 'Synchronization was interrupted in another browser context.',
-			}[queueResult.pauseReason ?? 'coordination'],
-		);
-	await markQueueCompletion(userId, generation, ownership.check);
-
-	const baseline = await getStoredLibrary(userId);
-	const [artists, albums] = await sendWithTimeout(ownership, (signal) =>
-		Promise.all([artistsApi.list(signal), albumsApi.list(signal)]),
-	);
-	const merged = await mergeLibraryRefresh(
-		userId,
-		{ artists, albums, loadedAt: Date.now() },
-		baseline,
-		generation,
-		ownership.check,
-	);
-	const metadata = await getSyncMetadata(userId);
-	ownership.check();
-
-	current = { userId, data: merged.library };
-	database.set(merged.library);
-	pendingMutations.set(merged.mutations);
-	cacheLibraryArtwork(merged.library);
-	storageProblem.set(null);
-	syncStatus.set({
-		state: hasActiveQueueWork(merged.mutations) ? 'pending' : 'synced',
-		lastSyncedAt: metadata.lastSyncedAt ?? null,
-		lastQueueCompletedAt: metadata.lastQueueCompletedAt ?? null,
-		lastLibraryRefreshedAt: metadata.lastLibraryRefreshedAt ?? null,
-	});
-	return merged.library;
-};
-
-const synchronize = async (run: SyncRun): Promise<DatabaseData> => {
-	const { userId, session } = run;
-	const sameSession = () => getCurrentUserId() === userId && getSessionGeneration() === session;
-	const canContinue = () => sameSession() && navigator.onLine;
+export async function refreshDatabaseData(): Promise<DatabaseData> {
+	const ctx = await openLibrary();
+	const before = await localLock(ctx, async () => (await ctx.db.dirty.find().exec()).map((d) => d.toJSON()));
+	ctx.lastError = null;
 	markConnecting();
-	try {
-		const result = await withSyncOwnership(userId, canContinue, async (ownership) => {
-			const { generation } = await getSyncMetadata(userId);
-			let data: DatabaseData;
-			do {
-				run.rerunRequested = false;
-				data = await syncPass(userId, generation, ownership);
-			} while (run.rerunRequested);
-			return { paused: false, data };
-		});
-		if (!result) throw new Error('Synchronization interrupted');
-		return result.data;
-	} catch (error) {
-		if (error instanceof LocalStorageError) storageProblem.set(error.message);
-		if (sameSession()) {
-			if (error instanceof ApiError && error.status === 401) await invalidateSession();
-			setSyncState(navigator.onLine ? 'error' : 'offline');
-		}
-		throw error;
-	} finally {
-		if (request?.run === run) {
-			request = null;
-			if (run.rerunRequested && canContinue()) void refreshDatabaseSafely();
-		}
-		void scheduleRetry().catch(console.error);
-	}
-};
+	ctx.replications.forEach((r) => r.reSync());
+	await Promise.race([
+		Promise.all(ctx.replications.map((r) => r.awaitInSync())),
+		new Promise((_, reject) =>
+			setTimeout(
+				() => reject(new Error(ctx.lastError ?? 'Sync timed out. Your local edits remain saved.')),
+				30000,
+			),
+		),
+	]);
+	if (!isCurrent(ctx)) throw new Error('Account changed');
 
-export const refreshDatabaseData = (): Promise<DatabaseData> => {
-	const userId = getCurrentUserId();
-	if (userId === null) return Promise.reject(new Error('Not authenticated'));
-	if (request?.run.userId === userId && request.run.session === getSessionGeneration()) {
-		request.run.rerunRequested = true;
-		return request.promise;
-	}
-	const run: SyncRun = { userId, session: getSessionGeneration(), rerunRequested: false };
-	const promise = synchronize(run);
-	request = { run, promise };
-	return promise;
-};
+	// Includes no-op/conflict acknowledgments after reload; only clear markers
+	// when RxDB confirms both persistent replication streams are fully in sync.
+	await localLock(ctx, async () => {
+		if (ctx.active > 0) return;
+
+		for (const previous of before) {
+			const marker = await ctx.db.dirty.findOne(previous.id).exec();
+			if (marker?.token === previous.token) await marker.remove();
+		}
+	});
+
+	ctx.lastError = null;
+	syncStatus.set({ state: 'synced', lastSyncedAt: Date.now() });
+	await publish(ctx);
+	return (await getDatabaseData())!;
+}
 
 export const refreshDatabaseSafely = async () => {
+	if (!navigator.onLine) {
+		markOffline();
+		return;
+	}
+
 	try {
-		if (!navigator.onLine) {
-			markOffline();
-			return;
-		}
-
-		const token = await getValidAccessToken();
-
-		if (!token) {
-			if (!hasStoredSession()) location.assign('/login');
-			else markSyncError('Authentication unavailable. Sign in to the same account to resume.');
-			return;
-		}
-
 		await refreshDatabaseData();
 	} catch (error) {
-		if (error instanceof LocalStorageError) storageProblem.set(error.message);
-		setSyncState(navigator.onLine ? 'error' : 'offline');
-		console.error('Failed to refresh database data', error);
+		markSyncError(error instanceof Error ? error.message : String(error));
 	}
 };
 
-export const createTemporaryId = (): TemporaryId => `local:${crypto.randomUUID()}`;
+export const hasUnsyncedChanges = async (userId: number) => {
+	if (userId !== getCurrentUserId()) return true;
 
-export const isTemporaryId = (id: EntityId): id is TemporaryId => typeof id === 'string' && id.startsWith('local:');
-
-const statusPriority: Record<RecordSyncStatus, number> = {
-	synced: 0,
-	pending: 1,
-	syncing: 2,
-	paused: 2,
-	blocked: 3,
-	failed: 4,
-	conflict: 5,
+	const ctx = await openLibrary();
+	return localLock(ctx, async () => ctx.active > 0 || (await ctx.db.dirty.find().exec()).length > 0);
 };
 
-export const getRecordSyncStatus = (
-	mutations: readonly PendingMutation[],
-	userId: number,
-	entity: MutationEntity,
-	entityId: EntityId,
-	syncState?: SyncStatus['state'],
-): RecordSyncStatus => {
-	let status: RecordSyncStatus = 'synced';
+export function getRecordSyncStatus(
+	records: readonly Dirty[],
+	entity: LibraryEntity,
+	id: EntityId,
+	state?: SyncStatus['state'],
+): RecordSyncStatus {
+	if (!records.some((d) => d.kind === `${entity}s` && d.recordId === id)) return 'synced';
 
-	for (const mutation of mutations) {
-		if (mutation.userId !== userId || mutation.entity !== entity || mutation.entityId !== entityId) continue;
-		let next: RecordSyncStatus = getMutationStatus(mutation, mutations);
-		if (
-			['pending', 'syncing'].includes(next) &&
-			syncState !== 'connecting' &&
-			(syncState === 'offline' || syncState === 'error' || hasUnknownOutcome(mutation))
-		)
-			next = 'paused';
-		if (statusPriority[next] > statusPriority[status]) status = next;
-	}
+	return (
+		state === 'error' ? 'failed'
+		: state === 'offline' ? 'paused'
+		: state === 'connecting' ? 'syncing'
+		: 'pending'
+	);
+}
 
-	return status;
-};
+const requiredName = (value: string, label: string) => {
+	const result = value.trim();
+	if (!result) throw new Error(`${label} is required`);
 
-export const parseEntityId = (value: string | null): EntityId | null => {
-	if (value?.startsWith('local:')) return value as TemporaryId;
-	const id = Number(value);
-
-	return Number.isInteger(id) && id > 0 ? id : null;
-};
-
-export const reconcileMutationResponse = async (
-	userId: number,
-	mutationId: string,
-	response: SuccessfulMutationResponse,
-	checkOwnership?: () => void,
-) => {
-	const result = await reconcileSuccessfulMutation(userId, mutationId, response, checkOwnership);
-
-	if (result && getCurrentUserId() === userId) {
-		pendingMutations.set(
-			[...result.mutations].sort(
-				(left, right) => (left.sequence ?? left.createdAt) - (right.sequence ?? right.createdAt),
-			),
-		);
-
-		publishCached(userId, result.library, result.mutations.length > 0);
-	}
+	if (result.length > 4096) throw new Error(`${label} is too long`);
 
 	return result;
 };
 
-const newMutation = () => {
-	const userId = getCurrentUserId();
-	if (userId === null) throw new Error('Not authenticated');
+async function edit(kind: Kind, id: string, change: (old: Doc | null) => Doc, includeDeleted = false): Promise<Doc> {
+	const ctx = await openLibrary();
+	try {
+		return await localLock(ctx, async () => {
+			const collection = ctx.db[kind] as RxCollection<Doc>;
+			const found = await collection.findOne(id).exec();
+			const raw =
+				!found && includeDeleted ? (await collection.storageInstance.findDocumentsById([id], true))[0] : null;
+			const next = change(
+				found ? (found.toJSON() as Doc)
+				: raw ? (sortObject(raw) as Doc)
+				: null,
+			);
+			if (kind === 'artists') {
+				if (next._deleted) {
+					if (await ctx.db.albums.findOne({ selector: { artist_id: id } }).exec())
+						throw new Error('Remove this artist’s albums first');
+				} else {
+					const name = (next as Artist).name;
+					const records = await ctx.db.artists.find().exec();
+					if (records.some((d) => d.id !== id && d.name.toLowerCase() === name.toLowerCase()))
+						throw new Error('Artist with this name already exists');
+				}
+			} else if (!next._deleted) {
+				const album = next as Album;
+				if (!(await ctx.db.artists.findOne(album.artist_id).exec())) throw new Error('Artist not found');
 
-	return { mutationId: crypto.randomUUID(), userId, createdAt: Date.now(), attempts: 0, status: 'pending' as const };
-};
-
-const requiredName = (value: string, label: string) => {
-	const name = value.trim();
-	if (!name) throw new Error(`${label} is required`);
-
-	return name;
-};
-
-const definedFields = <T extends object>(value: T): T =>
-	Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
-
-const queueMutation = async (mutation: PendingMutation) => {
-	const session = getSessionGeneration();
-	const result = await applyOptimisticMutation(mutation.userId, mutation, (library) => {
-		if (getCurrentUserId() !== mutation.userId || getSessionGeneration() !== session)
-			throw new Error('Account changed before the change was saved');
-
-		if (mutation.entity === 'artist') {
-			const existing = library.artists.find((item) => item.id === mutation.entityId);
-			mutation.baseVersion = existing?.version ?? undefined;
-			mutation.before = existing ? { ...existing } : null;
-
-			if (mutation.operation === 'delete') {
-				if (library.albums.some((item) => item.artist_id === mutation.entityId))
-					throw new Error('Remove this artist’s albums first');
-				return { ...library, artists: library.artists.filter((item) => item.id !== mutation.entityId) };
+				const records = await ctx.db.albums.find({ selector: { artist_id: album.artist_id } }).exec();
+				if (records.some((d) => d.id !== id && d.title.toLowerCase() === album.title.toLowerCase()))
+					throw new Error('Album with this title already exists for this artist');
 			}
 
-			if (mutation.operation === 'update' && !existing) throw new Error('Artist not found');
-
-			const payload = definedFields(mutation.payload);
-			if (!Object.keys(payload).length) throw new Error('At least one field must be provided');
-
-			const name = requiredName(payload.name ?? existing?.name ?? '', 'Name');
-			if (
-				library.artists.some(
-					(item) => item.id !== mutation.entityId && item.name.toLowerCase() === name.toLowerCase(),
-				)
-			)
-				throw new Error('Artist with this name already exists');
-
-			const record: Artist =
-				mutation.operation === 'create' ?
-					{
-						...payload,
-						name,
-						id: mutation.entityId as TemporaryId,
-						version: null,
-						created_at: new Date(mutation.createdAt).toISOString(),
-					}
-				:	{ ...existing!, ...payload, name };
-			return {
-				...library,
-				artists:
-					mutation.operation === 'create' ?
-						[record, ...library.artists]
-					:	library.artists.map((item) => (item.id === record.id ? record : item)),
-			};
-		}
-
-		const existing = library.albums.find((item) => item.id === mutation.entityId);
-
-		mutation.baseVersion = existing?.version ?? undefined;
-		mutation.before = existing ? { ...existing } : null;
-
-		if (mutation.operation === 'delete')
-			return { ...library, albums: library.albums.filter((item) => item.id !== mutation.entityId) };
-
-		if (mutation.operation === 'update' && !existing) throw new Error('Album not found');
-
-		const payload = definedFields(mutation.payload);
-
-		if (mutation.operation === 'update' && !Object.keys(payload).some((field) => field !== 'artist_id'))
-			throw new Error('At least one field must be provided');
-
-		if (!library.artists.some((item) => item.id === payload.artist_id)) throw new Error('Artist not found');
-
-		if (existing && existing.artist_id !== payload.artist_id) throw new Error('Cannot change an album’s artist');
-
-		const title = requiredName(payload.title ?? existing?.title ?? '', 'Title');
-
-		if (payload.rating != null && (!Number.isInteger(payload.rating) || payload.rating < 1 || payload.rating > 10))
-			throw new Error('Rating must be between 1 and 10');
-
-		if (payload.year != null && !Number.isInteger(payload.year)) throw new Error('Year must be an integer');
-
-		if (
-			library.albums.some(
-				(item) =>
-					item.id !== mutation.entityId &&
-					item.artist_id === payload.artist_id &&
-					item.title.toLowerCase() === title.toLowerCase(),
-			)
-		)
-			throw new Error('Album with this title already exists for this artist');
-
-		const record: Album =
-			mutation.operation === 'create' ?
-				{
-					...payload,
-					title,
-					id: mutation.entityId as TemporaryId,
-					version: null,
-					listened: payload.listened ?? false,
-					created_at: new Date(mutation.createdAt).toISOString(),
-				}
-			:	{ ...existing!, ...payload, title };
-
-		if (payload.listened === false) {
-			record.rating = null;
-			record.listened_at = null;
-		}
-
-		return {
-			...library,
-			albums:
-				mutation.operation === 'create' ?
-					[record, ...library.albums]
-				:	library.albums.map((item) => (item.id === record.id ? record : item)),
-		};
-	}).catch((error) => {
-		if (error instanceof LocalStorageError) storageProblem.set(error.message);
+			// Write the conservative dirty marker first. A crash can over-report pending
+			// work, but can never hide an unacknowledged local edit from logout checks.
+			await ctx.db.dirty.upsert({ id: `${kind}:${id}`, kind, recordId: id, token: crypto.randomUUID() });
+			await collection.upsert({ ...next, _deleted: next._deleted ?? false });
+			await publish(ctx);
+			return next;
+		});
+	} catch (error) {
+		if (error instanceof Error && /quota|storage|indexeddb/i.test(error.message)) storageError(error);
 		throw error;
-	});
-	storageProblem.set(null);
-
-	if (getCurrentUserId() === mutation.userId) {
-		current = { userId: mutation.userId, data: result.library };
-		database.set(result.library);
-		pendingMutations.set(result.mutations);
-		setSyncState(navigator.onLine ? 'pending' : 'offline');
-		cacheLibraryArtwork(result.library);
 	}
+}
 
-	return result.library;
-};
+const fields = <T extends object>(value: T) =>
+	Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T;
+function creationDate(value?: string): string {
+	if (value === undefined) return new Date().toISOString();
+	if (!Number.isFinite(Date.parse(value))) throw new Error('Invalid creation date');
+	return value;
+}
 
 export const artistsLibrary = {
-	create: async (payload: CreateArtistRequest) => {
-		const entityId = createTemporaryId();
-		const library = await queueMutation({
-			...newMutation(),
-			entity: 'artist',
-			operation: 'create',
-			entityId,
-			payload: definedFields(payload),
-		});
-
-		return library.artists.find((item) => item.id === entityId)!;
+	create: async (payload: CreateArtistRequest, createdAt?: string) => {
+		const id = crypto.randomUUID();
+		return edit('artists', id, () => ({
+			id,
+			name: requiredName(payload.name, 'Name'),
+			cover_url: payload.cover_url ?? null,
+			spotify_id: payload.spotify_id ?? null,
+			created_at: creationDate(createdAt),
+			edited_at: new Date().toISOString(),
+			_deleted: false,
+		})) as Promise<Artist>;
 	},
-	update: async (entityId: EntityId, payload: UpdateArtistRequest) => {
-		const library = await queueMutation({
-			...newMutation(),
-			entity: 'artist',
-			operation: 'update',
-			entityId,
-			payload: definedFields(payload),
-		});
+	update: async (id: EntityId, payload: UpdateArtistRequest) =>
+		edit('artists', id, (old) => {
+			if (!old || !('name' in old)) throw new Error('Artist not found');
 
-		return library.artists.find((item) => item.id === entityId)!;
-	},
+			return {
+				...old,
+				...fields(payload),
+				name: requiredName(payload.name ?? old.name, 'Name'),
+				edited_at: new Date().toISOString(),
+			};
+		}) as Promise<Artist>,
+	delete: async (id: EntityId) =>
+		edit('artists', id, (old) => {
+			if (!old) throw new Error('Artist not found');
 
-	delete: async (entityId: EntityId) => {
-		await queueMutation({ ...newMutation(), entity: 'artist', operation: 'delete', entityId, payload: null });
-	},
+			return { ...old, _deleted: true, edited_at: new Date().toISOString() };
+		}),
 };
+
+function albumFields(old: Album | null, payload: CreateAlbumRequest | UpdateAlbumRequest): Album {
+	const data = { ...old, ...fields(payload) };
+	if (!data.artist_id || !uuid.test(data.artist_id)) throw new Error('Artist is required');
+
+	if (old && old.artist_id !== data.artist_id) throw new Error('Cannot change the album artist');
+
+	if (data.rating != null && (!Number.isInteger(data.rating) || data.rating < 1 || data.rating > 10))
+		throw new Error('Rating must be between 1 and 10');
+	if (data.year != null && (!Number.isInteger(data.year) || data.year < -2147483648 || data.year > 2147483647))
+		throw new Error('Invalid release year');
+	if (data.listened_at != null && !Number.isFinite(Date.parse(data.listened_at)))
+		throw new Error('Invalid listening date');
+	return {
+		...data,
+		title: requiredName(data.title ?? '', 'Title'),
+		cover_url: data.cover_url ?? null,
+		spotify_id: data.spotify_id ?? null,
+		year: data.year ?? null,
+		comment: data.comment ?? null,
+		listened: data.listened ?? false,
+		rating: data.listened ? (data.rating ?? null) : null,
+		listened_at: data.listened ? (data.listened_at ?? null) : null,
+		edited_at: new Date().toISOString(),
+		_deleted: false,
+	} as Album;
+}
 
 export const albumsLibrary = {
-	create: async (payload: CreateAlbumMutationPayload) => {
-		const entityId = createTemporaryId();
-		const library = await queueMutation({
-			...newMutation(),
-			entity: 'album',
-			operation: 'create',
-			entityId,
-			payload: definedFields(payload),
-		});
-		return library.albums.find((item) => item.id === entityId)!;
+	create: async (payload: CreateAlbumRequest, createdAt?: string) => {
+		const id = crypto.randomUUID();
+		return edit('albums', id, () => ({
+			...albumFields(null, payload),
+			id,
+			created_at: creationDate(createdAt),
+		})) as Promise<Album>;
 	},
+	update: async (id: EntityId, payload: UpdateAlbumRequest) =>
+		edit('albums', id, (old) => {
+			if (!old || !('artist_id' in old)) throw new Error('Album not found');
 
-	update: async (entityId: EntityId, payload: UpdateAlbumMutationPayload) => {
-		const library = await queueMutation({
-			...newMutation(),
-			entity: 'album',
-			operation: 'update',
-			entityId,
-			payload: definedFields(payload),
-		});
-		return library.albums.find((item) => item.id === entityId)!;
-	},
+			return albumFields(old, payload);
+		}) as Promise<Album>,
+	delete: async (id: EntityId) =>
+		edit('albums', id, (old) => {
+			if (!old) throw new Error('Album not found');
 
-	delete: async (entityId: EntityId, artistId: EntityId) => {
-		await queueMutation({
-			...newMutation(),
-			entity: 'album',
-			operation: 'delete',
-			entityId,
-			payload: { artist_id: artistId },
-		});
-	},
+			return { ...old, _deleted: true, edited_at: new Date().toISOString() };
+		}),
 };
+
+export async function closeLocalLibrary() {
+	const ctx = context;
+	context = null;
+	if (ctx) transition = transition.then(() => closeContext(ctx));
+	await transition;
+	database.set(null);
+	pendingRecords.set([]);
+}
+
+// Rejected deletions must remain recoverable even though their records are hidden.
+export async function resolveSyncProblem(problem: SyncProblem, restore: boolean) {
+	await edit(
+		problem.kind,
+		problem.id,
+		(old) => {
+			if (!old) throw new Error('Record is unavailable. Export your library before clearing storage.');
+
+			return { ...old, _deleted: !restore, edited_at: new Date().toISOString() };
+		},
+		true,
+	);
+	await refreshDatabaseSafely();
+}

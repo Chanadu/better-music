@@ -1,13 +1,3 @@
-// @title Better Music API
-// @version 1.0
-// @description A music management API with artists and albums
-// @host localhost:8080
-// @BasePath /
-// @schemes http
-// @securityDefinitions.apikey Bearer
-// @in header
-// @name Authorization
-// @note Update the @host value above and run 'swag init' if you change the server host/port
 package main
 
 import (
@@ -17,11 +7,9 @@ import (
 
 	"github.com/Chanadu/better-music/config"
 	"github.com/Chanadu/better-music/db"
-	_ "github.com/Chanadu/better-music/docs"
 	"github.com/Chanadu/better-music/handlers"
 	"github.com/Chanadu/better-music/logger"
 	"github.com/Chanadu/better-music/middleware"
-	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
@@ -48,11 +36,6 @@ func main() {
 	h := handlers.NewHandler(&cfg, database)
 	mux := http.NewServeMux()
 
-	swaggerURL := "http://" + cfg.Server.Host + ":" + cfg.Server.Port + "/swagger/doc.json"
-	mux.HandleFunc("GET /swagger/", httpSwagger.Handler(
-		httpSwagger.URL(swaggerURL),
-	))
-
 	slog.Info("Creating API routes")
 	mux.HandleFunc("POST /api/auth/register", h.AuthRegister)
 	mux.HandleFunc("POST /api/auth/login", h.AuthLogin)
@@ -65,18 +48,12 @@ func main() {
 	protectedMux.HandleFunc("PUT /api/account/password", h.UpdateAccountPassword)
 	protectedMux.HandleFunc("DELETE /api/account", h.DeleteAccount)
 
-	protectedMux.HandleFunc("GET /api/artists", h.GetArtists)
-	protectedMux.HandleFunc("GET /api/artists/{id}", h.GetArtist)
-	protectedMux.HandleFunc("POST /api/artists", h.CreateArtist)
-	protectedMux.HandleFunc("DELETE /api/artists/{id}", h.DeleteArtist)
-	protectedMux.HandleFunc("PUT /api/artists/{id}", h.UpdateArtist)
-	protectedMux.HandleFunc("GET /api/artists/{id}/albums", h.GetArtistAlbums)
-
-	protectedMux.HandleFunc("GET /api/albums", h.GetAlbums)
-	protectedMux.HandleFunc("GET /api/albums/{id}", h.GetAlbum)
-	protectedMux.HandleFunc("POST /api/albums", h.CreateAlbum)
-	protectedMux.HandleFunc("PUT /api/albums/{id}", h.UpdateAlbum)
-	protectedMux.HandleFunc("DELETE /api/albums/{id}", h.DeleteAlbum)
+	protectedMux.HandleFunc("POST /api/sync/{kind}/pull", h.PullLibrary)
+	protectedMux.HandleFunc("POST /api/sync/{kind}/push", h.PushLibrary)
+	protectedMux.HandleFunc("/api/artists", retiredLibraryAPI)
+	protectedMux.HandleFunc("/api/artists/", retiredLibraryAPI)
+	protectedMux.HandleFunc("/api/albums", retiredLibraryAPI)
+	protectedMux.HandleFunc("/api/albums/", retiredLibraryAPI)
 
 	protectedMux.HandleFunc("GET /api/spotify/search/artists", h.SearchSpotifyArtists)
 	protectedMux.HandleFunc("GET /api/spotify/search/albums", h.SearchSpotifyAlbums)
@@ -90,4 +67,10 @@ func main() {
 	if err := http.ListenAndServe(serverAddr, mux); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func retiredLibraryAPI(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusGone)
+	_, _ = w.Write([]byte(`{"error":"Library sync has changed. Update the app."}`))
 }

@@ -1,20 +1,14 @@
 import { authenticatedFetch, sessionGuard } from './auth';
 import type {
-	Album,
 	AccountResponse,
-	Artist,
 	AuthRequest,
-	CreateAlbumRequest,
-	CreateArtistRequest,
 	MessageResponse,
 	DeleteAccountRequest,
 	SpotifyAlbumSearchResult,
 	SpotifyArtistSearchResult,
 	TokenResponse,
-	UpdateAlbumRequest,
 	UpdateEmailRequest,
 	UpdatePasswordRequest,
-	UpdateArtistRequest,
 } from './api-types';
 
 export class ApiError extends Error {
@@ -30,27 +24,6 @@ export class ApiError extends Error {
 }
 
 type JsonInit = Omit<RequestInit, 'body'> & { body?: unknown };
-
-export type MutationOptions = { mutationId: string; signal?: AbortSignal };
-export type VersionedMutationOptions = MutationOptions & { baseVersion: number };
-
-const mutationHeaders = (options: MutationOptions): Headers => {
-	if (!options.mutationId.trim() || options.mutationId.length > 255) {
-		throw new Error('A persisted mutation ID is required');
-	}
-
-	return new Headers({ 'Idempotency-Key': options.mutationId });
-};
-
-const versionedMutationHeaders = (options: VersionedMutationOptions): Headers => {
-	const headers = mutationHeaders(options);
-	if (!Number.isSafeInteger(options.baseVersion) || options.baseVersion <= 0) {
-		throw new Error('A positive record version is required');
-	}
-
-	headers.set('If-Match', String(options.baseVersion));
-	return headers;
-};
 
 const json = async <T>(path: string, init: JsonInit = {}, fetcher: typeof fetch = fetch): Promise<T> => {
 	const headers = new Headers(init.headers);
@@ -83,6 +56,7 @@ const secureJson = async <T>(path: string, init: JsonInit = {}) => {
 	checkSession();
 	return result;
 };
+
 const query = (values: Record<string, string | number | undefined>) => {
 	const params = new URLSearchParams();
 	Object.entries(values).forEach(([key, value]) => value !== undefined && params.set(key, String(value)));
@@ -101,58 +75,6 @@ export const accountApi = {
 	updatePassword: (body: UpdatePasswordRequest) =>
 		secureJson<MessageResponse>('/api/account/password', { method: 'PUT', body }),
 	delete: (body: DeleteAccountRequest) => secureJson<MessageResponse>('/api/account', { method: 'DELETE', body }),
-};
-
-export const artistsApi = {
-	list: (signal?: AbortSignal) => secureJson<Artist[]>('/api/artists', { signal }),
-	get: (id: number, signal?: AbortSignal) => secureJson<Artist>(`/api/artists/${id}`, { signal }),
-	create: (body: CreateArtistRequest, options: MutationOptions) =>
-		secureJson<Artist>('/api/artists', {
-			method: 'POST',
-			body,
-			headers: mutationHeaders(options),
-			signal: options.signal,
-		}),
-	update: (id: number, body: UpdateArtistRequest, options: VersionedMutationOptions) =>
-		secureJson<Artist>(`/api/artists/${id}`, {
-			method: 'PUT',
-			body,
-			headers: versionedMutationHeaders(options),
-			signal: options.signal,
-		}),
-	delete: (id: number, options: VersionedMutationOptions) =>
-		secureJson<MessageResponse>(`/api/artists/${id}`, {
-			method: 'DELETE',
-			headers: versionedMutationHeaders(options),
-			signal: options.signal,
-		}),
-};
-
-export const albumsApi = {
-	list: (signal?: AbortSignal) => secureJson<Album[]>('/api/albums', { signal }),
-	get: (id: number, artistId: number, signal?: AbortSignal) =>
-		secureJson<Album>(`/api/albums/${id}${query({ artist_id: artistId })}`, { signal }),
-	create: (body: CreateAlbumRequest, options: MutationOptions) =>
-		secureJson<Album>('/api/albums', {
-			method: 'POST',
-			body,
-			headers: mutationHeaders(options),
-			signal: options.signal,
-		}),
-	update: (id: number, body: UpdateAlbumRequest, options: VersionedMutationOptions) =>
-		secureJson<Album>(`/api/albums/${id}`, {
-			method: 'PUT',
-			body,
-			headers: versionedMutationHeaders(options),
-			signal: options.signal,
-		}),
-	delete: (id: number, artistId: number, options: VersionedMutationOptions) =>
-		secureJson<MessageResponse>(`/api/albums/${id}`, {
-			method: 'DELETE',
-			body: { artist_id: artistId },
-			headers: versionedMutationHeaders(options),
-			signal: options.signal,
-		}),
 };
 
 export const spotifyApi = {

@@ -24,7 +24,7 @@ func TestConnectAndMigrations(test *testing.T) {
 
 	var version int
 	var dirty bool
-	if err := database.QueryRow("SELECT version,dirty FROM schema_migrations").Scan(&version, &dirty); err != nil || version != 9 || dirty {
+	if err := database.QueryRow("SELECT version,dirty FROM schema_migrations").Scan(&version, &dirty); err != nil || version != 10 || dirty {
 		test.Fatalf("version=%d dirty=%v err=%v", version, dirty, err)
 	}
 
@@ -34,6 +34,8 @@ func TestConnectAndMigrations(test *testing.T) {
 		"albums",
 		"refresh_tokens",
 		"processed_mutations",
+		"library_artists",
+		"library_albums",
 	} {
 		var count int
 		if err := database.QueryRow("SELECT count(*) FROM " + table).Scan(&count); err != nil || count != 0 {

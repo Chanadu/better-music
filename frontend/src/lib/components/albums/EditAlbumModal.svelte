@@ -10,7 +10,7 @@
 	import FormModalShell from '$lib/components/create/FormModalShell.svelte';
 	import SpotifySearch from '$lib/components/create/SpotifySearch.svelte';
 	import { spotifyApi } from '$lib/scripts/api';
-	import type { Album, Artist, SpotifyRow as Row, UpdateAlbumMutationPayload } from '$lib/scripts/types';
+	import type { Album, Artist, SpotifyRow as Row, UpdateAlbumRequest } from '$lib/scripts/types';
 
 	let {
 		album,
@@ -18,16 +18,12 @@
 		dialog = $bindable(),
 		onupdated,
 		onsave,
-		mode = 'edit',
-		recoveryMessages = [],
 	}: {
 		album: Album;
 		artist: Artist;
 		dialog?: HTMLDialogElement;
 		onupdated?: (album: Album) => void;
-		onsave: (payload: UpdateAlbumMutationPayload) => Promise<Album>;
-		mode?: 'edit' | 'correct';
-		recoveryMessages?: string[];
+		onsave: (payload: UpdateAlbumRequest) => Promise<Album>;
 	} = $props();
 
 	let title = $state('');
@@ -144,7 +140,7 @@
 			const selectedAlbum = tab === 'spotify' ? selected : undefined;
 			const selectedYear = selectedAlbum?.releaseYear;
 
-			const payload: UpdateAlbumMutationPayload = {
+			const payload: UpdateAlbumRequest = {
 				artist_id: album.artist_id,
 				title: selectedAlbum?.name ?? title.trim(),
 				cover_url: selectedAlbum?.imageUrl ?? (coverUrl.trim() || null),
@@ -174,26 +170,14 @@
 <FormModalShell
 	bind:dialog
 	title="Album"
-	headingPrefix={mode === 'correct' ? 'Correct' : 'Edit'}
-	saveLabel={mode === 'correct' ? 'Save correction' : 'Save changes'}
+	headingPrefix="Edit"
+	saveLabel="Save changes"
 	{error}
 	{saving}
 	{canSave}
 	onsave={save}
 	onclose={reset}
 >
-	{#if recoveryMessages.length}
-		<div class="alert alert-warning alert-soft my-4">
-			<ul class="list-disc pl-4">
-				{#each recoveryMessages as message}
-					<li>
-						{message}
-					</li>
-				{/each}
-			</ul>
-		</div>
-	{/if}
-
 	<div role="tablist" class="tabs tabs-border">
 		<input
 			type="radio"

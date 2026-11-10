@@ -39,18 +39,14 @@
 	import ThemeOption from '$lib/components/more/ThemeOption.svelte';
 	import RatingDistributionChart from '$lib/components/more/RatingDistributionChart.svelte';
 	import StorageErrorAlert from '$lib/components/common/StorageErrorAlert.svelte';
-	import SyncQueueList from '$lib/components/more/SyncQueueList.svelte';
-	import ConflictMutationModal from '$lib/components/more/ConflictMutationModal.svelte';
-	import DiscardMutationModal from '$lib/components/more/DiscardMutationModal.svelte';
 	import BottomNav from '$lib/components/navigation/BottomNav.svelte';
 	import AlbumIcon from '$lib/components/icons/AlbumIcon.svelte';
 	import StarIcon from '$lib/components/icons/StarIcon.svelte';
 	import SpotifyIcon from '$lib/components/icons/SpotifyIcon.svelte';
 	import { daisyThemes } from '$lib/scripts/app-settings.svelte';
 	import { ratingColor, ratingLabel } from '$lib/scripts/rating-colors';
-	import { getChangesNeedingAttention } from '$lib/scripts/queue-state';
-	import type { RecoveryPlan } from '$lib/scripts/queue-recovery';
-	import type { Album, Artist, PendingMutation, RecordSyncStatus, SpotifyRow } from '$lib/scripts/types';
+	import type { Album, Artist, RecordSyncStatus, SpotifyRow } from '$lib/scripts/types';
+
 	let theme = $state('bettermusic');
 	let sort = $state<'album' | 'artist'>('album');
 	const noop = () => {};
@@ -73,16 +69,17 @@
 			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect width="400" height="400" fill="#172234"/><circle cx="200" cy="200" r="155" fill="#9bc0ff"/><circle cx="200" cy="200" r="110" fill="#283142"/><circle cx="200" cy="200" r="65" fill="#fdab8f"/><circle cx="200" cy="200" r="15" fill="#172234"/></svg>',
 		);
 	const artist: Artist = {
-		id: 900001,
-		version: 1,
+		id: '90000000-0000-4000-8000-000000000001',
+		edited_at: '2026-01-02T12:00:00.000Z',
 		name: 'Preview artist',
 		cover_url: artwork,
 		spotify_id: 'preview',
 		created_at: '2026-01-02T12:00:00Z',
 	};
+
 	const album: Album = {
-		id: 900001,
-		version: 1,
+		id: '90000000-0000-4000-8000-000000000002',
+		edited_at: '2026-01-02T12:00:00.000Z',
 		artist_id: artist.id,
 		title: 'Sample record',
 		cover_url: artwork,
@@ -94,47 +91,9 @@
 		rating: 8,
 		comment: 'A favorite worth another listen.\nNotes preserve line breaks.',
 	};
+
 	const row: SpotifyRow = { id: 'sample', name: album.title, meta: 'Preview artist • 2024', imageUrl: artwork };
-	const recordStates: RecordSyncStatus[] = [
-		'synced',
-		'pending',
-		'syncing',
-		'paused',
-		'failed',
-		'conflict',
-		'blocked',
-	];
-	const queue: PendingMutation[] = (
-		['pending', 'syncing', 'failed', 'conflict', 'blocked', 'unknown', 'retry'] as const
-	).map((status, i) => ({
-		mutationId: `preview-${i}`,
-		userId: 0,
-		entity: 'artist',
-		operation: 'update',
-		entityId: 900010 + i,
-		payload: { name: `${status} artist` },
-		after: { ...artist, name: `${status} artist` },
-		createdAt: Date.parse(artist.created_at),
-		attempts: 1,
-		status: status === 'unknown' || status === 'retry' ? 'pending' : status,
-		outcomeUnknown: status === 'unknown',
-		blockedReason: status === 'blocked' ? 'Resolve the earlier change first.' : undefined,
-		nextAttemptAt: status === 'retry' ? Date.parse('2099-01-01') : undefined,
-		failure:
-			status === 'failed' ?
-				{ kind: 'invalid-data', message: 'An artist with this name already exists.' }
-			:	undefined,
-	}));
-	const plan: RecoveryPlan = {
-		userId: 0,
-		session: null,
-		generation: 'preview',
-		revision: 0,
-		mutation: queue[2],
-		baseline: artist,
-		messages: ['Your local edit will be removed.', 'Later edits will be preserved.'],
-		action: 'discard',
-	};
+	const recordStates: RecordSyncStatus[] = ['synced', 'pending', 'syncing', 'paused', 'failed'];
 	const icons = Object.entries(
 		import.meta.glob<{ default: Component<{ class?: string }> }>('$lib/components/icons/*.svelte', { eager: true }),
 	).map(([path, module]) => ({ name: path.split('/').pop()!.replace('Icon.svelte', ''), component: module.default }));
@@ -147,6 +106,7 @@
 				e.stopPropagation();
 			}
 		};
+
 		node.addEventListener('click', prevent, true);
 		node.addEventListener('submit', prevent, true);
 		node.querySelectorAll('details').forEach((el) => el.setAttribute('open', ''));
@@ -748,115 +708,6 @@
 					{/each}
 				</div>
 
-				<Specimen label="Conflict · changed server record">
-					<ConflictMutationModal
-						plan={{
-							...plan,
-							action: 'server',
-							mutation: queue[2],
-							baseline: { ...artist, name: 'Server artist', version: 3 },
-							messages: ['Later edits are preserved. Review both versions before choosing.'],
-						}}
-						busy={false}
-						error=""
-						onresolve={noop}
-					/>
-				</Specimen>
-
-				<Specimen label="Conflict · server deleted">
-					<ConflictMutationModal
-						plan={{
-							...plan,
-							action: 'server',
-							baseline: null,
-							messages: [
-								'Recreating this record uses a new ID. Dependent changes are remapped or blocked.',
-							],
-						}}
-						busy={false}
-						error=""
-						onresolve={noop}
-					/>
-				</Specimen>
-
-				<Specimen label="Conflict · album">
-					<ConflictMutationModal
-						plan={{
-							...plan,
-							action: 'server',
-							baseline: album,
-							mutation: {
-								...queue[2],
-								entity: 'album',
-								operation: 'update',
-								entityId: album.id,
-								payload: { artist_id: album.artist_id, title: 'Local album' },
-								before: album,
-								after: { ...album, title: 'Local album' },
-							},
-						}}
-						busy={false}
-						error=""
-						onresolve={noop}
-					/>
-				</Specimen>
-
-				<Specimen label="Conflict · deleted album">
-					<ConflictMutationModal
-						plan={{
-							...plan,
-							action: 'server',
-							baseline: null,
-							mutation: {
-								...queue[2],
-								entity: 'album',
-								operation: 'update',
-								entityId: album.id,
-								payload: { artist_id: album.artist_id, title: 'Local album' },
-								before: album,
-								after: { ...album, title: 'Local album' },
-							},
-						}}
-						busy={false}
-						error=""
-						onresolve={noop}
-					/>
-				</Specimen>
-
-				<Specimen label="Sync queue · online">
-					<p class="text-sm">
-						{getChangesNeedingAttention(queue).length} changes need attention
-					</p>
-
-					<div class="queue-preview">
-						<SyncQueueList
-							mutations={queue}
-							status={{ state: 'synced', lastSyncedAt: 0 }}
-							recoveryDisabled={false}
-							sendingDisabled={false}
-							onretry={noop}
-							onreconcile={noop}
-							oncorrect={noop}
-							ondiscard={noop}
-						/>
-					</div>
-				</Specimen>
-
-				<Specimen label="Sync queue · offline / disabled recovery">
-					<div class="queue-preview">
-						<SyncQueueList
-							mutations={[queue[0], queue[2], queue[5]]}
-							status={{ state: 'offline', lastSyncedAt: null }}
-							recoveryDisabled
-							sendingDisabled
-							onretry={noop}
-							onreconcile={noop}
-							oncorrect={noop}
-							ondiscard={noop}
-						/>
-					</div>
-				</Specimen>
-
 				<Specimen label="Spotify · unselected / selected / fallback">
 					<ul class="list bg-base-200 rounded-box">
 						<SpotifySearchResult type="album" {row} loading={false} message="" />
@@ -944,54 +795,12 @@
 					<EditArtistModal {artist} onsave={async () => artist} />
 				</Specimen>
 
-				<Specimen label="Correct album">
-					<EditAlbumModal
-						{album}
-						{artist}
-						mode="correct"
-						recoveryMessages={['Your correction replaces the failed edit. Later changes are preserved.']}
-						onsave={async () => album}
-					/>
-				</Specimen>
-
-				<Specimen label="Correct artist">
-					<EditArtistModal
-						{artist}
-						mode="correct"
-						recoveryMessages={['Your correction replaces the failed edit.']}
-						onsave={async () => artist}
-					/>
-				</Specimen>
-
 				<Specimen label="Delete">
 					<DeleteConfirmationDialog
 						title="Delete album?"
 						description="This removes the album from your library."
 						confirmLabel="Delete album"
 						onconfirm={async () => {}}
-					/>
-				</Specimen>
-
-				<Specimen label="Delete · blocked">
-					<DeleteConfirmationDialog
-						title="Delete artist?"
-						description="This also removes the artist’s albums."
-						confirmLabel="Delete artist"
-						disabledReason="Resolve pending changes first."
-						onconfirm={async () => {}}
-					/>
-				</Specimen>
-
-				<Specimen label="Discard">
-					<DiscardMutationModal {plan} busy={false} error="" onconfirm={noop} />
-				</Specimen>
-
-				<Specimen label="Discard · busy / error">
-					<DiscardMutationModal
-						{plan}
-						busy
-						error="Recovery could not complete. Try again."
-						onconfirm={noop}
 					/>
 				</Specimen>
 

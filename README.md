@@ -33,13 +33,13 @@ The app includes an installable progressive web app (PWA) for supported browsers
 
 **Home** offers your next album and recent activity. **Listen** holds your queue, **Albums** holds your listening history, and **Artists** brings your collection together by artist. **More** contains listening statistics, customization, export, sync controls, and account settings.
 
-Playback happens in Spotify or your preferred music player. The Spotify integration searches metadata; playlist and listening-history imports are not currently supported. Library export is available as JSON; there is no import interface yet.
+Playback happens in Spotify or your preferred music player. The Spotify integration searches metadata; playlist and listening-history imports are not currently supported. Library import and export are available as Better Music JSON files.
 
 ## Technology
 
-**SvelteKit + Svelte 5 + TypeScript** on the frontend, **Go** for the API, and **PostgreSQL** for the library. Tailwind CSS and daisyUI provide the interface, while a service worker and IndexedDB support offline use.
+**SvelteKit + Svelte 5 + TypeScript** on the frontend, **Go** for the API, and **PostgreSQL** for the library. Tailwind CSS and daisyUI provide the interface, while RxDB with Dexie/IndexedDB handles local records and replication, and a service worker caches the app shell.
 
-The backend handles Spotify requests and authentication, including bcrypt passwords, JWT access tokens, and rotating refresh tokens. Swagger documentation and generated TypeScript API types keep the client and server contract in sync.
+The backend handles Spotify requests and authentication, including bcrypt passwords, JWT access tokens, and rotating refresh tokens. Frontend API contract types are maintained alongside the Go handlers.
 
 ## Getting started
 
@@ -133,17 +133,17 @@ cd frontend
 npm run dev
 ```
 
-Open [Better Music](http://localhost:5173) and create an account. Vite forwards `/api` requests to `http://localhost:8080`. The backend serves [Swagger UI](http://localhost:8080/swagger/index.html).
+Open [Better Music](http://localhost:5173) and create an account. Vite forwards `/api` requests to `http://localhost:8080`.
 
 Run the backend from `backend/`: its `.env` loading and migration paths depend on the working directory.
 
 ## Offline and sync
 
-Your library saves locally in the browser, so edits appear immediately and survive a reload. When you're online and signed in, pending changes synchronize with the server. Each account has its own local cache and queue.
+Your library saves locally in the browser, so edits appear immediately and survive a reload. When you're online and signed in, pending changes synchronize with the server. Each account has its own persistent RxDB database. UUIDs stay the same when records synchronize.
 
 Open the production app online and sign in before using it offline. Previously cached pages and artwork can then remain available without a connection. Spotify search and account changes still need internet access.
 
-Under **More → Library sync**, you can check pending work, select **Sync now**, retry failures, and resolve conflicting edits by choosing server values, local values, or individual fields.
+Under **More → Library sync**, you can check pending work, select **Sync now**, retry failures, and see errors that need attention. Rejected deletions can be undone from the sync panel; rejected live records can be opened or removed. Conflicts resolve automatically: the later edit timestamp wins, including deletions; equal timestamps keep the server version.
 
 <details>
 <summary>Browser requirements and keeping unsynced changes</summary>
@@ -151,10 +151,10 @@ Under **More → Library sync**, you can check pending work, select **Sync now**
 - Use HTTPS or localhost with IndexedDB, localStorage, Web Locks, and `crypto.randomUUID` available. Synchronization requires Web Locks.
 - The production PWA caches the app shell. The Vite development server does not provide the same offline experience, and artwork must be cached before it is available offline.
 - Expired authentication preserves pending changes. Sign back into the same account to resume syncing.
-- Explicit sign-out removes that account's local cache and pending changes once logout is eligible. Sync changes you want to keep before signing out. Clearing site data can also remove unsynced work.
-- Sign-out is blocked while relevant requests are active or their outcomes are unknown.
+- Sign-out is blocked while changes are pending or requests are active. Account-local records and checkpoints are retained after sign-out, so returning to the same account can reopen its cache. Clearing site data can remove unsynced work.
+- Device clocks supply edit timestamps. An incorrect clock can choose the wrong conflict winner.
 
-The sync queue uses idempotency keys to replay uncertain requests without repeating a mutation, record versions to detect conflicts, and Web Locks to coordinate processing across tabs. Conflict resolutions save locally and still need to synchronize.
+RxDB persists offline changes and retries replication. Go compares each proposed document with its assumed server state; duplicate delivery is a no-op. PostgreSQL publishes an ordered per-account change counter under a transaction lock. Deleted records remain as tombstones. Web Locks coordinate local edits and pending-status bookkeeping across tabs.
 
 </details>
 
@@ -168,13 +168,11 @@ backend/
   handlers/     Authentication, account, library, and Spotify endpoints
   models/       Database records and mutation persistence
   migrations/   PostgreSQL schema migrations
-  docs/         Generated Swagger files
 frontend/
   src/routes/   SvelteKit pages
   src/lib/      UI components, API client, local storage, and synchronization
-  scripts/      API type generator
 deploy/         Caddy, systemd, and deployment examples
-justfile        Development and API-generation shortcuts
+justfile        Development shortcuts
 ```
 
 ### Commands
@@ -187,8 +185,6 @@ npm run build            # Static production app in frontend/build/
 npm run preview          # Preview the frontend build
 npm run check            # Svelte and TypeScript checks
 npm run format:check     # Formatting checks
-npm run api:types        # Generate types from backend/docs/swagger.json
-npm run api:types:check  # Check that generated types are current
 ```
 
 The API proxy is configured for the development server. To use a production build with the backend, serve both through a reverse proxy as described below.
@@ -203,7 +199,7 @@ go test ./...
 
 Backend integration tests start a disposable PostgreSQL cluster when `initdb` and `pg_ctl` are on `PATH`. Alternatively, set `TEST_POSTGRES_URL` to a PostgreSQL URL whose user can create test databases. Tests create separate databases rather than migrating the supplied database. Set `REQUIRE_TEST_DB=1` to fail instead of skipping when PostgreSQL binaries are unavailable.
 
-After changing API handler annotations or models, run `just api` from the repository root to regenerate Swagger files and frontend types. Run `just api-check` to check frontend types against the checked-in Swagger contract. Do not edit `frontend/src/lib/scripts/api-types.ts` by hand.
+After changing API request or response shapes, update `frontend/src/lib/scripts/api-types.ts` to match the Go handlers.
 
 <details>
 <summary>API routes</summary>
@@ -213,19 +209,27 @@ Registration, login, refresh, and logout use `/api/auth/{register,login,refresh,
 | Resource | Routes |
 | --- | --- |
 | Account | `GET /api/account`, `PUT /api/account/email`, `PUT /api/account/password`, `DELETE /api/account` |
-| Artists | `GET/POST /api/artists`, `GET/PUT/DELETE /api/artists/{id}`, `GET /api/artists/{id}/albums` |
-| Albums | `GET/POST /api/albums`, `GET/PUT/DELETE /api/albums/{id}` |
+| Library replication | `POST /api/sync/{artists,albums}/{pull,push}` |
 | Spotify | `GET /api/spotify/search/artists`, `GET /api/spotify/search/albums`, `GET /api/spotify/artists/{id}`, `GET /api/spotify/albums/{id}` |
 
-See Swagger UI for request bodies, parameters, response schemas, and mutation version fields.
+See the Go handlers and `frontend/src/lib/scripts/api-types.ts` for request bodies, response shapes, and replication checkpoints.
 
 </details>
+
+### RxDB cutover
+
+Migration 010 creates empty UUID-based `library_artists` and `library_albums` tables, with sync sequence and epoch fields stored on each user row. The existing integer-ID `artists` and `albums` tables and all their data are left unchanged. There is no automatic conversion or copying of old library rows. Existing authentication remains in use; SuperTokens is a separate migration step.
+
+Before updating, sync the old release and export each account’s library using its JSON export feature. Keep those files and a PostgreSQL backup. Rehearse the update on a restored database copy before remote deployment. After updating, sign into the same account and use **More → Import library** with its Better Music format-version-2 export. The importer generates UUIDs, maps albums to the new artist IDs, and preserves artwork, Spotify IDs, years, listening state, ratings, notes, listening dates, and supplied creation dates. Imports with no creation date use the current date. Retry skips matching artist names and album titles; it does not overwrite existing records. Check the import counts and let synchronization finish on each account.
+
+The new client uses only the new RxDB-backed library, which is empty until import. Legacy CRUD routes return HTTP 410; old browser caches are ignored. Original PostgreSQL tables remain available as the source data, but the new app does not read them. Down migration is refused to avoid discarding new edits.
+
 
 ## Self-hosting
 
 Build the frontend with `npm run build` in `frontend/` and the backend with `go build -o build/better-music-backend .` in `backend/`. Run the backend with `backend/` as its working directory and provide its environment configuration and database access.
 
-Serve `frontend/build/` with a web server, proxy `/api/*` to the backend, and fall back to `200.html` for client-side routes. Use HTTPS for browser synchronization outside localhost. Proxy `/swagger/*` too if you want to expose API documentation; the Swagger document URL currently uses the host and port configured in `backend/main.go`.
+Serve `frontend/build/` with a web server, proxy `/api/*` to the backend, and fall back to `200.html` for client-side routes. Use HTTPS for browser synchronization outside localhost.
 
 <details>
 <summary>Using the included Raspberry Pi deployment examples</summary>
@@ -242,6 +246,17 @@ The files in [`deploy/`](deploy/) are Raspberry Pi examples and need adjustment 
 Keep regular PostgreSQL backups for the server library. The in-app JSON export is a readable library snapshot, including pending local edits, but it does not include account credentials or a database restore mechanism.
 
 ## Roadmap
+
+Planned migrations:
+
+- [ ] SuperTokens authentication
+- [ ] Huma API and Orval-generated client
+- [ ] Zod and Superforms validation/forms
+- [ ] Flowbite Svelte components and Lucide icons
+- [ ] Spotify SDK integration
+- [ ] Wails packaging
+
+More features:
 
 - [ ] Import from Spotify
 - [ ] Spotify shuffle

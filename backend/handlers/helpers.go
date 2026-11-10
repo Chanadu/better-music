@@ -30,32 +30,18 @@ type MessageResponse struct {
 	Message string `json:"message" validate:"required"`
 }
 
-func encodeJSON(value any) ([]byte, error) {
+func writeJSON(w http.ResponseWriter, status int, value any) {
 	body, err := json.Marshal(value)
 	if err != nil {
-		return nil, err
-	}
-	return append(body, '\n'), nil
-}
-
-func writeEncodedJSON(w http.ResponseWriter, status int, headers map[string]string, body []byte) {
-	w.Header().Set("Content-Type", "application/json")
-	for key, value := range headers {
-		w.Header().Set(key, value)
-	}
-	w.WriteHeader(status)
-	_, _ = w.Write(body)
-	slog.Info("Status: " + http.StatusText(status))
-	slog.Info("Response: " + strings.TrimSuffix(string(body), "\n"))
-}
-
-func writeJSON(w http.ResponseWriter, status int, value any) {
-	body, err := encodeJSON(value)
-	if err != nil {
 		status = http.StatusInternalServerError
-		body, _ = encodeJSON(apiError("failed to encode response"))
+		body, _ = json.Marshal(apiError("failed to encode response"))
 	}
-	writeEncodedJSON(w, status, nil, body)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, _ = w.Write(append(body, '\n'))
+	slog.Info("Status: " + http.StatusText(status))
+	slog.Info("Response: " + string(body))
 }
 
 func apiError(msg string) ApiErrorResponse {
@@ -74,10 +60,6 @@ func normalizeEmail(email string) (string, bool) {
 	}
 
 	return email, true
-}
-
-func isEmpty(s *string) bool {
-	return s == nil || *s == ""
 }
 
 func getUserID(w http.ResponseWriter, r *http.Request) (int, bool) {

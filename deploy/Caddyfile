@@ -5,10 +5,6 @@
         reverse_proxy 127.0.0.1:8080
     }
 
-    handle /swagger/* {
-        reverse_proxy 127.0.0.1:8080
-    }
-
     handle {
         root * /home/pi/better-music/frontend/build
         try_files {path} /200.html

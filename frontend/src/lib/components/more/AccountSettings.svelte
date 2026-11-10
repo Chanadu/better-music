@@ -9,7 +9,7 @@
 	import LogoutIcon from '$lib/components/icons/LogoutIcon.svelte';
 	import { accountApi } from '$lib/scripts/api';
 	import { canLogout, logout } from '$lib/scripts/auth';
-	import { subscribeSyncChanges } from '$lib/scripts/sync-events';
+	import { syncStatus } from '$lib/scripts/database';
 
 	let accountEmail = $state('');
 	let loadError = $state('');
@@ -17,7 +17,7 @@
 	let logoutError = $state('');
 	let loggingOut = $state(false);
 	let logoutAllowed = $state(false);
-	let actionsDisabled = $derived(!accountEmail || online.current !== true);
+	let actionsDisabled = $derived(!accountEmail || online.current !== true || !logoutAllowed);
 	let logoutDisabled = $derived(actionsDisabled || loggingOut || !logoutAllowed);
 
 	onMount(() => {
@@ -25,6 +25,7 @@
 		let checking = false;
 		const checkLogout = async () => {
 			if (checking) return;
+
 			checking = true;
 			try {
 				const allowed = await canLogout();
@@ -35,9 +36,9 @@
 				checking = false;
 			}
 		};
+
 		void checkLogout();
-		const unsubscribe = subscribeSyncChanges(() => void checkLogout());
-		// Locks can also belong to requests or tabs that do not publish sync events.
+		const unsubscribe = syncStatus.subscribe(() => void checkLogout());
 		const timer = setInterval(() => void checkLogout(), 500);
 		return () => {
 			mounted = false;
@@ -59,6 +60,7 @@
 
 	async function signOut() {
 		if (logoutDisabled) return;
+
 		loggingOut = true;
 		logoutError = '';
 		try {
@@ -70,6 +72,7 @@
 			} catch {
 				logoutAllowed = false;
 			}
+
 			if (logoutAllowed) logoutError = error instanceof Error ? error.message : 'Could not sign out. Try again.';
 		} finally {
 			loggingOut = false;

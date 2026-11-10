@@ -48,9 +48,6 @@ func RevokeRefreshToken(database *sql.DB, id int) error {
 	return err
 }
 
-// RotateRefreshToken atomically consumes an active refresh token and creates
-// its replacement. If the token is missing, expired, or already revoked, it
-// returns sql.ErrNoRows.
 func RotateRefreshToken(database *sql.DB, tokenHash, replacementHash string, replacementExpiresAt time.Time) (int, error) {
 	tx, err := database.Begin()
 	if err != nil {

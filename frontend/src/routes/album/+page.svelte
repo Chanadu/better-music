@@ -33,7 +33,7 @@
 	async function deleteAlbum() {
 		if (!album) return;
 
-		await albumsLibrary.delete(album.id, album.artist_id);
+		await albumsLibrary.delete(album.id);
 		await goto(backHref, { replaceState: true });
 	}
 

@@ -3,81 +3,41 @@ package models
 import "database/sql"
 
 type Album struct {
-	Version    int     `json:"version" validate:"required"`
-	ID         int     `json:"id" validate:"required"`
-	ArtistID   int     `json:"artist_id" validate:"required"`
-	Title      string  `json:"title" validate:"required"`
-	CoverUrl   *string `json:"cover_url" extensions:"x-nullable"`
-	Year       *int    `json:"year" extensions:"x-nullable"`
-	SpotifyID  *string `json:"spotify_id" extensions:"x-nullable"`
-	Listened   bool    `json:"listened" validate:"required"`
-	Rating     *int    `json:"rating" extensions:"x-nullable"`
-	Comment    *string `json:"comment" extensions:"x-nullable"`
-	ListenedAt *string `json:"listened_at" extensions:"x-nullable"`
-	CreatedAt  string  `json:"created_at" validate:"required"`
+	DocumentFields
+	ArtistID   string                `json:"artist_id"`
+	Title      string                `json:"title"`
+	Year       NullableField[int32]  `json:"year"`
+	Listened   *bool                 `json:"listened"`
+	Rating     NullableField[int32]  `json:"rating"`
+	Comment    NullableField[string] `json:"comment"`
+	ListenedAt NullableField[string] `json:"listened_at"`
 }
 
-func GetAlbumsByUser(database DB, userID int) ([]Album, error) {
-	rows, err := database.Query(
-		`SELECT id, artist_id, title, cover_url, year, spotify_id, listened, rating, comment, listened_at, created_at, version
-		FROM albums
-		WHERE user_id = $1
-		ORDER BY created_at DESC`,
-		userID,
+func (album *Album) ParentArtistID() *string {
+	return &album.ArtistID
+}
+
+func SaveAlbum(tx *sql.Tx, userID int, album Album, sequence int64) (sql.Result, error) {
+	return tx.Exec(
+		`INSERT INTO library_albums(id,user_id,artist_id,title,cover_url,spotify_id,year,listened,rating,comment,listened_at,created_at,edited_at,_deleted,change_seq)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+		ON CONFLICT(id) DO UPDATE SET title=EXCLUDED.title,cover_url=EXCLUDED.cover_url,
+		spotify_id=EXCLUDED.spotify_id,year=EXCLUDED.year,listened=EXCLUDED.listened,
+		rating=EXCLUDED.rating,comment=EXCLUDED.comment,listened_at=EXCLUDED.listened_at,
+		edited_at=EXCLUDED.edited_at,_deleted=EXCLUDED._deleted,change_seq=EXCLUDED.change_seq
+		WHERE library_albums.user_id=EXCLUDED.user_id`,
+		album.ID, userID, album.ArtistID, album.Title, album.CoverURL.Value, album.SpotifyID.Value,
+		album.Year.Value, album.Listened, album.Rating.Value, album.Comment.Value, album.ListenedAt.Value,
+		album.CreatedAt, album.EditedAt, album.Deleted, sequence,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	return scanAlbums(rows)
 }
 
-func AlbumExistsByID(database DB, userID int, artistID int, albumID int) (bool, error) {
+func LibraryArtistHasAlbums(tx *sql.Tx, userID int, id string) (bool, error) {
 	var exists bool
-	err := database.QueryRow(
-		`SELECT EXISTS (
-			SELECT 1
-			FROM albums
-			WHERE user_id = $1 AND artist_id = $2 AND id = $3
-		)
-		`,
-		userID, artistID, albumID,
+	err := tx.QueryRow(
+		`SELECT EXISTS(SELECT 1 FROM library_albums
+		WHERE user_id=$1 AND artist_id=$2 AND NOT _deleted)`,
+		userID, id,
 	).Scan(&exists)
-
 	return exists, err
-}
-
-func GetAlbumByID(database DB, userID int, artistID int, albumID int) (*Album, error) {
-	return scanAlbum(database.QueryRow(
-		`SELECT id, artist_id, title, cover_url, year, spotify_id, listened, rating, comment, listened_at, created_at, version
-  FROM albums WHERE user_id=$1 AND artist_id=$2 AND id=$3`,
-		userID, artistID, albumID,
-	))
-}
-
-func scanAlbum(row interface{ Scan(...any) error }) (*Album, error) {
-	var album Album
-	err := row.Scan(&album.ID, &album.ArtistID, &album.Title, &album.CoverUrl,
-		&album.Year, &album.SpotifyID, &album.Listened, &album.Rating,
-		&album.Comment, &album.ListenedAt, &album.CreatedAt, &album.Version)
-	if err != nil {
-		return nil, err
-	}
-	return &album, nil
-}
-
-func scanAlbums(rows *sql.Rows) ([]Album, error) {
-	defer rows.Close()
-	albums := []Album{}
-	for rows.Next() {
-		album, err := scanAlbum(rows)
-		if err != nil {
-			return nil, err
-		}
-		albums = append(albums, *album)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return albums, nil
 }

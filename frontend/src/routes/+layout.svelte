@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import { afterNavigate, beforeNavigate, preloadCode } from '$app/navigation';
+	import { beforeNavigate, preloadCode } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount, tick } from 'svelte';
 	import StorageErrorAlert from '$lib/components/common/StorageErrorAlert.svelte';
@@ -23,6 +23,7 @@
 
 	async function preloadLibraryPages() {
 		if (!navigator.onLine || authPage || previewPage) return;
+
 		const results = await Promise.allSettled(
 			['/', '/artists', '/albums', '/artist', '/album', '/listen', '/more'].map((path) => preloadCode(path)),
 		);
@@ -40,20 +41,18 @@
 		}
 	});
 
-	afterNavigate(() => {
-		if (ready && !authPage && !previewPage) void refreshDatabaseSafely();
-	});
-
 	onMount(() => {
 		const unsubscribeSession = subscribeSessionChanges(() => {
 			if (!authPage && !previewPage) location.assign(hasStoredSession() ? '/' : '/login');
 		});
+
 		appSettings.load();
 		void preloadLibraryPages();
 
 		const visibility = () => {
 			if (document.visibilityState === 'visible') void refreshDatabaseSafely();
 		};
+
 		const focus = () => void refreshDatabaseSafely();
 		const reconnect = () => {
 			void preloadLibraryPages();
@@ -73,6 +72,7 @@
 				location.assign('/login');
 				return;
 			}
+
 			if (!token) {
 				if (navigator.onLine) markSyncError();
 				else markOffline();

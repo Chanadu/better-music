@@ -17,7 +17,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// AuthRequest represents the request body for auth endpoints
 type AuthRequest struct {
 	Email    string `json:"email" example:"user@example.com" validate:"required"`
 	Password string `json:"password" example:"password123" validate:"required"`
@@ -102,20 +101,9 @@ func (h *Handler) issueTokens(userID int) (*TokenResponse, error) {
 	}, nil
 }
 
-// AuthRegister godoc
-// @Summary Register a new user
-// @Description Create a new user account and receive access and refresh tokens
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body AuthRequest true "User credentials"
-// @Success 201 {object} TokenResponse
-// @Failure 400 {object} ApiErrorResponse "Invalid JSON or missing fields"
-// @Failure 409 {object} ApiErrorResponse "Email already in use"
-// @Failure 500 {object} ApiErrorResponse "Server error"
-// @Router /api/auth/register [post]
 func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/auth/register", "method", r.Method, "path", r.URL.Path)
+
 	var body AuthRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -173,20 +161,9 @@ func (h *Handler) AuthRegister(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// AuthLogin godoc
-// @Summary Login user
-// @Description Authenticate user with email and password to receive access and refresh tokens
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body AuthRequest true "User credentials"
-// @Success 200 {object} TokenResponse
-// @Failure 400 {object} ApiErrorResponse "Invalid JSON"
-// @Failure 401 {object} ApiErrorResponse "Invalid credentials"
-// @Failure 500 {object} ApiErrorResponse "Server error"
-// @Router /api/auth/login [post]
 func (h *Handler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/auth/login", "method", r.Method, "path", r.URL.Path)
+
 	var body AuthRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -220,20 +197,9 @@ func (h *Handler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, tokens)
 }
 
-// AuthRefresh godoc
-// @Summary Refresh auth tokens
-// @Description Exchange a valid refresh token for a new access token and refresh token
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body RefreshTokenRequest true "Refresh token"
-// @Success 200 {object} TokenResponse
-// @Failure 400 {object} ApiErrorResponse "Invalid JSON or missing token"
-// @Failure 401 {object} ApiErrorResponse "Invalid or expired refresh token"
-// @Failure 500 {object} ApiErrorResponse "Server error"
-// @Router /api/auth/refresh [post]
 func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/auth/refresh", "method", r.Method, "path", r.URL.Path)
+
 	var body RefreshTokenRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -283,19 +249,9 @@ func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// AuthLogout godoc
-// @Summary Logout user
-// @Description Revoke a refresh token so it can no longer be used to mint new access tokens
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body RefreshTokenRequest true "Refresh token"
-// @Success 200 {object} MessageResponse
-// @Failure 400 {object} ApiErrorResponse "Invalid JSON or missing token"
-// @Failure 500 {object} ApiErrorResponse "Server error"
-// @Router /api/auth/logout [post]
 func (h *Handler) AuthLogout(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("route hit", "route", "POST /api/auth/logout", "method", r.Method, "path", r.URL.Path)
+
 	var body RefreshTokenRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {

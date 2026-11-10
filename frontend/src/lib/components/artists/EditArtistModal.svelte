@@ -15,15 +15,11 @@
 		dialog = $bindable(),
 		onupdated,
 		onsave,
-		mode = 'edit',
-		recoveryMessages = [],
 	}: {
 		artist: Artist;
 		dialog?: HTMLDialogElement;
 		onupdated?: (artist: Artist) => void;
 		onsave: (payload: UpdateArtistRequest) => Promise<Artist>;
-		mode?: 'edit' | 'correct';
-		recoveryMessages?: string[];
 	} = $props();
 
 	let name = $state('');
@@ -126,26 +122,14 @@
 <FormModalShell
 	bind:dialog
 	title="Artist"
-	headingPrefix={mode === 'correct' ? 'Correct' : 'Edit'}
-	saveLabel={mode === 'correct' ? 'Save correction' : 'Save changes'}
+	headingPrefix="Edit"
+	saveLabel="Save changes"
 	{error}
 	{saving}
 	{canSave}
 	onsave={save}
 	onclose={reset}
 >
-	{#if recoveryMessages.length}
-		<div class="alert alert-warning alert-soft my-4">
-			<ul class="list-disc pl-4">
-				{#each recoveryMessages as message}
-					<li>
-						{message}
-					</li>
-				{/each}
-			</ul>
-		</div>
-	{/if}
-
 	<div role="tablist" class="tabs tabs-border">
 		<input
 			type="radio"

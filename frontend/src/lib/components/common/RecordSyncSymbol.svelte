@@ -9,8 +9,6 @@
 		syncing: 'Syncing',
 		paused: 'Paused: synchronization cannot continue',
 		failed: 'Failed: review in Settings',
-		conflict: 'Conflicted: the server record changed',
-		blocked: 'Blocked: resolve an earlier change or dependency in Settings',
 	};
 
 	const colors = {
@@ -19,8 +17,6 @@
 		syncing: 'text-info',
 		paused: 'text-base-content/60',
 		failed: 'text-error',
-		conflict: 'text-warning',
-		blocked: 'text-error',
 	};
 </script>
 
@@ -51,12 +47,6 @@
 				<path d="M9 5v14M15 5v14" />
 			{:else if status === 'failed'}
 				<path d="m12 3 10 18H2L12 3ZM12 9v4M12 17h.01" />
-			{:else if status === 'conflict'}
-				<path d="M12 21v-7M12 14 5 7M12 14l7-7M5 11V5h6M13 5h6v6" />
-			{:else if status === 'blocked'}
-				<rect x="5" y="10" width="14" height="11" rx="2" />
-
-				<path d="M8 10V7a4 4 0 0 1 8 0v3" />
 			{/if}
 		</svg>
 	</span>

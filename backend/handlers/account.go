@@ -48,15 +48,6 @@ func validPassword(user *models.User, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) == nil
 }
 
-// GetAccount godoc
-// @Summary Get the current account
-// @Tags account
-// @Produce json
-// @Security Bearer
-// @Success 200 {object} AccountResponse
-// @Failure 401 {object} ApiErrorResponse
-// @Failure 500 {object} ApiErrorResponse
-// @Router /api/account [get]
 func (h *Handler) GetAccount(w http.ResponseWriter, r *http.Request) {
 	user, ok := h.authenticatedUser(w, r)
 	if !ok {
@@ -66,19 +57,6 @@ func (h *Handler) GetAccount(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, AccountResponse{Email: user.Email})
 }
 
-// UpdateAccountEmail godoc
-// @Summary Change the current account email
-// @Tags account
-// @Accept json
-// @Produce json
-// @Security Bearer
-// @Param request body UpdateEmailRequest true "New email and current password"
-// @Success 200 {object} MessageResponse
-// @Failure 400 {object} ApiErrorResponse
-// @Failure 401 {object} ApiErrorResponse
-// @Failure 409 {object} ApiErrorResponse
-// @Failure 500 {object} ApiErrorResponse
-// @Router /api/account/email [put]
 func (h *Handler) UpdateAccountEmail(w http.ResponseWriter, r *http.Request) {
 	var body UpdateEmailRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -96,20 +74,24 @@ func (h *Handler) UpdateAccountEmail(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+
 	if !validPassword(user, body.Password) {
 		writeJSON(w, http.StatusUnauthorized, apiError("current password is incorrect"))
 		return
 	}
+
 	if err := models.UpdateUserEmail(h.Database, user.ID, email, user.PasswordHash); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			writeJSON(w, http.StatusUnauthorized, apiError("current password is no longer valid"))
 			return
 		}
+
 		var pqError *pq.Error
 		if errors.As(err, &pqError) && pqError.Code == "23505" {
 			writeJSON(w, http.StatusConflict, apiError("email already in use"))
 			return
 		}
+
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to update email"))
 		return
 	}
@@ -117,24 +99,13 @@ func (h *Handler) UpdateAccountEmail(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, apiMessage("email updated"))
 }
 
-// UpdateAccountPassword godoc
-// @Summary Change the current account password
-// @Tags account
-// @Accept json
-// @Produce json
-// @Security Bearer
-// @Param request body UpdatePasswordRequest true "Current and new passwords"
-// @Success 200 {object} MessageResponse
-// @Failure 400 {object} ApiErrorResponse
-// @Failure 401 {object} ApiErrorResponse
-// @Failure 500 {object} ApiErrorResponse
-// @Router /api/account/password [put]
 func (h *Handler) UpdateAccountPassword(w http.ResponseWriter, r *http.Request) {
 	var body UpdatePasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON"))
 		return
 	}
+
 	if body.CurrentPassword == "" || len(body.NewPassword) < 4 {
 		writeJSON(w, http.StatusBadRequest, apiError("current password and a new password of at least 4 characters required"))
 		return
@@ -144,6 +115,7 @@ func (h *Handler) UpdateAccountPassword(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
+
 	if !validPassword(user, body.CurrentPassword) {
 		writeJSON(w, http.StatusUnauthorized, apiError("current password is incorrect"))
 		return
@@ -154,29 +126,20 @@ func (h *Handler) UpdateAccountPassword(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to hash password"))
 		return
 	}
+
 	if err = models.UpdateUserPassword(h.Database, user.ID, string(passwordHash), user.PasswordHash); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			writeJSON(w, http.StatusUnauthorized, apiError("current password is no longer valid"))
 			return
 		}
+
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to update password"))
 		return
 	}
+
 	writeJSON(w, http.StatusOK, apiMessage("password updated"))
 }
 
-// DeleteAccount godoc
-// @Summary Permanently delete the current account
-// @Tags account
-// @Accept json
-// @Produce json
-// @Security Bearer
-// @Param request body DeleteAccountRequest true "Current password"
-// @Success 200 {object} MessageResponse
-// @Failure 400 {object} ApiErrorResponse
-// @Failure 401 {object} ApiErrorResponse
-// @Failure 500 {object} ApiErrorResponse
-// @Router /api/account [delete]
 func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	var body DeleteAccountRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Password == "" {
@@ -188,6 +151,7 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+
 	if !validPassword(user, body.Password) {
 		writeJSON(w, http.StatusUnauthorized, apiError("current password is incorrect"))
 		return
@@ -198,6 +162,7 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusUnauthorized, apiError("current password is no longer valid"))
 			return
 		}
+
 		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete account"))
 		return
 	}

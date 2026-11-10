@@ -170,21 +170,11 @@ func TestAccountLifecycle(test *testing.T) {
 
 	status(test, request(apiHandler, apiHandler.AuthLogin, "POST", "/", `{"email":"new@example.com","password":"updated"}`, "", nil), 200)
 
-	status(
-		test,
-		request(
-			apiHandler,
-			apiHandler.CreateArtist,
-			"POST",
-			"/api/artists",
-			`{"name":"Artist"}`,
-			accountTokens.AccessToken,
-			map[string]string{"Idempotency-Key": "account-delete"},
-		),
-		201,
-	)
-
-	status(test, request(apiHandler, apiHandler.CreateAlbum, "POST", "/api/albums", `{"artist_id":1,"title":"Album"}`, accountTokens.AccessToken, nil), 201)
+	cp := initialPull(test, apiHandler, "artists", accountTokens.AccessToken)
+	artist := artistDocument(testArtistID, "Artist", stamp1)
+	status(test, push(test, apiHandler, "artists", accountTokens.AccessToken, cp, LibraryChange{New: artist}), 200)
+	album := albumDocument(testAlbumID, testArtistID, "Album", stamp1)
+	status(test, push(test, apiHandler, "albums", accountTokens.AccessToken, cp, LibraryChange{New: album}), 200)
 
 	status(test, request(apiHandler, apiHandler.DeleteAccount, "DELETE", "/", `{"password":"wrong"}`, accountTokens.AccessToken, nil), 401)
 
@@ -196,6 +186,8 @@ func TestAccountLifecycle(test *testing.T) {
 		"albums",
 		"refresh_tokens",
 		"processed_mutations",
+		"library_artists",
+		"library_albums",
 	} {
 		column := "user_id"
 		if table == "users" {
@@ -237,17 +229,8 @@ func TestValidationAndUnauthorized(test *testing.T) {
 
 	for _, endpointHandler := range []http.HandlerFunc{
 		apiHandler.GetAccount,
-		apiHandler.GetArtists,
-		apiHandler.GetArtist,
-		apiHandler.GetArtistAlbums,
-		apiHandler.CreateArtist,
-		apiHandler.UpdateArtist,
-		apiHandler.DeleteArtist,
-		apiHandler.GetAlbums,
-		apiHandler.GetAlbum,
-		apiHandler.CreateAlbum,
-		apiHandler.UpdateAlbum,
-		apiHandler.DeleteAlbum,
+		apiHandler.PullLibrary,
+		apiHandler.PushLibrary,
 		apiHandler.SearchSpotifyArtists,
 		apiHandler.SearchSpotifyAlbums,
 		apiHandler.GetSpotifyArtist,

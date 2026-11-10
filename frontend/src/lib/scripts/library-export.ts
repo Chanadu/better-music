@@ -1,4 +1,3 @@
-import { albumsApi, artistsApi } from './api';
 import { getDatabaseData } from './database';
 import type { DatabaseData, EntityId } from './types';
 
@@ -7,9 +6,10 @@ export const LIBRARY_EXPORT_FORMAT_VERSION = 2 as const;
 export type LibraryExportSource = Pick<DatabaseData, 'artists' | 'albums'>;
 
 export async function fetchFreshLibraryForExport(): Promise<LibraryExportSource> {
-	const [artists, albums] = await Promise.all([artistsApi.list(), albumsApi.list()]);
+	const source = await getDatabaseData();
+	if (!source) throw new Error('Load your local library before exporting.');
 
-	return { artists, albums };
+	return source;
 }
 
 export type ExportArtist = {

@@ -40,10 +40,10 @@ export function parseLibraryImport(text: string): ImportedLibrary {
 
 	const id = (value: unknown): EntityId => {
 		if (typeof value === 'number' && Number.isSafeInteger(value) && value > 0) {
-			return value;
+			return String(value);
 		}
 
-		if (typeof value === 'string' && /^local:.+/.test(value)) {
+		if (typeof value === 'string' && /^(?:local:.+|[0-9a-f]{8}-[0-9a-f-]{27})$/i.test(value)) {
 			return value as EntityId;
 		}
 
@@ -54,6 +54,7 @@ export function parseLibraryImport(text: string): ImportedLibrary {
 		if (typeof value === 'string' && value.trim()) {
 			return value.trim();
 		}
+
 		return fail('Artist names and album titles cannot be empty.');
 	};
 
@@ -73,7 +74,7 @@ export function parseLibraryImport(text: string): ImportedLibrary {
 		const result = nullableString(value);
 
 		if (result !== null && (!/^\d{4}-\d{2}-\d{2}T/.test(result) || !Number.isFinite(Date.parse(result)))) {
-			fail('Invalid listening date.');
+			fail('Invalid date.');
 		}
 
 		return result;
@@ -89,7 +90,7 @@ export function parseLibraryImport(text: string): ImportedLibrary {
 			name: name(row.name),
 			cover_url: nullableString(row.cover_url),
 			spotify_id: nullableString(row.spotify_id),
-			created_at: '',
+			created_at: date(row.created_at) ?? '',
 		};
 
 		if (artistIds.has(artist.id) || artistNames.has(artist.name.toLowerCase())) {
@@ -160,7 +161,7 @@ export function parseLibraryImport(text: string): ImportedLibrary {
 			rating: (row.rating as number | null) ?? null,
 			listened: row.listened as boolean,
 			listened_at: listenedAt,
-			created_at: '',
+			created_at: date(row.created_at) ?? '',
 		};
 	});
 
@@ -198,7 +199,9 @@ export async function importLibraryJson(text: string): Promise<{ artists: number
 
 			if (targetId === undefined) {
 				const { name, cover_url, spotify_id } = artist;
-				targetId = (await artistsLibrary.create({ name, cover_url, spotify_id })).id;
+				targetId = (
+					await artistsLibrary.create({ name, cover_url, spotify_id }, artist.created_at || undefined)
+				).id;
 
 				artists.set(name.toLowerCase(), targetId);
 				result.artists++;
@@ -222,17 +225,20 @@ export async function importLibraryJson(text: string): Promise<{ artists: number
 
 			const { title, cover_url, spotify_id, year, listened, rating, comment, listened_at } = album;
 
-			await albumsLibrary.create({
-				artist_id,
-				title,
-				cover_url,
-				spotify_id,
-				year,
-				listened,
-				rating,
-				comment,
-				listened_at,
-			});
+			await albumsLibrary.create(
+				{
+					artist_id,
+					title,
+					cover_url,
+					spotify_id,
+					year,
+					listened,
+					rating,
+					comment,
+					listened_at,
+				},
+				album.created_at || undefined,
+			);
 
 			albums.add(key);
 			result.albums++;

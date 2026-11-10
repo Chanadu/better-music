@@ -1,7 +1,4 @@
 import type { TokenResponse } from './types';
-import { deleteStoredLibrary, getPendingMutations } from './database-cache';
-import { hasUnknownOutcome } from './queue-state';
-import { syncConfig } from './sync-config';
 import { persistentStorage } from './storage';
 
 const keys = {
@@ -11,16 +8,19 @@ const keys = {
 	userId: 'betterMusicUserId',
 	generation: 'betterMusicSessionGeneration',
 };
+
 const sessionListeners = new Set<() => void>();
 const notifySession = () => {
 	for (const listener of sessionListeners) listener();
 };
+
 export const subscribeSessionChanges = (listener: () => void) => {
 	sessionListeners.add(listener);
 	return () => {
 		sessionListeners.delete(listener);
 	};
 };
+
 if (typeof window !== 'undefined')
 	window.addEventListener('storage', (event) => {
 		if (event.key === null || event.key === keys.generation || event.key === keys.userId) notifySession();
@@ -72,40 +72,42 @@ export const invalidateSession = async () => {
 	notifySession();
 };
 
-const blocksLogout = (queue: Awaited<ReturnType<typeof getPendingMutations>>) =>
-	queue.some((item) => item.status === 'syncing' || hasUnknownOutcome(item));
-
 export const canLogout = async () => {
 	const userId = getCurrentUserId();
 	const checkSession = sessionGuard();
 	if (userId === null || !navigator.locks) return false;
-	const [locks, queue] = await Promise.all([navigator.locks.query(), getPendingMutations(userId)]);
+
+	const { hasUnsyncedChanges } = await import('./database');
+	if (await hasUnsyncedChanges(userId)) return false;
+
+	const locks = await navigator.locks.query();
 	checkSession();
-	const lockNames = [syncConfig.lockPrefix + userId, requestLock(userId)];
-	const active = [...(locks.held ?? []), ...(locks.pending ?? [])].some((lock) =>
-		lockNames.includes(lock.name ?? ''),
-	);
-	return !active && !blocksLogout(queue);
+	return ![...(locks.held ?? []), ...(locks.pending ?? [])].some((lock) => lock.name === requestLock(userId));
 };
 
-// Use the same lock order as sync: account ownership, then HTTP requests.
 export const clearSession = async () => {
 	const userId = getCurrentUserId();
 	const checkSession = sessionGuard();
 	if (userId === null) return;
+
 	if (!navigator.locks) throw new Error('This browser does not support safe sign out');
-	await navigator.locks.request(syncConfig.lockPrefix + userId, { ifAvailable: true }, async (syncLock) => {
-		if (!syncLock) throw new Error('Synchronization is active in another tab. Wait before signing out.');
-		await navigator.locks.request(requestLock(userId), { ifAvailable: true }, async (lock) => {
-			if (!lock) throw new Error('An account request is active. Wait before signing out.');
-			checkSession();
-			const queue = await getPendingMutations(userId);
-			if (blocksLogout(queue)) throw new Error('A request outcome is unknown. Reconcile it before signing out.');
-			await deleteStoredLibrary(userId, checkSession);
-			await invalidateSession();
-			persistentStorage.remove(`bettermusic:next-album:${userId}`);
-		});
+
+	await navigator.locks.request(requestLock(userId), { ifAvailable: true }, async (lock) => {
+		if (!lock) throw new Error('An account request is active. Wait before signing out.');
+
+		checkSession();
+		const { hasUnsyncedChanges } = await import('./database');
+		if (await hasUnsyncedChanges(userId)) throw new Error('Sync your pending library changes before signing out.');
+
+		checkSession();
+		await invalidateSession();
+		persistentStorage.remove(`bettermusic:next-album:${userId}`);
 	});
+};
+
+const markAuthenticationExpired = () => {
+	persistentStorage.remove(keys.access);
+	persistentStorage.remove(keys.expires);
 };
 
 export const hasStoredSession = () => getCurrentUserId() !== null && persistentStorage.get(keys.refresh) !== null;
@@ -126,7 +128,7 @@ const performRefresh = async () => {
 		});
 
 		if (!response.ok) {
-			if (isCurrent() && (response.status === 400 || response.status === 401)) await invalidateSession();
+			if (isCurrent() && (response.status === 400 || response.status === 401)) markAuthenticationExpired();
 			return null;
 		}
 
@@ -181,6 +183,7 @@ const performAuthenticatedFetch = async (input: RequestInfo | URL, init: Request
 
 	if (!token) {
 		if (!hasStoredSession()) return response;
+
 		throw new AuthenticationError('Authentication is temporarily unavailable');
 	}
 
@@ -188,7 +191,7 @@ const performAuthenticatedFetch = async (input: RequestInfo | URL, init: Request
 	response = await fetch(input, { ...init, headers });
 
 	checkSession();
-	if (response.status === 401) await invalidateSession();
+	if (response.status === 401) markAuthenticationExpired();
 	return response;
 };
 
@@ -196,7 +199,9 @@ export const authenticatedFetch = async (input: RequestInfo | URL, init: Request
 	const userId = getCurrentUserId();
 	const checkSession = sessionGuard();
 	if (userId === null) throw new AuthenticationError('Not authenticated');
+
 	if (!navigator.locks) throw new AuthenticationError('This browser does not support account request locks');
+
 	return navigator.locks.request(
 		requestLock(userId),
 		{ mode: 'shared', signal: init.signal ?? undefined },
