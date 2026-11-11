@@ -9,65 +9,65 @@ import (
 	"github.com/lib/pq"
 )
 
-func (h *Handler) PushLibrary(w http.ResponseWriter, r *http.Request) {
-	userID, ok := getUserID(w, r)
+func (h *Handler) PushLibrary(writer http.ResponseWriter, httpRequest *http.Request) {
+	userID, ok := getUserID(writer, httpRequest)
 	if !ok {
 		return
 	}
 
-	kind, ok := syncKind(r)
+	kind, ok := syncKind(httpRequest)
 	if !ok {
-		writeJSON(w, 404, apiError("unknown collection"))
+		writeJSON(writer, 404, apiError("unknown collection"))
 		return
 	}
 
 	var input PushLibraryRequest
-	if !decodeSync(w, r, &input) {
+	if !decodeSync(writer, httpRequest, &input) {
 		return
 	}
 
 	if len(input.Rows) == 0 || len(input.Rows) > 100 || !validUUID(input.Epoch) {
-		writeJSON(w, 400, apiError("invalid push batch or epoch"))
+		writeJSON(writer, 400, apiError("invalid push batch or epoch"))
 		return
 	}
 
 	docs, err := validatePushRows(input.Rows, kind)
 	if err != nil {
-		writeJSON(w, 422, apiError(err.Error()))
+		writeJSON(writer, 422, apiError(err.Error()))
 		return
 	}
 
-	tx, e := h.Database.BeginTx(r.Context(), nil)
-	if e != nil {
-		syncStorageError(w, e)
+	tx, storageErr := h.Database.BeginTx(httpRequest.Context(), nil)
+	if storageErr != nil {
+		syncStorageError(writer, httpRequest, "begin push transaction", storageErr)
 		return
 	}
 
 	defer tx.Rollback()
-	epoch, e := models.LockSyncState(tx, userID)
-	if e != nil {
-		syncStorageError(w, e)
+	epoch, storageErr := models.LockSyncState(tx, userID)
+	if storageErr != nil {
+		syncStorageError(writer, httpRequest, "lock sync state", storageErr)
 		return
 	}
 
 	if epoch != input.Epoch {
-		writeJSON(w, 409, apiError("Sync history changed. Preserve pending edits before resetting."))
+		writeJSON(writer, 409, apiError("Sync history changed. Preserve pending edits before resetting."))
 		return
 	}
 
 	conflicts := []json.RawMessage{}
 	failures := []LibraryChangeFailure{}
 	retryable := false
-	for i, doc := range docs {
-		if e = models.CreateSyncSavepoint(tx); e != nil {
-			syncStorageError(w, e)
+	for index, doc := range docs {
+		if storageErr = models.CreateSyncSavepoint(tx); storageErr != nil {
+			syncStorageError(writer, httpRequest, "create sync savepoint", storageErr)
 			return
 		}
 
-		conflict, failure, err := applySyncRow(tx, userID, kind, doc, input.Rows[i].Assumed)
+		conflict, failure, err := applySyncRow(tx, userID, kind, doc, input.Rows[index].Assumed)
 		if err != nil {
-			if e = models.RollbackSyncSavepoint(tx); e != nil {
-				syncStorageError(w, e)
+			if storageErr = models.RollbackSyncSavepoint(tx); storageErr != nil {
+				syncStorageError(writer, httpRequest, "roll back sync savepoint", storageErr)
 				return
 			}
 
@@ -75,7 +75,7 @@ func (h *Handler) PushLibrary(w http.ResponseWriter, r *http.Request) {
 			if errors.As(err, &pe) && (pe.Code == "23505" || pe.Code == "23503" || pe.Code == "23514") {
 				failure = &LibraryChangeFailure{ID: doc.Fields().ID, Error: "A record with this name or ID already exists, or its relationship is invalid."}
 			} else {
-				syncStorageError(w, err)
+				syncStorageError(writer, httpRequest, "apply library change", err)
 				return
 			}
 		}
@@ -87,14 +87,14 @@ func (h *Handler) PushLibrary(w http.ResponseWriter, r *http.Request) {
 			conflicts = append(conflicts, conflict)
 		}
 
-		if e = models.ReleaseSyncSavepoint(tx); e != nil {
-			syncStorageError(w, e)
+		if storageErr = models.ReleaseSyncSavepoint(tx); storageErr != nil {
+			syncStorageError(writer, httpRequest, "release sync savepoint", storageErr)
 			return
 		}
 	}
 
-	if e = tx.Commit(); e != nil {
-		syncStorageError(w, e)
+	if storageErr = tx.Commit(); storageErr != nil {
+		syncStorageError(writer, httpRequest, "commit push transaction", storageErr)
 		return
 	}
 
@@ -104,9 +104,9 @@ func (h *Handler) PushLibrary(w http.ResponseWriter, r *http.Request) {
 			status = 409
 		}
 
-		writeJSON(w, status, PushLibraryErrorResponse{Error: "Some library changes could not sync. They remain saved on this device.", Failures: failures})
+		writeJSON(writer, status, PushLibraryErrorResponse{Error: "Some library changes could not sync. They remain saved on this device.", Failures: failures})
 		return
 	}
 
-	writeJSON(w, 200, conflicts)
+	writeJSON(writer, 200, conflicts)
 }

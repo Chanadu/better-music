@@ -17,14 +17,14 @@ func validUUID(value string) bool {
 		return false
 	}
 
-	for i := 0; i < len(value); i++ {
-		switch i {
+	for index := 0; index < len(value); index++ {
+		switch index {
 		case 8, 13, 18, 23:
-			if value[i] != '-' {
+			if value[index] != '-' {
 				return false
 			}
 		default:
-			if !strings.ContainsRune("0123456789abcdef", rune(value[i])) {
+			if !strings.ContainsRune("0123456789abcdef", rune(value[index])) {
 				return false
 			}
 		}
@@ -69,7 +69,7 @@ func decodeJSON(reader io.Reader, out any) error {
 func validatePushRows(rows []LibraryChange, kind models.LibraryKind) ([]models.LibraryDocument, error) {
 	docs := make([]models.LibraryDocument, len(rows))
 	seen := map[string]bool{}
-	for i, row := range rows {
+	for index, row := range rows {
 		doc, err := validateDocument(row.New, kind)
 		if err != nil {
 			return nil, err
@@ -87,7 +87,7 @@ func validatePushRows(rows []LibraryChange, kind models.LibraryKind) ([]models.L
 		}
 
 		seen[doc.Fields().ID] = true
-		docs[i] = doc
+		docs[index] = doc
 	}
 
 	return docs, nil

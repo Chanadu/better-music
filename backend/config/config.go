@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -11,13 +12,33 @@ import (
 )
 
 type Config struct {
-	Logs       LogConfig
-	DB         PostgresConfig
-	Server     ServerConfig
-	Spotify    SpotifyConfig
-	JWTSecret  string
-	AccessTTL  time.Duration
-	RefreshTTL time.Duration
+	Auth    AuthConfig
+	Logs    LogConfig
+	DB      PostgresConfig
+	Server  ServerConfig
+	Spotify SpotifyConfig
+}
+
+type AuthConfig struct {
+	CoreURI       string
+	APIKey        string
+	APIDomain     string
+	WebsiteDomain string
+}
+
+func loadAuthConfig() (AuthConfig, error) {
+	authConfig := AuthConfig{CoreURI: getEnvWithFallback("SUPERTOKENS_CONNECTION_URI"), APIKey: getEnvWithFallback("SUPERTOKENS_API_KEY"), APIDomain: getEnvWithFallback("AUTH_API_DOMAIN"), WebsiteDomain: getEnvWithFallback("AUTH_WEBSITE_DOMAIN")}
+	for _, value := range []string{authConfig.CoreURI, authConfig.APIDomain, authConfig.WebsiteDomain} {
+		originURL, err := url.Parse(value)
+		if err != nil || (originURL.Scheme != "http" && originURL.Scheme != "https") || originURL.Host == "" || originURL.User != nil || originURL.RawQuery != "" || originURL.Fragment != "" || (originURL.Path != "" && originURL.Path != "/") {
+			return authConfig, errors.New("SuperTokens Core/API/website settings must be HTTP(S) origins")
+		}
+	}
+	if authConfig.APIKey == "" {
+		return authConfig, errors.New("SUPERTOKENS_API_KEY is required")
+	}
+
+	return authConfig, nil
 }
 
 type LogConfig struct {
@@ -52,6 +73,10 @@ func getEnvWithFallback(keys ...string) string {
 }
 
 func LoadConfig() (Config, error) {
+	auth, err := loadAuthConfig()
+	if err != nil {
+		return Config{}, err
+	}
 	logEnabled, err := strconv.ParseBool(os.Getenv("LOG_ENABLE"))
 	if err != nil {
 		return Config{}, err
@@ -60,32 +85,6 @@ func LoadConfig() (Config, error) {
 	logDebug, err := strconv.ParseBool(os.Getenv("LOG_DEBUG"))
 	if err != nil {
 		return Config{}, err
-	}
-
-	accessTTL := 15 * time.Minute
-	accessMinutes := strings.TrimSpace(os.Getenv("JWT_ACCESS_TOKEN_MINUTES"))
-	if accessMinutes != "" {
-		minutes, err := strconv.Atoi(accessMinutes)
-		if err != nil {
-			return Config{}, err
-		}
-		if minutes <= 0 {
-			return Config{}, errors.New("JWT_ACCESS_TOKEN_MINUTES must be greater than 0")
-		}
-		accessTTL = time.Duration(minutes) * time.Minute
-	}
-
-	refreshTTL := 30 * 24 * time.Hour
-	refreshHours := strings.TrimSpace(os.Getenv("JWT_REFRESH_TOKEN_HOURS"))
-	if refreshHours != "" {
-		hours, err := strconv.Atoi(refreshHours)
-		if err != nil {
-			return Config{}, err
-		}
-		if hours <= 0 {
-			return Config{}, errors.New("JWT_REFRESH_TOKEN_HOURS must be greater than 0")
-		}
-		refreshTTL = time.Duration(hours) * time.Hour
 	}
 
 	logFilePath := ""
@@ -100,6 +99,7 @@ func LoadConfig() (Config, error) {
 	spotifyClientSecret := getEnvWithFallback("SPOTIFY_CLIENT_SECRET")
 
 	config := Config{
+		Auth: auth,
 		Logs: LogConfig{
 			Enabled: logEnabled,
 			File:    logFilePath,
@@ -116,17 +116,10 @@ func LoadConfig() (Config, error) {
 			ClientID:     spotifyClientID,
 			ClientSecret: spotifyClientSecret,
 		},
-		JWTSecret:  os.Getenv("JWT_SECRET"),
-		AccessTTL:  accessTTL,
-		RefreshTTL: refreshTTL,
 	}
 
 	if logDebug {
 		config.DB.Url += "?sslmode=disable"
-	}
-
-	if strings.TrimSpace(config.JWTSecret) == "" {
-		return Config{}, errors.New("JWT_SECRET is required")
 	}
 
 	return config, nil

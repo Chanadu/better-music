@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/Chanadu/better-music/config"
-	"github.com/Chanadu/better-music/middleware"
 )
 
 type transportFunc func(*http.Request) (*http.Response, error)
@@ -32,9 +31,7 @@ func spotifyResponse(code int, body string) *http.Response {
 
 func spotifyHandler(transport transportFunc) *Handler {
 	apiHandler := NewHandler(&config.Config{
-		JWTSecret: "secret",
-		AccessTTL: time.Hour,
-		Spotify:   config.SpotifyConfig{ClientID: "id", ClientSecret: "secret"},
+		Spotify: config.SpotifyConfig{ClientID: "id", ClientSecret: "secret"},
 	}, nil)
 	apiHandler.spotifyHTTPClient = &http.Client{Transport: transport}
 
@@ -182,33 +179,30 @@ func TestSpotifyEndpoints(test *testing.T) {
 
 				return spotifyResponse(200, item), nil
 			})
-			token, err := apiHandler.generateJWT(1)
-			if err != nil {
-				test.Fatal(err)
-			}
+			identity := createAccount(test, apiHandler, "spotify@test.example").Identity
 
 			search, lookup := apiHandler.SearchSpotifyArtists, apiHandler.GetSpotifyArtist
 			if kind == "albums" {
 				search, lookup = apiHandler.SearchSpotifyAlbums, apiHandler.GetSpotifyAlbum
 			}
 
-			responseRecorder := request(apiHandler, search, "GET", "/api/spotify?q=AC%2FDC+%26+friends&limit=10", "", token, nil)
+			responseRecorder := request(apiHandler, search, "GET", "/api/spotify?q=AC%2FDC+%26+friends&limit=10", "", identity, nil)
 			status(test, responseRecorder, 200)
 			if !strings.Contains(responseRecorder.Body.String(), `"id":"abc"`) {
 				test.Fatal(responseRecorder.Body)
 			}
 
-			httpRequest := newSpotifyRequest("abc", token)
+			httpRequest := newSpotifyRequest("abc")
 			lookupResponse := httptest.NewRecorder()
-			middleware.Auth(http.HandlerFunc(lookup), apiHandler.Config.JWTSecret).ServeHTTP(lookupResponse, httpRequest)
+			serveIdentity(apiHandler, http.HandlerFunc(lookup), lookupResponse, httpRequest, identity)
 			status(test, lookupResponse, 200)
 
 			for _, path := range []string{"/api/spotify", "/api/spotify?q=music&limit=11"} {
-				status(test, request(apiHandler, search, "GET", path, "", token, nil), 400)
+				status(test, request(apiHandler, search, "GET", path, "", identity, nil), 400)
 			}
 
 			apiHandler.Config.Spotify = config.SpotifyConfig{}
-			status(test, request(apiHandler, search, "GET", "/api/spotify?q=music", "", token, nil), 503)
+			status(test, request(apiHandler, search, "GET", "/api/spotify?q=music", "", identity, nil), 503)
 		})
 	}
 }
@@ -254,17 +248,16 @@ func TestSpotifyRetryAndFailures(test *testing.T) {
 
 			return spotifyResponse(200, testCase.body), nil
 		})
-		token, _ := apiHandler.generateJWT(1)
-		status(test, request(apiHandler, apiHandler.SearchSpotifyArtists, "GET", "/api/spotify?q=x", "", token, nil), 502)
+		identity := createAccount(test, apiHandler, "failed@test.example").Identity
+		status(test, request(apiHandler, apiHandler.SearchSpotifyArtists, "GET", "/api/spotify?q=x", "", identity, nil), 502)
 
-		status(test, request(apiHandler, apiHandler.SearchSpotifyAlbums, "GET", "/api/spotify?q=x", "", token, nil), 502)
+		status(test, request(apiHandler, apiHandler.SearchSpotifyAlbums, "GET", "/api/spotify?q=x", "", identity, nil), 502)
 	}
 }
 
-func newSpotifyRequest(spotifyID, token string) *http.Request {
+func newSpotifyRequest(spotifyID string) *http.Request {
 	httpRequest := httptest.NewRequest("GET", "/api/spotify/artists/"+spotifyID, nil)
 	httpRequest.SetPathValue("id", spotifyID)
-	httpRequest.Header.Set("Authorization", "Bearer "+token)
 
 	return httpRequest
 }

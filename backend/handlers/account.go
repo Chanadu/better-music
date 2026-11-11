@@ -2,170 +2,43 @@ package handlers
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
+	"net/mail"
+	"strings"
 
+	"github.com/Chanadu/better-music/logger"
 	"github.com/Chanadu/better-music/models"
-	"github.com/lib/pq"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AccountResponse struct {
 	Email string `json:"email" validate:"required"`
 }
 
-type UpdateEmailRequest struct {
-	Email    string `json:"email" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
-
-type UpdatePasswordRequest struct {
-	CurrentPassword string `json:"current_password" validate:"required"`
-	NewPassword     string `json:"new_password" validate:"required"`
-}
-
-type DeleteAccountRequest struct {
-	Password string `json:"password" validate:"required"`
-}
-
-func (h *Handler) authenticatedUser(w http.ResponseWriter, r *http.Request) (*models.User, bool) {
-	userID, ok := getUserID(w, r)
+func (h *Handler) GetAccount(writer http.ResponseWriter, httpRequest *http.Request) {
+	id, ok := getUserID(writer, httpRequest)
 	if !ok {
-		return nil, false
+		return
 	}
-
-	user, err := models.GetUserByID(h.Database, userID)
+	email, err := models.ActiveAccountEmail(httpRequest.Context(), h.Database, id)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to load account"))
-		return nil, false
-	}
-
-	return user, true
-}
-
-func validPassword(user *models.User, password string) bool {
-	return bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) == nil
-}
-
-func (h *Handler) GetAccount(w http.ResponseWriter, r *http.Request) {
-	user, ok := h.authenticatedUser(w, r)
-	if !ok {
-		return
-	}
-
-	writeJSON(w, http.StatusOK, AccountResponse{Email: user.Email})
-}
-
-func (h *Handler) UpdateAccountEmail(w http.ResponseWriter, r *http.Request) {
-	var body UpdateEmailRequest
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON"))
-		return
-	}
-
-	email, validEmail := normalizeEmail(body.Email)
-	if !validEmail || body.Password == "" {
-		writeJSON(w, http.StatusBadRequest, apiError("valid email and current password required"))
-		return
-	}
-
-	user, ok := h.authenticatedUser(w, r)
-	if !ok {
-		return
-	}
-
-	if !validPassword(user, body.Password) {
-		writeJSON(w, http.StatusUnauthorized, apiError("current password is incorrect"))
-		return
-	}
-
-	if err := models.UpdateUserEmail(h.Database, user.ID, email, user.PasswordHash); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			writeJSON(w, http.StatusUnauthorized, apiError("current password is no longer valid"))
-			return
+		if !errors.Is(err, sql.ErrNoRows) {
+			slog.ErrorContext(httpRequest.Context(), "load account email failed", "user_id", id, logger.ErrorDetails(err))
 		}
-
-		var pqError *pq.Error
-		if errors.As(err, &pqError) && pqError.Code == "23505" {
-			writeJSON(w, http.StatusConflict, apiError("email already in use"))
-			return
-		}
-
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to update email"))
+		writeJSON(writer, 503, apiError("account unavailable"))
 		return
 	}
 
-	writeJSON(w, http.StatusOK, apiMessage("email updated"))
+	writeJSON(writer, 200, AccountResponse{Email: email})
 }
 
-func (h *Handler) UpdateAccountPassword(w http.ResponseWriter, r *http.Request) {
-	var body UpdatePasswordRequest
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError("invalid JSON"))
-		return
+func normalizeEmail(email string) (string, bool) {
+	email = strings.ToLower(strings.TrimSpace(email))
+	address, err := mail.ParseAddress(email)
+	if err != nil || address.Address != email {
+		return "", false
 	}
 
-	if body.CurrentPassword == "" || len(body.NewPassword) < 4 {
-		writeJSON(w, http.StatusBadRequest, apiError("current password and a new password of at least 4 characters required"))
-		return
-	}
-
-	user, ok := h.authenticatedUser(w, r)
-	if !ok {
-		return
-	}
-
-	if !validPassword(user, body.CurrentPassword) {
-		writeJSON(w, http.StatusUnauthorized, apiError("current password is incorrect"))
-		return
-	}
-
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), bcrypt.DefaultCost)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to hash password"))
-		return
-	}
-
-	if err = models.UpdateUserPassword(h.Database, user.ID, string(passwordHash), user.PasswordHash); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			writeJSON(w, http.StatusUnauthorized, apiError("current password is no longer valid"))
-			return
-		}
-
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to update password"))
-		return
-	}
-
-	writeJSON(w, http.StatusOK, apiMessage("password updated"))
-}
-
-func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
-	var body DeleteAccountRequest
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Password == "" {
-		writeJSON(w, http.StatusBadRequest, apiError("current password required"))
-		return
-	}
-
-	user, ok := h.authenticatedUser(w, r)
-	if !ok {
-		return
-	}
-
-	if !validPassword(user, body.Password) {
-		writeJSON(w, http.StatusUnauthorized, apiError("current password is incorrect"))
-		return
-	}
-
-	if err := models.DeleteUser(h.Database, user.ID, user.PasswordHash); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			writeJSON(w, http.StatusUnauthorized, apiError("current password is no longer valid"))
-			return
-		}
-
-		writeJSON(w, http.StatusInternalServerError, apiError("failed to delete account"))
-		return
-	}
-
-	writeJSON(w, http.StatusOK, apiMessage("account deleted"))
+	return email, true
 }

@@ -42,7 +42,7 @@ type Collections = {
 };
 
 type Context = {
-	userId: number;
+	userId: string;
 	generation: string | null;
 	db: RxDatabase<Collections>;
 	replications: RxReplicationState<any, Checkpoint>[];
@@ -97,7 +97,7 @@ function storageError(error: unknown): Error {
 	return new Error(message);
 }
 
-const lockName = (userId: number) => `better-music-local-library:${userId}`;
+const lockName = (userId: string) => `better-music-local-library:${userId}`;
 
 async function localLock<T>(ctx: Context, fn: () => Promise<T>): Promise<T> {
 	if (!navigator.locks) throw new Error('This browser needs Web Locks for safe local editing.');
@@ -542,12 +542,21 @@ export const refreshDatabaseSafely = async () => {
 	}
 };
 
-export const hasUnsyncedChanges = async (userId: number) => {
+export const hasUnsyncedChanges = async (userId: string) => {
 	if (userId !== getCurrentUserId()) return true;
 
-	const ctx = await openLibrary();
-	return localLock(ctx, async () => ctx.active > 0 || (await ctx.db.dirty.find().exec()).length > 0);
+	return withAccountLibraryLock(userId, async (pending) => pending);
 };
+
+// Lifecycle actions hold this same lock as local edits across every open tab.
+export async function withAccountLibraryLock<T>(userId: string, action: (pending: boolean) => Promise<T>): Promise<T> {
+	if (userId !== getCurrentUserId()) throw new Error('Account changed');
+	const ctx = await openLibrary();
+	return localLock(ctx, async () => {
+		const pending = ctx.active > 0 || (await ctx.db.dirty.findOne().exec()) !== null;
+		return action(pending);
+	});
+}
 
 export function getRecordSyncStatus(
 	records: readonly Dirty[],
@@ -708,15 +717,6 @@ export const albumsLibrary = {
 			return { ...old, _deleted: true, edited_at: new Date().toISOString() };
 		}),
 };
-
-export async function closeLocalLibrary() {
-	const ctx = context;
-	context = null;
-	if (ctx) transition = transition.then(() => closeContext(ctx));
-	await transition;
-	database.set(null);
-	pendingRecords.set([]);
-}
 
 // Rejected deletions must remain recoverable even though their records are hidden.
 export async function resolveSyncProblem(problem: SyncProblem, restore: boolean) {

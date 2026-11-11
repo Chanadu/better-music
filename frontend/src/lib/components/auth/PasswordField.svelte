@@ -7,13 +7,17 @@
 		value = $bindable(''),
 		shown = $bindable(false),
 		autocomplete = 'current-password',
-		hint = 'Enter at least 4 characters',
+		hint,
+		minimumLength = 4,
+		label,
 		validate = true,
 	}: {
 		value?: string;
 		shown?: boolean;
 		autocomplete?: 'current-password' | 'new-password';
 		hint?: string;
+		minimumLength?: number;
+		label?: string;
 		validate?: boolean;
 	} = $props();
 </script>
@@ -27,7 +31,8 @@
 			name="password"
 			placeholder="password"
 			required={validate}
-			minlength={validate ? 4 : undefined}
+			minlength={validate ? minimumLength : undefined}
+			aria-label={label}
 			{autocomplete}
 			bind:value
 		/>
@@ -45,6 +50,6 @@
 	</label>
 
 	{#if validate}
-		<div class="validator-hint hidden w-full">{hint}</div>
+		<div class="validator-hint hidden w-full">{hint ?? `Enter at least ${minimumLength} characters`}</div>
 	{/if}
 </div>

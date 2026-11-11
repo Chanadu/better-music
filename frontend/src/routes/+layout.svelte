@@ -6,7 +6,12 @@
 	import StorageErrorAlert from '$lib/components/common/StorageErrorAlert.svelte';
 	import BottomNav from '$lib/components/navigation/BottomNav.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
-	import { getValidAccessToken, hasStoredSession, subscribeSessionChanges } from '$lib/scripts/auth';
+	import {
+		hasRemoteSession,
+		hasStoredSession,
+		subscribeSessionChanges,
+		initializeAuthentication,
+	} from '$lib/scripts/auth';
 	import {
 		getDatabaseData,
 		markOffline,
@@ -19,7 +24,12 @@
 	let { children } = $props();
 	let ready = $state(false);
 	let previewPage = $derived(page.url.pathname === '/preview');
-	let authPage = $derived(page.url.pathname === '/login' || page.url.pathname === '/create-account');
+	let authPage = $derived(
+		page.url.pathname === '/login' ||
+			page.url.pathname === '/create-account' ||
+			page.url.pathname === '/forgot-password' ||
+			page.url.pathname.startsWith('/auth/'),
+	);
 
 	async function preloadLibraryPages() {
 		if (!navigator.onLine || authPage || previewPage) return;
@@ -60,27 +70,28 @@
 		};
 
 		void (async () => {
+			if (!previewPage) initializeAuthentication();
 			if (authPage || previewPage) {
 				ready = true;
 				return;
 			}
 
 			const cached = await getDatabaseData();
-			const token = await getValidAccessToken();
+			const authenticated = await hasRemoteSession();
 
-			if (!token && (!cached || !hasStoredSession()) && !$storageProblem) {
+			if (!authenticated && (!cached || !hasStoredSession()) && !$storageProblem) {
 				location.assign('/login');
 				return;
 			}
 
-			if (!token) {
+			if (!authenticated) {
 				if (navigator.onLine) markSyncError();
 				else markOffline();
 			}
 
 			ready = true;
 			await tick();
-			if (token) void refreshDatabaseSafely();
+			if (authenticated) void refreshDatabaseSafely();
 
 			document.addEventListener('visibilitychange', visibility);
 			window.addEventListener('focus', focus);

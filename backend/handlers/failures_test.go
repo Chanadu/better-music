@@ -4,39 +4,33 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/Chanadu/better-music/config"
-	"github.com/Chanadu/better-music/middleware"
 )
 
 func TestMissingAccountDuringSync(test *testing.T) {
 	apiHandler := testHandler(test)
-	accountTokens := register(test, apiHandler, "a@example.com")
-	if _, err := apiHandler.Database.Exec("DELETE FROM users WHERE id=$1", accountTokens.UserID); err != nil {
+	account := createAccount(test, apiHandler, "a@example.com")
+	if _, err := apiHandler.Database.Exec("DELETE FROM users WHERE id=$1", account.UserID); err != nil {
 		test.Fatal(err)
 	}
 
-	status(test, syncCall(test, apiHandler, "artists", "pull", accountTokens.AccessToken, PullLibraryRequest{Limit: 10}), 401)
+	status(test, syncCall(test, apiHandler, "artists", "pull", account.Identity, PullLibraryRequest{Limit: 10}), 403)
 }
 
 func TestSpotifyLookupErrors(test *testing.T) {
-	apiHandler := NewHandler(&config.Config{JWTSecret: "secret", AccessTTL: time.Hour}, nil)
-
-	token, err := apiHandler.generateJWT(1)
-	if err != nil {
-		test.Fatal(err)
-	}
+	apiHandler := NewHandler(&config.Config{}, nil)
+	identity := createAccount(test, apiHandler, "lookup@test.example").Identity
 
 	for _, endpointHandler := range []http.HandlerFunc{apiHandler.GetSpotifyArtist, apiHandler.GetSpotifyAlbum} {
-		httpRequest := newSpotifyRequest("", token)
+		httpRequest := newSpotifyRequest("")
 		responseRecorder := httptest.NewRecorder()
-		middleware.Auth(endpointHandler, apiHandler.Config.JWTSecret).ServeHTTP(responseRecorder, httpRequest)
+		serveIdentity(apiHandler, endpointHandler, responseRecorder, httpRequest, identity)
 		status(test, responseRecorder, 400)
 
-		httpRequest = newSpotifyRequest("abc", token)
+		httpRequest = newSpotifyRequest("abc")
 		responseRecorder = httptest.NewRecorder()
-		middleware.Auth(endpointHandler, apiHandler.Config.JWTSecret).ServeHTTP(responseRecorder, httpRequest)
+		serveIdentity(apiHandler, endpointHandler, responseRecorder, httpRequest, identity)
 		status(test, responseRecorder, 503)
 	}
 
@@ -47,15 +41,12 @@ func TestSpotifyLookupErrors(test *testing.T) {
 
 		return spotifyResponse(404, "missing"), nil
 	})
-	token, err = apiHandler.generateJWT(1)
-	if err != nil {
-		test.Fatal(err)
-	}
+	identity = createAccount(test, apiHandler, "missing@test.example").Identity
 
 	for _, endpointHandler := range []http.HandlerFunc{apiHandler.GetSpotifyArtist, apiHandler.GetSpotifyAlbum} {
-		httpRequest := newSpotifyRequest("abc", token)
+		httpRequest := newSpotifyRequest("abc")
 		responseRecorder := httptest.NewRecorder()
-		middleware.Auth(endpointHandler, apiHandler.Config.JWTSecret).ServeHTTP(responseRecorder, httpRequest)
+		serveIdentity(apiHandler, endpointHandler, responseRecorder, httpRequest, identity)
 		status(test, responseRecorder, 502)
 	}
 }

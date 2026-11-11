@@ -8,7 +8,7 @@
 	import LockIcon from '$lib/components/icons/LockIcon.svelte';
 	import LogoutIcon from '$lib/components/icons/LogoutIcon.svelte';
 	import { accountApi } from '$lib/scripts/api';
-	import { canLogout, logout } from '$lib/scripts/auth';
+	import { canChangeAccount, logout } from '$lib/scripts/auth';
 	import { syncStatus } from '$lib/scripts/database';
 
 	let accountEmail = $state('');
@@ -16,46 +16,65 @@
 	let actionDialog = $state<AccountActionDialog>();
 	let logoutError = $state('');
 	let loggingOut = $state(false);
-	let logoutAllowed = $state(false);
-	let actionsDisabled = $derived(!accountEmail || online.current !== true || !logoutAllowed);
-	let logoutDisabled = $derived(actionsDisabled || loggingOut || !logoutAllowed);
+	let actionsAllowed = $state(false);
+	let actionsDisabled = $derived(!accountEmail || online.current !== true || !actionsAllowed);
+	let logoutDisabled = $derived(actionsDisabled || loggingOut);
+
+	const checkAccountActions = () => canChangeAccount().catch(() => false);
 
 	onMount(() => {
 		let mounted = true;
 		let checking = false;
-		const checkLogout = async () => {
+		let loadingAccount = false;
+		let lastSync: number | null = null;
+
+		const loadAccount = async () => {
+			if (accountEmail || loadingAccount || online.current !== true) return;
+
+			loadingAccount = true;
+			try {
+				const { email } = await accountApi.get();
+				if (mounted) {
+					accountEmail = email;
+					loadError = '';
+				}
+			} catch {
+				if (mounted) loadError = 'Could not load your account details.';
+			} finally {
+				loadingAccount = false;
+			}
+		};
+
+		const checkActions = async () => {
 			if (checking) return;
 
 			checking = true;
 			try {
-				const allowed = await canLogout();
-				if (mounted) logoutAllowed = allowed;
-			} catch {
-				if (mounted) logoutAllowed = false;
+				const allowed = await checkAccountActions();
+				if (mounted) actionsAllowed = allowed;
 			} finally {
 				checking = false;
 			}
 		};
 
-		void checkLogout();
-		const unsubscribe = syncStatus.subscribe(() => void checkLogout());
-		const timer = setInterval(() => void checkLogout(), 500);
+		void loadAccount();
+
+		const unsubscribe = syncStatus.subscribe(({ lastSyncedAt }) => {
+			void checkActions();
+
+			if (lastSyncedAt !== null && lastSyncedAt !== lastSync) {
+				lastSync = lastSyncedAt;
+				void loadAccount();
+			}
+		});
+
+		const timer = setInterval(() => void checkActions(), 500);
+
 		return () => {
 			mounted = false;
 			clearInterval(timer);
 			unsubscribe();
 		};
-	});
-
-	onMount(async () => {
-		if (online.current !== true) return;
-
-		try {
-			accountEmail = (await accountApi.get()).email;
-		} catch (value) {
-			console.error('Failed to load account', value);
-			loadError = 'Could not load your account details.';
-		}
 	});
 
 	async function signOut() {
@@ -67,13 +86,9 @@
 			await logout();
 			location.assign('/login');
 		} catch (error) {
-			try {
-				logoutAllowed = await canLogout();
-			} catch {
-				logoutAllowed = false;
-			}
+			actionsAllowed = await checkAccountActions();
 
-			if (logoutAllowed) logoutError = error instanceof Error ? error.message : 'Could not sign out. Try again.';
+			if (actionsAllowed) logoutError = error instanceof Error ? error.message : 'Could not sign out. Try again.';
 		} finally {
 			loggingOut = false;
 		}
@@ -89,6 +104,13 @@
 			Personal details
 		</h2>
 	</div>
+
+	{#if !actionsAllowed}
+		<p class="text-base-content/65 mb-4 text-sm" role="status">
+			Sync your library and wait for active requests before changing account information or signing out. Use Sync
+			now in Library sync.
+		</p>
+	{/if}
 
 	<div class="bg-base-200 divide-base-300 divide-y rounded-xl shadow-sm">
 		<AccountSettingRow

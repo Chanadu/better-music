@@ -2,13 +2,13 @@ package models
 
 import "database/sql"
 
-func LockSyncState(tx *sql.Tx, userID int) (string, error) {
+func LockSyncState(tx *sql.Tx, userID string) (string, error) {
 	var epoch string
 	err := tx.QueryRow(`SELECT library_sync_epoch FROM users WHERE id=$1 FOR UPDATE`, userID).Scan(&epoch)
 	return epoch, err
 }
 
-func GetSyncSequence(tx *sql.Tx, userID int) (int64, error) {
+func GetSyncSequence(tx *sql.Tx, userID string) (int64, error) {
 	var sequence int64
 	err := tx.QueryRow(`SELECT library_sync_sequence FROM users WHERE id=$1`, userID).Scan(&sequence)
 	return sequence, err

@@ -1,12 +1,10 @@
-import { authenticatedFetch, sessionGuard } from './auth';
+import { authenticatedFetch, runAccountChange, sessionGuard } from './auth';
 import type {
 	AccountResponse,
-	AuthRequest,
 	MessageResponse,
 	DeleteAccountRequest,
 	SpotifyAlbumSearchResult,
 	SpotifyArtistSearchResult,
-	TokenResponse,
 	UpdateEmailRequest,
 	UpdatePasswordRequest,
 } from './api-types';
@@ -63,18 +61,14 @@ const query = (values: Record<string, string | number | undefined>) => {
 	return params.size ? `?${params}` : '';
 };
 
-export const authApi = {
-	login: (body: AuthRequest) => json<TokenResponse>('/api/auth/login', { method: 'POST', body }),
-	register: (body: AuthRequest) => json<TokenResponse>('/api/auth/register', { method: 'POST', body }),
-};
+const accountChange = (path: string, init: JsonInit) =>
+	runAccountChange((fetcher) => json<MessageResponse>(path, init, fetcher));
 
 export const accountApi = {
 	get: () => secureJson<AccountResponse>('/api/account'),
-	updateEmail: (body: UpdateEmailRequest) =>
-		secureJson<MessageResponse>('/api/account/email', { method: 'PUT', body }),
-	updatePassword: (body: UpdatePasswordRequest) =>
-		secureJson<MessageResponse>('/api/account/password', { method: 'PUT', body }),
-	delete: (body: DeleteAccountRequest) => secureJson<MessageResponse>('/api/account', { method: 'DELETE', body }),
+	updateEmail: (body: UpdateEmailRequest) => accountChange('/api/account/email', { method: 'PUT', body }),
+	updatePassword: (body: UpdatePasswordRequest) => accountChange('/api/account/password', { method: 'PUT', body }),
+	delete: (body: DeleteAccountRequest) => accountChange('/api/account', { method: 'DELETE', body }),
 };
 
 export const spotifyApi = {

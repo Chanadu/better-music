@@ -24,22 +24,26 @@ func TestConnectAndMigrations(test *testing.T) {
 
 	var version int
 	var dirty bool
-	if err := database.QueryRow("SELECT version,dirty FROM schema_migrations").Scan(&version, &dirty); err != nil || version != 10 || dirty {
+	if err := database.QueryRow("SELECT version,dirty FROM schema_migrations").Scan(&version, &dirty); err != nil || version != 16 || dirty {
 		test.Fatalf("version=%d dirty=%v err=%v", version, dirty, err)
 	}
 
 	for _, table := range []string{
 		"users",
-		"artists",
-		"albums",
-		"refresh_tokens",
-		"processed_mutations",
 		"library_artists",
 		"library_albums",
+		"auth_account_operations",
 	} {
 		var count int
 		if err := database.QueryRow("SELECT count(*) FROM " + table).Scan(&count); err != nil || count != 0 {
 			test.Fatalf("table %s: %v", table, err)
+		}
+	}
+
+	for _, table := range []string{"artists", "albums", "refresh_tokens", "processed_mutations", "auth_provisioning"} {
+		var removed bool
+		if err := database.QueryRow("SELECT to_regclass($1) IS NULL", table).Scan(&removed); err != nil || !removed {
+			test.Fatalf("retired table %s still exists: %v", table, err)
 		}
 	}
 }

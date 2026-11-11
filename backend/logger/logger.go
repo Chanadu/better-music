@@ -20,11 +20,11 @@ func SetupLogger(fileEnabled bool, logFilePath string) error {
 	logger := slog.New(slog.NewTextHandler(output, &slog.HandlerOptions{
 		Level:     slog.LevelDebug,
 		AddSource: true,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.TimeKey {
-				a.Value = slog.StringValue(a.Value.Time().Format(time.DateTime))
+		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+			if attr.Key == slog.TimeKey {
+				attr.Value = slog.StringValue(attr.Value.Time().Format(time.DateTime))
 			}
-			return a
+			return attr
 		},
 	}))
 

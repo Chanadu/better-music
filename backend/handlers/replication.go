@@ -4,8 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 
+	"github.com/Chanadu/better-music/logger"
+	"github.com/Chanadu/better-music/middleware"
 	"github.com/Chanadu/better-music/models"
 )
 
@@ -45,17 +48,17 @@ type PushLibraryErrorResponse struct {
 	Failures []LibraryChangeFailure `json:"failures"`
 }
 
-func decodeSync(w http.ResponseWriter, r *http.Request, out any) bool {
-	if err := decodeJSON(http.MaxBytesReader(w, r.Body, 2<<20), out); err != nil {
-		writeJSON(w, 400, apiError("invalid or oversized sync request"))
+func decodeSync(writer http.ResponseWriter, httpRequest *http.Request, out any) bool {
+	if err := decodeJSON(http.MaxBytesReader(writer, httpRequest.Body, 2<<20), out); err != nil {
+		writeJSON(writer, 400, apiError("invalid or oversized sync request"))
 		return false
 	}
 
 	return true
 }
 
-func syncKind(r *http.Request) (models.LibraryKind, bool) {
-	switch r.PathValue("kind") {
+func syncKind(httpRequest *http.Request) (models.LibraryKind, bool) {
+	switch httpRequest.PathValue("kind") {
 	case "artists":
 		return models.ArtistKind, true
 	case "albums":
@@ -65,11 +68,17 @@ func syncKind(r *http.Request) (models.LibraryKind, bool) {
 	}
 }
 
-func syncStorageError(w http.ResponseWriter, e error) {
-	if errors.Is(e, sql.ErrNoRows) {
-		writeJSON(w, 401, apiError("account no longer exists"))
+func syncStorageError(writer http.ResponseWriter, httpRequest *http.Request, operation string, err error) {
+	if errors.Is(err, sql.ErrNoRows) {
+		writeJSON(writer, 401, apiError("account no longer exists"))
 		return
 	}
 
-	writeJSON(w, 500, apiError("library storage is unavailable"))
+	logSyncFailure(httpRequest, operation, err)
+	writeJSON(writer, 500, apiError("library storage is unavailable"))
+}
+
+func logSyncFailure(httpRequest *http.Request, operation string, err error) {
+	userID, _ := middleware.GetUserID(httpRequest)
+	slog.ErrorContext(httpRequest.Context(), "library sync failed", "operation", operation, "collection", httpRequest.PathValue("kind"), "user_id", userID, logger.ErrorDetails(err))
 }

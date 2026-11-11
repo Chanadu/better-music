@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Chanadu/better-music/logger"
 )
 
 const (
@@ -48,6 +49,15 @@ type SpotifyAlbumSearchResult struct {
 	Artists     []SpotifyAlbumArtist `json:"artists" validate:"required"`
 	Images      []SpotifyImage       `json:"images" validate:"required"`
 	ReleaseDate string               `json:"release_date" example:"1997-05-21" validate:"required"`
+}
+
+type spotifyUpstreamError struct {
+	operation string
+	status    int
+}
+
+func (err spotifyUpstreamError) Error() string {
+	return fmt.Sprintf("Spotify %s returned HTTP %d", err.operation, err.status)
 }
 
 type spotifyTokenResponse struct {
@@ -113,8 +123,7 @@ func (h *Handler) getSpotifyAccessToken(ctx context.Context) (string, error) {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(res.Body, 4096))
-		return "", fmt.Errorf("spotify auth failed (%d): %s", res.StatusCode, strings.TrimSpace(string(body)))
+		return "", spotifyUpstreamError{operation: "token request", status: res.StatusCode}
 	}
 
 	var payload spotifyTokenResponse
@@ -170,8 +179,7 @@ func (h *Handler) executeSpotifyJSONRequest(ctx context.Context, endpoint string
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(res.Body, 4096))
-		return fmt.Errorf("spotify request failed (%d): %s", res.StatusCode, strings.TrimSpace(string(body)))
+		return spotifyUpstreamError{operation: "API request", status: res.StatusCode}
 	}
 
 	return json.NewDecoder(res.Body).Decode(target)
@@ -248,126 +256,132 @@ func (h *Handler) getSpotifyAlbum(ctx context.Context, spotifyID string) (*Spoti
 	return &album, nil
 }
 
-func writeSpotifyError(w http.ResponseWriter, message string, status int, err error) {
-	if err != nil {
-		slog.Warn("spotify proxy request failed", "status", status, "error", err)
+func writeSpotifyError(writer http.ResponseWriter, httpRequest *http.Request, message string, status int, err error) {
+	var upstreamError spotifyUpstreamError
+	switch {
+	case errors.As(err, &upstreamError):
+		slog.WarnContext(httpRequest.Context(), message, "operation", upstreamError.operation, "upstream_status", upstreamError.status)
+	case errors.Is(err, errSpotifyNotConfigured):
+		slog.WarnContext(httpRequest.Context(), message)
+	default:
+		slog.WarnContext(httpRequest.Context(), message, logger.ErrorDetails(err))
 	}
 
-	writeJSON(w, status, apiError(message))
+	writeJSON(writer, status, apiError(message))
 }
 
-func (h *Handler) SearchSpotifyArtists(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("route hit", "route", "GET /api/spotify/search/artists", "method", r.Method, "path", r.URL.Path)
-	if _, ok := getUserID(w, r); !ok {
+func (h *Handler) SearchSpotifyArtists(writer http.ResponseWriter, httpRequest *http.Request) {
+	slog.Debug("route hit", "route", "GET /api/spotify/search/artists", "method", httpRequest.Method, "path", httpRequest.URL.Path)
+	if _, ok := getUserID(writer, httpRequest); !ok {
 		return
 	}
 
-	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	query := strings.TrimSpace(httpRequest.URL.Query().Get("q"))
 	if query == "" {
-		writeJSON(w, http.StatusBadRequest, apiError("q is required"))
+		writeJSON(writer, http.StatusBadRequest, apiError("q is required"))
 		return
 	}
 
-	limit, err := parseSpotifySearchLimit(r.URL.Query().Get("limit"))
+	limit, err := parseSpotifySearchLimit(httpRequest.URL.Query().Get("limit"))
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError(err.Error()))
+		writeJSON(writer, http.StatusBadRequest, apiError(err.Error()))
 		return
 	}
 
-	results, err := h.searchSpotifyArtists(r.Context(), query, limit)
+	results, err := h.searchSpotifyArtists(httpRequest.Context(), query, limit)
 	if err != nil {
 		if errors.Is(err, errSpotifyNotConfigured) {
-			writeSpotifyError(w, "spotify is not configured", http.StatusServiceUnavailable, err)
+			writeSpotifyError(writer, httpRequest, "spotify is not configured", http.StatusServiceUnavailable, err)
 			return
 		}
 
-		writeSpotifyError(w, "spotify artist search failed", http.StatusBadGateway, err)
+		writeSpotifyError(writer, httpRequest, "spotify artist search failed", http.StatusBadGateway, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, results)
+	writeJSON(writer, http.StatusOK, results)
 }
 
-func (h *Handler) GetSpotifyArtist(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("route hit", "route", "GET /api/spotify/artists/{id}", "method", r.Method, "path", r.URL.Path)
-	if _, ok := getUserID(w, r); !ok {
+func (h *Handler) GetSpotifyArtist(writer http.ResponseWriter, httpRequest *http.Request) {
+	slog.Debug("route hit", "route", "GET /api/spotify/artists/{id}", "method", httpRequest.Method, "path", httpRequest.URL.Path)
+	if _, ok := getUserID(writer, httpRequest); !ok {
 		return
 	}
 
-	spotifyID := strings.TrimSpace(r.PathValue("id"))
+	spotifyID := strings.TrimSpace(httpRequest.PathValue("id"))
 	if spotifyID == "" {
-		writeJSON(w, http.StatusBadRequest, apiError("spotify artist ID is required"))
+		writeJSON(writer, http.StatusBadRequest, apiError("spotify artist ID is required"))
 		return
 	}
 
-	artist, err := h.getSpotifyArtist(r.Context(), spotifyID)
+	artist, err := h.getSpotifyArtist(httpRequest.Context(), spotifyID)
 	if err != nil {
 		if errors.Is(err, errSpotifyNotConfigured) {
-			writeSpotifyError(w, "spotify is not configured", http.StatusServiceUnavailable, err)
+			writeSpotifyError(writer, httpRequest, "spotify is not configured", http.StatusServiceUnavailable, err)
 			return
 		}
 
-		writeSpotifyError(w, "spotify artist lookup failed", http.StatusBadGateway, err)
+		writeSpotifyError(writer, httpRequest, "spotify artist lookup failed", http.StatusBadGateway, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, artist)
+	writeJSON(writer, http.StatusOK, artist)
 }
 
-func (h *Handler) GetSpotifyAlbum(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("route hit", "route", "GET /api/spotify/albums/{id}", "method", r.Method, "path", r.URL.Path)
-	if _, ok := getUserID(w, r); !ok {
+func (h *Handler) GetSpotifyAlbum(writer http.ResponseWriter, httpRequest *http.Request) {
+	slog.Debug("route hit", "route", "GET /api/spotify/albums/{id}", "method", httpRequest.Method, "path", httpRequest.URL.Path)
+	if _, ok := getUserID(writer, httpRequest); !ok {
 		return
 	}
 
-	spotifyID := strings.TrimSpace(r.PathValue("id"))
+	spotifyID := strings.TrimSpace(httpRequest.PathValue("id"))
 	if spotifyID == "" {
-		writeJSON(w, http.StatusBadRequest, apiError("spotify album ID is required"))
+		writeJSON(writer, http.StatusBadRequest, apiError("spotify album ID is required"))
 		return
 	}
 
-	album, err := h.getSpotifyAlbum(r.Context(), spotifyID)
+	album, err := h.getSpotifyAlbum(httpRequest.Context(), spotifyID)
 	if err != nil {
 		if errors.Is(err, errSpotifyNotConfigured) {
-			writeSpotifyError(w, "spotify is not configured", http.StatusServiceUnavailable, err)
+			writeSpotifyError(writer, httpRequest, "spotify is not configured", http.StatusServiceUnavailable, err)
 			return
 		}
 
-		writeSpotifyError(w, "spotify album lookup failed", http.StatusBadGateway, err)
+		writeSpotifyError(writer, httpRequest, "spotify album lookup failed", http.StatusBadGateway, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, album)
+	writeJSON(writer, http.StatusOK, album)
 }
 
-func (h *Handler) SearchSpotifyAlbums(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("route hit", "route", "GET /api/spotify/search/albums", "method", r.Method, "path", r.URL.Path)
-	if _, ok := getUserID(w, r); !ok {
+func (h *Handler) SearchSpotifyAlbums(writer http.ResponseWriter, httpRequest *http.Request) {
+	slog.Debug("route hit", "route", "GET /api/spotify/search/albums", "method", httpRequest.Method, "path", httpRequest.URL.Path)
+	if _, ok := getUserID(writer, httpRequest); !ok {
 		return
 	}
 
-	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	query := strings.TrimSpace(httpRequest.URL.Query().Get("q"))
 	if query == "" {
-		writeJSON(w, http.StatusBadRequest, apiError("q is required"))
+		writeJSON(writer, http.StatusBadRequest, apiError("q is required"))
 		return
 	}
 
-	limit, err := parseSpotifySearchLimit(r.URL.Query().Get("limit"))
+	limit, err := parseSpotifySearchLimit(httpRequest.URL.Query().Get("limit"))
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, apiError(err.Error()))
+		writeJSON(writer, http.StatusBadRequest, apiError(err.Error()))
 		return
 	}
 
-	results, err := h.searchSpotifyAlbums(r.Context(), query, limit)
+	results, err := h.searchSpotifyAlbums(httpRequest.Context(), query, limit)
 	if err != nil {
 		if errors.Is(err, errSpotifyNotConfigured) {
-			writeSpotifyError(w, "spotify is not configured", http.StatusServiceUnavailable, err)
+			writeSpotifyError(writer, httpRequest, "spotify is not configured", http.StatusServiceUnavailable, err)
 			return
 		}
 
-		writeSpotifyError(w, "spotify album search failed", http.StatusBadGateway, err)
+		writeSpotifyError(writer, httpRequest, "spotify album search failed", http.StatusBadGateway, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, results)
+	writeJSON(writer, http.StatusOK, results)
 }

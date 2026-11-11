@@ -5,6 +5,14 @@ import (
 	"time"
 )
 
+type LibraryKind uint8
+
+const (
+	UnknownLibraryKind LibraryKind = iota
+	ArtistKind
+	AlbumKind
+)
+
 type LibraryDocument interface {
 	Fields() *DocumentFields
 	ParentArtistID() *string
@@ -17,6 +25,7 @@ type NullableField[T any] struct {
 
 func (field *NullableField[T]) UnmarshalJSON(raw []byte) error {
 	field.Present = true
+
 	return json.Unmarshal(raw, &field.Value)
 }
 

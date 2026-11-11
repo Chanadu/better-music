@@ -8,7 +8,6 @@
 	import DeleteIcon from '$lib/components/icons/DeleteIcon.svelte';
 	import EmailIcon from '$lib/components/icons/EmailIcon.svelte';
 	import { accountApi } from '$lib/scripts/api';
-	import { accountErrorMessage, finishAccountAction } from '$lib/scripts/account';
 
 	type Action = 'email' | 'password' | 'delete';
 
@@ -25,13 +24,15 @@
 
 	let valid = $derived(
 		action === 'email' ? Boolean(email && email !== currentEmail && currentPassword)
-		: action === 'password' ? Boolean(currentPassword && newPassword.length >= 4 && newPassword === confirmPassword)
+		: action === 'password' ? Boolean(currentPassword && newPassword.length >= 8 && newPassword === confirmPassword)
 		: Boolean(currentPassword),
 	);
+
 	let canSubmit = $derived(!busy && valid && (preview?.online ?? online.current) === true);
 
 	export function open(nextAction: Action, accountEmail = '') {
 		if (online.current !== true) return;
+
 		reset();
 		action = nextAction;
 		currentEmail = accountEmail;
@@ -41,6 +42,7 @@
 
 	function reset() {
 		if (busy) return;
+
 		email = '';
 		currentPassword = '';
 		newPassword = '';
@@ -61,9 +63,9 @@
 				await accountApi.updatePassword({ current_password: currentPassword, new_password: newPassword });
 			} else await accountApi.delete({ password: currentPassword });
 
-			await finishAccountAction();
+			location.assign('/login');
 		} catch (value) {
-			error = accountErrorMessage(value);
+			error = value instanceof Error ? value.message : 'Could not reach the server. Please try again.';
 			busy = false;
 		}
 	}
@@ -111,7 +113,13 @@
 			<div class="fieldset">
 				<span class="label"> New password </span>
 
-				<PasswordField bind:value={newPassword} bind:shown={shown.new} autocomplete="new-password" />
+				<PasswordField
+					label="New password"
+					minimumLength={8}
+					bind:value={newPassword}
+					bind:shown={shown.new}
+					autocomplete="new-password"
+				/>
 			</div>
 
 			<div class="fieldset">

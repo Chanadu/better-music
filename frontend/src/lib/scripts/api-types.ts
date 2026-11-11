@@ -6,11 +6,6 @@ export type ApiErrorResponse = {
 	error: string;
 };
 
-export type AuthRequest = {
-	email: string;
-	password: string;
-};
-
 export type CreateAlbumRequest = {
 	artist_id: string;
 	comment?: string | null;
@@ -37,10 +32,6 @@ export type MessageResponse = {
 	message: string;
 };
 
-export type RefreshTokenRequest = {
-	refresh_token: string;
-};
-
 export type SpotifyAlbumArtist = {
 	id: string;
 	name: string;
@@ -64,14 +55,6 @@ export type SpotifyImage = {
 	height: number;
 	url: string;
 	width: number;
-};
-
-export type TokenResponse = {
-	access_token: string;
-	expires_in: number;
-	refresh_token: string;
-	token_type: string;
-	user_id: number;
 };
 
 export type UpdateAlbumRequest = {

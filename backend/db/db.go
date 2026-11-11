@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"log/slog"
 
@@ -40,4 +41,20 @@ func RunMigrations(databaseURL string) {
 	}
 
 	slog.Info("migrations up to date")
+}
+
+func RequireAuthSchema(database *sql.DB) error {
+	const requiredVersion = 16
+	var version int
+	var dirty bool
+
+	if err := database.QueryRow("SELECT version, dirty FROM schema_migrations").Scan(&version, &dirty); err != nil {
+		return fmt.Errorf("check auth schema: %w", err)
+	}
+
+	if version < requiredVersion || dirty {
+		return fmt.Errorf("auth-admin requires a clean database at schema version %d or later (found version %d, dirty=%t)", requiredVersion, version, dirty)
+	}
+
+	return nil
 }

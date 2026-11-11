@@ -75,8 +75,9 @@
 	{/if}
 	{#if message}
 		<p class="px-4 pb-5 text-sm sm:px-5">
-			Your edits remain saved locally. Correct the affected record or sign in to the same account, then retry.
-			Export your library before clearing browser data.
+			Your edits remain saved locally. Correct the affected record or <a href="/login" class="link link-primary"
+				>sign in to the same account</a
+			>, then retry. Export your library before clearing browser data.
 		</p>
 		{#if /authenticat|sign in/i.test(message)}
 			<a class="btn btn-outline mx-4 mb-4" href="/login">Sign in again</a>

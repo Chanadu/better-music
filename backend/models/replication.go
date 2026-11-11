@@ -24,7 +24,7 @@ func libraryQuery(kind LibraryKind) (table, document string, err error) {
 	}
 }
 
-func PullLibraryDocuments(tx *sql.Tx, userID int, kind LibraryKind, sequence int64, limit int) ([]json.RawMessage, int64, error) {
+func PullLibraryDocuments(tx *sql.Tx, userID string, kind LibraryKind, sequence int64, limit int) ([]json.RawMessage, int64, error) {
 	table, document, err := libraryQuery(kind)
 	if err != nil {
 		return nil, sequence, err
@@ -54,7 +54,7 @@ func PullLibraryDocuments(tx *sql.Tx, userID int, kind LibraryKind, sequence int
 	return documents, sequence, rows.Err()
 }
 
-func GetLibraryDocument(tx *sql.Tx, userID int, id string) ([]byte, LibraryKind, error) {
+func GetLibraryDocument(tx *sql.Tx, userID string, id string) ([]byte, LibraryKind, error) {
 	for _, kind := range []LibraryKind{ArtistKind, AlbumKind} {
 		table, document, _ := libraryQuery(kind)
 
@@ -71,7 +71,7 @@ func GetLibraryDocument(tx *sql.Tx, userID int, id string) ([]byte, LibraryKind,
 	return nil, UnknownLibraryKind, sql.ErrNoRows
 }
 
-func SaveLibraryDocument(tx *sql.Tx, userID int, document LibraryDocument) error {
+func SaveLibraryDocument(tx *sql.Tx, userID string, document LibraryDocument) error {
 	var sequence int64
 
 	if err := tx.QueryRow(

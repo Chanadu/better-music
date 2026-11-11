@@ -10,21 +10,21 @@ import (
 	"github.com/Chanadu/better-music/models"
 )
 
-func equivalentJSON(a, b []byte) bool {
+func equivalentJSON(left, right []byte) bool {
 	var av, bv any
-	if json.Unmarshal(a, &av) != nil || json.Unmarshal(b, &bv) != nil {
+	if json.Unmarshal(left, &av) != nil || json.Unmarshal(right, &bv) != nil {
 		return false
 	}
 
 	return reflect.DeepEqual(av, bv)
 }
 
-func applySyncRow(tx *sql.Tx, userID int, kind models.LibraryKind, doc models.LibraryDocument, assumed []byte) (json.RawMessage, *LibraryChangeFailure, error) {
+func applySyncRow(tx *sql.Tx, userID string, kind models.LibraryKind, doc models.LibraryDocument, assumed []byte) (json.RawMessage, *LibraryChangeFailure, error) {
 	fields := doc.Fields()
-	current, currentKind, e := models.GetLibraryDocument(tx, userID, fields.ID)
-	exists := e == nil
-	if e != nil && !errors.Is(e, sql.ErrNoRows) {
-		return nil, nil, e
+	current, currentKind, err := models.GetLibraryDocument(tx, userID, fields.ID)
+	exists := err == nil
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, nil, err
 	}
 
 	if exists {
@@ -36,9 +36,9 @@ func applySyncRow(tx *sql.Tx, userID int, kind models.LibraryKind, doc models.Li
 			return nil, nil, nil
 		}
 
-		old, e := validateDocument(current, kind)
-		if e != nil {
-			return nil, nil, e
+		old, err := validateDocument(current, kind)
+		if err != nil {
+			return nil, nil, err
 		}
 
 		if old.Fields().CreatedAt != fields.CreatedAt || !reflect.DeepEqual(old.ParentArtistID(), doc.ParentArtistID()) {
@@ -53,9 +53,9 @@ func applySyncRow(tx *sql.Tx, userID int, kind models.LibraryKind, doc models.Li
 	}
 
 	if kind == models.AlbumKind && !*fields.Deleted {
-		live, e := models.LiveLibraryArtistExists(tx, userID, doc.ParentArtistID())
-		if e != nil {
-			return nil, nil, e
+		live, err := models.LiveLibraryArtistExists(tx, userID, doc.ParentArtistID())
+		if err != nil {
+			return nil, nil, err
 		}
 
 		if !live {
@@ -64,9 +64,9 @@ func applySyncRow(tx *sql.Tx, userID int, kind models.LibraryKind, doc models.Li
 	}
 
 	if kind == models.ArtistKind && *fields.Deleted {
-		children, e := models.LibraryArtistHasAlbums(tx, userID, fields.ID)
-		if e != nil {
-			return nil, nil, e
+		children, err := models.LibraryArtistHasAlbums(tx, userID, fields.ID)
+		if err != nil {
+			return nil, nil, err
 		}
 
 		if children {
@@ -74,6 +74,6 @@ func applySyncRow(tx *sql.Tx, userID int, kind models.LibraryKind, doc models.Li
 		}
 	}
 
-	e = models.SaveLibraryDocument(tx, userID, doc)
-	return nil, nil, e
+	err = models.SaveLibraryDocument(tx, userID, doc)
+	return nil, nil, err
 }

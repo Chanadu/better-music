@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { authApi, ApiError } from '$lib/scripts/api';
-	import { saveTokens } from '$lib/scripts/auth';
+	import { authenticate, type AuthMode } from '$lib/scripts/auth';
 	import PasswordField from './PasswordField.svelte';
 	import EmailIcon from '../icons/EmailIcon.svelte';
 
-	let { mode }: { mode: 'login' | 'register' } = $props();
+	let { mode }: { mode: AuthMode } = $props();
 
 	let email = $state('');
 	let password = $state('');
@@ -13,6 +12,7 @@
 	let showConfirm = $state(false);
 	let busy = $state(false);
 	let error = $state('');
+
 	let copy = $derived.by(() => {
 		if (mode === 'login') {
 			return {
@@ -40,7 +40,7 @@
 	}
 
 	let valid = $derived(
-		mode === 'login' || (isValidEmail(email) && password.length >= 4 && confirmPassword === password),
+		mode === 'login' || (isValidEmail(email) && password.length >= 8 && confirmPassword === password),
 	);
 
 	async function submit(event: SubmitEvent) {
@@ -49,18 +49,12 @@
 		if (!valid || busy) return;
 		busy = true;
 		error = '';
-		try {
-			let tokens;
-			if (mode === 'register') {
-				tokens = await authApi.register({ email, password });
-			} else {
-				tokens = await authApi.login({ email, password });
-			}
 
-			saveTokens(tokens);
+		try {
+			await authenticate(mode, email, password);
 			location.assign('/');
 		} catch (e) {
-			error = e instanceof ApiError ? e.message : 'Could not reach the server. Please try again.';
+			error = e instanceof Error ? e.message : 'Could not reach the server. Please try again.';
 		} finally {
 			busy = false;
 		}
@@ -95,6 +89,9 @@
 				bind:value={password}
 				bind:shown={showPassword}
 				autocomplete={copy.passwordAutocomplete}
+				label="Password"
+				minimumLength={mode === 'register' ? 8 : 4}
+				hint={mode === 'register' ? 'Use at least 8 characters, including a letter and a number' : undefined}
 				validate={mode === 'register'}
 			/>
 		</div>
@@ -102,6 +99,7 @@
 			<div class="flex flex-col gap-2">
 				<div class="label">Confirm password</div>
 				<PasswordField
+					label="Confirm password"
 					bind:value={confirmPassword}
 					bind:shown={showConfirm}
 					autocomplete="new-password"
