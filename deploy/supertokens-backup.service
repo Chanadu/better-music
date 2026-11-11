@@ -1,0 +1,22 @@
+[Unit]
+Description=Back up the SuperTokens PostgreSQL database
+After=postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+User=postgres
+Group=postgres
+Environment=DATABASE_NAME=supertokens
+Environment=BACKUP_DIR=/var/lib/supertokens-backups
+Environment=RETENTION_DAYS=30
+Environment=MAX_BACKUP_MB=1024
+Environment=MIN_FREE_MB=10240
+StateDirectory=supertokens-backups
+StateDirectoryMode=0700
+UMask=0077
+ExecStart=/usr/local/bin/better-music-backup
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

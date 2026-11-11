@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly SuperTokens database backup
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+Unit=supertokens-backup.service
+
+[Install]
+WantedBy=timers.target
