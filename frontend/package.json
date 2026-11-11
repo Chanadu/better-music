@@ -13,7 +13,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
-		"generate:api": "(cd ../backend && go run ./cmd/openapi) > openapi.json && orval && prettier --write src/lib/scripts/generated"
+		"generate:api": "svelte-kit sync && (cd ../backend && go run ./cmd/openapi) > openapi.json && orval && prettier --write src/lib/scripts/generated"
 	},
 	"dependencies": {
 		"@tailwindcss/vite": "4.2.4",
