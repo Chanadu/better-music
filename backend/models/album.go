@@ -6,11 +6,11 @@ type Album struct {
 	DocumentFields
 	ArtistID   string                `json:"artist_id"`
 	Title      string                `json:"title"`
-	Year       NullableField[int32]  `json:"year"`
-	Listened   *bool                 `json:"listened"`
-	Rating     NullableField[int32]  `json:"rating"`
-	Comment    NullableField[string] `json:"comment"`
-	ListenedAt NullableField[string] `json:"listened_at"`
+	Year       NullableField[int32]  `json:"year" nullable:"true"`
+	Listened   *bool                 `json:"listened" nullable:"false"`
+	Rating     NullableField[int32]  `json:"rating" nullable:"true"`
+	Comment    NullableField[string] `json:"comment" nullable:"true"`
+	ListenedAt NullableField[string] `json:"listened_at" nullable:"true"`
 }
 
 func (album *Album) ParentArtistID() *string {

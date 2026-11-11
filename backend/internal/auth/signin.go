@@ -32,6 +32,7 @@ func (s *Service) signin(email, password, tenant string, uc supertokens.UserCont
 
 	if errors.Is(err, sql.ErrNoRows) {
 		email = strings.ToLower(email)
+
 		err = s.withEmailLock(ctx, email, func() error {
 			if err := models.CheckActiveAuthAccount(ctx, s.DB, userID); !errors.Is(err, sql.ErrNoRows) {
 				return err
@@ -50,6 +51,7 @@ func (s *Service) signin(email, password, tenant string, uc supertokens.UserCont
 		if !errors.Is(err, sql.ErrNoRows) {
 			slog.ErrorContext(ctx, "resolve application account during sign-in failed", "user_id", userID, logger.ErrorDetails(err))
 		}
+
 		return epmodels.SignInResponse{WrongCredentialsError: &struct{}{}}, nil
 	}
 

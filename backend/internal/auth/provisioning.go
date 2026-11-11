@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"log/slog"
+	"net/http"
 	"strings"
 
 	"github.com/Chanadu/better-music/logger"
 	"github.com/Chanadu/better-music/models"
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/supertokens/supertokens-golang/recipe/emailpassword/epmodels"
 	"github.com/supertokens/supertokens-golang/supertokens"
 )
@@ -55,7 +57,7 @@ func (s *Service) createIdentity(email, password, tenant string, uc supertokens.
 	}
 
 	if verified.OK == nil {
-		return epmodels.User{}, ErrEmailExists
+		return epmodels.User{}, huma.Error409Conflict("email already in use")
 	}
 
 	return verified.OK.User, nil
@@ -69,12 +71,15 @@ func (s *Service) signup(email, password, tenant string, uc supertokens.UserCont
 	email = strings.ToLower(strings.TrimSpace(email))
 
 	ctx := context.Background()
+
 	var response epmodels.SignUpResponse
 	err := s.withEmailLock(ctx, email, func() error {
 		userID, err := models.ReserveSignupAccount(ctx, s.DB, email)
+
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrEmailExists
+			return huma.Error409Conflict("email already in use")
 		}
+
 		if err != nil {
 			return err
 		}
@@ -93,7 +98,8 @@ func (s *Service) signup(email, password, tenant string, uc supertokens.UserCont
 		return nil
 	})
 
-	if errors.Is(err, ErrEmailExists) {
+	var statusError huma.StatusError
+	if errors.As(err, &statusError) && statusError.GetStatus() == http.StatusConflict {
 		return epmodels.SignUpResponse{EmailAlreadyExistsError: &struct{}{}}, nil
 	}
 

@@ -3,6 +3,7 @@
 	import { beforeNavigate, preloadCode } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount, tick } from 'svelte';
+	import { registerSW } from 'virtual:pwa-register';
 	import StorageErrorAlert from '$lib/components/common/StorageErrorAlert.svelte';
 	import BottomNav from '$lib/components/navigation/BottomNav.svelte';
 	import { appSettings } from '$lib/scripts/app-settings.svelte';
@@ -52,6 +53,7 @@
 	});
 
 	onMount(() => {
+		registerSW();
 		const unsubscribeSession = subscribeSessionChanges(() => {
 			if (!authPage && !previewPage) location.assign(hasStoredSession() ? '/' : '/login');
 		});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isLibraryName } from '$lib/scripts/library-validation';
 	import { online } from 'svelte/reactivity/window';
 	import ManualArtistForm from './ManualArtistForm.svelte';
 	import FormModalShell from './FormModalShell.svelte';
@@ -19,7 +20,7 @@
 		if (online.current === false && tab === 'spotify') tab = 'manual';
 	});
 
-	let canSave = $derived(!saving && (tab === 'spotify' ? Boolean(selected) : Boolean(name.trim())));
+	let canSave = $derived(!saving && (tab === 'spotify' ? Boolean(selected) : isLibraryName(name)));
 
 	function formatError(value: unknown) {
 		const text = value instanceof Error ? value.message : 'Failed to save artist';

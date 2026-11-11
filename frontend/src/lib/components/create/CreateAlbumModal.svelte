@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isLibraryName } from '$lib/scripts/library-validation';
 	import { online } from 'svelte/reactivity/window';
 	import ListenedFields from './ListenedFields.svelte';
 	import ManualAlbumForm from './ManualAlbumForm.svelte';
@@ -45,7 +46,7 @@
 		!saving &&
 			(tab === 'spotify' ?
 				Boolean(selected && selectedSpotifyArtistId)
-			:	Boolean(name.trim()) && Boolean(artistId) && yearValid),
+			:	isLibraryName(name) && Boolean(artistId) && yearValid),
 	);
 
 	$effect(() => {
@@ -106,8 +107,8 @@
 		let cover_url: string | undefined;
 		try {
 			if (navigator.onLine)
-				cover_url = (await spotifyApi.searchArtists(credit.name, 10)).find((artist) => artist.id === credit.id)
-					?.images[0]?.url;
+				cover_url = (await spotifyApi.searchArtists(credit.name, 10))?.find((artist) => artist.id === credit.id)
+					?.images?.[0]?.url;
 		} catch {}
 
 		const created = await artistsLibrary.create({

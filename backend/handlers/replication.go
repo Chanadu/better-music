@@ -1,15 +1,19 @@
 package handlers
 
 import (
+	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
+	"reflect"
 
 	"github.com/Chanadu/better-music/logger"
 	"github.com/Chanadu/better-music/middleware"
 	"github.com/Chanadu/better-music/models"
+	"github.com/danielgtaylor/huma/v2"
 )
 
 type LibraryCheckpoint struct {
@@ -39,46 +43,118 @@ type LibraryChangeFailure struct {
 }
 
 type PullLibraryResponse struct {
-	Documents  []json.RawMessage `json:"documents"`
+	Documents  []json.RawMessage `json:"documents" nullable:"false"`
 	Checkpoint LibraryCheckpoint `json:"checkpoint"`
 }
 
 type PushLibraryErrorResponse struct {
 	Error    string                 `json:"error"`
+	Failures []LibraryChangeFailure `json:"failures" nullable:"false"`
+}
+
+type pushLibraryFailure struct {
+	Status   int                    `json:"-"`
+	Message  string                 `json:"error"`
 	Failures []LibraryChangeFailure `json:"failures"`
 }
 
-func decodeSync(writer http.ResponseWriter, httpRequest *http.Request, out any) bool {
-	if err := decodeJSON(http.MaxBytesReader(writer, httpRequest.Body, 2<<20), out); err != nil {
-		writeJSON(writer, 400, apiError("invalid or oversized sync request"))
-		return false
-	}
+func (err pushLibraryFailure) GetStatus() int { return err.Status }
+func (err pushLibraryFailure) Error() string  { return err.Message }
 
-	return true
+func (h *Handler) registerSync(api huma.API) {
+	schemas := api.OpenAPI().Components.Schemas
+	schemas.RegisterTypeAlias(reflect.TypeFor[models.NullableField[string]](), reflect.TypeFor[string]())
+	schemas.RegisterTypeAlias(reflect.TypeFor[models.NullableField[int32]](), reflect.TypeFor[int32]())
+
+	document := &huma.Schema{AnyOf: []*huma.Schema{
+		schemas.Schema(reflect.TypeFor[models.Artist](), true, ""),
+		schemas.Schema(reflect.TypeFor[models.Album](), true, ""),
+	}}
+
+	pull := schemas.Schema(reflect.TypeFor[PullLibraryResponse](), true, "")
+	schemas.SchemaFromRef(pull.Ref).Properties["documents"].Items = document
+
+	push := schemas.Schema(reflect.TypeFor[PushLibraryRequest](), true, "")
+	row := schemas.Schema(reflect.TypeFor[LibraryChange](), true, "")
+
+	rowProperties := schemas.SchemaFromRef(row.Ref).Properties
+	rowProperties["newDocumentState"] = document
+	rowProperties["assumedMasterState"] = &huma.Schema{AnyOf: append([]*huma.Schema{{Type: "null"}}, document.AnyOf...)}
+
+	schemas.SchemaFromRef(row.Ref).Required = []string{"newDocumentState"}
+
+	pullRequest := schemas.Schema(reflect.TypeFor[PullLibraryRequest](), true, "")
+	checkpoint := schemas.SchemaFromRef(pullRequest.Ref).Properties
+	checkpoint["checkpoint"] = &huma.Schema{AnyOf: []*huma.Schema{{Type: "null"}, checkpoint["checkpoint"]}}
+
+	registerSyncRoute(api, "pull", pull, pullRequest, h.pullLibrary)
+	registerSyncRoute(api, "push", &huma.Schema{Type: huma.TypeArray, Items: document}, push, h.pushLibrary)
 }
 
-func syncKind(httpRequest *http.Request) (models.LibraryKind, bool) {
-	switch httpRequest.PathValue("kind") {
-	case "artists":
-		return models.ArtistKind, true
-	case "albums":
-		return models.AlbumKind, true
-	default:
-		return models.UnknownLibraryKind, false
+func registerSyncRoute[I, O any](api huma.API, action string, outputSchema, inputSchema *huma.Schema, handler func(context.Context, string, models.LibraryKind, I) (*jsonOutput[O], error)) {
+	responses := authenticatedResponses(api)
+	responses["200"] = &huma.Response{Content: map[string]*huma.MediaType{"application/json": {Schema: outputSchema}}}
+
+	addProblemResponses(api, responses, http.StatusBadRequest, http.StatusNotFound, http.StatusConflict,
+		http.StatusRequestEntityTooLarge, http.StatusInternalServerError)
+
+	if action == "push" {
+		addProblemResponses(api, responses, http.StatusUnprocessableEntity)
+		schemas := api.OpenAPI().Components.Schemas
+		failures := schemas.Schema(reflect.TypeFor[PushLibraryErrorResponse](), true, "")
+		conflict := responses["409"].Content["application/json"]
+		conflict.Schema = &huma.Schema{AnyOf: []*huma.Schema{conflict.Schema, failures}}
+		responses["422"].Content["application/json"] = &huma.MediaType{Schema: failures}
 	}
+
+	registerRawJSON(api, huma.Operation{
+		OperationID:     action + "Library",
+		Method:          http.MethodPost,
+		Path:            "/api/sync/{kind}/" + action,
+		MaxBodyBytes:    2 << 20,
+		BodyReadTimeout: -1,
+		Responses:       responses,
+	}, inputSchema, func(ctx context.Context, request *struct {
+		Kind    string `path:"kind"`
+		RawBody []byte
+	}) (*jsonOutput[O], error) {
+		userID, ok := middleware.UserIDFromContext(ctx)
+
+		if !ok {
+			return nil, huma.Error401Unauthorized("unauthorized")
+		}
+
+		var kind models.LibraryKind
+
+		switch request.Kind {
+		case "artists":
+			kind = models.ArtistKind
+
+		case "albums":
+			kind = models.AlbumKind
+
+		default:
+			return nil, huma.Error404NotFound("unknown collection")
+		}
+
+		var input I
+		if err := decodeJSON(bytes.NewReader(request.RawBody), &input); err != nil {
+			return nil, huma.Error400BadRequest("invalid or oversized sync request")
+		}
+
+		return handler(ctx, userID, kind, input)
+	})
 }
 
-func syncStorageError(writer http.ResponseWriter, httpRequest *http.Request, operation string, err error) {
+func syncStorageError(ctx context.Context, userID string, kind models.LibraryKind, operation string, err error) error {
 	if errors.Is(err, sql.ErrNoRows) {
-		writeJSON(writer, 401, apiError("account no longer exists"))
-		return
+		return huma.Error401Unauthorized("account no longer exists")
 	}
 
-	logSyncFailure(httpRequest, operation, err)
-	writeJSON(writer, 500, apiError("library storage is unavailable"))
+	logSyncFailure(ctx, userID, kind, operation, err)
+	return huma.Error500InternalServerError("library storage is unavailable")
 }
 
-func logSyncFailure(httpRequest *http.Request, operation string, err error) {
-	userID, _ := middleware.GetUserID(httpRequest)
-	slog.ErrorContext(httpRequest.Context(), "library sync failed", "operation", operation, "collection", httpRequest.PathValue("kind"), "user_id", userID, logger.ErrorDetails(err))
+func logSyncFailure(ctx context.Context, userID string, kind models.LibraryKind, operation string, err error) {
+	slog.ErrorContext(ctx, "library sync failed", "operation", operation, "collection", kind, "user_id", userID, logger.ErrorDetails(err))
 }

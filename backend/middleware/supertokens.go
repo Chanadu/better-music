@@ -29,8 +29,8 @@ func httpError(writer http.ResponseWriter, httpRequest *http.Request, msg string
 	_ = json.NewEncoder(writer).Encode(map[string]string{"error": msg})
 }
 
-func GetUserID(httpRequest *http.Request) (string, bool) {
-	userID, ok := httpRequest.Context().Value(userIDKey).(string)
+func UserIDFromContext(ctx context.Context) (string, bool) {
+	userID, ok := ctx.Value(userIDKey).(string)
 
 	if !ok || userID == "" {
 		return "", false

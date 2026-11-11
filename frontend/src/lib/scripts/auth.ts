@@ -2,6 +2,8 @@ import { browser } from '$app/environment';
 import SuperTokens from 'supertokens-web-js';
 import EmailPassword from 'supertokens-web-js/recipe/emailpassword';
 import Session from 'supertokens-web-js/recipe/session';
+import { ApiError } from './api-fetch';
+import { getSession } from './generated/api';
 import { persistentStorage } from './storage';
 
 let initialized = false;
@@ -34,7 +36,6 @@ export function initializeAuthentication(): void {
 		],
 	});
 	initialized = true;
-	// Retire credentials without touching cached ownership or unsynced records.
 	for (const key of [
 		'betterMusicAccessToken',
 		'betterMusicRefreshToken',
@@ -104,8 +105,6 @@ export const canChangeAccount = async () => {
 	return ![...(locks.held ?? []), ...(locks.pending ?? [])].some((lock) => lock.name === requestLock(userId));
 };
 
-// All lifecycle operations exclude requests and local edits until identity state
-// is updated. The global lock also serializes signin across tabs/accounts.
 async function withLifecycle<T>(action: () => Promise<T>, requireSynced = true): Promise<T> {
 	if (!navigator.locks) throw new Error('This browser does not support safe account changes.');
 	const check = sessionGuard();
@@ -133,8 +132,7 @@ export async function runAccountChange<T>(action: (fetcher: typeof fetch) => Pro
 		if (expectedOwner === null) throw new Error('Not authenticated');
 		const check = sessionGuard();
 		const result = await action((input, init = {}) => performAuthenticatedFetch(input, init, expectedOwner, check));
-		// The backend revokes all sessions after these operations.
-		await Session.signOut({ userContext: { expectedOwner } }).catch(() => {});
+		await Session.signOut({ userContext: { expectedOwner } }).catch(() => { });
 		invalidateSession();
 		return result;
 	});
@@ -150,8 +148,7 @@ export async function hasRemoteSession({ verifyOwner = false } = {}): Promise<bo
 		if (previousOwner === null) {
 			await withLifecycle(() => loadSessionOwner(null), false);
 		} else if (verifyOwner) {
-			const response = await authenticatedFetch('/api/session', { cache: 'no-store' });
-			return response.ok;
+			await getSession({ cache: 'no-store' });
 		}
 		return true;
 	} catch {
@@ -197,7 +194,7 @@ function sdkError(result: { status: string; formFields?: { error: string }[] }):
 	return new Error(
 		result.status === 'FIELD_ERROR' ?
 			result.formFields?.map((field) => field.error).join(' ')
-		:	'Email or password is incorrect.',
+			: 'Email or password is incorrect.',
 	);
 }
 
@@ -216,7 +213,7 @@ export async function authenticate(mode: AuthMode, email: string, password: stri
 		const result =
 			mode === 'register' ?
 				await EmailPassword.signUp({ formFields })
-			:	await EmailPassword.signIn({
+				: await EmailPassword.signIn({
 					formFields,
 					options: {
 						preAPIHook: async ({ url, requestInit }) => ({
@@ -231,12 +228,14 @@ export async function authenticate(mode: AuthMode, email: string, password: stri
 }
 
 async function loadSessionOwner(previousOwner: string | null): Promise<void> {
-	const response = await fetch(
-		'/api/session',
-		withAccountHeader({ credentials: 'include', cache: 'no-store' }, previousOwner),
-	);
-	if (!response.ok) throw new Error('Could not load your account. Retry signing in.');
-	const { user_id: userId } = await response.json();
+	const { user_id: userId } = await getSession({
+		credentials: 'include',
+		cache: 'no-store',
+		fetcher: (input, init = {}) => fetch(input, withAccountHeader(init, previousOwner)),
+	}).catch((error: unknown) => {
+		if (error instanceof ApiError) throw new Error('Could not load your account. Retry signing in.');
+		throw error;
+	});
 	if (typeof userId !== 'string' || !userId) throw new Error('Invalid account identity.');
 	if (previousOwner !== null && previousOwner !== userId) throw new Error('Sign out before switching accounts.');
 
@@ -253,5 +252,4 @@ export async function resetPassword(password: string): Promise<void> {
 	if (result.status === 'RESET_PASSWORD_INVALID_TOKEN_ERROR')
 		throw new Error('This reset link has expired or was already used. Ask your administrator for a new link.');
 	if (result.status !== 'OK') throw sdkError(result);
-	// A recovery flow never clears cached ownership or pending library changes.
 }

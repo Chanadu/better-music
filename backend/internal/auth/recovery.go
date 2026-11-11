@@ -29,7 +29,7 @@ func (s *Service) PasswordResetLink(ctx context.Context, userID string) (string,
 	}
 
 	if disabled {
-		return "", ErrAccountDisabled
+		return "", errors.New("account is disabled or awaiting deletion")
 	}
 
 	if !identity.Valid || accountChangePending {
@@ -64,6 +64,7 @@ func (s *Service) resetPasswordAndRevokeSessions(token, password, tenant string,
 
 	if err := models.MarkSessionRevocationPending(revocationCtx, s.DB, userID); err != nil {
 		slog.WarnContext(revocationCtx, "record pending session revocation failed", "user_id", userID, logger.ErrorDetails(err))
+
 		if _, revokeErr := session.RevokeAllSessionsForUser(userID, nil, ctx); revokeErr != nil {
 			return epmodels.ResetPasswordUsingTokenResponse{}, fmt.Errorf("password reset succeeded but session revocation failed: %w", errors.Join(err, revokeErr))
 		}

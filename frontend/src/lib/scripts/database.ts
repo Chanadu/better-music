@@ -1,11 +1,14 @@
 import { writable } from 'svelte/store';
+import { getCurrentUserId, getSessionGeneration, sessionGuard, subscribeSessionChanges } from './auth';
+import { ApiError } from './api-fetch';
+import { isAlbumRating, isAlbumYear, isLibraryName } from './library-validation';
 import {
-	getCurrentUserId,
-	getSessionGeneration,
-	sessionGuard,
-	subscribeSessionChanges,
-	authenticatedFetch,
-} from './auth';
+	pullLibrary,
+	pushLibrary,
+	type LibraryChange,
+	type LibraryCheckpoint,
+	type PushLibraryErrorResponse,
+} from './generated/api';
 import { cacheLibraryArtwork } from './artwork-cache';
 import type { RxDatabase, RxCollection } from 'rxdb/plugins/core';
 import type { RxReplicationState } from 'rxdb/plugins/replication';
@@ -28,7 +31,6 @@ type Doc = Artist | Album;
 
 type Kind = 'artists' | 'albums';
 
-type Checkpoint = { epoch: string; sequence: string };
 
 export type SyncProblem = { id: string; kind: Kind; label: string; message: string; deleted: boolean; href: string };
 
@@ -45,7 +47,7 @@ type Context = {
 	userId: string;
 	generation: string | null;
 	db: RxDatabase<Collections>;
-	replications: RxReplicationState<any, Checkpoint>[];
+	replications: RxReplicationState<any, LibraryCheckpoint>[];
 	subscriptions: { unsubscribe(): void }[];
 	active: number;
 	activeKinds: Set<Kind>;
@@ -132,11 +134,11 @@ async function publish(ctx: Context) {
 		...s,
 		state:
 			!navigator.onLine ? 'offline'
-			: ctx.lastError ? 'error'
-			: ctx.active ? 'connecting'
-			: dirty.length ? 'pending'
-			: s.lastSyncedAt ? 'synced'
-			: 'connecting',
+				: ctx.lastError ? 'error'
+					: ctx.active ? 'connecting'
+						: dirty.length ? 'pending'
+							: s.lastSyncedAt ? 'synced'
+								: 'connecting',
 		error: ctx.lastError ?? undefined,
 	}));
 }
@@ -185,25 +187,19 @@ function schema(kind: Kind) {
 	return { version: 0, primaryKey: 'id', type: 'object', properties, required: Object.keys(properties) } as any;
 }
 
-async function syncJSON(ctx: Context, path: string, body: unknown): Promise<any> {
+async function syncRequest<T>(ctx: Context, kind: Kind, request: (init: RequestInit) => Promise<T>): Promise<T> {
 	if (!isCurrent(ctx)) throw new Error('Account changed');
 
-	const check = sessionGuard();
-	const response = await authenticatedFetch(path, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-		signal: AbortSignal.timeout(30000),
-	});
+	try {
+		return await request({ signal: AbortSignal.timeout(30000) }).finally(() => {
+			if (!isCurrent(ctx)) throw new Error('Account changed');
+		});
+	} catch (error) {
+		if (!(error instanceof ApiError)) throw error;
 
-	check();
-	if (!isCurrent(ctx)) throw new Error('Account changed');
-
-	const result = await response.json();
-	if (!response.ok) {
+		const result = error.body as Partial<PushLibraryErrorResponse> | null;
 		const problems: SyncProblem[] = [];
-		const kind: Kind = path.includes('/artists/') ? 'artists' : 'albums';
-		for (const failure of result.failures ?? []) {
+		for (const failure of result?.failures ?? []) {
 			const raw = (await ctx.db[kind].storageInstance.findDocumentsById([failure.id], true))[0] as any;
 			const label = raw?.name ?? raw?.title ?? 'Library record';
 			problems.push({
@@ -215,7 +211,7 @@ async function syncJSON(ctx: Context, path: string, body: unknown): Promise<any>
 				href:
 					kind === 'artists' ?
 						`/artist?id=${failure.id}`
-					:	`/album?id=${failure.id}&artist_id=${raw?.artist_id ?? ''}`,
+						: `/album?id=${failure.id}&artist_id=${raw?.artist_id ?? ''}`,
 			});
 		}
 
@@ -225,10 +221,9 @@ async function syncJSON(ctx: Context, path: string, body: unknown): Promise<any>
 				...problems,
 			]);
 		const details = problems.map((p) => `${p.label}: ${p.message}`).join(' ');
-		throw new Error(`${result.error ?? 'Synchronization failed'}${details ? ' ' + details : ''}`);
+		const message = result ? error.message : 'Synchronization failed';
+		throw new Error(`${message}${details ? ' ' + details : ''}`);
 	}
-
-	return result;
 }
 
 async function openLibrary(): Promise<Context> {
@@ -270,7 +265,7 @@ async function openLibrary(): Promise<Context> {
 						resolve: async ({ realMasterState, newDocumentState }) =>
 							Date.parse(newDocumentState.edited_at) > Date.parse(realMasterState.edited_at) ?
 								newDocumentState
-							:	realMasterState,
+								: realMasterState,
 					},
 				},
 				albums: {
@@ -280,7 +275,7 @@ async function openLibrary(): Promise<Context> {
 						resolve: async ({ realMasterState, newDocumentState }) =>
 							Date.parse(newDocumentState.edited_at) > Date.parse(realMasterState.edited_at) ?
 								newDocumentState
-							:	realMasterState,
+								: realMasterState,
 					},
 				},
 				dirty: {
@@ -327,7 +322,7 @@ async function openLibrary(): Promise<Context> {
 				check();
 				if (!isCurrent(ctx)) throw new Error('Account changed');
 
-				const replication = replicateRxCollection<Doc, Checkpoint>({
+				const replication = replicateRxCollection<Doc, LibraryCheckpoint>({
 					collection: db[kind] as RxCollection<Doc>,
 					replicationIdentifier: `${location.origin}/api/sync/v1/${userId}/${kind}`,
 					live: true,
@@ -336,10 +331,9 @@ async function openLibrary(): Promise<Context> {
 					pull: {
 						batchSize: 100,
 						handler: async (checkpoint, limit) => {
-							const page = await syncJSON(ctx, `/api/sync/${kind}/pull`, {
-								checkpoint: checkpoint ?? null,
-								limit,
-							});
+							const page = await syncRequest(ctx, kind, (init) =>
+								pullLibrary(kind, { checkpoint: checkpoint ?? null, limit }, init),
+							);
 
 							if (epoch && epoch !== page.checkpoint.epoch)
 								throw new Error('Sync history changed. Export your local library before resetting.');
@@ -352,18 +346,14 @@ async function openLibrary(): Promise<Context> {
 						batchSize: 100,
 						handler: async (rows) => {
 							if (!epoch) {
-								const page = await syncJSON(ctx, `/api/sync/${kind}/pull`, {
-									checkpoint: null,
-									limit: 1,
-								});
+								const page = await syncRequest(ctx, kind, (init) =>
+									pullLibrary(kind, { checkpoint: null, limit: 1 }, init),
+								);
 
 								epoch = page.checkpoint.epoch;
 								await db.syncstate.upsert({ id: kind, epoch: epoch! });
 							}
 
-							// RxDB retries a failed batch before advancing to later local
-							// writes. Read newer corrections here so a rejected deletion
-							// or invalid field cannot trap the stream on an obsolete row.
 							const latestDocs = await db[kind].storageInstance.findDocumentsById(
 								rows.map((row) => row.newDocumentState.id),
 								true,
@@ -372,18 +362,16 @@ async function openLibrary(): Promise<Context> {
 							const outbound = rows.map((row) => {
 								const latest = latestById.get(row.newDocumentState.id);
 								return (
-										latest &&
-											Date.parse(latest.edited_at) > Date.parse(row.newDocumentState.edited_at)
-									) ?
-										{ ...row, newDocumentState: sortObject(latest) as Doc & { _deleted: boolean } }
-									:	row;
+									latest &&
+									Date.parse(latest.edited_at) > Date.parse(row.newDocumentState.edited_at)
+								) ?
+									{ ...row, newDocumentState: sortObject(latest) as Doc & { _deleted: boolean } }
+									: row;
 							});
 
-							const conflicts: (Doc & { _deleted: boolean })[] = await syncJSON(
-								ctx,
-								`/api/sync/${kind}/push`,
-								{ epoch, rows: outbound },
-							);
+							// RxDB's schema requires the wire fields that local UI types mark optional.
+							const request = { epoch, rows: outbound as LibraryChange[] };
+							const conflicts = await syncRequest(ctx, kind, (init) => pushLibrary(kind, request, init));
 							const ids = new Set(conflicts.map((d) => d.id));
 							if (isCurrent(ctx))
 								syncProblems.update((problems) =>
@@ -512,8 +500,6 @@ export async function refreshDatabaseData(): Promise<DatabaseData> {
 	]);
 	if (!isCurrent(ctx)) throw new Error('Account changed');
 
-	// Includes no-op/conflict acknowledgments after reload; only clear markers
-	// when RxDB confirms both persistent replication streams are fully in sync.
 	await localLock(ctx, async () => {
 		if (ctx.active > 0) return;
 
@@ -548,7 +534,6 @@ export const hasUnsyncedChanges = async (userId: string) => {
 	return withAccountLibraryLock(userId, async (pending) => pending);
 };
 
-// Lifecycle actions hold this same lock as local edits across every open tab.
 export async function withAccountLibraryLock<T>(userId: string, action: (pending: boolean) => Promise<T>): Promise<T> {
 	if (userId !== getCurrentUserId()) throw new Error('Account changed');
 	const ctx = await openLibrary();
@@ -568,9 +553,9 @@ export function getRecordSyncStatus(
 
 	return (
 		state === 'error' ? 'failed'
-		: state === 'offline' ? 'paused'
-		: state === 'connecting' ? 'syncing'
-		: 'pending'
+			: state === 'offline' ? 'paused'
+				: state === 'connecting' ? 'syncing'
+					: 'pending'
 	);
 }
 
@@ -578,7 +563,7 @@ const requiredName = (value: string, label: string) => {
 	const result = value.trim();
 	if (!result) throw new Error(`${label} is required`);
 
-	if (result.length > 4096) throw new Error(`${label} is too long`);
+	if (!isLibraryName(result)) throw new Error(`${label} is too long`);
 
 	return result;
 };
@@ -593,8 +578,8 @@ async function edit(kind: Kind, id: string, change: (old: Doc | null) => Doc, in
 				!found && includeDeleted ? (await collection.storageInstance.findDocumentsById([id], true))[0] : null;
 			const next = change(
 				found ? (found.toJSON() as Doc)
-				: raw ? (sortObject(raw) as Doc)
-				: null,
+					: raw ? (sortObject(raw) as Doc)
+						: null,
 			);
 			if (kind === 'artists') {
 				if (next._deleted) {
@@ -615,8 +600,6 @@ async function edit(kind: Kind, id: string, change: (old: Doc | null) => Doc, in
 					throw new Error('Album with this title already exists for this artist');
 			}
 
-			// Write the conservative dirty marker first. A crash can over-report pending
-			// work, but can never hide an unacknowledged local edit from logout checks.
 			await ctx.db.dirty.upsert({ id: `${kind}:${id}`, kind, recordId: id, token: crypto.randomUUID() });
 			await collection.upsert({ ...next, _deleted: next._deleted ?? false });
 			await publish(ctx);
@@ -674,9 +657,9 @@ function albumFields(old: Album | null, payload: CreateAlbumRequest | UpdateAlbu
 
 	if (old && old.artist_id !== data.artist_id) throw new Error('Cannot change the album artist');
 
-	if (data.rating != null && (!Number.isInteger(data.rating) || data.rating < 1 || data.rating > 10))
+	if (data.rating != null && !isAlbumRating(data.rating))
 		throw new Error('Rating must be between 1 and 10');
-	if (data.year != null && (!Number.isInteger(data.year) || data.year < -2147483648 || data.year > 2147483647))
+	if (data.year != null && !isAlbumYear(data.year))
 		throw new Error('Invalid release year');
 	if (data.listened_at != null && !Number.isFinite(Date.parse(data.listened_at)))
 		throw new Error('Invalid listening date');
@@ -718,7 +701,6 @@ export const albumsLibrary = {
 		}),
 };
 
-// Rejected deletions must remain recoverable even though their records are hidden.
 export async function resolveSyncProblem(problem: SyncProblem, restore: boolean) {
 	await edit(
 		problem.kind,

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"database/sql"
-	"errors"
 	"log/slog"
 	"net/http"
 
@@ -14,11 +13,6 @@ import (
 	"github.com/supertokens/supertokens-golang/recipe/session/sessmodels"
 	"github.com/supertokens/supertokens-golang/supertokens"
 )
-
-var ErrCurrentPassword = errors.New("current password is incorrect")
-var ErrEmailExists = errors.New("email already in use")
-var ErrInvalidInput = errors.New("invalid account input")
-var ErrAccountDisabled = errors.New("account is disabled or awaiting deletion")
 
 const publicTenant = "public"
 

@@ -52,10 +52,12 @@ func main() {
 			if err := service.ReconcilePending(ctx); err != nil {
 				slog.Warn("account workflow retry failed", "error", err)
 			}
+
 			cancel()
 			<-ticker.C
 		}
 	}()
+
 	serverAddr := cfg.Server.Host + ":" + cfg.Server.Port
 	slog.Info("Starting server", "address", serverAddr)
 	if err := http.ListenAndServe(serverAddr, root); err != nil {
@@ -75,35 +77,14 @@ func newAPIHandler(cfg *config.Config, database *sql.DB) (http.Handler, *auth.Se
 	handler.Auth = service
 
 	protectedMux := http.NewServeMux()
-	protectedMux.HandleFunc("GET /api/account", handler.GetAccount)
-	protectedMux.HandleFunc("PUT /api/account/email", handler.ChangeSuperTokensAccount)
-	protectedMux.HandleFunc("PUT /api/account/password", handler.ChangeSuperTokensAccount)
-	protectedMux.HandleFunc("DELETE /api/account", handler.ChangeSuperTokensAccount)
-
-	protectedMux.HandleFunc("POST /api/sync/{kind}/pull", handler.PullLibrary)
-	protectedMux.HandleFunc("POST /api/sync/{kind}/push", handler.PushLibrary)
-	protectedMux.HandleFunc("/api/artists", retiredLibraryAPI)
-	protectedMux.HandleFunc("/api/artists/", retiredLibraryAPI)
-	protectedMux.HandleFunc("/api/albums", retiredLibraryAPI)
-	protectedMux.HandleFunc("/api/albums/", retiredLibraryAPI)
-
-	protectedMux.HandleFunc("GET /api/spotify/search/artists", handler.SearchSpotifyArtists)
-	protectedMux.HandleFunc("GET /api/spotify/search/albums", handler.SearchSpotifyAlbums)
-	protectedMux.HandleFunc("GET /api/spotify/artists/{id}", handler.GetSpotifyArtist)
-	protectedMux.HandleFunc("GET /api/spotify/albums/{id}", handler.GetSpotifyAlbum)
+	handler.RegisterAPI(protectedMux)
 
 	checkCore := true
-	mux.Handle("GET /api/session", middleware.SuperTokensAuth(http.HandlerFunc(handler.SessionInfo), database, &sessmodels.VerifySessionOptions{
+	mux.Handle("GET /api/session", middleware.SuperTokensAuth(protectedMux, database, &sessmodels.VerifySessionOptions{
 		CheckDatabase: &checkCore,
 	}))
 	mux.Handle("/api/", middleware.SuperTokensAuth(protectedMux, database, nil))
 	root := supertokens.Middleware(mux)
 
 	return root, handler.Auth, nil
-}
-
-func retiredLibraryAPI(writer http.ResponseWriter, httpRequest *http.Request) {
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusGone)
-	_, _ = writer.Write([]byte(`{"error":"Library sync has changed. Update the app."}`))
 }

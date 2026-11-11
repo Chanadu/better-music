@@ -56,19 +56,19 @@
 
 		try {
 			if (type === 'artist')
-				rows = (await spotifyApi.searchArtists(current, count)).map((a) => ({
+				rows = ((await spotifyApi.searchArtists(current, count)) ?? []).map((a) => ({
 					id: a.id,
 					name: a.name,
-					imageUrl: a.images[0]?.url,
+					imageUrl: a.images?.[0]?.url,
 				}));
 			else
-				rows = (await spotifyApi.searchAlbums(current, count)).map((a) => ({
+				rows = ((await spotifyApi.searchAlbums(current, count)) ?? []).map((a) => ({
 					id: a.id,
 					name: a.name,
-					imageUrl: a.images[0]?.url,
-					artists: a.artists,
+					imageUrl: a.images?.[0]?.url,
+					artists: a.artists ?? [],
 					releaseYear: a.release_date.split('-')[0],
-					meta: [a.artists.map((artist) => artist.name).join(', '), a.release_date.split('-')[0]]
+					meta: [(a.artists ?? []).map((artist) => artist.name).join(', '), a.release_date.split('-')[0]]
 						.filter(Boolean)
 						.join(' • '),
 				}));

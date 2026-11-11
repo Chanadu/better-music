@@ -1,44 +1,48 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log/slog"
 	"net/http"
-	"net/mail"
-	"strings"
 
 	"github.com/Chanadu/better-music/logger"
+	"github.com/Chanadu/better-music/middleware"
 	"github.com/Chanadu/better-music/models"
+	"github.com/danielgtaylor/huma/v2"
 )
 
 type AccountResponse struct {
-	Email string `json:"email" validate:"required"`
+	Email string `json:"email"`
 }
 
-func (h *Handler) GetAccount(writer http.ResponseWriter, httpRequest *http.Request) {
-	id, ok := getUserID(writer, httpRequest)
+func (h *Handler) registerAccount(api huma.API) {
+	huma.Register(api, huma.Operation{
+		OperationID: "getAccount",
+		Method:      http.MethodGet,
+		Path:        "/api/account",
+		Summary:     "Get the signed-in account",
+		Responses:   authenticatedResponses(api),
+	}, h.getAccount)
+
+	h.registerAccountChanges(api)
+}
+
+func (h *Handler) getAccount(ctx context.Context, _ *struct{}) (*jsonOutput[AccountResponse], error) {
+	id, ok := middleware.UserIDFromContext(ctx)
 	if !ok {
-		return
+		return nil, huma.Error401Unauthorized("unauthorized")
 	}
-	email, err := models.ActiveAccountEmail(httpRequest.Context(), h.Database, id)
+
+	email, err := models.ActiveAccountEmail(ctx, h.Database, id)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
-			slog.ErrorContext(httpRequest.Context(), "load account email failed", "user_id", id, logger.ErrorDetails(err))
+			slog.ErrorContext(ctx, "load account email failed", "user_id", id, logger.ErrorDetails(err))
 		}
-		writeJSON(writer, 503, apiError("account unavailable"))
-		return
+
+		return nil, huma.Error503ServiceUnavailable("account unavailable")
 	}
 
-	writeJSON(writer, 200, AccountResponse{Email: email})
-}
-
-func normalizeEmail(email string) (string, bool) {
-	email = strings.ToLower(strings.TrimSpace(email))
-	address, err := mail.ParseAddress(email)
-	if err != nil || address.Address != email {
-		return "", false
-	}
-
-	return email, true
+	return &jsonOutput[AccountResponse]{Body: AccountResponse{Email: email}}, nil
 }

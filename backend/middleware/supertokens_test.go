@@ -27,7 +27,7 @@ func TestAuthIdentityOwnership(test *testing.T) {
 	} {
 		test.Run(tc.identity, func(test *testing.T) {
 			handler := ResolveAuthIdentity(http.HandlerFunc(func(writer http.ResponseWriter, httpRequest *http.Request) {
-				id, ok := GetUserID(httpRequest)
+				id, ok := UserIDFromContext(httpRequest.Context())
 				if !ok || id != tc.owner {
 					test.Errorf("owner=%s want=%s", id, tc.owner)
 				}

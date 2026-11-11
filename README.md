@@ -39,7 +39,7 @@ Playback happens in Spotify or your preferred music player. The Spotify integrat
 
 **SvelteKit + Svelte 5 + TypeScript** on the frontend, **Go** for the API, and **PostgreSQL** for the library. Tailwind CSS and daisyUI provide the interface, while RxDB with Dexie/IndexedDB handles local records and replication, and a service worker caches the app shell.
 
-The backend handles Spotify requests and authentication, including bcrypt passwords, JWT access tokens, and rotating refresh tokens. Frontend API contract types are maintained alongside the Go handlers.
+The backend handles Spotify requests and verifies SuperTokens sessions. SuperTokens Core owns passwords and session credentials. Its user ID also identifies each active account and library owner. Frontend API contract types are maintained alongside the Go handlers.
 
 ## Getting started
 
@@ -48,6 +48,7 @@ The backend handles Spotify requests and authentication, including bcrypt passwo
 - Node.js **22.12 or newer** and npm
 - Go **1.26.1 or newer**
 - A running PostgreSQL server and a database user able to create the application's tables
+- SuperTokens Core with separate authentication storage; the local helper requires Java and PostgreSQL tools (see [setup](deploy/SUPERTOKENS.md))
 - Optional: [`just`](https://github.com/casey/just) for the repository's command shortcuts
 - Optional: a Spotify application's client ID and client secret for metadata search
 
@@ -73,15 +74,16 @@ POSTGRES_URL=postgres://postgres:postgres@localhost:5432/better_music
 SERVER_HOST=localhost
 SERVER_PORT=8080
 
-JWT_SECRET=replace-with-a-long-random-secret
-JWT_ACCESS_TOKEN_MINUTES=15
-JWT_REFRESH_TOKEN_HOURS=720
+SUPERTOKENS_CONNECTION_URI=http://127.0.0.1:3567
+SUPERTOKENS_API_KEY=replace-with-your-core-api-key
+AUTH_API_DOMAIN=http://localhost:5173
+AUTH_WEBSITE_DOMAIN=http://localhost:5173
 
 SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
 ```
 
-Replace the example database credentials and JWT secret. Generate a secret with `openssl rand -hex 32`, for example. Keep credentials out of version control: the current root `.gitignore` does not exclude `.env` files.
+Replace the example database credentials and supply the API key configured on Core. For local development, [the setup helper](deploy/SUPERTOKENS.md) starts Core and generates private environment settings; export those before running the backend. Keep credentials out of version control: the current root `.gitignore` does not exclude `.env` files.
 
 You can leave the Spotify credentials blank to use manual entry. Both log flags must be set to `true` or `false`; the example disables file logging and uses a local database connection.
 
@@ -92,9 +94,8 @@ You can leave the Spotify credentials blank to use manual entry. Both log flags 
 | --- | --- |
 | `POSTGRES_URL` | PostgreSQL connection URL for the application's database. |
 | `SERVER_HOST`, `SERVER_PORT` | Address and port the API listens on. Use `localhost` and `8080` for the included Vite proxy. |
-| `JWT_SECRET` | Required signing secret for access tokens. |
-| `JWT_ACCESS_TOKEN_MINUTES` | Access-token lifetime; defaults to 15 minutes. Must be positive. |
-| `JWT_REFRESH_TOKEN_HOURS` | Refresh-token lifetime; defaults to 720 hours (30 days). Must be positive. |
+| `SUPERTOKENS_CONNECTION_URI`, `SUPERTOKENS_API_KEY` | Required private Core origin and API key. |
+| `AUTH_API_DOMAIN`, `AUTH_WEBSITE_DOMAIN` | Required browser-facing API and website origins. |
 | `LOG_ENABLE` | Required boolean. Enables file logging when `true`; stdout logging remains enabled either way. |
 | `LOG_DEBUG` | Required boolean. When `true`, uses `debug.log` and appends `?sslmode=disable` to the database URL. |
 | `LOG_DIR` | Directory for log files when file logging is enabled. |
@@ -199,30 +200,40 @@ go test ./...
 
 Backend integration tests start a disposable PostgreSQL cluster when `initdb` and `pg_ctl` are on `PATH`. Alternatively, set `TEST_POSTGRES_URL` to a PostgreSQL URL whose user can create test databases. Tests create separate databases rather than migrating the supplied database. Set `REQUIRE_TEST_DB=1` to fail instead of skipping when PostgreSQL binaries are unavailable.
 
-After changing API request or response shapes, update `frontend/src/lib/scripts/api-types.ts` to match the Go handlers.
+The session, account, library replication, and Spotify routes use Huma and the Orval-generated frontend client. After
+changing a Huma contract, run `npm --prefix frontend run generate:api` from
+the repository root with Node.js 22.18 or newer and the frontend dependencies
+installed. Commit the updated OpenAPI spec and generated client together.
+Generation requires no database or SuperTokens Core. Local library types live in
+`frontend/src/lib/scripts/types.ts`.
 
 <details>
 <summary>API routes</summary>
 
-Registration, login, refresh, and logout use `/api/auth/{register,login,refresh,logout}`. Other API routes require an `Authorization: Bearer <token>` header.
+The SuperTokens SDK owns signup/signin, session refresh/signout, and reset-token submission beneath `/api/auth`. Protected application routes use verified cookie sessions and SDK CSRF protection. The retired `/api/auth/{register,login,refresh,logout}` routes and custom bearer authentication are removed.
 
 | Resource | Routes |
 | --- | --- |
+| Session | `GET /api/session` |
 | Account | `GET /api/account`, `PUT /api/account/email`, `PUT /api/account/password`, `DELETE /api/account` |
 | Library replication | `POST /api/sync/{artists,albums}/{pull,push}` |
 | Spotify | `GET /api/spotify/search/artists`, `GET /api/spotify/search/albums`, `GET /api/spotify/artists/{id}`, `GET /api/spotify/albums/{id}` |
 
-See the Go handlers and `frontend/src/lib/scripts/api-types.ts` for request bodies, response shapes, and replication checkpoints.
+See `frontend/openapi.json` for request bodies, response shapes, and replication checkpoints.
 
 </details>
 
+### SuperTokens authentication
+
+SuperTokens is the only authentication system. Public signup is enabled, and password recovery uses administrator-issued single-use links. Old JWT login and custom refresh-token handling have been removed. Existing accounts must be provisioned and reset before signing in; cached library data and pending edits are preserved. See [local setup, account migration, and verification](deploy/SUPERTOKENS.md).
+
 ### RxDB cutover
 
-Migration 010 creates empty UUID-based `library_artists` and `library_albums` tables, with sync sequence and epoch fields stored on each user row. The existing integer-ID `artists` and `albums` tables and all their data are left unchanged. There is no automatic conversion or copying of old library rows. Existing authentication remains in use; SuperTokens is a separate migration step.
+The app uses SuperTokens IDs for active account and library ownership. Export any legacy library as a Better Music format-version-2 JSON file before updating. Migration 015 upgrades version 010 directly. It clears legacy accounts and library rows and drops retired credential and library tables. Restore your library from the JSON export after creating a SuperTokens account.
 
-Before updating, sync the old release and export each account’s library using its JSON export feature. Keep those files and a PostgreSQL backup. Rehearse the update on a restored database copy before remote deployment. After updating, sign into the same account and use **More → Import library** with its Better Music format-version-2 export. The importer generates UUIDs, maps albums to the new artist IDs, and preserves artwork, Spotify IDs, years, listening state, ratings, notes, listening dates, and supplied creation dates. Imports with no creation date use the current date. Retry skips matching artist names and album titles; it does not overwrite existing records. Check the import counts and let synchronization finish on each account.
+Create or sign into your SuperTokens account and use **More → Import library**. The importer generates UUIDs, maps albums to the new artist IDs, and preserves artwork, Spotify IDs, years, listening state, ratings, notes, listening dates, and supplied creation dates. Imports with no creation date use the current date. Retrying skips matching artist names and album titles. Check the import counts and let synchronization finish.
 
-The new client uses only the new RxDB-backed library, which is empty until import. Legacy CRUD routes return HTTP 410; old browser caches are ignored. Original PostgreSQL tables remain available as the source data, but the new app does not read them. Down migration is refused to avoid discarding new edits.
+The client uses the RxDB-backed library, which starts empty before import. Library records synchronize through the pull and push routes. Keep the JSON export and pre-cutover PostgreSQL backup to retain the original library data. Down migration is refused to avoid discarding new edits.
 
 
 ## Self-hosting
@@ -249,8 +260,8 @@ Keep regular PostgreSQL backups for the server library. The in-app JSON export i
 
 Planned migrations:
 
-- [ ] SuperTokens authentication
-- [ ] Huma API and Orval-generated client
+- [x] SuperTokens authentication implemented locally; deployment validation remains
+- [x] Huma API and Orval-generated client
 - [ ] Zod and Superforms validation/forms
 - [ ] Flowbite Svelte components and Lucide icons
 - [ ] Spotify SDK integration

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isLibraryName } from '$lib/scripts/library-validation';
 	import { getContext } from 'svelte';
 	import { previewContext, type PreviewContext } from '$lib/components/preview/context';
 	const preview = getContext<PreviewContext | undefined>(previewContext);
@@ -43,7 +44,7 @@
 	});
 
 	let canSave = $derived(
-		!saving && !refreshing && (tab === 'spotify' ? Boolean(selected) : Boolean(name.trim()) && changed),
+		!saving && !refreshing && (tab === 'spotify' ? Boolean(selected) : isLibraryName(name) && changed),
 	);
 
 	$effect(() => {
@@ -85,7 +86,7 @@
 		try {
 			const spotifyArtist = await spotifyApi.getArtist(spotifyId.trim());
 			name = spotifyArtist.name;
-			coverUrl = spotifyArtist.images[0]?.url ?? '';
+			coverUrl = spotifyArtist.images?.[0]?.url ?? '';
 			refreshed = true;
 		} catch (e) {
 			error = formatError(e, 'Failed to refresh artist from Spotify');

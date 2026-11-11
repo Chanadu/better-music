@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/Chanadu/better-music/config"
@@ -22,16 +21,12 @@ func TestSpotifyLookupErrors(test *testing.T) {
 	apiHandler := NewHandler(&config.Config{}, nil)
 	identity := createAccount(test, apiHandler, "lookup@test.example").Identity
 
-	for _, endpointHandler := range []http.HandlerFunc{apiHandler.GetSpotifyArtist, apiHandler.GetSpotifyAlbum} {
-		httpRequest := newSpotifyRequest("")
-		responseRecorder := httptest.NewRecorder()
-		serveIdentity(apiHandler, endpointHandler, responseRecorder, httpRequest, identity)
-		status(test, responseRecorder, 400)
-
-		httpRequest = newSpotifyRequest("abc")
-		responseRecorder = httptest.NewRecorder()
-		serveIdentity(apiHandler, endpointHandler, responseRecorder, httpRequest, identity)
-		status(test, responseRecorder, 503)
+	mux := http.NewServeMux()
+	apiHandler.RegisterAPI(mux)
+	for _, kind := range []string{"artists", "albums"} {
+		path := "/api/spotify/" + kind + "/"
+		status(test, request(apiHandler, mux.ServeHTTP, "GET", path+"%20", "", identity, nil), 400)
+		status(test, request(apiHandler, mux.ServeHTTP, "GET", path+"abc", "", identity, nil), 503)
 	}
 
 	apiHandler = spotifyHandler(func(httpRequest *http.Request) (*http.Response, error) {
@@ -43,10 +38,9 @@ func TestSpotifyLookupErrors(test *testing.T) {
 	})
 	identity = createAccount(test, apiHandler, "missing@test.example").Identity
 
-	for _, endpointHandler := range []http.HandlerFunc{apiHandler.GetSpotifyArtist, apiHandler.GetSpotifyAlbum} {
-		httpRequest := newSpotifyRequest("abc")
-		responseRecorder := httptest.NewRecorder()
-		serveIdentity(apiHandler, endpointHandler, responseRecorder, httpRequest, identity)
-		status(test, responseRecorder, 502)
+	mux = http.NewServeMux()
+	apiHandler.RegisterAPI(mux)
+	for _, kind := range []string{"artists", "albums"} {
+		status(test, request(apiHandler, mux.ServeHTTP, "GET", "/api/spotify/"+kind+"/abc", "", identity, nil), 502)
 	}
 }

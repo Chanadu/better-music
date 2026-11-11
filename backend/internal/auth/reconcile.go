@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/Chanadu/better-music/models"
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/supertokens/supertokens-golang/recipe/emailpassword"
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"github.com/supertokens/supertokens-golang/supertokens"
@@ -24,6 +25,7 @@ func (s *Service) Reconcile(ctx context.Context, userID string) error {
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
+
 	if err != nil {
 		return err
 	}
@@ -32,6 +34,7 @@ func (s *Service) Reconcile(ctx context.Context, userID string) error {
 		if _, err := session.RevokeAllSessionsForUser(userID, nil); err != nil {
 			return err
 		}
+
 		if err := models.ClearSessionRevocation(ctx, tx, userID); err != nil {
 			return err
 		}
@@ -40,11 +43,13 @@ func (s *Service) Reconcile(ctx context.Context, userID string) error {
 	kind, targetEmail, err := models.PendingAuthAccountOperation(ctx, tx, userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		if disabled {
-			return ErrAccountDisabled
+			return huma.Error403Forbidden("account is disabled")
 		}
+
 		if revocationPending {
 			return tx.Commit()
 		}
+
 		return nil
 	}
 
@@ -73,7 +78,7 @@ func (s *Service) Reconcile(ctx context.Context, userID string) error {
 
 	switch {
 	case result.EmailAlreadyExistsError != nil:
-		operationErr = ErrEmailExists
+		operationErr = huma.Error409Conflict("email already in use")
 
 	case result.OK == nil:
 		return errors.New("pending email update could not complete")

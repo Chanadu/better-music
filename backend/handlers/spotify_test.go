@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Chanadu/better-music/config"
+	"github.com/danielgtaylor/huma/v2"
 )
 
 type transportFunc func(*http.Request) (*http.Response, error)
@@ -145,7 +145,8 @@ func TestSpotifyTokenErrors(test *testing.T) {
 	}
 
 	apiHandler := NewHandler(&config.Config{}, nil)
-	if _, err := apiHandler.getSpotifyAccessToken(context.Background()); !errors.Is(err, errSpotifyNotConfigured) {
+	var statusError huma.StatusError
+	if _, err := apiHandler.getSpotifyAccessToken(context.Background()); !errors.As(err, &statusError) || statusError.GetStatus() != http.StatusServiceUnavailable {
 		test.Fatal(err)
 	}
 }
@@ -181,28 +182,24 @@ func TestSpotifyEndpoints(test *testing.T) {
 			})
 			identity := createAccount(test, apiHandler, "spotify@test.example").Identity
 
-			search, lookup := apiHandler.SearchSpotifyArtists, apiHandler.GetSpotifyArtist
-			if kind == "albums" {
-				search, lookup = apiHandler.SearchSpotifyAlbums, apiHandler.GetSpotifyAlbum
-			}
-
-			responseRecorder := request(apiHandler, search, "GET", "/api/spotify?q=AC%2FDC+%26+friends&limit=10", "", identity, nil)
+			mux := http.NewServeMux()
+			apiHandler.RegisterAPI(mux)
+			search := "/api/spotify/search/" + kind
+			lookup := "/api/spotify/" + kind + "/abc"
+			responseRecorder := request(apiHandler, mux.ServeHTTP, "GET", search+"?q=AC%2FDC+%26+friends&limit=10", "", identity, nil)
 			status(test, responseRecorder, 200)
 			if !strings.Contains(responseRecorder.Body.String(), `"id":"abc"`) {
 				test.Fatal(responseRecorder.Body)
 			}
 
-			httpRequest := newSpotifyRequest("abc")
-			lookupResponse := httptest.NewRecorder()
-			serveIdentity(apiHandler, http.HandlerFunc(lookup), lookupResponse, httpRequest, identity)
-			status(test, lookupResponse, 200)
+			status(test, request(apiHandler, mux.ServeHTTP, "GET", lookup, "", identity, nil), 200)
 
-			for _, path := range []string{"/api/spotify", "/api/spotify?q=music&limit=11"} {
-				status(test, request(apiHandler, search, "GET", path, "", identity, nil), 400)
+			for _, query := range []string{"", "?q=music&limit=11", "?q=music&limit=1.5"} {
+				status(test, request(apiHandler, mux.ServeHTTP, "GET", search+query, "", identity, nil), 400)
 			}
 
 			apiHandler.Config.Spotify = config.SpotifyConfig{}
-			status(test, request(apiHandler, search, "GET", "/api/spotify?q=music", "", identity, nil), 503)
+			status(test, request(apiHandler, mux.ServeHTTP, "GET", search+"?q=music", "", identity, nil), 503)
 		})
 	}
 }
@@ -249,15 +246,29 @@ func TestSpotifyRetryAndFailures(test *testing.T) {
 			return spotifyResponse(200, testCase.body), nil
 		})
 		identity := createAccount(test, apiHandler, "failed@test.example").Identity
-		status(test, request(apiHandler, apiHandler.SearchSpotifyArtists, "GET", "/api/spotify?q=x", "", identity, nil), 502)
-
-		status(test, request(apiHandler, apiHandler.SearchSpotifyAlbums, "GET", "/api/spotify?q=x", "", identity, nil), 502)
+		mux := http.NewServeMux()
+		apiHandler.RegisterAPI(mux)
+		for _, kind := range []string{"artists", "albums"} {
+			status(test, request(apiHandler, mux.ServeHTTP, "GET", "/api/spotify/search/"+kind+"?q=x", "", identity, nil), 502)
+		}
 	}
 }
 
-func newSpotifyRequest(spotifyID string) *http.Request {
-	httpRequest := httptest.NewRequest("GET", "/api/spotify/artists/"+spotifyID, nil)
-	httpRequest.SetPathValue("id", spotifyID)
-
-	return httpRequest
+func TestSpotifyRateLimitHeader(test *testing.T) {
+	handler := spotifyHandler(func(req *http.Request) (*http.Response, error) {
+		if req.URL.String() == spotifyAuthURL {
+			return spotifyResponse(200, `{"access_token":"token","expires_in":3600}`), nil
+		}
+		response := spotifyResponse(429, "rate limited")
+		response.Header = http.Header{"Retry-After": {"15"}}
+		return response, nil
+	})
+	identity := createAccount(test, handler, "limited@test.example").Identity
+	mux := http.NewServeMux()
+	handler.RegisterAPI(mux)
+	response := request(handler, mux.ServeHTTP, "GET", "/api/spotify/artists/abc", "", identity, nil)
+	status(test, response, http.StatusBadGateway)
+	if got := response.Header().Get("Retry-After"); got != "15" {
+		test.Fatalf("Retry-After = %q, want 15", got)
+	}
 }

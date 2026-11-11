@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { isLibraryName } from '$lib/scripts/library-validation';
 	import { getContext } from 'svelte';
 	import { previewContext, type PreviewContext } from '$lib/components/preview/context';
 	const preview = getContext<PreviewContext | undefined>(previewContext);
@@ -67,7 +68,7 @@
 	let canSave = $derived(
 		!saving &&
 			!refreshing &&
-			(tab === 'spotify' ? Boolean(selected) : Boolean(title.trim()) && yearValid && changed),
+			(tab === 'spotify' ? Boolean(selected) : isLibraryName(title) && yearValid && changed),
 	);
 
 	function loadAlbum(current: Album | null | undefined) {
@@ -121,7 +122,7 @@
 		try {
 			const spotifyAlbum = await spotifyApi.getAlbum(spotifyId.trim());
 			title = spotifyAlbum.name;
-			coverUrl = spotifyAlbum.images[0]?.url ?? '';
+			coverUrl = spotifyAlbum.images?.[0]?.url ?? '';
 			year = spotifyAlbum.release_date.split('-')[0];
 			refreshed = true;
 		} catch (e) {

@@ -113,6 +113,24 @@ func TestSuperTokensIntegration(test *testing.T) {
 		test.Fatal(err)
 	}
 	for _, tc := range []struct{ index, status int }{{-1, 401}, {2, 403}, {0, 200}, {1, 200}} {
+		recorder := request(tc.index, "GET", "/api/account", "", nil)
+		if recorder.Code != tc.status {
+			test.Fatalf("account %d: %d %s", tc.index, recorder.Code, recorder.Body.String())
+		}
+		if tc.status == http.StatusOK {
+			var account struct {
+				Email string `json:"email"`
+			}
+			if err := json.Unmarshal(recorder.Body.Bytes(), &account); err != nil || account.Email != emails[tc.index] {
+				test.Fatalf("account %d returned %s", tc.index, recorder.Body.String())
+			}
+		}
+	}
+	if recorder := request(0, "GET", "/api/account", "", map[string]string{"X-Better-Music-Account": owners[1]}); recorder.Code != http.StatusConflict {
+		test.Fatalf("account owner mismatch: %d %s", recorder.Code, recorder.Body.String())
+	}
+
+	for _, tc := range []struct{ index, status int }{{-1, 401}, {2, 403}, {0, 200}, {1, 200}} {
 		recorder := request(tc.index, "POST", "/api/sync/artists/pull", `{"checkpoint":null,"limit":100}`, nil)
 		if recorder.Code != tc.status {
 			test.Fatalf("pull %d: %d %s", tc.index, recorder.Code, recorder.Body.String())
@@ -260,6 +278,14 @@ func TestSuperTokensIntegration(test *testing.T) {
 	}
 
 	// Lifecycle actions use Core credentials, not the unused legacy hash.
+	// Invalid JSON must not echo credentials in Huma's problem details.
+	malformed := request(0, http.MethodPut, "/api/account/email", `{"password":"secret-do-not-echo",`, nil)
+	if malformed.Code != http.StatusBadRequest || strings.Contains(malformed.Body.String(), "secret-do-not-echo") {
+		test.Fatalf("malformed account request returned HTTP %d or echoed the password", malformed.Code)
+	}
+	if recorder := request(0, http.MethodPut, "/api/account/email", "{}", map[string]string{"X-Better-Music-Account": owners[1]}); recorder.Code != http.StatusConflict {
+		test.Fatalf("account change owner mismatch: %d %s", recorder.Code, recorder.Body.String())
+	}
 	if recorder := request(0, "PUT", "/api/account/email", `{"email":"new@example.test","password":"wrong"}`, nil); recorder.Code != 400 {
 		test.Fatal("wrong password accepted")
 	}

@@ -22,8 +22,7 @@ func syncCall(test *testing.T, handler *Handler, kind, op, identity string, body
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/sync/{kind}/pull", handler.PullLibrary)
-	mux.HandleFunc("POST /api/sync/{kind}/push", handler.PushLibrary)
+	handler.RegisterAPI(mux)
 	httpRequest := httptest.NewRequest("POST", "/api/sync/"+kind+"/"+op, bytes.NewReader(raw))
 	recorder := httptest.NewRecorder()
 	serveIdentity(handler, mux, recorder, httpRequest, identity)

@@ -2,6 +2,7 @@ import { albumsLibrary, artistsLibrary, getDatabaseData } from './database';
 import { getCurrentUserId, getSessionGeneration } from './auth';
 import type { ExportAlbum, ExportArtist } from './library-export';
 import type { EntityId } from './types';
+import { isAlbumRating, isAlbumYear, isLibraryName } from './library-validation';
 
 type ImportedLibrary = { artists: ExportArtist[]; albums: ExportAlbum[] };
 
@@ -51,11 +52,11 @@ export function parseLibraryImport(text: string): ImportedLibrary {
 	};
 
 	const name = (value: unknown): string => {
-		if (typeof value === 'string' && value.trim()) {
-			return value.trim();
+		if (!isLibraryName(value)) {
+			return fail('Artist names and album titles must contain 1 to 4096 characters.');
 		}
 
-		return fail('Artist names and album titles cannot be empty.');
+		return value.trim();
 	};
 
 	const nullableString = (value: unknown): string | null => {
@@ -128,20 +129,11 @@ export function parseLibraryImport(text: string): ImportedLibrary {
 			fail('Invalid listening status.');
 		}
 
-		if (
-			row.rating != null &&
-			(typeof row.rating !== 'number' || !Number.isInteger(row.rating) || row.rating < 1 || row.rating > 10)
-		) {
+		if (row.rating != null && !isAlbumRating(row.rating)) {
 			fail('Ratings must be integers from 1 to 10.');
 		}
 
-		if (
-			row.year != null &&
-			(typeof row.year !== 'number' ||
-				!Number.isInteger(row.year) ||
-				row.year < -2147483648 ||
-				row.year > 2147483647)
-		) {
+		if (row.year != null && !isAlbumYear(row.year)) {
 			fail('Invalid album year.');
 		}
 

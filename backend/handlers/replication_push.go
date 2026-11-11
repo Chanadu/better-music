@@ -1,82 +1,60 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
 
 	"github.com/Chanadu/better-music/models"
+	"github.com/danielgtaylor/huma/v2"
 	"github.com/lib/pq"
 )
 
-func (h *Handler) PushLibrary(writer http.ResponseWriter, httpRequest *http.Request) {
-	userID, ok := getUserID(writer, httpRequest)
-	if !ok {
-		return
-	}
-
-	kind, ok := syncKind(httpRequest)
-	if !ok {
-		writeJSON(writer, 404, apiError("unknown collection"))
-		return
-	}
-
-	var input PushLibraryRequest
-	if !decodeSync(writer, httpRequest, &input) {
-		return
-	}
-
+func (h *Handler) pushLibrary(ctx context.Context, userID string, kind models.LibraryKind, input PushLibraryRequest) (*jsonOutput[[]json.RawMessage], error) {
 	if len(input.Rows) == 0 || len(input.Rows) > 100 || !validUUID(input.Epoch) {
-		writeJSON(writer, 400, apiError("invalid push batch or epoch"))
-		return
+		return nil, huma.Error400BadRequest("invalid push batch or epoch")
 	}
 
 	docs, err := validatePushRows(input.Rows, kind)
 	if err != nil {
-		writeJSON(writer, 422, apiError(err.Error()))
-		return
+		return nil, huma.Error422UnprocessableEntity(err.Error())
 	}
 
-	tx, storageErr := h.Database.BeginTx(httpRequest.Context(), nil)
+	tx, storageErr := h.Database.BeginTx(ctx, nil)
 	if storageErr != nil {
-		syncStorageError(writer, httpRequest, "begin push transaction", storageErr)
-		return
+		return nil, syncStorageError(ctx, userID, kind, "begin push transaction", storageErr)
 	}
 
 	defer tx.Rollback()
 	epoch, storageErr := models.LockSyncState(tx, userID)
 	if storageErr != nil {
-		syncStorageError(writer, httpRequest, "lock sync state", storageErr)
-		return
+		return nil, syncStorageError(ctx, userID, kind, "lock sync state", storageErr)
 	}
 
 	if epoch != input.Epoch {
-		writeJSON(writer, 409, apiError("Sync history changed. Preserve pending edits before resetting."))
-		return
+		return nil, huma.Error409Conflict("Sync history changed. Preserve pending edits before resetting.")
 	}
 
 	conflicts := []json.RawMessage{}
 	failures := []LibraryChangeFailure{}
 	retryable := false
+
 	for index, doc := range docs {
 		if storageErr = models.CreateSyncSavepoint(tx); storageErr != nil {
-			syncStorageError(writer, httpRequest, "create sync savepoint", storageErr)
-			return
+			return nil, syncStorageError(ctx, userID, kind, "create sync savepoint", storageErr)
 		}
 
 		conflict, failure, err := applySyncRow(tx, userID, kind, doc, input.Rows[index].Assumed)
 		if err != nil {
 			if storageErr = models.RollbackSyncSavepoint(tx); storageErr != nil {
-				syncStorageError(writer, httpRequest, "roll back sync savepoint", storageErr)
-				return
+				return nil, syncStorageError(ctx, userID, kind, "roll back sync savepoint", storageErr)
 			}
 
 			var pe *pq.Error
 			if errors.As(err, &pe) && (pe.Code == "23505" || pe.Code == "23503" || pe.Code == "23514") {
 				failure = &LibraryChangeFailure{ID: doc.Fields().ID, Error: "A record with this name or ID already exists, or its relationship is invalid."}
 			} else {
-				syncStorageError(writer, httpRequest, "apply library change", err)
-				return
+				return nil, syncStorageError(ctx, userID, kind, "apply library change", err)
 			}
 		}
 
@@ -88,14 +66,12 @@ func (h *Handler) PushLibrary(writer http.ResponseWriter, httpRequest *http.Requ
 		}
 
 		if storageErr = models.ReleaseSyncSavepoint(tx); storageErr != nil {
-			syncStorageError(writer, httpRequest, "release sync savepoint", storageErr)
-			return
+			return nil, syncStorageError(ctx, userID, kind, "release sync savepoint", storageErr)
 		}
 	}
 
 	if storageErr = tx.Commit(); storageErr != nil {
-		syncStorageError(writer, httpRequest, "commit push transaction", storageErr)
-		return
+		return nil, syncStorageError(ctx, userID, kind, "commit push transaction", storageErr)
 	}
 
 	if len(failures) > 0 {
@@ -104,9 +80,8 @@ func (h *Handler) PushLibrary(writer http.ResponseWriter, httpRequest *http.Requ
 			status = 409
 		}
 
-		writeJSON(writer, status, PushLibraryErrorResponse{Error: "Some library changes could not sync. They remain saved on this device.", Failures: failures})
-		return
+		return nil, pushLibraryFailure{Status: status, Message: "Some library changes could not sync. They remain saved on this device.", Failures: failures}
 	}
 
-	writeJSON(writer, 200, conflicts)
+	return &jsonOutput[[]json.RawMessage]{Body: conflicts}, nil
 }

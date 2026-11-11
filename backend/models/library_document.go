@@ -35,11 +35,11 @@ func (field NullableField[T]) MarshalJSON() ([]byte, error) {
 
 type DocumentFields struct {
 	ID        string                `json:"id"`
-	CoverURL  NullableField[string] `json:"cover_url"`
-	SpotifyID NullableField[string] `json:"spotify_id"`
+	CoverURL  NullableField[string] `json:"cover_url" nullable:"true"`
+	SpotifyID NullableField[string] `json:"spotify_id" nullable:"true"`
 	CreatedAt string                `json:"created_at"`
 	EditedAt  string                `json:"edited_at"`
-	Deleted   *bool                 `json:"_deleted"`
+	Deleted   *bool                 `json:"_deleted" nullable:"false"`
 	Raw       []byte                `json:"-"`
 	Edited    time.Time             `json:"-"`
 }
