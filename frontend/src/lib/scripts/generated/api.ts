@@ -139,19 +139,16 @@ export interface SpotifyImage {
 }
 
 export interface SpotifyAlbumSearchResult {
-	/** @nullable */
-	artists: SpotifyAlbumArtist[] | null;
+	artists: SpotifyAlbumArtist[];
 	id: string;
-	/** @nullable */
-	images: SpotifyImage[] | null;
+	images: SpotifyImage[];
 	name: string;
 	release_date: string;
 }
 
 export interface SpotifyArtistSearchResult {
 	id: string;
-	/** @nullable */
-	images: SpotifyImage[] | null;
+	images: SpotifyImage[];
 	name: string;
 }
 
@@ -339,8 +336,8 @@ export const getSearchSpotifyAlbumsUrl = (params: SearchSpotifyAlbumsParams) => 
 export const searchSpotifyAlbums = async (
 	params: SearchSpotifyAlbumsParams,
 	options?: Parameters<typeof apiFetch>[1],
-): Promise<SpotifyAlbumSearchResult[] | null> => {
-	return apiFetch<SpotifyAlbumSearchResult[] | null>(getSearchSpotifyAlbumsUrl(params), {
+): Promise<SpotifyAlbumSearchResult[]> => {
+	return apiFetch<SpotifyAlbumSearchResult[]>(getSearchSpotifyAlbumsUrl(params), {
 		...options,
 		method: 'GET',
 	});
@@ -365,8 +362,8 @@ export const getSearchSpotifyArtistsUrl = (params: SearchSpotifyArtistsParams) =
 export const searchSpotifyArtists = async (
 	params: SearchSpotifyArtistsParams,
 	options?: Parameters<typeof apiFetch>[1],
-): Promise<SpotifyArtistSearchResult[] | null> => {
-	return apiFetch<SpotifyArtistSearchResult[] | null>(getSearchSpotifyArtistsUrl(params), {
+): Promise<SpotifyArtistSearchResult[]> => {
+	return apiFetch<SpotifyArtistSearchResult[]>(getSearchSpotifyArtistsUrl(params), {
 		...options,
 		method: 'GET',
 	});

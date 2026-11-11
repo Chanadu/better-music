@@ -258,14 +258,15 @@ Keep regular PostgreSQL backups for the server library. The in-app JSON export i
 
 ## Roadmap
 
-Planned migrations:
-
 - [x] SuperTokens authentication implemented locally; deployment validation remains
-- [x] Huma API and Orval-generated client
-- [ ] Zod and Superforms validation/forms
-- [ ] Flowbite Svelte components and Lucide icons
-- [ ] Spotify SDK integration
-- [ ] Wails packaging
+- [x] Huma API and Orval-generated client deployed to the Raspberry Pi
+
+Remaining migration order
+
+1. Migrate the backend Spotify integration to the Spotify Go SDK.
+2. Integrate Wails and get the current frontend working on one desktop platform.
+3. Redesign the UI with Flowbite Svelte and Lucide.
+4. Finish Wails packaging and verify the redesigned app on the target platforms.
 
 More features:
 

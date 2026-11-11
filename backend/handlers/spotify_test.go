@@ -24,7 +24,7 @@ func (transport transportFunc) RoundTrip(httpRequest *http.Request) (*http.Respo
 func spotifyResponse(code int, body string) *http.Response {
 	return &http.Response{
 		StatusCode: code,
-		Header:     make(http.Header),
+		Header:     http.Header{"Content-Type": {"application/json"}},
 		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }
@@ -60,6 +60,36 @@ func TestSpotifySearchLimits(test *testing.T) {
 	}
 }
 
+func TestSpotifyMissingArrays(test *testing.T) {
+	handler := spotifyHandler(func(request *http.Request) (*http.Response, error) {
+		if request.URL.String() == spotifyAuthURL {
+			return spotifyResponse(200, `{"access_token":"token","expires_in":3600}`), nil
+		}
+		if strings.HasSuffix(request.URL.Path, "/search") {
+			return spotifyResponse(200, `{"albums":{"items":null}}`), nil
+		}
+		return spotifyResponse(200, `{"id":"abc","images":null}`), nil
+	})
+	ctx := context.Background()
+
+	artists, err := handler.searchSpotifyArtists(ctx, "music", 6)
+	if err != nil || artists == nil || len(artists) != 0 {
+		test.Fatalf("artist search = %v, %v; want empty array", artists, err)
+	}
+	albums, err := handler.searchSpotifyAlbums(ctx, "music", 6)
+	if err != nil || albums == nil || len(albums) != 0 {
+		test.Fatalf("album search = %v, %v; want empty array", albums, err)
+	}
+	artist, err := handler.getSpotifyArtist(ctx, "abc")
+	if err != nil || artist.Images == nil || len(artist.Images) != 0 {
+		test.Fatalf("artist = %+v, %v; want empty images array", artist, err)
+	}
+	album, err := handler.getSpotifyAlbum(ctx, "abc")
+	if err != nil || album.Images == nil || album.Artists == nil || len(album.Images) != 0 || len(album.Artists) != 0 {
+		test.Fatalf("album = %+v, %v; want empty images and artists arrays", album, err)
+	}
+}
+
 func TestSpotifyTokenCache(test *testing.T) {
 	var calls atomic.Int32
 	apiHandler := spotifyHandler(func(httpRequest *http.Request) (*http.Response, error) {
@@ -82,8 +112,8 @@ func TestSpotifyTokenCache(test *testing.T) {
 	for attemptIndex := 0; attemptIndex < 10; attemptIndex++ {
 		waitGroup.Go(func() {
 			token, err := apiHandler.getSpotifyAccessToken(context.Background())
-			if err != nil || token != "token" {
-				test.Errorf("%q %v", token, err)
+			if err != nil || token.AccessToken != "token" {
+				test.Errorf("unexpected token result: %v", err)
 			}
 		})
 	}
@@ -93,7 +123,7 @@ func TestSpotifyTokenCache(test *testing.T) {
 		test.Fatal("token fetched more than once")
 	}
 
-	apiHandler.spotifyTokenExpiresAt = time.Now().Add(5 * time.Second)
+	apiHandler.spotifyToken.Expiry = time.Now().Add(5 * time.Second)
 	if _, err := apiHandler.getSpotifyAccessToken(context.Background()); err != nil {
 		test.Fatal(err)
 	}
@@ -102,10 +132,6 @@ func TestSpotifyTokenCache(test *testing.T) {
 		test.Error("near-expiry token not refreshed")
 	}
 
-	apiHandler.clearSpotifyToken()
-	if apiHandler.spotifyAccessToken != "" || !apiHandler.spotifyTokenExpiresAt.IsZero() {
-		test.Error("cache not cleared")
-	}
 }
 
 func TestSpotifyTokenErrors(test *testing.T) {
@@ -138,7 +164,7 @@ func TestSpotifyTokenErrors(test *testing.T) {
 				test.Fatal("expected error")
 			}
 
-			if apiHandler.spotifyAccessToken != "" {
+			if apiHandler.spotifyToken != nil {
 				test.Error("invalid token cached")
 			}
 		})
@@ -205,7 +231,7 @@ func TestSpotifyEndpoints(test *testing.T) {
 }
 
 func TestSpotifyRetryAndFailures(test *testing.T) {
-	for _, code := range []int{200, 401, 429, 500} {
+	for _, code := range []int{200, 401, 404, 429, 500} {
 		test.Run(http.StatusText(code), func(test *testing.T) {
 			auth, api := 0, 0
 			apiHandler := spotifyHandler(func(httpRequest *http.Request) (*http.Response, error) {
@@ -222,8 +248,7 @@ func TestSpotifyRetryAndFailures(test *testing.T) {
 
 				return spotifyResponse(code, `{"id":"abc"}`), nil
 			})
-			var target map[string]any
-			err := apiHandler.executeSpotifyJSONRequest(context.Background(), spotifyAPIBaseURL+"/artists/abc", &target)
+			_, err := apiHandler.getSpotifyArtist(context.Background(), "abc")
 			if (err != nil) != (code != 200) || auth != 2 || api != 2 {
 				test.Fatalf("err=%v auth=%d api=%d", err, auth, api)
 			}

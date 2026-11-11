@@ -452,10 +452,7 @@
             "items": {
               "$ref": "#/components/schemas/SpotifyAlbumArtist"
             },
-            "type": [
-              "array",
-              "null"
-            ]
+            "type": "array"
           },
           "id": {
             "examples": [
@@ -467,10 +464,7 @@
             "items": {
               "$ref": "#/components/schemas/SpotifyImage"
             },
-            "type": [
-              "array",
-              "null"
-            ]
+            "type": "array"
           },
           "name": {
             "examples": [
@@ -507,10 +501,7 @@
             "items": {
               "$ref": "#/components/schemas/SpotifyImage"
             },
-            "type": [
-              "array",
-              "null"
-            ]
+            "type": "array"
           },
           "name": {
             "examples": [
@@ -1405,10 +1396,7 @@
                   "items": {
                     "$ref": "#/components/schemas/SpotifyAlbumSearchResult"
                   },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
+                  "type": "array"
                 }
               }
             },
@@ -1534,10 +1522,7 @@
                   "items": {
                     "$ref": "#/components/schemas/SpotifyArtistSearchResult"
                   },
-                  "type": [
-                    "array",
-                    "null"
-                  ]
+                  "type": "array"
                 }
               }
             },

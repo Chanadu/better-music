@@ -21,6 +21,10 @@ type spotifySearchInput struct {
 	Limit string `query:"limit" doc:"Integer between 1 and 10. Defaults to 6."`
 }
 
+type spotifySearchOutput[T any] struct {
+	Body []T `nullable:"false"`
+}
+
 func (h *Handler) registerSpotify(api huma.API) {
 	huma.Register(api, spotifyOperation(api, "getSpotifyArtist", "/api/spotify/artists/{id}"),
 		spotifyLookup("artist", h.getSpotifyArtist))
@@ -75,8 +79,8 @@ func spotifyLookup[T any](kind string, lookup func(context.Context, string) (*T,
 	}
 }
 
-func spotifySearch[T any](kind string, search func(context.Context, string, int) ([]T, error)) func(context.Context, *spotifySearchInput) (*jsonOutput[[]T], error) {
-	return func(ctx context.Context, input *spotifySearchInput) (*jsonOutput[[]T], error) {
+func spotifySearch[T any](kind string, search func(context.Context, string, int) ([]T, error)) func(context.Context, *spotifySearchInput) (*spotifySearchOutput[T], error) {
+	return func(ctx context.Context, input *spotifySearchInput) (*spotifySearchOutput[T], error) {
 		if _, ok := middleware.UserIDFromContext(ctx); !ok {
 			return nil, huma.Error401Unauthorized("unauthorized")
 		}
@@ -96,7 +100,7 @@ func spotifySearch[T any](kind string, search func(context.Context, string, int)
 			return nil, spotifyError(ctx, "spotify "+kind+" search failed", err)
 		}
 
-		return &jsonOutput[[]T]{Body: results}, nil
+		return &spotifySearchOutput[T]{Body: results}, nil
 	}
 }
 

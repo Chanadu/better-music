@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,6 +11,9 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/zmb3/spotify/v2"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
@@ -20,7 +21,6 @@ const (
 	maxSpotifySearchLimit     = 10
 	spotifyTokenBuffer        = 30 * time.Second
 	spotifyAuthURL            = "https://accounts.spotify.com/api/token"
-	spotifyAPIBaseURL         = "https://api.spotify.com/v1"
 )
 
 type SpotifyImage struct {
@@ -32,7 +32,7 @@ type SpotifyImage struct {
 type SpotifyArtistSearchResult struct {
 	ID     string         `json:"id" example:"4Z8W4fKeB5YxbusRsdQVPb"`
 	Name   string         `json:"name" example:"Radiohead"`
-	Images []SpotifyImage `json:"images" nullable:"true"`
+	Images []SpotifyImage `json:"images" nullable:"false"`
 }
 
 type SpotifyAlbumArtist struct {
@@ -43,8 +43,8 @@ type SpotifyAlbumArtist struct {
 type SpotifyAlbumSearchResult struct {
 	ID          string               `json:"id" example:"6ZG5lRT77aJ3btmArcykra"`
 	Name        string               `json:"name" example:"OK Computer"`
-	Artists     []SpotifyAlbumArtist `json:"artists" nullable:"true"`
-	Images      []SpotifyImage       `json:"images" nullable:"true"`
+	Artists     []SpotifyAlbumArtist `json:"artists" nullable:"false"`
+	Images      []SpotifyImage       `json:"images" nullable:"false"`
 	ReleaseDate string               `json:"release_date" example:"1997-05-21"`
 }
 
@@ -58,129 +58,93 @@ func (err spotifyUpstreamError) Error() string {
 	return fmt.Sprintf("Spotify %s returned HTTP %d", err.operation, err.status)
 }
 
-type spotifyTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-}
-
-type spotifySearchArtistsResponse struct {
-	Artists struct {
-		Items []SpotifyArtistSearchResult `json:"items"`
-	} `json:"artists"`
-}
-
-type spotifySearchAlbumsResponse struct {
-	Albums struct {
-		Items []SpotifyAlbumSearchResult `json:"items"`
-	} `json:"albums"`
-}
-
-func (h *Handler) spotifyConfigured() bool {
-	return strings.TrimSpace(h.Config.Spotify.ClientID) != "" && strings.TrimSpace(h.Config.Spotify.ClientSecret) != ""
-}
-
-func (h *Handler) clearSpotifyToken() {
-	h.spotifyMutex.Lock()
-	defer h.spotifyMutex.Unlock()
-
-	h.spotifyAccessToken = ""
-	h.spotifyTokenExpiresAt = time.Time{}
-}
-
-func (h *Handler) getSpotifyAccessToken(ctx context.Context) (string, error) {
-	if !h.spotifyConfigured() {
-		return "", huma.Error503ServiceUnavailable("spotify is not configured")
+func (h *Handler) getSpotifyAccessToken(ctx context.Context) (*oauth2.Token, error) {
+	if strings.TrimSpace(h.Config.Spotify.ClientID) == "" || strings.TrimSpace(h.Config.Spotify.ClientSecret) == "" {
+		return nil, huma.Error503ServiceUnavailable("spotify is not configured")
 	}
 
 	h.spotifyMutex.Lock()
 	defer h.spotifyMutex.Unlock()
 
-	if h.spotifyAccessToken != "" && time.Until(h.spotifyTokenExpiresAt) > spotifyTokenBuffer {
-		return h.spotifyAccessToken, nil
+	if h.spotifyToken != nil && time.Until(h.spotifyToken.Expiry) > spotifyTokenBuffer {
+		return h.spotifyToken, nil
 	}
 
-	form := url.Values{}
-	form.Set("grant_type", "client_credentials")
+	credentials := clientcredentials.Config{
+		ClientID:     h.Config.Spotify.ClientID,
+		ClientSecret: h.Config.Spotify.ClientSecret,
+		TokenURL:     spotifyAuthURL,
+		AuthStyle:    oauth2.AuthStyleInHeader,
+	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, spotifyAuthURL, strings.NewReader(form.Encode()))
+	token, err := credentials.Token(context.WithValue(ctx, oauth2.HTTPClient, h.spotifyHTTPClient))
 	if err != nil {
-		return "", err
+		var upstream *oauth2.RetrieveError
+		if errors.As(err, &upstream) && upstream.Response.StatusCode != http.StatusOK {
+			return nil, spotifyResponseError("token request", upstream.Response)
+		}
+
+		return nil, errors.New("spotify token request failed")
 	}
 
-	basicAuth := base64.StdEncoding.EncodeToString(
-		fmt.Appendf(nil, "%s:%s", h.Config.Spotify.ClientID, h.Config.Spotify.ClientSecret),
-	)
-	req.Header.Set("Authorization", "Basic "+basicAuth)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	res, err := h.spotifyHTTPClient.Do(req)
-	if err != nil {
-		return "", err
+	if !token.Expiry.After(time.Now()) {
+		return nil, errors.New("spotify auth returned an invalid token expiry")
 	}
 
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return "", spotifyUpstreamError{operation: "token request", status: res.StatusCode, retryAfter: res.Header.Get("Retry-After")}
-	}
-
-	var payload spotifyTokenResponse
-	if err := json.NewDecoder(res.Body).Decode(&payload); err != nil {
-		return "", err
-	}
-
-	if payload.AccessToken == "" || payload.ExpiresIn <= 0 {
-		return "", errors.New("spotify auth returned an invalid token response")
-	}
-
-	h.spotifyAccessToken = payload.AccessToken
-	h.spotifyTokenExpiresAt = time.Now().Add(time.Duration(payload.ExpiresIn) * time.Second)
-	return h.spotifyAccessToken, nil
+	h.spotifyToken = token
+	return token, nil
 }
 
-func (h *Handler) executeSpotifyJSONRequest(ctx context.Context, endpoint string, target any) error {
-	token, err := h.getSpotifyAccessToken(ctx)
-	if err != nil {
-		return err
+func spotifyResponseError(operation string, response *http.Response) spotifyUpstreamError {
+	return spotifyUpstreamError{
+		operation:  operation,
+		status:     response.StatusCode,
+		retryAfter: response.Header.Get("Retry-After"),
+	}
+}
+
+type spotifyTransport struct {
+	handler *Handler
+}
+
+func (transport spotifyTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	h := transport.handler
+	base := h.spotifyHTTPClient.Transport
+
+	if base == nil {
+		base = http.DefaultTransport
 	}
 
-	doRequest := func(accessToken string) (*http.Response, error) {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	for retry := true; ; retry = false {
+		token, err := h.getSpotifyAccessToken(request.Context())
 		if err != nil {
 			return nil, err
 		}
 
-		req.Header.Set("Authorization", "Bearer "+accessToken)
-		return h.spotifyHTTPClient.Do(req)
-	}
+		authenticated := request.Clone(request.Context())
+		authenticated.Header.Set("Authorization", "Bearer "+token.AccessToken)
 
-	res, err := doRequest(token)
-	if err != nil {
-		return err
-	}
-
-	if res.StatusCode == http.StatusUnauthorized {
-		res.Body.Close()
-		h.clearSpotifyToken()
-
-		token, err = h.getSpotifyAccessToken(ctx)
+		response, err := base.RoundTrip(authenticated)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		res, err = doRequest(token)
-		if err != nil {
-			return err
+		if response.StatusCode == http.StatusOK {
+			return response, nil
 		}
+
+		response.Body.Close()
+		if response.StatusCode != http.StatusUnauthorized || !retry {
+			return nil, spotifyResponseError("API request", response)
+		}
+
+		h.spotifyMutex.Lock()
+		if h.spotifyToken == token {
+			h.spotifyToken = nil
+		}
+
+		h.spotifyMutex.Unlock()
 	}
-
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return spotifyUpstreamError{operation: "API request", status: res.StatusCode, retryAfter: res.Header.Get("Retry-After")}
-	}
-
-	return json.NewDecoder(res.Body).Decode(target)
 }
 
 func parseSpotifySearchLimit(raw string) (int, error) {
@@ -201,55 +165,73 @@ func parseSpotifySearchLimit(raw string) (int, error) {
 }
 
 func (h *Handler) searchSpotifyArtists(ctx context.Context, query string, limit int) ([]SpotifyArtistSearchResult, error) {
-	values := url.Values{}
-	values.Set("q", query)
-	values.Set("type", "artist")
-	values.Set("limit", strconv.Itoa(limit))
-
-	var payload spotifySearchArtistsResponse
-	if err := h.executeSpotifyJSONRequest(ctx, spotifyAPIBaseURL+"/search?"+values.Encode(), &payload); err != nil {
+	results, err := h.spotifyClient.Search(ctx, query, spotify.SearchTypeArtist, spotify.Limit(limit))
+	if err != nil {
 		return nil, err
 	}
+	if results.Artists == nil {
+		return []SpotifyArtistSearchResult{}, nil
+	}
 
-	return payload.Artists.Items, nil
+	return mapSpotifyResults(results.Artists.Artists, spotifyArtistResult), nil
 }
 
 func (h *Handler) getSpotifyArtist(ctx context.Context, spotifyID string) (*SpotifyArtistSearchResult, error) {
-	var artist SpotifyArtistSearchResult
-	if err := h.executeSpotifyJSONRequest(
-		ctx,
-		spotifyAPIBaseURL+"/artists/"+url.PathEscape(spotifyID),
-		&artist,
-	); err != nil {
+	artist, err := h.spotifyClient.GetArtist(ctx, spotify.ID(url.PathEscape(spotifyID)))
+	if err != nil {
 		return nil, err
 	}
 
-	return &artist, nil
+	result := spotifyArtistResult(*artist)
+	return &result, nil
 }
 
 func (h *Handler) searchSpotifyAlbums(ctx context.Context, query string, limit int) ([]SpotifyAlbumSearchResult, error) {
-	values := url.Values{}
-	values.Set("q", query)
-	values.Set("type", "album")
-	values.Set("limit", strconv.Itoa(limit))
-
-	var payload spotifySearchAlbumsResponse
-	if err := h.executeSpotifyJSONRequest(ctx, spotifyAPIBaseURL+"/search?"+values.Encode(), &payload); err != nil {
+	results, err := h.spotifyClient.Search(ctx, query, spotify.SearchTypeAlbum, spotify.Limit(limit))
+	if err != nil {
 		return nil, err
 	}
+	if results.Albums == nil {
+		return []SpotifyAlbumSearchResult{}, nil
+	}
 
-	return payload.Albums.Items, nil
+	return mapSpotifyResults(results.Albums.Albums, spotifyAlbumResult), nil
 }
 
 func (h *Handler) getSpotifyAlbum(ctx context.Context, spotifyID string) (*SpotifyAlbumSearchResult, error) {
-	var album SpotifyAlbumSearchResult
-	if err := h.executeSpotifyJSONRequest(
-		ctx,
-		spotifyAPIBaseURL+"/albums/"+url.PathEscape(spotifyID),
-		&album,
-	); err != nil {
+	album, err := h.spotifyClient.GetAlbum(ctx, spotify.ID(url.PathEscape(spotifyID)))
+	if err != nil {
 		return nil, err
 	}
 
-	return &album, nil
+	result := spotifyAlbumResult(album.SimpleAlbum)
+	return &result, nil
+}
+
+func spotifyArtistResult(artist spotify.FullArtist) SpotifyArtistSearchResult {
+	return SpotifyArtistSearchResult{
+		ID: string(artist.ID), Name: artist.Name, Images: mapSpotifyResults(artist.Images, spotifyImage),
+	}
+}
+
+func spotifyAlbumResult(album spotify.SimpleAlbum) SpotifyAlbumSearchResult {
+	return SpotifyAlbumSearchResult{
+		ID: string(album.ID), Name: album.Name, ReleaseDate: album.ReleaseDate,
+		Images: mapSpotifyResults(album.Images, spotifyImage),
+		Artists: mapSpotifyResults(album.Artists, func(artist spotify.SimpleArtist) SpotifyAlbumArtist {
+			return SpotifyAlbumArtist{ID: string(artist.ID), Name: artist.Name}
+		}),
+	}
+}
+
+func spotifyImage(image spotify.Image) SpotifyImage {
+	return SpotifyImage{URL: image.URL, Width: int(image.Width), Height: int(image.Height)}
+}
+
+func mapSpotifyResults[In, Out any](items []In, convert func(In) Out) []Out {
+	result := make([]Out, len(items))
+	for index, item := range items {
+		result[index] = convert(item)
+	}
+	return result
 }
