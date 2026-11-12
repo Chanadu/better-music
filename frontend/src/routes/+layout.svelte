@@ -61,14 +61,15 @@
 		appSettings.load();
 		void preloadLibraryPages();
 
-		const visibility = () => {
-			if (document.visibilityState === 'visible') void refreshDatabaseSafely();
+		const focus = () => {
+			if (ready && !authPage && !previewPage && hasStoredSession()) void refreshDatabaseSafely();
 		};
-
-		const focus = () => void refreshDatabaseSafely();
+		const visibility = () => {
+			if (document.visibilityState === 'visible') focus();
+		};
 		const reconnect = () => {
 			void preloadLibraryPages();
-			void refreshDatabaseSafely();
+			focus();
 		};
 
 		void (async () => {
@@ -78,8 +79,15 @@
 				return;
 			}
 
+			document.addEventListener('visibilitychange', visibility);
+			window.addEventListener('focus', focus);
+			window.addEventListener('online', reconnect);
+			window.addEventListener('offline', markOffline);
+
 			const cached = await getDatabaseData();
-			const authenticated = await hasRemoteSession();
+			// A session refresh can stall even while the webview reports it is online.
+			if (cached && hasStoredSession()) ready = true;
+			const authenticated = navigator.onLine && (await hasRemoteSession());
 
 			if (!authenticated && (!cached || !hasStoredSession()) && !$storageProblem) {
 				location.assign('/login');
@@ -94,11 +102,6 @@
 			ready = true;
 			await tick();
 			if (authenticated) void refreshDatabaseSafely();
-
-			document.addEventListener('visibilitychange', visibility);
-			window.addEventListener('focus', focus);
-			window.addEventListener('online', reconnect);
-			window.addEventListener('offline', markOffline);
 		})();
 
 		return () => {

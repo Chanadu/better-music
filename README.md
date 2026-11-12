@@ -260,14 +260,13 @@ Keep regular PostgreSQL backups for the server library. The in-app JSON export i
 
 - [x] SuperTokens authentication implemented locally; deployment validation remains
 - [x] Huma API and Orval-generated client deployed to the Raspberry Pi
-- [x] Spotify Go SDK implemented on main, with Raspberry Pi verification pending
+- [x] Spotify Go SDK deployed and smoke-tested on the Raspberry Pi
 
 Remaining migration order
 
-1. Deploy and smoke-test the Spotify Go SDK migration on the Raspberry Pi.
-2. Integrate Wails and get the current frontend working on one desktop platform.
+1. Integrate Wails and get the current frontend working on one desktop platform.
+2. Finish Wails packaging and verify the packaged app on the target platforms.
 3. Redesign the UI with Flowbite Svelte and Lucide.
-4. Finish Wails packaging and verify the redesigned app on the target platforms.
 
 More features:
 
