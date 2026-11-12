@@ -19,7 +19,3 @@
 
 	<AccountSettings />
 </div>
-
-<div class="mx-auto mb-6 max-w-5xl text-center">
-	<a class="link link-primary" href="/preview"> Visual component preview </a>
-</div>

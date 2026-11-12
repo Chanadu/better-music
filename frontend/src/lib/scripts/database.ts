@@ -52,6 +52,7 @@ type Context = {
 	active: number;
 	activeKinds: Set<Kind>;
 	lastError: string | null;
+	sessionRejected: boolean;
 	closed: boolean;
 	timer?: ReturnType<typeof setInterval>;
 };
@@ -86,6 +87,7 @@ function sortObject(value: any): any {
 }
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const syncSignInMessage = 'Sign in to the same account to resume sync. Your changes remain saved locally.';
 export const parseEntityId = (value: string | null): EntityId | null => (value && uuid.test(value) ? value : null);
 export const markOffline = () => syncStatus.update((s) => ({ ...s, state: 'offline' }));
 export const markConnecting = () => syncStatus.update((s) => ({ ...s, state: 'connecting' }));
@@ -189,6 +191,8 @@ function schema(kind: Kind) {
 
 async function syncRequest<T>(ctx: Context, kind: Kind, request: (init: RequestInit) => Promise<T>): Promise<T> {
 	if (!isCurrent(ctx)) throw new Error('Account changed');
+	if (ctx.sessionRejected) throw new Error(syncSignInMessage);
+	if (!navigator.onLine) throw new Error('Connect to the server to sync your library.');
 
 	try {
 		return await request({ signal: AbortSignal.timeout(30000) }).finally(() => {
@@ -196,6 +200,15 @@ async function syncRequest<T>(ctx: Context, kind: Kind, request: (init: RequestI
 		});
 	} catch (error) {
 		if (!(error instanceof ApiError)) throw error;
+		if (error.status === 401) {
+			if (!ctx.sessionRejected) {
+				ctx.sessionRejected = true;
+				ctx.lastError = syncSignInMessage;
+				markSyncError(syncSignInMessage);
+				void Promise.allSettled(ctx.replications.map((replication) => replication.pause()));
+			}
+			throw new Error(syncSignInMessage);
+		}
 
 		const result = error.body as Partial<PushLibraryErrorResponse> | null;
 		const problems: SyncProblem[] = [];
@@ -313,6 +326,7 @@ async function openLibrary(): Promise<Context> {
 				active: 0,
 				activeKinds: new Set(),
 				lastError: null,
+				sessionRejected: false,
 				closed: false,
 			};
 
@@ -405,7 +419,7 @@ async function openLibrary(): Promise<Context> {
 				ctx.replications.push(replication);
 				ctx.subscriptions.push(
 					replication.error$.subscribe((error) => {
-						if (!isCurrent(ctx)) return;
+						if (!isCurrent(ctx) || ctx.sessionRejected || !navigator.onLine) return;
 
 						ctx.lastError =
 							(error.parameters.errors as { message?: string }[] | undefined)?.[0]?.message ??
@@ -485,6 +499,7 @@ export const retryLocalStorage = async () => {
 
 export async function refreshDatabaseData(): Promise<DatabaseData> {
 	const ctx = await openLibrary();
+	if (ctx.sessionRejected) throw new Error(syncSignInMessage);
 	const before = await localLock(ctx, async () => (await ctx.db.dirty.find().exec()).map((d) => d.toJSON()));
 	ctx.lastError = null;
 	markConnecting();

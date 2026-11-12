@@ -14,6 +14,7 @@ func main() {
 
 	fmt.Println("test")
 	server := flag.String("server", "http://localhost:5173", "Better Music server URL")
+	inspect := flag.Bool("inspect", false, "Open the webview inspector at startup")
 
 	flag.Parse()
 
@@ -30,10 +31,12 @@ func main() {
 
 	app := application.New(application.Options{Name: "Better Music"})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  "Better Music",
-		URL:    target.String(),
-		Width:  1100,
-		Height: 760,
+		Title:                  "Better Music",
+		URL:                    target.String(),
+		Width:                  1100,
+		Height:                 760,
+		DevToolsEnabled:        *inspect,
+		OpenInspectorOnStartup: *inspect,
 	})
 
 	if err := app.Run(); err != nil {
