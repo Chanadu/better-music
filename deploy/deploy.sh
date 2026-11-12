@@ -3,10 +3,10 @@ set -euo pipefail
 
 APP_DIR="/home/pi/better-music"
 
-echo "==> updating repo"
-cd "$APP_DIR"
-git fetch origin
-git reset --hard origin/main
+# echo "==> updating repo"
+# cd "$APP_DIR"
+# git fetch origin
+# git reset --hard origin/main
 
 echo "==> building backend"
 cd "$APP_DIR/backend"
