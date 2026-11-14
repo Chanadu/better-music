@@ -1,0 +1,5 @@
+ios:
+  bundleID: com.chanadu.bettermusic
+  displayName: Better Music
+  version: "0.0.1"
+  minIOSVersion: "15.0"
