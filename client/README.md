@@ -63,3 +63,17 @@ On GitHub, open **Actions → Better Music iOS IPA → Run workflow**. After the
 With LocalDevVPN connected, import the IPA into SideStore on the iPhone. SideStore signs it with your Apple Account. Switch back to Tailscale before opening Better Music so the app can reach the Pi.
 
 The IPA opens the hosted Better Music site. Verify sign-in, navigation, and scrolling on the iPhone.
+
+### Update with Shortcuts
+
+Successful builds on `main` publish the IPA to the [iOS preview release](https://github.com/Chanadu/better-music/releases/tag/ios-preview). Once the first build publishes it, create a shortcut named **Update Better Music** with these actions:
+
+1. Connect **LocalDevVPN** using **Set VPN**.
+2. Add **Wait** and set it to five seconds.
+3. Add **Open URLs** with this URL:
+
+   ```text
+   sidestore://install?url=https%3A%2F%2Fgithub.com%2FChanadu%2Fbetter-music%2Freleases%2Fdownload%2Fios-preview%2FBetter-Music.ipa
+   ```
+
+Run the shortcut while on Wi-Fi and follow any prompts in SideStore. Keep LocalDevVPN connected until installation finishes. The daily refresh shortcut renews the installed app's signature.
