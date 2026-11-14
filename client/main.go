@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"net/url"
@@ -12,9 +11,9 @@ import (
 
 func main() {
 
-	fmt.Println("test")
-	server := flag.String("server", "http://localhost:5173", "Better Music server URL")
+	server := flag.String("server", defaultServerURL, "Better Music server URL")
 	inspect := flag.Bool("inspect", false, "Open the webview inspector at startup")
+	bundle := flag.Bool("bundled", false, "Serve the embedded frontend and forward API requests to -server")
 
 	flag.Parse()
 
@@ -30,14 +29,21 @@ func main() {
 	}
 
 	app := application.New(application.Options{Name: "Better Music"})
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
+	options := application.WebviewWindowOptions{
 		Title:                  "Better Music",
 		URL:                    target.String(),
 		Width:                  1100,
 		Height:                 760,
 		DevToolsEnabled:        *inspect,
 		OpenInspectorOnStartup: *inspect,
-	})
+	}
+	if *bundle {
+		if err := runBundled(app, options, target); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+	app.Window.NewWithOptions(options)
 
 	if err := app.Run(); err != nil {
 		log.Fatal(err)
