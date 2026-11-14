@@ -13,7 +13,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: better-music-ios-${{ github.ref }}
 
 jobs:
   build:
@@ -36,3 +39,14 @@ jobs:
           name: Better-Music-iOS
           path: client/packages/Better-Music.ipa
           if-no-files-found: error
+      - name: Publish IPA for SideStore
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view ios-preview >/dev/null 2>&1; then
+            gh release create ios-preview --target "$GITHUB_SHA" \
+              --title "Better Music iOS Preview" --prerelease --latest=false \
+              --notes "Latest successful iPhone build from main. Install with SideStore."
+          fi
+          gh release upload ios-preview client/packages/Better-Music.ipa --clobber
