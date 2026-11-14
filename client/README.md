@@ -56,13 +56,13 @@ Sign in with a test account. Check that the library loads, then quit and reopen 
 
 To build a Linux executable from `client/`, run `go build -o /tmp/better-music-wails .` and launch it with the same `-server` argument.
 
-## Install the hosted iPhone client with SideStore
+## Install the iPhone client with SideStore
 
 On GitHub, open **Actions → Better Music iOS IPA → Run workflow**. After the build succeeds, download the **Better-Music-iOS** artifact and extract `Better-Music.ipa` from it.
 
-With LocalDevVPN connected, import the IPA into SideStore on the iPhone. SideStore signs it with your Apple Account. Switch back to Tailscale before opening Better Music so the app can reach the Pi.
+With LocalDevVPN connected, import the IPA into SideStore on the iPhone. SideStore signs it with your Apple Account. Disconnect LocalDevVPN after installation.
 
-The IPA opens the hosted Better Music site. Verify sign-in, navigation, and scrolling on the iPhone.
+The IPA embeds the Better Music frontend and forwards API requests to the Pi. After upgrading from the hosted IPA, sign in while online so the bundled client can populate its local library. Its local HTTPS origin has separate webview storage. Sync any pending edits in the hosted version before upgrading.
 
 ### Update with Shortcuts
 

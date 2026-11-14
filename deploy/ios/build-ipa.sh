@@ -16,13 +16,19 @@ mkdir -p "$work/build"
 cp "$repo/frontend/static/pwa-icon-512.png" "$work/build/appicon.png"
 (cd "$work" && wails3 ios xcode:gen -outdir "$project" -config "$config")
 
-cd "$repo/client"
+# Build in a temporary module so the generated frontend stays out of the checkout.
+npm --prefix "$repo/frontend" ci
+npm --prefix "$repo/frontend" run build -- --mode wails
+mkdir -p "$work/client/ui"
+cp "$repo/client/"*.go "$repo/client/"*.m "$repo/client/go.mod" "$repo/client/go.sum" "$work/client/"
+cp -R "$repo/frontend/build/." "$work/client/ui/"
+cd "$work/client"
 wails3 ios overlay:gen -out "$project/overlay.json" -config "$config"
 
 GOOS=ios GOARCH=arm64 CGO_ENABLED=1 \
     CGO_CFLAGS="-isysroot $sdk -target $target -miphoneos-version-min=$minimum" \
     CGO_LDFLAGS="-isysroot $sdk -target $target" \
-    go build -buildmode=c-archive -tags production -trimpath -buildvcs=false \
+    go build -buildmode=c-archive -tags production,bundle -trimpath -buildvcs=false \
     -overlay "$project/overlay.json" -o "$work/client.a" .
 
 mkdir -p "$app"

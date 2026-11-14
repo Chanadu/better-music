@@ -14,7 +14,7 @@ func main() {
 
 	server := flag.String("server", defaultServerURL, "Better Music server URL")
 	inspect := flag.Bool("inspect", false, "Open the webview inspector at startup")
-	bundle := flag.Bool("bundled", false, "Serve the embedded frontend and forward API requests to -server")
+	bundle := flag.Bool("bundled", runtime.GOOS == "ios", "Serve the embedded frontend and forward API requests to -server")
 
 	flag.Parse()
 

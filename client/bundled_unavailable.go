@@ -1,4 +1,4 @@
-//go:build !bundle || !linux || android || gtk3 || !cgo
+//go:build !bundle || !cgo || (!ios && (!linux || android || gtk3))
 
 package main
 
@@ -10,5 +10,5 @@ import (
 )
 
 func runBundled(_ *application.App, _ application.WebviewWindowOptions, _ *url.URL) error {
-	return errors.New("bundled mode requires a Linux GTK4 build with CGO and the bundle tag; see client/README.md")
+	return errors.New("bundled mode requires an iOS or Linux GTK4 build with CGO and the bundle tag; see client/README.md")
 }
