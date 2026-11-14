@@ -11,8 +11,12 @@ sdk=$(xcrun --sdk iphoneos --show-sdk-path)
 minimum=$(awk -F'"' '/minIOSVersion:/ {print $2}' "$config")
 target="arm64-apple-ios${minimum}"
 
+# Wails reads build/appicon.png relative to the generator's working directory.
+mkdir -p "$work/build"
+cp "$repo/frontend/static/pwa-icon-512.png" "$work/build/appicon.png"
+(cd "$work" && wails3 ios xcode:gen -outdir "$project" -config "$config")
+
 cd "$repo/client"
-wails3 ios xcode:gen -outdir "$project" -config "$config"
 wails3 ios overlay:gen -out "$project/overlay.json" -config "$config"
 
 GOOS=ios GOARCH=arm64 CGO_ENABLED=1 \

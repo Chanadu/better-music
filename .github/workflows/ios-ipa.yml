@@ -1,6 +1,15 @@
 name: Better Music iOS IPA
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-ipa.yml'
+      - 'client/*.go'
+      - 'client/go.mod'
+      - 'client/go.sum'
+      - 'deploy/ios/**'
+      - 'frontend/static/pwa-icon-512.png'
   workflow_dispatch:
 
 permissions:

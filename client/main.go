@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"runtime"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -28,7 +29,7 @@ func main() {
 		}
 	}
 
-	app := application.New(application.Options{Name: "Better Music"})
+	appOptions := application.Options{Name: "Better Music"}
 	options := application.WebviewWindowOptions{
 		Title:                  "Better Music",
 		URL:                    target.String(),
@@ -37,6 +38,13 @@ func main() {
 		DevToolsEnabled:        *inspect,
 		OpenInspectorOnStartup: *inspect,
 	}
+	if runtime.GOOS == "ios" {
+		// UIKit paints outside the webview's safe-area bounds.
+		background := application.RGBA{Red: 0x28, Green: 0x31, Blue: 0x42, Alpha: 0xff}
+		appOptions.IOS.BackgroundColour = background
+		options.BackgroundColour = background
+	}
+	app := application.New(appOptions)
 	if *bundle {
 		if err := runBundled(app, options, target); err != nil {
 			log.Fatal(err)
