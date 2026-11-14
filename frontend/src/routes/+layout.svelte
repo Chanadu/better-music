@@ -53,7 +53,7 @@
 	});
 
 	onMount(() => {
-		registerSW();
+		if (import.meta.env.MODE !== 'wails') registerSW();
 		const unsubscribeSession = subscribeSessionChanges(() => {
 			if (!authPage && !previewPage) location.assign(hasStoredSession() ? '/' : '/login');
 		});

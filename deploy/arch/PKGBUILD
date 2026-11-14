@@ -1,0 +1,24 @@
+pkgname=better-music
+pkgver=0.0.1
+pkgrel=1
+pkgdesc='Better Music desktop client'
+arch=('x86_64')
+url='https://github.com/Chanadu/better-music'
+license=('MIT')
+depends=('gtk4' 'webkitgtk-6.0' 'libx11')
+source=('better-music-bin' 'better-music.desktop' 'app-icon.svg' 'LICENSE')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+    install -Dm755 better-music-bin "$pkgdir/usr/lib/better-music/better-music"
+    install -Dm644 better-music.desktop "$pkgdir/usr/share/applications/better-music.desktop"
+    install -Dm644 app-icon.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/better-music.svg"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/better-music/LICENSE"
+    install -dm755 "$pkgdir/usr/bin"
+    cat > "$pkgdir/usr/bin/better-music" <<'LAUNCHER'
+#!/bin/sh
+exec /usr/lib/better-music/better-music -bundled \
+    -server "${BETTER_MUSIC_SERVER:-https://web-pi.tail559d08.ts.net}" "$@"
+LAUNCHER
+    chmod 755 "$pkgdir/usr/bin/better-music"
+}

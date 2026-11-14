@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Better Music
+Comment=Track albums and listening history
+Exec=better-music
+Icon=better-music
+Terminal=false
+Categories=AudioVideo;Audio;
