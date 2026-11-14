@@ -1,0 +1,29 @@
+name: Better Music iOS IPA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: client/go.mod
+          cache-dependency-path: client/go.sum
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+      - name: Build device IPA for SideStore
+        run: |
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          bash deploy/ios/build-ipa.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Better-Music-iOS
+          path: client/packages/Better-Music.ipa
+          if-no-files-found: error
