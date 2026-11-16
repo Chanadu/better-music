@@ -18,4 +18,6 @@
 	<div class="divider my-8 sm:my-10"></div>
 
 	<AccountSettings />
+
+	<a class="btn btn-outline btn-sm mt-8 self-start" href="/preview">Component preview</a>
 </div>
