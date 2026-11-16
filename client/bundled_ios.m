@@ -12,6 +12,7 @@
 @end
 
 extern void ios_native_tabs_set_items_json(const char *json);
+void openBetterMusicLivePreview(UIViewController *presenter, NSString *address);
 
 @interface BetterMusicPreviewTabs : NSObject <WKScriptMessageHandler>
 @property (nonatomic, weak) WailsViewController *controller;
@@ -23,10 +24,18 @@ extern void ios_native_tabs_set_items_json(const char *json);
     WKSecurityOrigin *origin = message.frameInfo.securityOrigin;
     if (!message.frameInfo.isMainFrame ||
         ![origin.protocol isEqualToString:@"https"] ||
-        ![origin.host isEqualToString:@"localhost"] || origin.port != 43179 ||
-        ![message.body isKindOfClass:[NSNumber class]]) {
+        ![origin.host isEqualToString:@"localhost"] || origin.port != 43179) {
         return;
     }
+
+    if ([message.name isEqualToString:@"betterMusicLivePreview"]) {
+        if ([message.webView.URL.path isEqualToString:@"/more"] &&
+            [message.body isKindOfClass:[NSString class]]) {
+            openBetterMusicLivePreview(self.controller, message.body);
+        }
+        return;
+    }
+    if (![message.body isKindOfClass:[NSNumber class]]) return;
 
     NSInteger index = [message.body integerValue];
     BOOL show = [message.webView.URL.path isEqualToString:@"/preview/redesign"] && (index == 0 || index == 1);
@@ -52,6 +61,7 @@ static void installPreviewTabs(WailsViewController *controller, WKWebView *webVi
     handler.controller = controller;
     WKUserContentController *content = webView.configuration.userContentController;
     [content addScriptMessageHandler:handler name:@"betterMusicPreviewTabs"];
+    [content addScriptMessageHandler:handler name:@"betterMusicLivePreview"];
     // Full-page navigation out of the preview hides the native bar before the
     // next page renders, even if the next page has no Svelte navigation code.
     WKUserScript *reset = [[WKUserScript alloc] initWithSource:

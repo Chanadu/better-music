@@ -66,6 +66,20 @@ With LocalDevVPN connected, import the IPA into SideStore on the iPhone. SideSto
 
 The IPA embeds the Better Music frontend and forwards API requests to the Pi. After upgrading from the hosted IPA, sign in while online so the bundled client can populate its local library. Its local HTTPS origin has separate webview storage. Sync any pending edits in the hosted version before upgrading.
 
+### Preview frontend changes live on iPhone
+
+Run Vite from the repository root and leave it running:
+
+```sh
+npm --prefix frontend run dev -- --host 127.0.0.1 --port 5193 --strictPort
+```
+
+In a second terminal, run `tailscale serve 5193` and copy the HTTPS address it prints. The laptop hostname must be in `server.allowedHosts` in the Vite config.
+
+Connect the iPhone to the same tailnet. In Better Music, open **More → Developer**, paste the HTTPS address, and tap **Open live preview**. Vite serves the sample redesign and reloads frontend edits. The preview has its own webview and native tabs. Tap **Done** to return to the bundled app.
+
+Changes to the native preview code still require an IPA update.
+
 ### Update with Shortcuts
 
 Successful builds on `main` publish the IPA to the [iOS preview release](https://github.com/Chanadu/better-music/releases/tag/ios-preview). Once the first build publishes it, create a shortcut named **Update Better Music** with these actions:

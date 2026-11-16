@@ -26,9 +26,12 @@
 	let screen = $state<'artists' | 'album'>('artists');
 	type PreviewTabs = { postMessage(index: number): void };
 	type PreviewWindow = Window & {
-		webkit?: { messageHandlers?: { betterMusicPreviewTabs?: PreviewTabs } };
+		webkit?: {
+			messageHandlers?: { betterMusicPreviewTabs?: PreviewTabs; betterMusicLivePreviewTabs?: PreviewTabs };
+		};
 	};
 	let nativeTabs = $state.raw<PreviewTabs>();
+	let livePreview = $state(false);
 	let query = $state('');
 	let alphabetical = $state(false);
 	let saved = $state(true);
@@ -47,9 +50,11 @@
 	}
 
 	onMount(() => {
-		const bridge = (window as PreviewWindow).webkit?.messageHandlers?.betterMusicPreviewTabs;
+		const handlers = (window as PreviewWindow).webkit?.messageHandlers;
+		const bridge = handlers?.betterMusicLivePreviewTabs ?? handlers?.betterMusicPreviewTabs;
 		if (!bridge) return;
 
+		livePreview = !!handlers?.betterMusicLivePreviewTabs;
 		nativeTabs = bridge;
 		const sync = () => bridge.postMessage(screen === 'artists' ? 0 : 1);
 		const hide = () => bridge.postMessage(-1);
@@ -98,7 +103,9 @@
 				onclick={() => show('album')}><Disc3 size={18} /> Album detail</button
 			>
 		</nav>
-		<a class="exit" href="/preview">Component preview <ArrowUpRight size={15} /></a>
+		{#if !livePreview}
+			<a class="exit" href="/preview">Component preview <ArrowUpRight size={15} /></a>
+		{/if}
 	</aside>
 	<main>
 		{#if screen === 'artists'}
