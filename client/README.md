@@ -78,6 +78,8 @@ In a second terminal, run `tailscale serve 5193` and copy the HTTPS address it p
 
 Connect the iPhone to the same tailnet. In Better Music, open **More → Developer**, paste the HTTPS address, and tap **Open live preview**. Vite serves the sample redesign and reloads frontend edits. The preview has its own webview and native tabs. Tap **Done** to return to the bundled app.
 
+If the iPhone cannot resolve the Tailscale hostname, run `tailscale serve --tcp=5194 tcp://127.0.0.1:5193` and use the laptop’s Tailscale IPv4 address with port 5194, for example `http://100.64.0.2:5194`. Keep the TCP forwarding command running while you use the preview.
+
 Changes to the native preview code still require an IPA update.
 
 ### Update with Shortcuts

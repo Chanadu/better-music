@@ -2,6 +2,12 @@
 
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
+#import <arpa/inet.h>
+
+static NSInteger previewPort(NSURL *url) {
+    if (url.port) return url.port.integerValue;
+    return [url.scheme.lowercaseString isEqualToString:@"https"] ? 443 : 80;
+}
 
 @interface BetterMusicLivePreview : UIViewController <WKNavigationDelegate, UITabBarDelegate>
 @property (nonatomic, strong) NSURL *previewURL;
@@ -78,9 +84,9 @@
 }
 
 - (BOOL)allowsURL:(NSURL *)url {
-    return [url.scheme.lowercaseString isEqualToString:@"https"] &&
+    return [url.scheme.lowercaseString isEqualToString:self.previewURL.scheme.lowercaseString] &&
         [url.host.lowercaseString isEqualToString:self.previewURL.host.lowercaseString] &&
-        (!url.port || url.port.integerValue == 443) &&
+        previewPort(url) == previewPort(self.previewURL) &&
         !url.user && !url.password &&
         [url.path isEqualToString:self.previewURL.path];
 }
@@ -101,7 +107,7 @@
     withError:(NSError *)error {
     if (error.code == NSURLErrorCancelled || !self.view.window || self.presentedViewController) return;
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Couldn’t load the live preview"
-        message:@"Check that Vite is running and that this iPhone is connected to Tailscale."
+        message:error.localizedDescription
         preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
@@ -126,9 +132,14 @@
 
 void openBetterMusicLivePreview(UIViewController *presenter, NSString *address) {
     NSURLComponents *url = [NSURLComponents componentsWithString:address];
-    if (![url.scheme.lowercaseString isEqualToString:@"https"] ||
-        ![url.host.lowercaseString hasSuffix:@".ts.net"] ||
-        (url.port && url.port.integerValue != 443) || url.user || url.password ||
+    BOOL tailscaleHTTPS = [url.scheme.lowercaseString isEqualToString:@"https"] &&
+        [url.host.lowercaseString hasSuffix:@".ts.net"] && (!url.port || url.port.integerValue == 443);
+    struct in_addr addressIPv4;
+    BOOL tailscaleIP = [url.scheme.lowercaseString isEqualToString:@"http"] && url.host &&
+        inet_pton(AF_INET, url.host.UTF8String, &addressIPv4) == 1 &&
+        (ntohl(addressIPv4.s_addr) & 0xffc00000) == 0x64400000 &&
+        (!url.port || (url.port.integerValue > 0 && url.port.integerValue <= 65535));
+    if ((!tailscaleHTTPS && !tailscaleIP) || url.user || url.password ||
         ![url.path isEqualToString:@"/preview/redesign"] || url.query || url.fragment) return;
 
     NSURL *previewURL = url.URL;

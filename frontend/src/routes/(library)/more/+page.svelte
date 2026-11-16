@@ -9,6 +9,7 @@
 		webkit?: { messageHandlers?: { betterMusicLivePreview?: LivePreview } };
 	};
 	const previewUrlKey = 'better-music-live-preview-url';
+	const invalidPreviewUrl = 'Enter a Tailscale HTTPS address or an HTTP URL with a Tailscale IPv4 address.';
 	let livePreview = $state.raw<LivePreview>();
 	let laptopUrl = $state('');
 	let previewError = $state('');
@@ -24,17 +25,21 @@
 		try {
 			url = new URL(laptopUrl.trim());
 		} catch {
-			previewError = 'Enter the HTTPS address shown by Tailscale Serve.';
+			previewError = invalidPreviewUrl;
 			return;
 		}
-		if (
-			url.protocol !== 'https:' ||
-			!url.hostname.endsWith('.ts.net') ||
-			url.port ||
-			url.username ||
-			url.password
-		) {
-			previewError = 'Enter the HTTPS address shown by Tailscale Serve.';
+		const tailscaleHttps = url.protocol === 'https:' && url.hostname.endsWith('.ts.net') && !url.port;
+		const [, secondOctet, thirdOctet, fourthOctet] = url.hostname.split('.').map(Number);
+		const tailscaleIp =
+			url.protocol === 'http:' &&
+			/^100(?:\.\d{1,3}){3}$/.test(url.hostname) &&
+			secondOctet >= 64 &&
+			secondOctet <= 127 &&
+			thirdOctet <= 255 &&
+			fourthOctet <= 255 &&
+			url.port !== '0';
+		if ((!tailscaleHttps && !tailscaleIp) || url.username || url.password) {
+			previewError = invalidPreviewUrl;
 			return;
 		}
 		previewError = '';
