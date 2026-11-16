@@ -3,6 +3,7 @@
 package main
 
 /*
+#cgo CFLAGS: -x objective-c -fobjc-arc
 void pinBetterMusicLoopbackCertificate(const void *der, unsigned long length);
 */
 import "C"

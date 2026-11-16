@@ -50,6 +50,8 @@ sudo pacman -U client/packages/better-music-0.0.1-1-x86_64.pkg.tar.zst
 
 Open **Better Music** from your application menu or run `better-music` in a terminal. The launcher defaults to the project's Pi deployment. To use a different Better Music deployment, set `BETTER_MUSIC_SERVER` to its HTTPS origin before the first launch.
 
+GTK4 uses the installed desktop entry to display the Better Music icon in the taskbar. The Arch package installs that entry and the icon.
+
 ## Verify hosted mode
 
 Sign in with a test account. Check that the library loads, then quit and reopen the app to check session persistence. Offline startup in hosted mode depends on the site's service worker and the webview's cache.

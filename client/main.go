@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"flag"
 	"log"
 	"net"
@@ -9,6 +10,9 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
+
+//go:embed app-icon.png
+var appIcon []byte
 
 func main() {
 
@@ -29,7 +33,13 @@ func main() {
 		}
 	}
 
-	appOptions := application.Options{Name: "Better Music"}
+	appOptions := application.Options{
+		Name: "Better Music",
+		Icon: appIcon,
+		Linux: application.LinuxOptions{
+			ProgramName: "better-music",
+		},
+	}
 	options := application.WebviewWindowOptions{
 		Title:                  "Better Music",
 		URL:                    target.String(),

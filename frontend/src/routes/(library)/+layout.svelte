@@ -1,5 +1,5 @@
 <script lang="ts">
-	import '../app.css';
+	import '../../app.css';
 	import { beforeNavigate, preloadCode } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount, tick } from 'svelte';
@@ -24,7 +24,8 @@
 
 	let { children } = $props();
 	let ready = $state(false);
-	let previewPage = $derived(page.url.pathname === '/preview');
+	const isPreviewPath = (path: string) => path === '/preview';
+	let previewPage = $derived(isPreviewPath(page.url.pathname));
 	let authPage = $derived(
 		page.url.pathname === '/login' ||
 			page.url.pathname === '/create-account' ||
@@ -46,7 +47,7 @@
 	// The preview has no session initialization. Remount the layout when crossing
 	// its boundary so normal library routes always run their authentication flow.
 	beforeNavigate(({ to, cancel }) => {
-		if (to && previewPage !== (to.url.pathname === '/preview')) {
+		if (to && (to.route.id?.startsWith('/(redesign)/') || previewPage !== isPreviewPath(to.url.pathname))) {
 			cancel();
 			location.assign(to.url.href);
 		}

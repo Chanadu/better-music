@@ -4,5 +4,6 @@ Name=Better Music
 Comment=Track albums and listening history
 Exec=better-music
 Icon=better-music
+StartupWMClass=better-music
 Terminal=false
 Categories=AudioVideo;Audio;

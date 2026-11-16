@@ -16,8 +16,11 @@
 		"generate:api": "svelte-kit sync && (cd ../backend && go run ./cmd/openapi) > openapi.json && orval && prettier --write src/lib/scripts/generated"
 	},
 	"dependencies": {
+		"@lucide/svelte": "^1.72.0",
 		"@tailwindcss/vite": "4.2.4",
 		"daisyui": "5.5.19",
+		"flowbite": "^4.0.2",
+		"flowbite-svelte": "^1.33.1",
 		"rxdb": "17.6.0",
 		"supertokens-web-js": "0.16.0",
 		"tailwindcss": "4.2.4",
