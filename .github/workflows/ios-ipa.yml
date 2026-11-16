@@ -7,6 +7,7 @@ on:
       - '.github/workflows/ios-ipa.yml'
       - 'client/*.go'
       - 'client/*.m'
+      - 'client/app-icon.png'
       - 'client/go.mod'
       - 'client/go.sum'
       - 'deploy/ios/**'

@@ -21,6 +21,7 @@ npm --prefix "$repo/frontend" ci
 npm --prefix "$repo/frontend" run build -- --mode wails
 mkdir -p "$work/client/ui"
 cp "$repo/client/"*.go "$repo/client/"*.m "$repo/client/go.mod" "$repo/client/go.sum" "$work/client/"
+cp "$repo/client/app-icon.png" "$work/client/"
 cp -R "$repo/frontend/build/." "$work/client/ui/"
 cd "$work/client"
 wails3 ios overlay:gen -out "$project/overlay.json" -config "$config"
