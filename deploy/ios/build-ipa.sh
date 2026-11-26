@@ -34,12 +34,6 @@ GOOS=ios GOARCH=arm64 CGO_ENABLED=1 \
 
 mkdir -p "$app"
 cp "$project/main/Info.plist" "$app/Info.plist"
-# iOS 17+ requires an ATS exception for HTTP to numeric IP addresses.
-/usr/libexec/PlistBuddy \
-    -c 'Add :NSAppTransportSecurity:NSExceptionDomains dict' \
-    -c 'Add :NSAppTransportSecurity:NSExceptionDomains:100.64.0.0/10 dict' \
-    -c 'Add :NSAppTransportSecurity:NSExceptionDomains:100.64.0.0/10:NSExceptionAllowsInsecureHTTPLoads bool true' \
-    "$app/Info.plist"
 executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Info.plist")
 xcrun --sdk iphoneos clang -target "$target" -isysroot "$sdk" \
     -framework Foundation -framework UIKit -framework WebKit \

@@ -129,7 +129,6 @@
 	<header class="border-base-300 border-b px-4 py-8 sm:px-8">
 		<div class="mx-auto max-w-7xl">
 			<a class="link link-primary" href="/more"> ← Back to Better Music </a>
-			<a class="link link-primary ml-4" href="/preview/redesign">Redesign preview</a>
 
 			<div class="mt-4 flex flex-wrap items-end justify-between gap-4">
 				<div>

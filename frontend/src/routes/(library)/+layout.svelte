@@ -47,7 +47,7 @@
 	// The preview has no session initialization. Remount the layout when crossing
 	// its boundary so normal library routes always run their authentication flow.
 	beforeNavigate(({ to, cancel }) => {
-		if (to && (to.route.id?.startsWith('/(redesign)/') || previewPage !== isPreviewPath(to.url.pathname))) {
+		if (to && previewPage !== isPreviewPath(to.url.pathname)) {
 			cancel();
 			location.assign(to.url.href);
 		}
