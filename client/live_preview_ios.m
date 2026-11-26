@@ -3,6 +3,7 @@
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
 #import <arpa/inet.h>
+#import <math.h>
 
 static NSInteger previewPort(NSURL *url) {
     if (url.port) return url.port.integerValue;
@@ -20,10 +21,18 @@ static UIColor *previewColor(id value) {
                            blue:(rgb & 255) / 255.0 alpha:1];
 }
 
+static CGFloat dockNumber(NSDictionary *config, NSString *key, CGFloat fallback, CGFloat minimum, CGFloat maximum) {
+    id value = config[key];
+    if (![value isKindOfClass:NSNumber.class] || !isfinite([value doubleValue])) return fallback;
+    return MIN(maximum, MAX(minimum, [value doubleValue]));
+}
+
 @interface BetterMusicLivePreview : UIViewController <WKNavigationDelegate, UITabBarDelegate>
 @property (nonatomic, strong) NSURL *previewURL;
 @property (nonatomic, strong) WKWebView *webView;
 @property (nonatomic, strong) UITabBar *tabBar;
+@property (nonatomic, strong) UIView *dockContainer;
+@property (nonatomic, strong) NSDictionary *dockConfig;
 - (void)selectTabFromPage:(WKScriptMessage *)message;
 @end
 
@@ -58,10 +67,8 @@ static UIColor *previewColor(id value) {
     [configuration.userContentController addScriptMessageHandler:messages name:@"betterMusicLivePreviewDock"];
     self.webView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:configuration];
     self.webView.navigationDelegate = self;
-    self.webView.translatesAutoresizingMaskIntoConstraints = NO;
 
     self.tabBar = [[UITabBar alloc] init];
-    self.tabBar.translatesAutoresizingMaskIntoConstraints = NO;
     self.tabBar.delegate = self;
     self.tabBar.items = @[
         [[UITabBarItem alloc] initWithTitle:@"Artists" image:[UIImage systemImageNamed:@"person.2"] tag:0],
@@ -69,19 +76,42 @@ static UIColor *previewColor(id value) {
     ];
     self.tabBar.selectedItem = self.tabBar.items.firstObject;
     [self.view addSubview:self.webView];
-    [self.view addSubview:self.tabBar];
-    UILayoutGuide *safeArea = self.view.safeAreaLayoutGuide;
-    [NSLayoutConstraint activateConstraints:@[
-        [self.webView.topAnchor constraintEqualToAnchor:safeArea.topAnchor],
-        [self.webView.leadingAnchor constraintEqualToAnchor:safeArea.leadingAnchor],
-        [self.webView.trailingAnchor constraintEqualToAnchor:safeArea.trailingAnchor],
-        [self.webView.bottomAnchor constraintEqualToAnchor:self.tabBar.topAnchor],
-        [self.tabBar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-        [self.tabBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.tabBar.bottomAnchor constraintEqualToAnchor:safeArea.bottomAnchor],
-        [self.tabBar.heightAnchor constraintEqualToConstant:49],
-    ]];
+    self.dockContainer = [[UIView alloc] init];
+    [self.view addSubview:self.dockContainer];
+    [self.dockContainer addSubview:self.tabBar];
+    self.dockConfig = @{};
     [self loadPreview];
+}
+
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    NSDictionary *config = self.dockConfig;
+    CGRect safe = self.view.safeAreaLayoutGuide.layoutFrame;
+    CGFloat margin = dockNumber(config, @"sideMargin", 0, 0, safe.size.width / 3);
+    CGFloat available = MAX(0, safe.size.width - 2 * margin);
+    CGFloat width = dockNumber(config, @"width", 0, 0, available);
+    if (width == 0) width = available;
+    CGFloat height = dockNumber(config, @"height", 49, 32, 120);
+    CGFloat bottom = dockNumber(config, @"bottomOffset", 0, 0, 120);
+    BOOL visible = ![config[@"visible"] isKindOfClass:NSNumber.class] || [config[@"visible"] boolValue];
+    CGFloat top = visible ? MAX(CGRectGetMinY(safe), CGRectGetMaxY(safe) - bottom - height) : CGRectGetMaxY(safe);
+    self.dockContainer.hidden = !visible;
+    self.dockContainer.frame = CGRectMake(CGRectGetMidX(safe) - width / 2, top, width, height);
+    self.tabBar.frame = self.dockContainer.bounds;
+    self.webView.frame = CGRectMake(safe.origin.x, safe.origin.y, safe.size.width,
+                                    MAX(0, top - safe.origin.y));
+    CGFloat radius = dockNumber(config, @"cornerRadius", 0, 0, height / 2);
+    self.tabBar.layer.cornerRadius = radius;
+    self.tabBar.clipsToBounds = YES;
+    self.tabBar.layer.borderWidth = dockNumber(config, @"borderWidth", 0, 0, 4);
+    self.tabBar.layer.borderColor = (previewColor(config[@"borderColor"]) ?: UIColor.clearColor).CGColor;
+    CALayer *shadow = self.dockContainer.layer;
+    shadow.shadowColor = (previewColor(config[@"shadowColor"]) ?: UIColor.blackColor).CGColor;
+    shadow.shadowOpacity = dockNumber(config, @"shadowOpacity", 0, 0, 1);
+    shadow.shadowRadius = dockNumber(config, @"shadowRadius", 12, 0, 40);
+    shadow.shadowOffset = CGSizeMake(dockNumber(config, @"shadowX", 0, -40, 40),
+                                    dockNumber(config, @"shadowY", 4, -40, 40));
+    shadow.shadowPath = [UIBezierPath bezierPathWithRoundedRect:self.dockContainer.bounds cornerRadius:radius].CGPath;
 }
 
 - (void)loadPreview {
@@ -150,20 +180,41 @@ static UIColor *previewColor(id value) {
         UIColor *background = previewColor(config[@"background"]);
         UIColor *tint = previewColor(config[@"tint"]);
         UIColor *muted = previewColor(config[@"muted"]);
-        if (background) appearance.backgroundColor = background;
+        self.dockConfig = config;
+        if (background) self.view.backgroundColor = background;
+        appearance.backgroundColor = [(background ?: UIColor.secondarySystemBackgroundColor)
+            colorWithAlphaComponent:dockNumber(config, @"backgroundOpacity", 1, 0, 1)];
+        NSString *blur = config[@"blur"];
+        if ([blur isEqual:@"light"]) appearance.backgroundEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterialLight];
+        else if ([blur isEqual:@"dark"]) appearance.backgroundEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterialDark];
+        else if ([blur isEqual:@"system"]) appearance.backgroundEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+        else appearance.backgroundEffect = nil;
+        appearance.shadowColor = UIColor.clearColor;
+        UIFont *font = [UIFont systemFontOfSize:dockNumber(config, @"labelSize", 10, 8, 20)
+                                        weight:UIFontWeightMedium];
+        for (UITabBarItem *tab in items) {
+            CGFloat x = dockNumber(config, @"iconX", 0, -20, 20);
+            CGFloat y = dockNumber(config, @"iconY", 0, -20, 20);
+            tab.imageInsets = UIEdgeInsetsMake(y, x, -y, -x);
+            tab.titlePositionAdjustment = UIOffsetMake(dockNumber(config, @"labelX", 0, -20, 20),
+                                                       dockNumber(config, @"labelY", 0, -20, 20));
+        }
         for (UITabBarItemAppearance *item in @[appearance.stackedLayoutAppearance,
              appearance.inlineLayoutAppearance, appearance.compactInlineLayoutAppearance]) {
+            item.selected.titleTextAttributes = @{NSFontAttributeName:font};
+            item.normal.titleTextAttributes = @{NSFontAttributeName:font};
             if (tint) {
                 item.selected.iconColor = tint;
-                item.selected.titleTextAttributes = @{NSForegroundColorAttributeName:tint};
+                item.selected.titleTextAttributes = @{NSForegroundColorAttributeName:tint, NSFontAttributeName:font};
             }
             if (muted) {
                 item.normal.iconColor = muted;
-                item.normal.titleTextAttributes = @{NSForegroundColorAttributeName:muted};
+                item.normal.titleTextAttributes = @{NSForegroundColorAttributeName:muted, NSFontAttributeName:font};
             }
         }
         self.tabBar.standardAppearance = appearance;
         self.tabBar.scrollEdgeAppearance = appearance;
+        [self.view setNeedsLayout];
         return;
     }
     if (![message.body isKindOfClass:NSNumber.class]) return;

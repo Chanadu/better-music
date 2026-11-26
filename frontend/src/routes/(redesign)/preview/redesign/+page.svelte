@@ -27,17 +27,57 @@
 	// Edit these labels, SF Symbols, and hex colors while live preview is open.
 	const dock = {
 		items: [
-			{ screen: 'artists', title: 'Artists', symbol: 'person.2' },
-			{ screen: 'album', title: 'Album detail', symbol: 'opticaldisc' },
+			{ screen: 'artists', title: 'Artists', symbol: 'person.2.fill' },
+			{ screen: 'album', title: 'Album', symbol: 'square.stack.fill' },
 		],
-		background: '#172234',
-		tint: '#9bc0ff',
-		muted: '#a9b6cc',
+		background: '#1f293a',
+		tint: '#b5ceff',
+		muted: '#8593ab',
+		visible: true,
+		height: 58,
+		width: 0, // Zero fills the available width after side margins.
+		sideMargin: 16,
+		bottomOffset: 8,
+		cornerRadius: 20,
+		borderWidth: 1,
+		borderColor: '#354258',
+		shadowColor: '#000000',
+		shadowOpacity: 0.18,
+		shadowRadius: 12,
+		shadowX: 0,
+		shadowY: 4,
+		backgroundOpacity: 0.9,
+		blur: 'dark',
+		labelSize: 11,
+		iconX: 0,
+		iconY: 0,
+		labelX: 0,
+		labelY: 0,
 	} satisfies {
 		items: { screen: 'artists' | 'album'; title: string; symbol: string }[];
 		background: string;
 		tint: string;
 		muted: string;
+		visible: boolean;
+		height: number;
+		width: number;
+		sideMargin: number;
+		bottomOffset: number;
+		cornerRadius: number;
+		borderWidth: number;
+		borderColor: string;
+		shadowColor: string;
+		shadowOpacity: number;
+		shadowRadius: number;
+		shadowX: number;
+		shadowY: number;
+		backgroundOpacity: number;
+		blur: 'none' | 'light' | 'dark' | 'system';
+		labelSize: number;
+		iconX: number;
+		iconY: number;
+		labelX: number;
+		labelY: number;
 	};
 	type PreviewTabs = { postMessage(index: number): void };
 	type PreviewDock = { postMessage(config: typeof dock): void };
