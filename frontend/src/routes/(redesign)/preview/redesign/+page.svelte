@@ -27,33 +27,32 @@
 	// Edit these labels, SF Symbols, and hex colors while live preview is open.
 	const dock = {
 		items: [
-			{ screen: 'artists', title: 'Artists', symbol: 'person.2' },
-			{ screen: 'album', title: 'Album', symbol: 'opticaldisc' },
+			{ screen: 'artists', title: 'Artists', symbol: 'person.2.fill' },
+			{ screen: 'album', title: 'Album', symbol: 'square.stack.fill' },
 		],
-		background: '#182437',
-		tint: '#bdd5ff',
-		muted: '#a0aec3',
+		background: '#1f293a',
+		tint: '#b5ceff',
+		muted: '#8593ab',
 		visible: true,
-		height: 84,
-		topPadding: 16,
-		width: 320, // Capped to the available width after side margins.
-		sideMargin: 20,
-		bottomOffset: 12,
-		cornerRadius: 26,
-		borderWidth: 1,
-		borderColor: '#3b4b63',
-		shadowColor: '#080e19',
-		shadowOpacity: 0.24,
-		shadowRadius: 20,
+		height: 68,
+		width: 0, // Zero fills the available width after side margins.
+		sideMargin: 0,
+		bottomOffset: 0,
+		cornerRadius: 0,
+		borderWidth: 0,
+		borderColor: '#354258',
+		shadowColor: '#000000',
+		shadowOpacity: 0,
+		shadowRadius: 12,
 		shadowX: 0,
-		shadowY: 8,
-		backgroundOpacity: 0.96,
-		blur: 'dark',
+		shadowY: 4,
+		backgroundOpacity: 1,
+		blur: 'none',
 		labelSize: 11,
 		iconX: 0,
-		iconY: 0,
+		iconY: 4,
 		labelX: 0,
-		labelY: 2,
+		labelY: 4,
 	} satisfies {
 		items: { screen: 'artists' | 'album'; title: string; symbol: string }[];
 		background: string;
@@ -61,7 +60,6 @@
 		muted: string;
 		visible: boolean;
 		height: number;
-		topPadding: number;
 		width: number;
 		sideMargin: number;
 		bottomOffset: number;
@@ -94,7 +92,6 @@
 	};
 	let nativeTabs = $state.raw<PreviewTabs>();
 	let livePreview = $state(false);
-	let liveDockUnavailable = $state(false);
 	let query = $state('');
 	let alphabetical = $state(false);
 	let saved = $state(true);
@@ -118,16 +115,9 @@
 		if (!bridge) return;
 
 		livePreview = !!handlers?.betterMusicLivePreviewTabs;
-		const dockBridge = handlers?.betterMusicLivePreviewDock;
-		liveDockUnavailable = livePreview && !dockBridge;
+		handlers?.betterMusicLivePreviewDock?.postMessage(dock);
 		nativeTabs = bridge;
-		const sync = () => {
-			dockBridge?.postMessage(dock);
-			bridge.postMessage(dock.items.findIndex((item) => item.screen === screen));
-		};
-		const syncWhenVisible = () => {
-			if (document.visibilityState === 'visible') sync();
-		};
+		const sync = () => bridge.postMessage(dock.items.findIndex((item) => item.screen === screen));
 		const hide = () => bridge.postMessage(-1);
 		const select = (event: Event) => {
 			const index = (event as CustomEvent<{ index: number }>).detail.index;
@@ -137,13 +127,10 @@
 		window.addEventListener('nativeTabSelected', select);
 		window.addEventListener('pageshow', sync);
 		window.addEventListener('pagehide', hide);
-		document.addEventListener('visibilitychange', syncWhenVisible);
-		sync();
 		return () => {
 			window.removeEventListener('nativeTabSelected', select);
 			window.removeEventListener('pageshow', sync);
 			window.removeEventListener('pagehide', hide);
-			document.removeEventListener('visibilitychange', syncWhenVisible);
 			hide();
 		};
 	});
@@ -165,18 +152,7 @@
 <div class="design dark" class:native-tabs={!!nativeTabs}>
 	<aside>
 		<div class="brand"><span class="brand-mark"><Disc3 size={23} /></span> Better Music</div>
-		<nav
-			aria-label="Preview screens"
-			style:--dock-background={dock.background}
-			style:--dock-tint={dock.tint}
-			style:--dock-muted={dock.muted}
-			style:--dock-border={dock.borderColor}
-			style:--dock-width={`${dock.width}px`}
-			style:--dock-height={`${dock.height}px`}
-			style:--dock-margin={`${dock.sideMargin}px`}
-			style:--dock-bottom={`${dock.bottomOffset}px`}
-			style:--dock-radius={`${dock.cornerRadius}px`}
-		>
+		<nav aria-label="Preview screens">
 			<button
 				class:active={screen === 'artists'}
 				aria-current={screen === 'artists' ? 'page' : undefined}
@@ -185,7 +161,7 @@
 			<button
 				class:active={screen === 'album'}
 				aria-current={screen === 'album' ? 'page' : undefined}
-				onclick={() => show('album')}><Disc3 size={18} /> Album</button
+				onclick={() => show('album')}><Disc3 size={18} /> Album detail</button
 			>
 		</nav>
 		{#if !livePreview}
@@ -193,11 +169,6 @@
 		{/if}
 	</aside>
 	<main>
-		{#if liveDockUnavailable}
-			<p class="mb-4 text-sm text-(--preview-muted)">
-				Update the Better Music iPhone app to preview dock changes.
-			</p>
-		{/if}
 		{#if screen === 'artists'}
 			<header class="page-title">
 				<h1>Artists</h1>
@@ -390,10 +361,6 @@
 	nav button.active {
 		color: var(--color-primary);
 	}
-	nav button:focus-visible {
-		outline: 2px solid var(--color-primary);
-		outline-offset: 3px;
-	}
 	.exit {
 		margin-top: auto;
 		display: flex;
@@ -515,58 +482,29 @@
 		nav {
 			position: fixed;
 			z-index: 10;
-			inset: auto 0 calc(var(--dock-bottom) + env(safe-area-inset-bottom));
+			inset: auto 0 0;
 			display: grid;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 6px;
-			width: min(
-				var(--dock-width),
-				calc(100% - var(--dock-margin) * 2 - env(safe-area-inset-left) - env(safe-area-inset-right))
-			);
-			min-height: var(--dock-height);
-			margin: 0 auto;
-			background: color-mix(in srgb, var(--dock-background) 96%, transparent);
-			border: 1px solid var(--dock-border);
-			border-radius: var(--dock-radius);
-			padding: 22px 6px 6px;
-			box-shadow: 0 8px 20px #080e193d;
-			backdrop-filter: blur(20px);
-			-webkit-backdrop-filter: blur(20px);
+			gap: 8px;
+			margin: 0;
+			background: var(--color-base-300);
+			border-top: 1px solid var(--preview-border);
+			padding: 8px max(16px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom))
+				max(16px, env(safe-area-inset-left));
 		}
 		nav button {
 			flex-direction: column;
 			justify-content: center;
-			min-height: 54px;
-			padding: 7px 14px;
-			gap: 5px;
-			border-radius: 19px;
-			color: var(--dock-muted);
-			font-size: 11px;
-			font-weight: 600;
-			line-height: 1.2;
-			-webkit-tap-highlight-color: transparent;
-		}
-		nav button:hover {
-			background: color-mix(in srgb, var(--dock-tint) 7%, transparent);
-			color: var(--dock-tint);
-		}
-		nav button.active {
-			background: color-mix(in srgb, var(--dock-tint) 13%, transparent);
-			color: var(--dock-tint);
-			box-shadow: inset 0 1px 0 #ffffff0a;
-		}
-		nav button :global(svg) {
-			width: 21px;
-			height: 21px;
-		}
-		nav button:active {
-			background: color-mix(in srgb, var(--dock-tint) 20%, transparent);
+			min-height: 52px;
+			padding: 6px 10px;
+			gap: 4px;
+			font-size: 12px;
 		}
 		.exit {
 			display: none;
 		}
 		main {
-			padding: calc(20px + env(safe-area-inset-top)) 16px calc(128px + env(safe-area-inset-bottom));
+			padding: calc(20px + env(safe-area-inset-top)) 16px calc(92px + env(safe-area-inset-bottom));
 		}
 		.native-tabs main {
 			padding-bottom: 20px;
