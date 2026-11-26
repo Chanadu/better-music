@@ -9,6 +9,17 @@ static NSInteger previewPort(NSURL *url) {
     return [url.scheme.lowercaseString isEqualToString:@"https"] ? 443 : 80;
 }
 
+static UIColor *previewColor(id value) {
+    if (![value isKindOfClass:NSString.class] || [value length] != 7 ||
+        ![value hasPrefix:@"#"]) return nil;
+    unsigned int rgb;
+    NSScanner *scanner = [NSScanner scannerWithString:[value substringFromIndex:1]];
+    if (![scanner scanHexInt:&rgb] || !scanner.isAtEnd) return nil;
+    return [UIColor colorWithRed:((rgb >> 16) & 255) / 255.0
+                          green:((rgb >> 8) & 255) / 255.0
+                           blue:(rgb & 255) / 255.0 alpha:1];
+}
+
 @interface BetterMusicLivePreview : UIViewController <WKNavigationDelegate, UITabBarDelegate>
 @property (nonatomic, strong) NSURL *previewURL;
 @property (nonatomic, strong) WKWebView *webView;
@@ -44,6 +55,7 @@ static NSInteger previewPort(NSURL *url) {
     BetterMusicLivePreviewMessages *messages = [[BetterMusicLivePreviewMessages alloc] init];
     messages.preview = self;
     [configuration.userContentController addScriptMessageHandler:messages name:@"betterMusicLivePreviewTabs"];
+    [configuration.userContentController addScriptMessageHandler:messages name:@"betterMusicLivePreviewDock"];
     self.webView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:configuration];
     self.webView.navigationDelegate = self;
     self.webView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -114,8 +126,47 @@ static NSInteger previewPort(NSURL *url) {
 }
 
 - (void)selectTabFromPage:(WKScriptMessage *)message {
-    if (!message.frameInfo.isMainFrame || ![self allowsURL:message.frameInfo.request.URL] ||
-        ![message.body isKindOfClass:[NSNumber class]]) return;
+    if (!message.frameInfo.isMainFrame || ![self allowsURL:message.frameInfo.request.URL]) return;
+
+    if ([message.name isEqualToString:@"betterMusicLivePreviewDock"]) {
+        if (![message.body isKindOfClass:NSDictionary.class]) return;
+        NSDictionary *config = message.body;
+        NSArray *tabs = config[@"items"];
+        if (![tabs isKindOfClass:NSArray.class] || tabs.count < 1 || tabs.count > 5) return;
+        NSMutableArray<UITabBarItem *> *items = [NSMutableArray array];
+        for (id entry in tabs) {
+            if (![entry isKindOfClass:NSDictionary.class]) return;
+            NSString *title = entry[@"title"];
+            NSString *symbol = entry[@"symbol"];
+            if (![title isKindOfClass:NSString.class] || ![symbol isKindOfClass:NSString.class]) return;
+            [items addObject:[[UITabBarItem alloc] initWithTitle:title
+                image:[UIImage systemImageNamed:symbol] tag:items.count]];
+        }
+        NSInteger selected = [self.tabBar.items indexOfObject:self.tabBar.selectedItem];
+        self.tabBar.items = items;
+        self.tabBar.selectedItem = items[selected >= 0 && selected < (NSInteger)items.count ? selected : 0];
+        UITabBarAppearance *appearance = [[UITabBarAppearance alloc] init];
+        [appearance configureWithDefaultBackground];
+        UIColor *background = previewColor(config[@"background"]);
+        UIColor *tint = previewColor(config[@"tint"]);
+        UIColor *muted = previewColor(config[@"muted"]);
+        if (background) appearance.backgroundColor = background;
+        for (UITabBarItemAppearance *item in @[appearance.stackedLayoutAppearance,
+             appearance.inlineLayoutAppearance, appearance.compactInlineLayoutAppearance]) {
+            if (tint) {
+                item.selected.iconColor = tint;
+                item.selected.titleTextAttributes = @{NSForegroundColorAttributeName:tint};
+            }
+            if (muted) {
+                item.normal.iconColor = muted;
+                item.normal.titleTextAttributes = @{NSForegroundColorAttributeName:muted};
+            }
+        }
+        self.tabBar.standardAppearance = appearance;
+        self.tabBar.scrollEdgeAppearance = appearance;
+        return;
+    }
+    if (![message.body isKindOfClass:NSNumber.class]) return;
 
     NSInteger index = [message.body integerValue];
     if (index >= 0 && index < (NSInteger)self.tabBar.items.count) {

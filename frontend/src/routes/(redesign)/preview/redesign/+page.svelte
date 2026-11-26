@@ -24,10 +24,30 @@
 	];
 	const addedDate = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' });
 	let screen = $state<'artists' | 'album'>('artists');
+	// Edit these labels, SF Symbols, and hex colors while live preview is open.
+	const dock = {
+		items: [
+			{ screen: 'artists', title: 'Artists', symbol: 'person.2' },
+			{ screen: 'album', title: 'Album detail', symbol: 'opticaldisc' },
+		],
+		background: '#172234',
+		tint: '#9bc0ff',
+		muted: '#a9b6cc',
+	} satisfies {
+		items: { screen: 'artists' | 'album'; title: string; symbol: string }[];
+		background: string;
+		tint: string;
+		muted: string;
+	};
 	type PreviewTabs = { postMessage(index: number): void };
+	type PreviewDock = { postMessage(config: typeof dock): void };
 	type PreviewWindow = Window & {
 		webkit?: {
-			messageHandlers?: { betterMusicPreviewTabs?: PreviewTabs; betterMusicLivePreviewTabs?: PreviewTabs };
+			messageHandlers?: {
+				betterMusicPreviewTabs?: PreviewTabs;
+				betterMusicLivePreviewTabs?: PreviewTabs;
+				betterMusicLivePreviewDock?: PreviewDock;
+			};
 		};
 	};
 	let nativeTabs = $state.raw<PreviewTabs>();
@@ -55,13 +75,14 @@
 		if (!bridge) return;
 
 		livePreview = !!handlers?.betterMusicLivePreviewTabs;
+		handlers?.betterMusicLivePreviewDock?.postMessage(dock);
 		nativeTabs = bridge;
-		const sync = () => bridge.postMessage(screen === 'artists' ? 0 : 1);
+		const sync = () => bridge.postMessage(dock.items.findIndex((item) => item.screen === screen));
 		const hide = () => bridge.postMessage(-1);
 		const select = (event: Event) => {
 			const index = (event as CustomEvent<{ index: number }>).detail.index;
-			if (index === 0) show('artists');
-			if (index === 1) show('album');
+			const item = dock.items[index];
+			if (item) show(item.screen);
 		};
 		window.addEventListener('nativeTabSelected', select);
 		window.addEventListener('pageshow', sync);
@@ -75,7 +96,7 @@
 	});
 
 	$effect(() => {
-		nativeTabs?.postMessage(screen === 'artists' ? 0 : 1);
+		nativeTabs?.postMessage(dock.items.findIndex((item) => item.screen === screen));
 	});
 </script>
 
