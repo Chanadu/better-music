@@ -32,6 +32,7 @@ static CGFloat dockNumber(NSDictionary *config, NSString *key, CGFloat fallback,
 @property (nonatomic, strong) WKWebView *webView;
 @property (nonatomic, strong) UITabBar *tabBar;
 @property (nonatomic, strong) UIView *dockContainer;
+@property (nonatomic, strong) UIVisualEffectView *dockSurface;
 @property (nonatomic, strong) NSDictionary *dockConfig;
 - (void)selectTabFromPage:(WKScriptMessage *)message;
 @end
@@ -78,7 +79,9 @@ static CGFloat dockNumber(NSDictionary *config, NSString *key, CGFloat fallback,
     [self.view addSubview:self.webView];
     self.dockContainer = [[UIView alloc] init];
     [self.view addSubview:self.dockContainer];
-    [self.dockContainer addSubview:self.tabBar];
+    self.dockSurface = [[UIVisualEffectView alloc] initWithEffect:nil];
+    [self.dockContainer addSubview:self.dockSurface];
+    [self.dockSurface.contentView addSubview:self.tabBar];
     self.dockConfig = @{};
     [self loadPreview];
 }
@@ -97,14 +100,16 @@ static CGFloat dockNumber(NSDictionary *config, NSString *key, CGFloat fallback,
     CGFloat top = visible ? MAX(CGRectGetMinY(safe), CGRectGetMaxY(safe) - bottom - height) : CGRectGetMaxY(safe);
     self.dockContainer.hidden = !visible;
     self.dockContainer.frame = CGRectMake(CGRectGetMidX(safe) - width / 2, top, width, height);
-    self.tabBar.frame = self.dockContainer.bounds;
+    self.dockSurface.frame = self.dockContainer.bounds;
+    CGFloat topPadding = dockNumber(config, @"topPadding", 0, 0, MAX(0, height - 44));
+    self.tabBar.frame = CGRectMake(0, topPadding, width, height - topPadding);
     self.webView.frame = CGRectMake(safe.origin.x, safe.origin.y, safe.size.width,
                                     MAX(0, top - safe.origin.y));
     CGFloat radius = dockNumber(config, @"cornerRadius", 0, 0, height / 2);
-    self.tabBar.layer.cornerRadius = radius;
-    self.tabBar.clipsToBounds = YES;
-    self.tabBar.layer.borderWidth = dockNumber(config, @"borderWidth", 0, 0, 4);
-    self.tabBar.layer.borderColor = (previewColor(config[@"borderColor"]) ?: UIColor.clearColor).CGColor;
+    self.dockSurface.layer.cornerRadius = radius;
+    self.dockSurface.clipsToBounds = YES;
+    self.dockSurface.layer.borderWidth = dockNumber(config, @"borderWidth", 0, 0, 4);
+    self.dockSurface.layer.borderColor = (previewColor(config[@"borderColor"]) ?: UIColor.clearColor).CGColor;
     CALayer *shadow = self.dockContainer.layer;
     shadow.shadowColor = (previewColor(config[@"shadowColor"]) ?: UIColor.blackColor).CGColor;
     shadow.shadowOpacity = dockNumber(config, @"shadowOpacity", 0, 0, 1);
@@ -176,19 +181,20 @@ static CGFloat dockNumber(NSDictionary *config, NSString *key, CGFloat fallback,
         self.tabBar.items = items;
         self.tabBar.selectedItem = items[selected >= 0 && selected < (NSInteger)items.count ? selected : 0];
         UITabBarAppearance *appearance = [[UITabBarAppearance alloc] init];
-        [appearance configureWithDefaultBackground];
+        [appearance configureWithTransparentBackground];
         UIColor *background = previewColor(config[@"background"]);
         UIColor *tint = previewColor(config[@"tint"]);
         UIColor *muted = previewColor(config[@"muted"]);
         self.dockConfig = config;
         if (background) self.view.backgroundColor = background;
-        appearance.backgroundColor = [(background ?: UIColor.secondarySystemBackgroundColor)
+        self.dockSurface.contentView.backgroundColor = [(background ?: UIColor.secondarySystemBackgroundColor)
             colorWithAlphaComponent:dockNumber(config, @"backgroundOpacity", 1, 0, 1)];
         NSString *blur = config[@"blur"];
-        if ([blur isEqual:@"light"]) appearance.backgroundEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterialLight];
-        else if ([blur isEqual:@"dark"]) appearance.backgroundEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterialDark];
-        else if ([blur isEqual:@"system"]) appearance.backgroundEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
-        else appearance.backgroundEffect = nil;
+        UIBlurEffect *effect = nil;
+        if ([blur isEqual:@"light"]) effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterialLight];
+        else if ([blur isEqual:@"dark"]) effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterialDark];
+        else if ([blur isEqual:@"system"]) effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+        self.dockSurface.effect = effect;
         appearance.shadowColor = UIColor.clearColor;
         UIFont *font = [UIFont systemFontOfSize:dockNumber(config, @"labelSize", 10, 8, 20)
                                         weight:UIFontWeightMedium];
